@@ -1,5 +1,5 @@
 import { Color, Matrix4, WebGLRenderer } from 'three';
-import { WMTSCapabilitiesResult, WMTSLayer, WMTSTileMatrixSet } from '../loaders/WMTSCapabilitiesLoader.js';
+import { WMTSTileMatrix } from '../loaders/WMTSCapabilitiesLoader.js';
 
 export class ImageOverlayPlugin {
 
@@ -106,12 +106,17 @@ export class WMSTilesOverlay extends TiledImageOverlay {
 export class WMTSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options: {
-		dimensions?: { [ key: string ]: any } | null,
 		url?: string | null,
-		capabilities?: WMTSCapabilitiesResult | null,
-		layer?: WMTSLayer | string | null,
-		tileMatrixSet?: WMTSTileMatrixSet | string | null,
+		layer?: string | null,
+		tileMatrixSet?: string | null,
 		style?: string,
+		tileMatrixLabels?: Array<string>,
+		tileMatrices: Array<WMTSTileMatrix>,
+		dimensions?: { [ key: string ]: any } | null,
+		projection?: string,
+		levels?: number,
+		tileDimension?: number,
+		contentBoundingBox?: Array<number>,
 
 		color?: number | Color,
 		opacity?: number,

@@ -309,8 +309,9 @@ function renderCallable( doc, heading, sigPrefix, callbackMap ) {
 export function renderMethod( doc, callbackMap = {} ) {
 
 	const isStatic = doc.scope === 'static';
-	const prefix = isStatic ? 'static ' : '';
-	return renderCallable( doc, `### ${ prefix }.${ doc.name }`, prefix, callbackMap );
+	const headingPrefix = isStatic ? 'static ' : '';
+	const sigPrefix = isStatic ? `static ${ doc.async ? 'async ' : '' }` : ( doc.async ? 'async ' : '' );
+	return renderCallable( doc, `### ${ headingPrefix }.${ doc.name }`, sigPrefix, callbackMap );
 
 }
 
@@ -409,11 +410,12 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null, he
 	for ( const prop of ( typeDoc.properties || [] ) ) {
 
 		const type = formatType( prop.type, callbackMap );
-		const optional = prop.optional ? '?' : '';
+		const optional = prop.optional && prop.defaultvalue === undefined ? '?' : '';
+		const defStr = prop.defaultvalue !== undefined ? ` = ${ prop.defaultvalue }` : '';
 		lines.push( `${ hSub } .${ prop.name }` );
 		lines.push( '' );
 		lines.push( '```js' );
-		lines.push( `${ prop.name }${ optional }: ${ type }` );
+		lines.push( `${ prop.name }${ optional }${ defStr }: ${ type }` );
 		lines.push( '```' );
 		lines.push( '' );
 

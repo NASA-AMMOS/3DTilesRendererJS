@@ -6,7 +6,7 @@ import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, EnvironmentControl
 import { CesiumIonAuthPlugin, UpdateOnChangePlugin, GLTFExtensionsPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
 
 // Plugins
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports
 import { Canvas } from '@react-three/fiber';

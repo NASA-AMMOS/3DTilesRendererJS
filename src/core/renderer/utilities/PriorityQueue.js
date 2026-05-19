@@ -1,3 +1,5 @@
+import { Scheduler } from './Scheduler.js';
+
 /**
  * Error thrown when a queued item's promise is rejected because the item was removed
  * before its callback could run.
@@ -45,10 +47,35 @@ export class PriorityQueueItemRemovedError extends Error {
  */
 export class PriorityQueue {
 
-	// returns whether tasks are queued or actively running
+	/**
+	 * returns whether tasks are queued or actively running
+	 * @readonly
+	 * @type {boolean}
+	 */
 	get running() {
 
 		return this.items.length !== 0 || this.currJobs !== 0;
+
+	}
+
+	/**
+	 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
+	 * single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
+	 * overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
+	 * running in WebXR.
+	 * @type {SchedulingCallback}
+	 * @deprecated
+	 */
+	get schedulingCallback() {
+
+		return this._schedulingCallback;
+
+	}
+
+	set schedulingCallback( cb ) {
+
+		console.log( 'PriorityQueue: Setting "schedulingCallback" has been deprecated. Use Scheduler to switch to an XRSession rAF, instead.' );
+		this._schedulingCallback = cb;
 
 	}
 
@@ -78,16 +105,9 @@ export class PriorityQueue {
 		 */
 		this.priorityCallback = null;
 
-		/**
-		 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
-		 * single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
-		 * overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
-		 * running in WebXR.
-		 * @type {SchedulingCallback}
-		 */
-		this.schedulingCallback = func => {
+		this._schedulingCallback = func => {
 
-			requestAnimationFrame( func );
+			Scheduler.requestAnimationFrame( func );
 
 		};
 
@@ -289,7 +309,7 @@ export class PriorityQueue {
 
 		if ( ! this.scheduled ) {
 
-			this.schedulingCallback( this._runjobs );
+			this._schedulingCallback( this._runjobs );
 
 			this.scheduled = true;
 

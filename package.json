@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.4.23",
+  "version": "0.4.24",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -83,6 +83,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/preset-modules": "^0.1.6",
+    "@mapbox/vector-tile": "^2.0.3",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
     "@babylonjs/core": "^8.47.2",
@@ -107,6 +108,8 @@
     "jsdoc": "^4.0.5",
     "leva": "^0.10.0",
     "lil-gui": "^0.21.0",
+    "pbf": "^4.0.1",
+    "pmtiles": "^4.3.2",
     "postprocessing": "^6.36.4",
     "three": "^0.170.0",
     "typescript": "^5.6.0",
@@ -117,12 +120,18 @@
   "peerDependencies": {
     "@babylonjs/core": ">=8.0.0",
     "@babylonjs/loaders": ">=8.0.0",
+    "@mapbox/vector-tile": "^2.0.3",
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
+    "pbf": "^4.0.1",
+    "pmtiles": "^4.3.2",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
     "three": ">=0.167.0"
   },
   "peerDependenciesMeta": {
+    "@mapbox/vector-tile": {
+      "optional": true
+    },
     "@react-three/fiber": {
       "optional": true
     },
@@ -130,6 +139,12 @@
       "optional": true
     },
     "@babylonjs/loaders": {
+      "optional": true
+    },
+    "pbf": {
+      "optional": true
+    },
+    "pmtiles": {
       "optional": true
     },
     "react": {

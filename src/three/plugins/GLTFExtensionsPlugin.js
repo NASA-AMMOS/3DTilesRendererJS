@@ -1,4 +1,4 @@
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFStructuralMetadataExtension } from './gltf/GLTFStructuralMetadataExtension.js';
 import { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
 import { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';

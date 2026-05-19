@@ -4,16 +4,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.24] - Unreleased
+## Unreleased
+### Added
+- "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
+- Improved support for ExternalTexture memory tracking.
+- StructuralMetadata: Throw an error in `getPropertyTableData` when non-matching argument types are passed.
+- MVTOverlay, PMTilesOverlay: Overlays for reading and rendering vector tilee formats as tile overlays.
+
+### Fixed
+- ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
+- Converted remaining "three/examples/jsm/" paths to "three/addons/"
+
+### Changed
+- Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin" & "ImageOverlayPlugin", instead.
+
+## [0.4.24] - 2026.04.10
+### Added
+- TilesRenderer: Added support for reverse depth buffer.
+- Scheduler class for setting an XR session to use for rAF callbacks.
+
 ### Changed
 - EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
 - ImageOverlayPlugin: Do not allocate a render target for compositing if only a single tile is returned that exactly matches the tile bounds.
+- WMTSImageOverlay, WMTSTilesPlugin: Deprecated "capabilities" argument, adjusted options so literals can be passed.
+- Changed "three/examples/jsm" paths to "three/addons"
+- ImageOverlayPlugin: Image overlay tile levels are now determined using image resolution rather than depth.
 
 ### Fixed
 - Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
 - ImageOverlayPlugin: Fix case where UVs can be generated as NaN.
 - ImageFormatPlugin: Adjust root tile geometricError to be Infinity.
 - ImageOverlays: Updated types.
+- EnvironmentControls: Removed use of "THREE.Clock"
 
 ## [0.4.23] - 2026-03-18
 ### Added

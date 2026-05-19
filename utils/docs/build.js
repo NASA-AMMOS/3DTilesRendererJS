@@ -40,10 +40,19 @@ const ENTRY_POINTS = [
 ];
 
 // Run JSDoc for all entry points and build a global type registry for cross-file links
-const results = ENTRY_POINTS.map( entry => ( {
-	entry,
-	jsdoc: filterDocumented( runJsDoc( path.resolve( ROOT_DIR, entry.source ) ) )
-} ) );
+const results = ENTRY_POINTS.map( entry => {
+
+	let jsdoc = filterDocumented( runJsDoc( path.resolve( ROOT_DIR, entry.source ) ) );
+	if ( entry.exclude ) {
+
+		const excludePath = path.resolve( ROOT_DIR, entry.exclude );
+		jsdoc = jsdoc.filter( d => ! d.meta || ! d.meta.path || ! d.meta.path.startsWith( excludePath ) );
+
+	}
+
+	return { entry, jsdoc };
+
+} );
 
 // Doclet type predicates
 const isClass = d => d.kind === 'class';
@@ -69,7 +78,8 @@ for ( const { entry, jsdoc } of results ) {
 
 }
 
-// Pass 2: render each entry point.
+// Pass 2: render each entry point and accumulate sections per output file.
+const outputSections = {}; // output file -> accumulated sections array
 for ( const { entry, jsdoc } of results ) {
 
 	const resolveLink = name => {
@@ -173,7 +183,7 @@ for ( const { entry, jsdoc } of results ) {
 
 	}
 
-	// construct the readme files
+	// construct sections for this entry point
 	const sections = [ `# ${ entry.title }`, '' ];
 
 	for ( const [ groupName, consts ] of Object.entries( constsByGroup ) ) {
@@ -207,22 +217,22 @@ for ( const { entry, jsdoc } of results ) {
 
 	}
 
-	const header = '<!-- This file is generated automatically. Do not edit it directly. -->\n';
+	if ( ! outputSections[ entry.output ] ) outputSections[ entry.output ] = [];
+	outputSections[ entry.output ].push( ...sections );
+
+}
+
+// Write each output file once, after all entry points have been processed.
+const header = '<!-- This file is generated automatically. Do not edit it directly. -->\n';
+for ( const [ outputFile, sections ] of Object.entries( outputSections ) ) {
+
 	const output = header + resolveLinks( sections.join( '\n' ) );
-	fs.writeFileSync( path.join( ROOT_DIR, entry.output ), output );
-	console.log( `Written: ${ entry.output }` );
+	fs.writeFileSync( path.join( ROOT_DIR, outputFile ), output );
+	console.log( `Written: ${ outputFile }` );
 
 }
 
 //
-
-function runJsDoc( source ) {
-
-	// Default maxBuffer is 1 MB; large source directories can exceed that, so raise it to 32 MB.
-	const result = execSync( `npx jsdoc -X -r "${ source }"`, { maxBuffer: 32 * 1024 * 1024 } ).toString();
-	return JSON.parse( result );
-
-}
 
 function groupByTag( docs, predicate, defaultGroup ) {
 
@@ -237,6 +247,14 @@ function groupByTag( docs, predicate, defaultGroup ) {
 	}
 
 	return groups;
+
+}
+
+function runJsDoc( source ) {
+
+	// Default maxBuffer is 1 MB; large source directories can exceed that, so raise it to 32 MB.
+	const result = execSync( `npx jsdoc -X -r "${ source }"`, { maxBuffer: 32 * 1024 * 1024 } ).toString();
+	return JSON.parse( result );
 
 }
 

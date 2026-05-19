@@ -8,7 +8,6 @@ import {
 	Plane,
 	EventDispatcher,
 	MathUtils,
-	Clock,
 	Ray,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
@@ -228,7 +227,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.raycaster.firstHitOnly = true;
 
 		this.up = new Vector3( 0, 1, 0 );
-		this.clock = new Clock();
+		this._lastTime = performance.now();
 
 		this._detachCallback = null;
 		this._upInitialized = false;
@@ -243,6 +242,17 @@ export class EnvironmentControls extends EventDispatcher {
 		if ( camera ) this.setCamera( camera );
 		if ( scene ) this.setScene( scene );
 		if ( tilesRenderer ) this.setTilesRenderer( tilesRenderer );
+
+	}
+
+	_getDeltaTime() {
+
+		// custom delta time function that increments the last time used since "Clock" has
+		// been removed from three.js.
+		const curr = performance.now();
+		const delta = curr - this._lastTime;
+		this._lastTime = curr;
+		return delta * 1e-3;
 
 	}
 
@@ -776,7 +786,7 @@ export class EnvironmentControls extends EventDispatcher {
 	 * Applies pending input and inertia to the camera. Must be called each frame.
 	 * @param {number} [deltaTime] - Time in seconds since the last frame. Defaults to the clock delta, capped at 64ms.
 	 */
-	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
+	update( deltaTime = Math.min( this._getDeltaTime(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.camera || deltaTime === 0 ) {
 

@@ -1,4 +1,6 @@
 /** @import { WebGLRenderer } from 'three' */
+/** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
+/** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
@@ -14,6 +16,7 @@ import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
 import { WMSImageSource } from './sources/WMSImageSource.js';
 import { TiledRegionImageSource } from './sources/RegionImageSource.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
+import { DeepZoomImageSource } from './sources/DeepZoomImageSource.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -289,7 +292,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, tile );
+					overlay.releaseTexture( range );
 
 				}
 
@@ -510,7 +513,7 @@ export class ImageOverlayPlugin {
 			// if the tile has a render target associated with the overlay and the last level of detail
 			// is not being displayed, yet, then we need to split
 			const info = tileInfo.get( tile );
-			if ( info && info.target && overlay.shouldSplit( info.range, tile ) ) {
+			if ( info && info.target && overlay.shouldSplit( info.range ) ) {
 
 				// get the vector representing the projection direction
 				if ( overlay.frame ) {
@@ -856,7 +859,7 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, tile );
+					overlay.releaseTexture( range );
 
 				}
 
@@ -1011,7 +1014,7 @@ export class ImageOverlayPlugin {
 				range = overlay.projection.toNormalizedRange( range );
 
 				info.range = range;
-				overlay.lockTexture( range, tile );
+				overlay.lockTexture( range );
 
 			}
 
@@ -1103,14 +1106,14 @@ export class ImageOverlayPlugin {
 		if ( info.range === null ) {
 
 			info.range = range;
-			overlay.lockTexture( range, tile );
+			overlay.lockTexture( range );
 
 		}
 
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.hasContent( range, tile ) ) {
+		if ( heightInRange && overlay.hasContent( range ) ) {
 
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1123,7 +1126,7 @@ export class ImageOverlayPlugin {
 					}
 
 					// Get the texture from the overlay
-					const regionTarget = await overlay.getTexture( range, tile );
+					const regionTarget = await overlay.getTexture( range );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -1275,7 +1278,7 @@ export class ImageOverlayPlugin {
  * @param {boolean} [options.alphaInvert=false] If true, inverts the alpha channel before
  * applying the mask or blend.
  */
-class ImageOverlay {
+export class ImageOverlay {
 
 	get isPlanarProjection() {
 
@@ -1348,35 +1351,35 @@ class ImageOverlay {
 
 	}
 
-	hasContent( range, tile ) {
+	hasContent( range, level = null ) {
 
 		return false;
 
 	}
 
-	async getTexture( range, tile ) {
+	async getTexture( range, level = null ) {
 
 		return null;
 
 	}
 
-	async lockTexture( range, tile ) {
+	async lockTexture( range, level = null ) {
 
 		return null;
 
 	}
 
-	releaseTexture( range, tile ) {
+	releaseTexture( range, level = null ) {
+
+	}
+
+	shouldSplit( range, level = null ) {
+
+		return false;
 
 	}
 
 	setResolution( resolution ) {
-
-	}
-
-	shouldSplit( range, tile ) {
-
-		return false;
 
 	}
 
@@ -1388,7 +1391,7 @@ class ImageOverlay {
  * multiple source tiles into a single texture per 3D tile region.
  * @extends ImageOverlay
  */
-class TiledImageOverlay extends ImageOverlay {
+export class TiledImageOverlay extends ImageOverlay {
 
 	get tiling() {
 
@@ -1449,77 +1452,75 @@ class TiledImageOverlay extends ImageOverlay {
 	}
 
 	// Texture acquisition API implementations
-	calculateLevel( range, tile ) {
+	calculateLevel( range ) {
 
-		if ( this.isPlanarProjection ) {
+		const [ minX, minY, maxX, maxY ] = range;
+		const w = maxX - minX;
+		const h = maxY - minY;
 
-			const [ minX, minY, maxX, maxY ] = range;
-			const w = maxX - minX;
-			const h = maxY - minY;
+		let level = 0;
+		const resolution = this.regionImageSource.resolution;
+		const maxLevel = this.tiling.maxLevel;
+		for ( ; level < maxLevel; level ++ ) {
 
-			let level = 0;
-			const resolution = this.regionImageSource.resolution;
-			const maxLevel = this.tiling.maxLevel;
-			for ( ; level < maxLevel; level ++ ) {
+			// the number of pixels per image on each axis
+			const wProj = resolution / w;
+			const hProj = resolution / h;
 
-				// the number of pixels per image on each axis
-				const wProj = resolution / w;
-				const hProj = resolution / h;
+			const levelData = this.tiling.getLevel( level );
+			if ( levelData === null || levelData === undefined ) {
 
-				const { pixelWidth, pixelHeight } = this.tiling.getLevel( level );
-				if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
-
-					break;
-
-				}
+				continue;
 
 			}
 
-			// TODO: should this be one layer higher LoD?
-			return level;
+			const { pixelWidth, pixelHeight } = levelData;
+			if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
 
-		} else {
+				break;
 
-			return tile.internal.depthFromRenderedParent - 1;
+			}
 
 		}
 
-	}
-
-	hasContent( range, tile ) {
-
-		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range, tile ) );
+		return level;
 
 	}
 
-	getTexture( range, tile ) {
+	hasContent( range, level = this.calculateLevel( range ) ) {
 
-		return this.regionImageSource.get( ...range, this.calculateLevel( range, tile ) );
-
-	}
-
-	lockTexture( range, tile ) {
-
-		return this.regionImageSource.lock( ...range, this.calculateLevel( range, tile ) );
+		return this.regionImageSource.hasContent( ...range, level );
 
 	}
 
-	releaseTexture( range, tile ) {
+	getTexture( range, level = this.calculateLevel( range ) ) {
 
-		this.regionImageSource.release( ...range, this.calculateLevel( range, tile ) );
+		return this.regionImageSource.get( ...range, level );
+
+	}
+
+	lockTexture( range, level = this.calculateLevel( range ) ) {
+
+		return this.regionImageSource.lock( ...range, level );
+
+	}
+
+	releaseTexture( range, level = this.calculateLevel( range ) ) {
+
+		this.regionImageSource.release( ...range, level );
+
+	}
+
+	shouldSplit( range, level = this.calculateLevel( range ) ) {
+
+		// if we haven't reached the max level yet then continue splitting
+		return this.tiling.maxLevel > level;
 
 	}
 
 	setResolution( resolution ) {
 
 		this.regionImageSource.resolution = resolution;
-
-	}
-
-	shouldSplit( range, tile ) {
-
-		// if we haven't reached the max level yet then continue splitting
-		return this.tiling.maxLevel > this.calculateLevel( range, tile );
 
 	}
 
@@ -1553,6 +1554,32 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 }
 
 /**
+ * Plugin that renders a Deep Zoom Image (DZI) as a tiled overlay. Only a single embedded "Image" is supported.
+ * See the {@link https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95) Deep Zoom specification}
+ * and {@link https://openseadragon.github.io OpenSeadragon}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] URL to the `.dzi` descriptor file.
+ */
+export class DeepZoomOverlay extends TiledImageOverlay {
+
+	constructor( options ) {
+
+		super( options );
+		this.imageSource = new DeepZoomImageSource( options );
+
+	}
+
+}
+
+/**
+ * @callback GeoJSONGetStyleCallback
+ * @param {Object} feature The GeoJSON feature object being rendered.
+ * @param {Object} properties The feature's properties object.
+ * @returns {VectorTileStyle|null} Style to apply, or `null` to use defaults.
+ */
+
+/**
  * Overlay that rasterizes a GeoJSON dataset onto 3D tile geometry. Features are drawn using the
  * Canvas 2D API at the tile's native resolution. Per-feature style overrides can be provided via
  * the `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius` properties on each GeoJSON
@@ -1564,6 +1591,7 @@ export class XYZTilesOverlay extends TiledImageOverlay {
  * @param {string} [options.url=null] URL to a GeoJSON file to fetch on initialization (used when
  * `geojson` is not supplied directly).
  * @param {number} [options.resolution=256] Canvas resolution (pixels) used when compositing tiles.
+ * @param {GeoJSONGetStyleCallback} [options.getStyle] Per-feature style callback. When provided, overrides `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius`.
  * @param {number} [options.pointRadius=6] Radius in pixels used to render Point features.
  * @param {string} [options.strokeStyle='white'] Canvas stroke style for feature outlines.
  * @param {number} [options.strokeWidth=2] Stroke line width in pixels.
@@ -1692,7 +1720,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
-	shouldSplit( range, tile ) {
+	shouldSplit( range ) {
 
 		// geojson can always split
 		return true;
@@ -1718,7 +1746,10 @@ export class GeoJSONOverlay extends ImageOverlay {
  * @param {string} [options.format] Image MIME type, e.g. `'image/png'`.
  * @param {number} [options.tileDimension=256] Tile pixel size.
  * @param {string} [options.styles] WMS styles parameter.
- * @param {string} [options.version] WMS version string, e.g. `'1.3.0'`.
+ * @param {string} [options.version='1.3.0'] WMS version string.
+ * @param {boolean} [options.transparent=false] Whether to request a transparent image.
+ * @param {number} [options.levels=18] Number of zoom levels.
+ * @param {number[]|null} [options.contentBoundingBox=null] Content bounding box in radians `[west, south, east, north]`. If null, uses full projection bounds.
  * @param {number} [options.opacity=1] Overlay opacity (0–1).
  * @param {number|Color} [options.color=0xffffff] Tint color.
  * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
@@ -1743,17 +1774,18 @@ export class WMSTilesOverlay extends TiledImageOverlay {
  * directly. See the {@link https://www.ogc.org/standard/wmts/ WMTS specification}.
  * @extends TiledImageOverlay
  * @param {Object} [options]
- * @param {Object} [options.capabilities] Parsed WMTS capabilities from `WMTSCapabilitiesLoader`.
- * @param {string} [options.layer] WMTS layer identifier.
- * @param {string} [options.tileMatrixSet] Tile matrix set identifier.
- * @param {string} [options.style] Style identifier.
- * @param {Object} [options.dimensions] Additional WMTS dimension parameters.
- * @param {number} [options.opacity=1] Overlay opacity (0–1).
- * @param {number|Color} [options.color=0xffffff] Tint color.
- * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
- * @param {Function} [options.preprocessURL=null] URL rewriting callback.
- * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
- * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ * @param {string} [options.url] - WMTS service URL.
+ * @param {string} [options.layer] - WMTS layer identifier.
+ * @param {string} [options.tileMatrixSet] - TileMatrixSet identifier (e.g., 'GoogleMapsCompatible', 'EPSG:3857').
+ * @param {string} [options.style='default'] - Style identifier.
+ * @param {string} [options.format='image/jpeg'] - Output image format (e.g., 'image/png', 'image/jpeg').
+ * @param {Object<string, string|number>|null} [options.dimensions=null] - WMTS dimension values
+ * @param {string[]|null} [options.tileMatrixLabels=null] - Custom TileMatrix identifiers per level
+ * @param {WMTSTileMatrix[]|null} [options.tileMatrices=null] - Explicit per-level tile matrix definitions. When provided, `levels` and `tileMatrixLabels` are ignored.
+ * @param {string|null} [options.projection=null] - Projection identifier ('EPSG:3857' or 'EPSG:4326'). Defaults to 'EPSG:3857' if not specified.
+ * @param {number} [options.levels=20] - Number of zoom levels. Ignored if `tileMatrices` is provided.
+ * @param {number} [options.tileDimension=256] - Default tile width and height in pixels.
+ * @param {number[]|null} [options.contentBoundingBox=null] - Content bounding box in radians, `[west, south, east, north]`. If null, uses full projection bounds.
  */
 export class WMTSTilesOverlay extends TiledImageOverlay {
 

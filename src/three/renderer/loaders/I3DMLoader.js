@@ -2,7 +2,7 @@
 /** @import { BatchTable, FeatureTable } from '3d-tiles-renderer/core' */
 import { I3DMLoaderBase } from '3d-tiles-renderer/core';
 import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
 const tempFwd = /* @__PURE__ */ new Vector3();

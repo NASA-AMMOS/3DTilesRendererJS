@@ -169,6 +169,10 @@ constructor(
 		geojson = null: Object,
 		url = null: string,
 		resolution = 256: number,
+		getStyle?: (
+			feature: Object,
+			properties: Object
+		) => VectorTileStyle | null,
 		pointRadius = 6: number,
 		strokeStyle = 'white': string,
 		strokeWidth = 2: number,
@@ -183,6 +187,67 @@ constructor(
 )
 ```
 
+## MVTOverlay
+
+_extends [`ImageOverlay`](#imageoverlay)_
+
+Overlay that renders XYZ-template MVT vector tiles on top of 3D tile geometry.
+See the [Mapbox Vector Tile specification](https://github.com/mapbox/vector-tile-spec).
+
+Requires the optional peer dependencies `@mapbox/vector-tile` and `pbf`, which are
+imported dynamically on first use and must be installed separately:
+```
+npm install @mapbox/vector-tile pbf
+```
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		levels = 20: number,
+		projection = 'EPSG:3857': string,
+		resolution = 512: number,
+		getStyle?: (
+			layerName: string,
+			properties: Object | null
+		) => VectorTileStyle | null,
+	}
+)
+```
+
+## PMTilesOverlay
+
+_extends [`MVTOverlay`](#mvtoverlay)_
+
+Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
+Projection and zoom levels are read automatically from the PMTiles archive header.
+
+Requires the optional peer dependency `pmtiles`, which is imported dynamically on first use
+and must be installed separately. Vector archives additionally require `@mapbox/vector-tile`
+and `pbf`:
+```
+npm install pmtiles @mapbox/vector-tile pbf
+```
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		resolution = 512: number,
+		getStyle?: (
+			layerName: string,
+			properties: Object | null
+		) => VectorTileStyle | null,
+	}
+)
+```
+
 ## TiledImageOverlay
 
 _extends [`ImageOverlay`](#imageoverlay)_
@@ -191,6 +256,25 @@ Base class for overlays backed by a tiled image source (XYZ, TMS, WMS, WMTS, etc
 Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
 multiple source tiles into a single texture per 3D tile region.
 
+
+## DeepZoomOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Plugin that renders a Deep Zoom Image (DZI) as a tiled overlay. Only a single embedded "Image" is supported.
+See the [Deep Zoom specification](https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95))
+and [OpenSeadragon](https://openseadragon.github.io).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+	}
+)
+```
 
 ## GoogleMapsOverlay
 
@@ -262,7 +346,10 @@ constructor(
 		format?: string,
 		tileDimension = 256: number,
 		styles?: string,
-		version?: string,
+		version = '1.3.0': string,
+		transparent = false: boolean,
+		levels = 18: number,
+		contentBoundingBox = null: Array<number> | null,
 		opacity = 1: number,
 		color = 0xffffff: number | Color,
 		frame = null: Matrix4,
@@ -287,17 +374,18 @@ directly. See the [WMTS specification](https://www.ogc.org/standard/wmts/).
 ```js
 constructor(
 	{
-		capabilities?: Object,
+		url?: string,
 		layer?: string,
 		tileMatrixSet?: string,
-		style?: string,
-		dimensions?: Object,
-		opacity = 1: number,
-		color = 0xffffff: number | Color,
-		frame = null: Matrix4,
-		preprocessURL = null: function,
-		alphaMask = false: boolean,
-		alphaInvert = false: boolean,
+		style = 'default': string,
+		format = 'image/jpeg': string,
+		dimensions = null: Object<string, (string|number)> | null,
+		tileMatrixLabels = null: Array<string> | null,
+		tileMatrices = null: Array<WMTSTileMatrix> | null,
+		projection = null: string | null,
+		levels = 20: number,
+		tileDimension = 256: number,
+		contentBoundingBox = null: Array<number> | null,
 	}
 )
 ```
@@ -482,9 +570,12 @@ constructor(
 		layer?: string,
 		crs?: string,
 		format?: string,
-		tileDimension?: number,
+		tileDimension = 256: number,
 		styles?: string,
-		version?: string,
+		version = '1.3.0': string,
+		transparent = false: boolean,
+		levels = 18: number,
+		contentBoundingBox = null: Array<number> | null,
 	}
 )
 ```
@@ -503,11 +594,18 @@ a URL template directly.
 ```js
 constructor(
 	{
-		capabilities?: Object,
+		url?: string,
 		layer?: string,
 		tileMatrixSet?: string,
-		style?: string,
-		dimensions?: Object,
+		style = 'default': string,
+		format = 'image/jpeg': string,
+		dimensions = null: Object<string, (string|number)> | null,
+		tileMatrixLabels = null: Array<string> | null,
+		tileMatrices = null: Array<WMTSTileMatrix> | null,
+		projection = null: string | null,
+		levels = 20: number,
+		tileDimension = 256: number,
+		contentBoundingBox = null: Array<number> | null,
 	}
 )
 ```
@@ -551,6 +649,53 @@ constructor(
 	}
 )
 ```
+
+## GeneratedSurfacePlugin
+
+Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
+image overlay data.
+
+The tiling scheme and projection are derived from a provided overlay.
+If the source's projection is cartographic (any EPSG scheme), the plugin supports
+both planar and ellipsoidal geometry via the `shape` option.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		overlay = null: ImageOverlay,
+		shape = 'ellipsoid': string,
+		endCaps = true: boolean,
+		center = true: boolean,
+		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
+### .getCartographicFromPosition
+
+```js
+getCartographicFromPosition( position: Vector3, target = {}: Object ): Object
+```
+
+Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
+to the target object.
+
+
+### .getPositionFromCartographic
+
+```js
+getPositionFromCartographic(
+	lat: number,
+	lon: number,
+	target = new Vector3(): Vector3
+): Vector3
+```
+
+Returns the world-space position for a given cartographic coordinate.
+
 
 ## GLTFCesiumRTCExtension
 
@@ -857,11 +1002,11 @@ for how to obtain these values.
 ### .getPropertyTextureDataAsync
 
 ```js
-getPropertyTextureDataAsync(
+async getPropertyTextureDataAsync(
 	triangle: number,
 	barycoord: Vector3,
 	target = []: Array
-): Promise<Array>
+): Array
 ```
 
 Returns the same data as `getPropertyTextureData` but performs texture reads
@@ -1101,111 +1246,6 @@ Bounding box `bounds` arrays are in `[ minLon, minLat, maxLon, maxLat ]` order i
 constructor( manager: LoadingManager )
 ```
 
-## WMTSImageSource
-
-_extends `TiledImageSource`_
-
-WMTS (Web Map Tile Service) image source for loading tiled map imagery.
-
-This class provides support for loading map tiles from WMTS-compliant services.
-It handles parsing WMTS capabilities documents and constructing proper tile URLs.
-
-
-### .capabilities
-
-```js
-capabilities: Object | null
-```
-
-Parsed WMTS capabilities object
-
-
-### .layer
-
-```js
-layer: string | Object | null
-```
-
-The layer to render (identifier string or layer object)
-
-
-### .tileMatrixSet
-
-```js
-tileMatrixSet: string | Object | null
-```
-
-The tile matrix set to use (identifier string or object)
-
-
-### .style
-
-```js
-style: string | null
-```
-
-The style identifier
-
-
-### .dimensions
-
-```js
-dimensions: Object
-```
-
-Dimension values for the WMTS request
-
-
-### .url
-
-```js
-url: string | null
-```
-
-The URL template for tile requests
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		capabilities = null: Object,
-		layer = null: string | Object,
-		tileMatrixSet = null: string | Object,
-		style = null: string,
-		url = null: string,
-		dimensions = {}: Object,
-	}
-)
-```
-
-Creates a new WMTSImageSource instance.
-
-### .getUrl
-
-```js
-getUrl( x: number, y: number, level: number ): string
-```
-
-Generates the URL for a specific tile.
-
-
-### .init
-
-```js
-init(): Promise<void>
-```
-
-Initializes the image source by parsing capabilities and setting up the tiling scheme.
-
-This method:
-- Resolves layer, tileMatrixSet, and style from capabilities
-- Determines the projection (EPSG:4326 or EPSG:3857)
-- Configures the tiling scheme with proper bounds and tile sizes
-- Constructs the final URL template
-
-
 ## FeatureInfo
 
 
@@ -1232,3 +1272,107 @@ nullFeatureId: number | null
 ```js
 texture?: Object
 ```
+
+## VectorTileStyle
+
+
+### .fill
+
+```js
+fill = '#cccccc': string
+```
+
+CSS fill color.
+
+### .stroke
+
+```js
+stroke = 'transparent': string
+```
+
+CSS stroke color.
+
+### .strokeWidth
+
+```js
+strokeWidth = 1: number
+```
+
+Stroke width in pixels.
+
+### .radius
+
+```js
+radius = 2: number
+```
+
+Point radius in pixels.
+
+### .order
+
+```js
+order = 0: number
+```
+
+Layer draw order; lower values are drawn first.
+
+### .visible
+
+```js
+visible = true: boolean
+```
+
+Whether the feature is rendered.
+
+## WMTSTileMatrix
+
+
+### .identifier
+
+```js
+identifier: string
+```
+
+TileMatrix identifier (e.g., 'Level0', 'EPSG:3857:0').
+
+### .matrixWidth
+
+```js
+matrixWidth: number
+```
+
+Number of tile columns at this level.
+
+### .matrixHeight
+
+```js
+matrixHeight: number
+```
+
+Number of tile rows at this level.
+
+### .tileWidth
+
+```js
+tileWidth?: number
+```
+
+Tile width in pixels (defaults to tileDimension).
+
+### .tileHeight
+
+```js
+tileHeight?: number
+```
+
+Tile height in pixels (defaults to tileDimension).
+
+### .tileBounds
+
+```js
+tileBounds: Array<number>
+```
+
+Tile grid bounds in radians `[west, south, east, north]`.
+  Required because the actual coverage depends on TopLeftCorner and ScaleDenominator
+  from the capabilities XML and cannot be computed from grid dimensions alone.

@@ -106,11 +106,6 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load internal tile sets first
 		return a.internal.hasUnrenderableContent ? 1 : - 1;
 
-	} else if ( a.traversal.error !== b.traversal.error ) {
-
-		// load the tile with the higher error
-		return a.traversal.error > b.traversal.error ? 1 : - 1;
-
 	} else if ( a.traversal.distanceFromCamera !== b.traversal.distanceFromCamera ) {
 
 		// load closer tiles first

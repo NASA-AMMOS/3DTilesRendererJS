@@ -25,6 +25,8 @@ export class ImageFormatPlugin {
 
 	constructor( options = {} ) {
 
+		console.warn( `${ this.constructor.name } has been deprecated. Use "GeneratedSurfacePlugin" & "ImageOverlayPlugin", instead.` );
+
 		const {
 			pixelSize = null,
 			center = false,
@@ -142,21 +144,15 @@ export class ImageFormatPlugin {
 
 		}
 
-		return mesh;
-
-	}
-
-	preprocessNode( tile ) {
-
-		// generate children
-		const { tiling } = this;
-		const maxLevel = tiling.maxLevel;
-		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel && tile.parent !== null ) {
+		// Only expose descendants while the tile content is resident so unload can clear the
+		// branch and a later reload will recreate it symmetrically.
+		if ( level < tiling.maxLevel && tile.children.length === 0 ) {
 
 			this.expandChildren( tile );
 
 		}
+
+		return mesh;
 
 	}
 
@@ -172,6 +168,14 @@ export class ImageFormatPlugin {
 			imageSource.release( tx, ty, level );
 
 		}
+
+
+		tile.children.forEach( child => {
+
+			this.tiles.processNodeQueue.remove( child );
+
+		} );
+		tile.children.length = 0;
 
 	}
 

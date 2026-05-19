@@ -9,7 +9,7 @@ import {
 	Group,
 	FogExp2,
 } from 'three';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { TopoLinesPlugin } from './src/plugins/topolines/TopoLinesPlugin.js';
 
 let camera, controls, scene, renderer;
