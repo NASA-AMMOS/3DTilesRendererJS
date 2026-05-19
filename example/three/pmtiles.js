@@ -46,12 +46,9 @@ function init() {
 
 	// PMTiles overlay: vector tile data composited on top of the base geometry
 	overlay = new PMTilesOverlay( {
-		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
 		getStyle,
 	} );
-	overlay.fetchOptions = {
-		mode: 'cors',
-	};
 
 	// Base tile layer: XYZ raster tiles provide the globe geometry
 	tiles = new TilesRenderer();
