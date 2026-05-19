@@ -169,6 +169,29 @@ const lruPriorityCallback = ( a, b ) => {
 
 };
 
+// Unified priority callback for shared queues — delegates to the appropriate per-tile callback
+// based on each tile's renderer settings. Falls back to defaultPriorityCallback for cross-renderer
+// comparisons or when renderer settings differ.
+const unifiedPriorityCallback = ( a, b ) => {
+
+	const aRenderer = a.internal.renderer;
+	const bRenderer = b.internal.renderer;
+
+	const aOptimized = aRenderer.optimizedLoadStrategy && ! aRenderer.loadAncestors;
+	const bOptimized = bRenderer.optimizedLoadStrategy && ! bRenderer.loadAncestors;
+
+	if ( aOptimized && bOptimized ) {
+
+		return optimizedPriorityCallback( a, b );
+
+	} else {
+
+		return defaultPriorityCallback( a, b );
+
+	}
+
+};
+
 // Internal Tile Type Definitions
 
 /**
@@ -463,6 +486,7 @@ export class TilesRendererBase {
 		 * @type {PriorityQueue}
 		 */
 		this.downloadQueue = downloadQueue;
+		this.downloadQueue.priorityCallback = unifiedPriorityCallback;
 
 		/**
 		 * Priority queue controlling concurrent tile parsing. Max jobs defaults to `5`.
@@ -470,6 +494,7 @@ export class TilesRendererBase {
 		 * @type {PriorityQueue}
 		 */
 		this.parseQueue = parseQueue;
+		this.parseQueue.priorityCallback = unifiedPriorityCallback;
 
 		/**
 		 * Priority queue for expanding and initializing tiles for traversal. Max jobs defaults to `25`.
@@ -783,7 +808,7 @@ export class TilesRendererBase {
 	update() {
 
 		// load root
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy, loadAncestors } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -879,11 +904,6 @@ export class TilesRendererBase {
 
 		usedSet.forEach( tile => lruCache.markUnused( tile ) );
 		usedSet.clear();
-
-		// assign the correct callbacks
-		const priorityCallback = ( optimizedLoadStrategy && ! loadAncestors ) ? optimizedPriorityCallback : defaultPriorityCallback;
-		downloadQueue.priorityCallback = priorityCallback;
-		parseQueue.priorityCallback = priorityCallback;
 
 		// prepare for traversal
 		this.prepareForTraversal();
@@ -1191,6 +1211,7 @@ export class TilesRendererBase {
 			depthFromRenderedParent: - 1,
 			isVirtual: false,
 			virtualChildCount: 0,
+			renderer: this,
 
 			// preserve any pre-seeded fields
 			...tile.internal,
