@@ -124,12 +124,13 @@ export class VectorShapeCanvasRenderer {
 		const offsetX = tileLeft - localOriginX * scaleX;
 		const offsetY = tileTop - localOriginY * scaleY;
 
-		ctx.save();
 		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
 
 		ctx.beginPath();
 		ctx.rect( localOriginX, tileExtent ? 0 : tMinY, spanX, spanY );
 		ctx.clip();
+
+		ctx.clearRect( localOriginX, tileExtent ? 0 : tMinY, spanX, spanY );
 
 		this._ctx = ctx;
 		this._invScale = 1 / scaleX;
@@ -144,7 +145,7 @@ export class VectorShapeCanvasRenderer {
 		this.stroke = style?.stroke ?? DEFAULT_STYLE.stroke;
 		this.strokeWidth = ( style?.strokeWidth ?? DEFAULT_STYLE.strokeWidth ) * _invScale;
 		this.radius = ( style?.radius ?? DEFAULT_STYLE.radius ) * _invScale;
-		this.visible = style?.visible ?? DEFAULT_STYLE.visible;
+		this.visible = style ? style?.visible ?? DEFAULT_STYLE.visible : false;
 
 	}
 
