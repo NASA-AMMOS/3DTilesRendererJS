@@ -924,7 +924,22 @@ loadSiblings: boolean
 
 **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
 camera movement. When `false`, only visible tiles are loaded, minimizing memory but
-potentially causing brief gaps during rapid movement.
+potentially causing brief gaps during rapid movement. Implicitly treated as `true` when
+`loadAncestors` is enabled.
+
+Only applies when `optimizedLoadStrategy` is enabled.
+
+
+### .loadAncestors
+
+```js
+loadAncestors: boolean
+```
+
+**Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
+fallback while children are loading — similar to the behavior of the standard load
+strategy. Increases memory usage but provides smoother transitions on first load.
+Implicitly enables sibling loading to prevent flickering during camera movement.
 
 Only applies when `optimizedLoadStrategy` is enabled.
 

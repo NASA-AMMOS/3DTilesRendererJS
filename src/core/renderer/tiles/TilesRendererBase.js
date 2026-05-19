@@ -113,6 +113,7 @@ const optimizedPriorityCallback = ( a, b ) => {
 
 	} else if ( a.internal.depthFromRenderedParent !== b.internal.depthFromRenderedParent ) {
 
+		// when distance is equal (e.g. camera inside bounds), load shallower tiles first
 		return a.internal.depthFromRenderedParent > b.internal.depthFromRenderedParent ? - 1 : 1;
 
 	}
@@ -566,12 +567,24 @@ export class TilesRendererBase {
 		/**
 		 * **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
 		 * camera movement. When `false`, only visible tiles are loaded, minimizing memory but
-		 * potentially causing brief gaps during rapid movement.
+		 * potentially causing brief gaps during rapid movement. Implicitly treated as `true` when
+		 * `loadAncestors` is enabled.
 		 *
 		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
 		 */
 		this.loadSiblings = true;
+
+		/**
+		 * **Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
+		 * fallback while children are loading — similar to the behavior of the standard load
+		 * strategy. Increases memory usage but provides smoother transitions on first load.
+		 * Implicitly enables sibling loading to prevent flickering during camera movement.
+		 *
+		 * Only applies when `optimizedLoadStrategy` is enabled.
+		 * @type {boolean}
+		 */
+		this.loadAncestors = false;
 
 		/**
 		 * The number of tiles to process immediately when traversing the tile set to determine
@@ -770,7 +783,7 @@ export class TilesRendererBase {
 	update() {
 
 		// load root
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy, loadAncestors } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -868,7 +881,7 @@ export class TilesRendererBase {
 		usedSet.clear();
 
 		// assign the correct callbacks
-		const priorityCallback = optimizedLoadStrategy ? optimizedPriorityCallback : defaultPriorityCallback;
+		const priorityCallback = ( optimizedLoadStrategy && ! loadAncestors ) ? optimizedPriorityCallback : defaultPriorityCallback;
 		downloadQueue.priorityCallback = priorityCallback;
 		parseQueue.priorityCallback = priorityCallback;
 
@@ -1226,6 +1239,7 @@ export class TilesRendererBase {
 			active: false,
 			wasSetActive: false,
 			allChildrenReady: false,
+			allChildrenLoaded: false,
 			kicked: false,
 			allUsedChildrenProcessed: false,
 			lastFrameVisited: - 1,
