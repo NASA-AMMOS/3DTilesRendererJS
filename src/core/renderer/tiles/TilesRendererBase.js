@@ -34,9 +34,11 @@ const regionErrorTarget = {
 	distance: Infinity,
 };
 
-// priority queue sort function that takes two tiles to compare. Returning 1 means
-// "tile a" is loaded first.
-const defaultPriorityCallback = ( a, b ) => {
+// Priority callbacks for the download and parse queues. Returning 1 means "tile a" is loaded first.
+// Differences between the two:
+//   errorPriorityCallback:    sorts by error (high → low), then distance. Used when loadAncestors is enabled.
+//   distancePriorityCallback: sorts by inFrustum, hasUnrenderableContent, then distance. No error sort.
+const errorPriorityCallback = ( a, b ) => {
 
 	const aPriority = a.priority || 0;
 	const bPriority = b.priority || 0;
@@ -76,8 +78,7 @@ const defaultPriorityCallback = ( a, b ) => {
 
 };
 
-// Optimized priority callback - prioritizes distance over error for better user experience
-const optimizedPriorityCallback = ( a, b ) => {
+const distancePriorityCallback = ( a, b ) => {
 
 	const aPriority = a.priority || 0;
 	const bPriority = b.priority || 0;
@@ -170,7 +171,7 @@ const lruPriorityCallback = ( a, b ) => {
 };
 
 // Unified priority callback for shared queues — delegates to the appropriate per-tile callback
-// based on each tile's renderer settings. Falls back to defaultPriorityCallback for cross-renderer
+// based on each tile's renderer settings. Falls back to errorPriorityCallback for cross-renderer
 // comparisons or when renderer settings differ.
 const unifiedPriorityCallback = ( a, b ) => {
 
@@ -182,11 +183,11 @@ const unifiedPriorityCallback = ( a, b ) => {
 
 	if ( aOptimized && bOptimized ) {
 
-		return optimizedPriorityCallback( a, b );
+		return distancePriorityCallback( a, b );
 
 	} else {
 
-		return defaultPriorityCallback( a, b );
+		return errorPriorityCallback( a, b );
 
 	}
 
@@ -422,11 +423,11 @@ export class TilesRendererBase {
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
-		downloadQueue.priorityCallback = defaultPriorityCallback;
+		downloadQueue.priorityCallback = errorPriorityCallback;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 5;
-		parseQueue.priorityCallback = defaultPriorityCallback;
+		parseQueue.priorityCallback = errorPriorityCallback;
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
