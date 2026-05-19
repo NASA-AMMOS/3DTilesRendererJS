@@ -80,19 +80,7 @@ const errorPriorityCallback = ( a, b ) => {
 
 const distancePriorityCallback = ( a, b ) => {
 
-	const aPriority = a.priority || 0;
-	const bPriority = b.priority || 0;
-
-	if ( aPriority !== bPriority ) {
-
-		// lower priority value sorts first
-		return aPriority > bPriority ? 1 : - 1;
-
-	} else if ( ! a.traversal || ! b.traversal ) {
-
-		return 0;
-
-	} else if ( a.traversal.used !== b.traversal.used ) {
+	if ( a.traversal.used !== b.traversal.used ) {
 
 		// load tiles that have been used
 		return a.traversal.used ? 1 : - 1;
@@ -127,19 +115,7 @@ const distancePriorityCallback = ( a, b ) => {
 // is unloaded first.
 const lruPriorityCallback = ( a, b ) => {
 
-	const aPriority = a.priority || 0;
-	const bPriority = b.priority || 0;
-
-	if ( aPriority !== bPriority ) {
-
-		// lower priority value sorts first
-		return aPriority > bPriority ? 1 : - 1;
-
-	} else if ( ! a.traversal || ! b.traversal ) {
-
-		return 0;
-
-	} else if ( a.traversal.lastFrameVisited !== b.traversal.lastFrameVisited ) {
+	if ( a.traversal.lastFrameVisited !== b.traversal.lastFrameVisited ) {
 
 		// dispose of least recent tiles first
 		return a.traversal.lastFrameVisited > b.traversal.lastFrameVisited ? - 1 : 1;
@@ -174,6 +150,21 @@ const lruPriorityCallback = ( a, b ) => {
 // based on each tile's renderer settings. Falls back to errorPriorityCallback for cross-renderer
 // comparisons or when renderer settings differ.
 const unifiedPriorityCallback = ( a, b ) => {
+
+	// handle non-tile cases
+	const aPriority = a.priority ?? Infinity;
+	const bPriority = b.priority ?? Infinity;
+
+	if ( aPriority !== bPriority ) {
+
+		// lower priority value sorts first
+		return aPriority > bPriority ? 1 : - 1;
+
+	} else if ( ! a.internal || ! b.internal ) {
+
+		return 0;
+
+	}
 
 	const aRenderer = a.internal.renderer;
 	const bRenderer = b.internal.renderer;
