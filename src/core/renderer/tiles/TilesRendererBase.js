@@ -567,7 +567,8 @@ export class TilesRendererBase {
 		/**
 		 * **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
 		 * camera movement. When `false`, only visible tiles are loaded, minimizing memory but
-		 * potentially causing brief gaps during rapid movement.
+		 * potentially causing brief gaps during rapid movement. Implicitly treated as `true` when
+		 * `loadAncestors` is enabled.
 		 *
 		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
@@ -583,7 +584,7 @@ export class TilesRendererBase {
 		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
 		 */
-		this.loadAncestors = true;
+		this.loadAncestors = false;
 
 		/**
 		 * The number of tiles to process immediately when traversing the tile set to determine
