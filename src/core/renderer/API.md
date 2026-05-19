@@ -1245,6 +1245,14 @@ virtualChildCount: number
 
 Number of virtual children appended to this tile by plugins.
 
+### .renderer
+
+```js
+renderer: TilesRendererBase
+```
+
+The renderer instance that owns this tile.
+
 ## Tileset
 
 A loaded 3D Tiles tileset JSON object.

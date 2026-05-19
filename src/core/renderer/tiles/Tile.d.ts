@@ -1,3 +1,5 @@
+import { TilesRendererBase } from './TilesRendererBase.js';
+
 /**
  * Internal implementation details for tile management
  */
@@ -17,6 +19,7 @@ export interface TileInternalData {
 	 * The number of virtual children appended to this tile's children array by plugins.
 	 */
 	virtualChildCount: number;
+	renderer: TilesRendererBase,
 }
 
 /**
