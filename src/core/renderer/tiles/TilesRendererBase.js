@@ -1237,6 +1237,7 @@ export class TilesRendererBase {
 			active: false,
 			wasSetActive: false,
 			allChildrenReady: false,
+			allChildrenLoaded: false,
 			kicked: false,
 			allUsedChildrenProcessed: false,
 			lastFrameVisited: - 1,
