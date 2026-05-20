@@ -19,6 +19,7 @@ export const DRAG = 1;
 export const ROTATE = 2;
 export const ZOOM = 3;
 export const WAITING = 4;
+export const FREE_ROTATE = 5;
 
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
@@ -406,6 +407,21 @@ export class EnvironmentControls extends EventDispatcher {
 			const dot = Math.abs( raycaster.ray.direction.dot( up ) );
 			if ( dot < DRAG_PLANE_THRESHOLD || dot < DRAG_UP_THRESHOLD ) {
 
+				return;
+
+			}
+
+			// flight mode with shift held: free-look around the camera origin, skip raycasting
+			if (
+				this.enableFlight &&
+				! pointerTracker.isPointerTouch() && (
+					pointerTracker.isRightClicked() ||
+					pointerTracker.isLeftClicked() && e.shiftKey
+				)
+			) {
+
+				pivotPoint.copy( camera.position );
+				this.setState( FREE_ROTATE );
 				return;
 
 			}
@@ -877,7 +893,7 @@ export class EnvironmentControls extends EventDispatcher {
 			this._updatePosition( deltaTime );
 			this._updateRotation( deltaTime );
 
-			if ( state === DRAG || state === ROTATE ) {
+			if ( state === DRAG || state === ROTATE || state === FREE_ROTATE ) {
 
 				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 				this.inertiaTargetDistance = _vec.copy( pivotPoint ).sub( camera.position ).dot( _forward );
@@ -917,7 +933,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
 		// to the original point.
-		if ( ( this.state === DRAG || this.state === ROTATE ) && this.actionHeightOffset !== 0 ) {
+		if ( ( this.state === DRAG || this.state === ROTATE || this.state === FREE_ROTATE ) && this.actionHeightOffset !== 0 ) {
 
 			const { actionHeightOffset } = this;
 			camera.position.addScaledVector( up, - actionHeightOffset );
@@ -1483,7 +1499,14 @@ export class EnvironmentControls extends EventDispatcher {
 			rotationInertia,
 		} = this;
 
-		if ( state === ROTATE ) {
+		if ( state === ROTATE || state === FREE_ROTATE ) {
+
+			// keep the pivot glued to the camera for first-person look-around
+			if ( state === FREE_ROTATE ) {
+
+				pivotPoint.copy( this.camera.position );
+
+			}
 
 			// get the rotation motion and divide out the container height to normalize for element size
 			pointerTracker.getCenterPoint( _pointer );
@@ -1689,7 +1712,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// calculate the active point
 		let fixedPoint = null;
-		if ( state === DRAG || state === ROTATE ) {
+		if ( state === DRAG || state === ROTATE || state === FREE_ROTATE ) {
 
 			fixedPoint = _pos.copy( pivotPoint );
 
@@ -1770,7 +1793,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// calculate the active point
 		let fixedPoint = null;
-		if ( state === DRAG || state === ROTATE ) {
+		if ( state === DRAG || state === ROTATE || state === FREE_ROTATE ) {
 
 			fixedPoint = _pos.copy( pivotPoint );
 
