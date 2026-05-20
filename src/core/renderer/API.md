@@ -85,7 +85,7 @@ Base class for all 3D Tiles content loaders. Handles fetching and parsing tile c
 ### .fetchOptions
 
 ```js
-fetchOptions: Object
+fetchOptions: Object = {}
 ```
 
 Options passed to `fetch` when loading tile content.
@@ -94,7 +94,7 @@ Options passed to `fetch` when loading tile content.
 ### .workingPath
 
 ```js
-workingPath: string
+workingPath: string = ''
 ```
 
 Base URL used to resolve relative external URLs.
