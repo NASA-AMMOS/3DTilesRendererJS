@@ -152,7 +152,7 @@ export class MVTOverlay extends ImageOverlay {
 		if ( visible ) {
 
 			const { _redrawQueue } = this;
-			const key = range.join( '_' );
+			const key = range.join( '_' ) + '_' + this.calculateLevel( range );
 			if ( _redrawQueue.has( key ) ) {
 
 				_redrawQueue.flush( key );
@@ -179,7 +179,7 @@ export class MVTOverlay extends ImageOverlay {
 
 		imageSource.forEachItem( ( _, args ) => {
 
-			const key = args.slice( 0, 4 ).join( '_' );
+			const key = args.join( '_' );
 			if ( ! _visibleRegionCounts.has( key ) && ! _redrawQueue.has( key ) ) {
 
 				_redrawQueue.add( key, () => {
