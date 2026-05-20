@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
 - Improved support for ExternalTexture memory tracking.
 - StructuralMetadata: Throw an error in `getPropertyTableData` when non-matching argument types are passed.
-- MVTOverlay, PMTilesOverlay: Overlays for reading and rendering vector tilee formats as tile overlays.
+- MVTOverlay, PMTilesOverlay: Overlays for reading and rendering vector tile formats as tile overlays.
 - TilesRenderer: Added "loadAncestors" option.
 - GlobeControls, EnvironmentControls: Add "enableFlight" option for free controls.
 
