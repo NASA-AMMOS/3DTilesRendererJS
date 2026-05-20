@@ -1411,28 +1411,23 @@ export class ImageOverlay {
 
 		const { _visibleRegionCounts } = this;
 		const key = range.join( '_' );
-		let count = _visibleRegionCounts.get( key ) || 0;
-		if ( visible ) {
+		let entry = _visibleRegionCounts.get( key );
+		if ( ! entry ) {
 
-			count ++;
-
-		} else {
-
-			count --;
+			entry = { range: [ ...range ], count: 0 };
+			_visibleRegionCounts.set( key, entry );
 
 		}
 
-		if ( count < 0 ) {
+		entry.count += visible ? 1 : - 1;
+
+		if ( entry.count < 0 ) {
 
 			throw new Error();
 
-		} else if ( count === 0 ) {
+		} else if ( entry.count === 0 ) {
 
 			_visibleRegionCounts.delete( key );
-
-		} else {
-
-			_visibleRegionCounts.set( key, count );
 
 		}
 
@@ -1790,7 +1785,11 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	redraw() {
 
-		this.imageSource.redraw();
+		for ( const { range } of this._visibleRegionCounts.values() ) {
+
+			this.imageSource.redraw( range );
+
+		}
 
 	}
 

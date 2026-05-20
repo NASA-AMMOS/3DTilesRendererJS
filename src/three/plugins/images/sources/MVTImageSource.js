@@ -290,7 +290,7 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
-	redraw( args ) {
+	redraw( ...args ) {
 
 		const [ minX, minY, maxX, maxY, level ] = args;
 		const tex = this.get( minX, minY, maxX, maxY, level );

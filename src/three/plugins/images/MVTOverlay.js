@@ -142,7 +142,11 @@ export class MVTOverlay extends ImageOverlay {
 
 	redraw() {
 
-		this.imageSource.redraw();
+		for ( const { range } of this._visibleRegionCounts.values() ) {
+
+			this.imageSource.redraw( ...range, this.calculateLevel( range ) );
+
+		}
 
 	}
 

@@ -122,7 +122,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	}
 
-	redraw( args ) {
+	redraw( ...args ) {
 
 		const tex = this.get( ...args );
 		if ( ! tex ) {
