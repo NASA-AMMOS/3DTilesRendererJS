@@ -348,7 +348,7 @@ are in use each frame and evicts unused items when the cache exceeds its size li
 ### .unloadPriorityCallback
 
 ```js
-unloadPriorityCallback: ( a: any, b: any ) => number | null
+unloadPriorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to determine eviction order. Items that sort last are evicted first.
@@ -569,7 +569,7 @@ If true, job runs are automatically scheduled after `add` and after each job com
 ### .priorityCallback
 
 ```js
-priorityCallback: ( a: any, b: any ) => number | null
+priorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to sort queued items. Higher-priority items should sort last
@@ -897,7 +897,7 @@ Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skip
 ### .optimizedLoadStrategy
 
 ```js
-optimizedLoadStrategy: boolean
+optimizedLoadStrategy: boolean = false
 ```
 
 **Experimental.** Enables an optimized tile loading strategy that loads only the tiles

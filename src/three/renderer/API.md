@@ -107,7 +107,7 @@ animation. Use `toggle()` to animate the transition.
 ### .orthographicPositionalZoom
 
 ```js
-orthographicPositionalZoom: boolean
+orthographicPositionalZoom: boolean = true
 ```
 
 When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain.
@@ -116,7 +116,7 @@ When true, the orthographic camera position is offset backwards along the view d
 ### .orthographicOffset
 
 ```js
-orthographicOffset: number
+orthographicOffset: number = 50
 ```
 
 Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true.
@@ -134,7 +134,7 @@ World-space point that remains visually fixed during the transition.
 ### .duration
 
 ```js
-duration: number
+duration: number = 200
 ```
 
 Duration of the animated transition in milliseconds.
@@ -143,7 +143,7 @@ Duration of the animated transition in milliseconds.
 ### .autoSync
 
 ```js
-autoSync: boolean
+autoSync: boolean = true
 ```
 
 When true, cameras are synced automatically before each `update` call.
@@ -152,7 +152,7 @@ When true, cameras are synced automatically before each `update` call.
 ### .easeFunction
 
 ```js
-easeFunction: function
+easeFunction: function = x => x
 ```
 
 Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1].
@@ -477,7 +477,7 @@ and inertia is cleared.
 ### .cameraRadius
 
 ```js
-cameraRadius: number
+cameraRadius: number = 5
 ```
 
 Minimum camera distance above the surface in world units. Prevents clipping into terrain.
@@ -486,7 +486,7 @@ Minimum camera distance above the surface in world units. Prevents clipping into
 ### .rotationSpeed
 
 ```js
-rotationSpeed: number
+rotationSpeed: number = 1
 ```
 
 Rotation sensitivity multiplier.
@@ -495,7 +495,7 @@ Rotation sensitivity multiplier.
 ### .minAltitude
 
 ```js
-minAltitude: number
+minAltitude: number = 0
 ```
 
 Minimum camera angle above the horizon in radians.
@@ -504,7 +504,7 @@ Minimum camera angle above the horizon in radians.
 ### .maxAltitude
 
 ```js
-maxAltitude: number
+maxAltitude: number = 0.45 * Math.PI
 ```
 
 Maximum camera angle above the horizon in radians.
@@ -513,7 +513,7 @@ Maximum camera angle above the horizon in radians.
 ### .minDistance
 
 ```js
-minDistance: number
+minDistance: number = 10
 ```
 
 Minimum zoom distance in world units.
@@ -522,7 +522,7 @@ Minimum zoom distance in world units.
 ### .maxDistance
 
 ```js
-maxDistance: number
+maxDistance: number = Infinity
 ```
 
 Maximum zoom distance in world units.
@@ -531,7 +531,7 @@ Maximum zoom distance in world units.
 ### .minZoom
 
 ```js
-minZoom: number
+minZoom: number = 0
 ```
 
 Minimum orthographic zoom level.
@@ -540,7 +540,7 @@ Minimum orthographic zoom level.
 ### .maxZoom
 
 ```js
-maxZoom: number
+maxZoom: number = Infinity
 ```
 
 Maximum orthographic zoom level.
@@ -549,7 +549,7 @@ Maximum orthographic zoom level.
 ### .zoomSpeed
 
 ```js
-zoomSpeed: number
+zoomSpeed: number = 1
 ```
 
 Zoom sensitivity multiplier.
@@ -558,7 +558,7 @@ Zoom sensitivity multiplier.
 ### .adjustHeight
 
 ```js
-adjustHeight: boolean
+adjustHeight: boolean = true
 ```
 
 When true, the camera height is automatically adjusted to avoid clipping into the terrain.
@@ -567,7 +567,7 @@ When true, the camera height is automatically adjusted to avoid clipping into th
 ### .enableDamping
 
 ```js
-enableDamping: boolean
+enableDamping: boolean = false
 ```
 
 When true, camera movements decelerate gradually after input ends.
@@ -576,7 +576,7 @@ When true, camera movements decelerate gradually after input ends.
 ### .dampingFactor
 
 ```js
-dampingFactor: number
+dampingFactor: number = 0.15
 ```
 
 Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting.
@@ -585,7 +585,7 @@ Rate of inertia decay per frame when damping is enabled. Lower values produce lo
 ### .fallbackPlane
 
 ```js
-fallbackPlane: Plane
+fallbackPlane: Plane = new Plane( UP, 0 )
 ```
 
 Fallback plane used for drag/zoom when no scene geometry is hit.
@@ -594,7 +594,7 @@ Fallback plane used for drag/zoom when no scene geometry is hit.
 ### .useFallbackPlane
 
 ```js
-useFallbackPlane: boolean
+useFallbackPlane: boolean = true
 ```
 
 When true, the fallback plane is used when raycasting misses scene geometry.
@@ -603,7 +603,7 @@ When true, the fallback plane is used when raycasting misses scene geometry.
 ### .enableFlight
 
 ```js
-enableFlight: boolean
+enableFlight: boolean = false
 ```
 
 When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
@@ -615,7 +615,7 @@ supported for perspective cameras.
 ### .flightSpeed
 
 ```js
-flightSpeed: number
+flightSpeed: number = 10
 ```
 
 Base camera speed in world units per second during keyboard flight.
@@ -624,7 +624,7 @@ Base camera speed in world units per second during keyboard flight.
 ### .flightSpeedMultiplier
 
 ```js
-flightSpeedMultiplier: number
+flightSpeedMultiplier: number = 4
 ```
 
 Speed multiplier applied when the fast key is held during flight.
@@ -775,7 +775,7 @@ The inverse of `ellipsoidFrame`.
 ### .nearMargin
 
 ```js
-nearMargin: number
+nearMargin: number = 0.25
 ```
 
 Fraction of the near plane distance added as a buffer.
@@ -784,7 +784,7 @@ Fraction of the near plane distance added as a buffer.
 ### .farMargin
 
 ```js
-farMargin: number
+farMargin: number = 0
 ```
 
 Fraction of the far plane distance added as a buffer.
@@ -811,7 +811,7 @@ Magnitude of the current globe rotation inertia. Decays to zero over time.
 ### .ellipsoid
 
 ```js
-ellipsoid: Ellipsoid
+ellipsoid: Ellipsoid = WGS84_ELLIPSOID
 ```
 
 The ellipsoid model used for surface interaction and up-direction calculation.
@@ -948,7 +948,7 @@ tileset frame.
 ### .ellipsoid
 
 ```js
-ellipsoid: Ellipsoid
+ellipsoid: Ellipsoid = WGS84_ELLIPSOID
 ```
 
 The ellipsoid definition used for the tileset. May be overridden by the
