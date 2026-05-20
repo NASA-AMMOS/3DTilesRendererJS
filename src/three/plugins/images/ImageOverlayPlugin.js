@@ -87,6 +87,7 @@ export class ImageOverlayPlugin {
 		this.processQueue = null;
 		this._onUpdateAfter = null;
 		this._onTileDownloadStart = null;
+		this._onTileVisibilityChange = null;
 		this._virtualChildResetId = 0;
 		this._bytesUsed = new WeakMap();
 
@@ -222,8 +223,20 @@ export class ImageOverlayPlugin {
 
 		};
 
+		this._onTileVisibilityChange = ( { tile, visible } ) => {
+
+			this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
+
+				const info = tileInfo.get( tile );
+				overlay.setRegionVisible( info.range, visible );
+
+			} );
+
+		};
+
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
+		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 
 		this.overlays.forEach( overlay => {
 
@@ -403,6 +416,8 @@ export class ImageOverlayPlugin {
 		} );
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+		tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
+		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 
 		this.resetVirtualChildren( true );
 
@@ -1110,6 +1125,12 @@ export class ImageOverlayPlugin {
 
 		}
 
+		if ( tile.traversal.visible ) {
+
+			overlay.setRegionVisible( info.range, true );
+
+		}
+
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
@@ -1306,6 +1327,7 @@ export class ImageOverlay {
 		this._whenReady = null;
 		this.isReady = false;
 		this.isInitialized = false;
+		this._visibleRegionCounts = new Map();
 
 	}
 
@@ -1380,6 +1402,32 @@ export class ImageOverlay {
 	}
 
 	setResolution( resolution ) {
+
+	}
+
+	setRegionVisible( range, visible ) {
+
+		const { _visibleRegionCounts } = this;
+		const key = range.join( '_' );
+		let entry = _visibleRegionCounts.get( key );
+		if ( ! entry ) {
+
+			entry = { range: [ ...range ], count: 0 };
+			_visibleRegionCounts.set( key, entry );
+
+		}
+
+		entry.count += visible ? 1 : - 1;
+
+		if ( entry.count < 0 ) {
+
+			throw new Error();
+
+		} else if ( entry.count === 0 ) {
+
+			_visibleRegionCounts.delete( key );
+
+		}
 
 	}
 
@@ -1682,6 +1730,10 @@ export class GeoJSONOverlay extends ImageOverlay {
 		super( options );
 		this.imageSource = new GeoJSONImageSource( options );
 
+		this._redrawQueue = new PriorityQueue();
+		this._redrawQueue.maxJobs = 4;
+		this._redrawQueue.priorityCallback = () => 0;
+
 	}
 
 	_init() {
@@ -1727,9 +1779,52 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
+	setRegionVisible( range, visible ) {
+
+		super.setRegionVisible( range, visible );
+
+		if ( visible ) {
+
+			const { _redrawQueue } = this;
+			const key = range.join( '_' );
+			if ( _redrawQueue.has( key ) ) {
+
+				_redrawQueue.flush( key );
+
+			}
+
+		}
+
+	}
+
 	redraw() {
 
-		this.imageSource.redraw();
+		const {
+			imageSource,
+			_redrawQueue,
+			_visibleRegionCounts,
+		} = this;
+
+		for ( const { range } of _visibleRegionCounts.values() ) {
+
+			imageSource.redraw( ...range );
+
+		}
+
+		imageSource.forEachItem( ( _, args ) => {
+
+			const key = args.join( '_' );
+			if ( ! _visibleRegionCounts.has( key ) && ! _redrawQueue.has( key ) ) {
+
+				_redrawQueue.add( key, () => {
+
+					imageSource.redraw( ...args );
+
+				} );
+
+			}
+
+		} );
 
 	}
 

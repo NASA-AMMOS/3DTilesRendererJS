@@ -184,34 +184,23 @@ export class MVTImageSource extends RegionImageSource {
 
 	async fetchItem( [ minX, minY, maxX, maxY, level ], _signal ) {
 
-		const { resolution } = this;
+		const { resolution, _contentCache } = this;
 		const canvas = document.createElement( 'canvas' );
 		canvas.width = resolution;
 		canvas.height = resolution;
 
-		const ctx = canvas.getContext( '2d' );
 		const regionBounds = [ minX, minY, maxX, maxY ];
-		const { _contentCache, _canvasRenderer } = this;
 
 		const promises = [];
 		forEachTileInBounds( regionBounds, level, _contentCache.tiling, ( tx, ty, tl ) => {
 
-			promises.push( ( async () => {
-
-				const vectorTile = await _contentCache.lock( tx, ty, tl );
-				if ( vectorTile ) {
-
-					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					_canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
-					this._renderVectorTile( vectorTile );
-
-				}
-
-			} )() );
+			promises.push( _contentCache.lock( tx, ty, tl ) );
 
 		} );
 
 		await Promise.all( promises );
+
+		this._drawToCanvas( canvas, regionBounds, level );
 
 		const tex = new CanvasTexture( canvas );
 		tex.colorSpace = SRGBColorSpace;
@@ -232,6 +221,48 @@ export class MVTImageSource extends RegionImageSource {
 		} );
 
 		texture.dispose();
+
+	}
+
+	redraw( ...args ) {
+
+		const [ minX, minY, maxX, maxY, level ] = args;
+		const tex = this.get( minX, minY, maxX, maxY, level );
+		if ( ! tex ) {
+
+			return;
+
+		}
+
+		this._drawToCanvas( tex.image, [ minX, minY, maxX, maxY ], level );
+		tex.needsUpdate = true;
+
+	}
+
+	dispose() {
+
+		super.dispose();
+		this._contentCache.dispose();
+
+	}
+
+	_drawToCanvas( canvas, regionBounds, level ) {
+
+		const { _contentCache, _canvasRenderer } = this;
+		const ctx = canvas.getContext( '2d' );
+		forEachTileInBounds( regionBounds, level, _contentCache.tiling, ( tx, ty, tl ) => {
+
+			const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
+			_canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
+
+			const vectorTile = _contentCache.get( tx, ty, tl );
+			if ( vectorTile ) {
+
+				this._renderVectorTile( vectorTile );
+
+			}
+
+		} );
 
 	}
 
@@ -287,42 +318,6 @@ export class MVTImageSource extends RegionImageSource {
 			}
 
 		}
-
-	}
-
-	redraw() {
-
-		this.forEachItem( ( tex, args ) => {
-
-			const [ minX, minY, maxX, maxY, level ] = args;
-			const regionBounds = [ minX, minY, maxX, maxY ];
-			const canvas = tex.image;
-			const ctx = canvas.getContext( '2d' );
-			ctx.clearRect( 0, 0, canvas.width, canvas.height );
-
-			forEachTileInBounds( regionBounds, level, this._contentCache.tiling, ( tx, ty, tl ) => {
-
-				const vectorTile = this._contentCache.get( tx, ty, tl );
-				if ( vectorTile ) {
-
-					const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					this._canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
-					this._renderVectorTile( vectorTile );
-
-				}
-
-			} );
-
-			tex.needsUpdate = true;
-
-		} );
-
-	}
-
-	dispose() {
-
-		super.dispose();
-		this._contentCache.dispose();
 
 	}
 
