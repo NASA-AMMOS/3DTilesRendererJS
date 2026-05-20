@@ -192,6 +192,7 @@ export class MVTOverlay extends ImageOverlay {
 			const key = args.slice( 0, 4 ).join( '_' );
 			if ( ! _visibleRegionCounts.has( key ) && ! _dirtyRegions.has( key ) ) {
 
+				_dirtyRegions.set( key, args );
 				_redrawQueue.add( args, async args => {
 
 					_dirtyRegions.delete( key );

@@ -306,6 +306,54 @@ export class PriorityQueue {
 	}
 
 	/**
+	 * Immediately runs the callback for the given item, removing it from the queue.
+	 * Does nothing if the item is not queued.
+	 * @param {any} item
+	 * @returns {Promise<any>|any}
+	 */
+	flush( item ) {
+
+		const { items, callbacks } = this;
+		const index = items.indexOf( item );
+		if ( ! callbacks.has( item ) ) {
+
+			return;
+
+		}
+
+		const { callback, resolve, reject } = callbacks.get( item );
+		callbacks.delete( item );
+		items.splice( index, 1 );
+
+		let result;
+		try {
+
+			result = callback( item );
+
+		} catch ( err ) {
+
+			reject( err );
+			return;
+
+		}
+
+		if ( result instanceof Promise ) {
+
+			result
+				.then( resolve )
+				.catch( reject );
+
+		} else {
+
+			resolve( result );
+
+		}
+
+		return result;
+
+	}
+
+	/**
 	 * Schedules a deferred call to `tryRunJobs` via `schedulingCallback`.
 	 */
 	scheduleJobRun() {
