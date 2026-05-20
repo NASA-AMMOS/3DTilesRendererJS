@@ -57,6 +57,7 @@ export class TilesRenderer extends TilesRendererBase {
 	 * tiles renderer performs its own frustum culling. If `displayActiveTiles` is `true` or
 	 * multiple cameras are being used, consider setting this to `false`.
 	 * @type {boolean}
+	 * @default true
 	 */
 	get autoDisableRendererCulling() {
 
@@ -129,6 +130,7 @@ export class TilesRenderer extends TilesRendererBase {
 		/**
 		 * The `LoadingManager` used when loading tile geometry.
 		 * @type {LoadingManager}
+		 * @default new LoadingManager()
 		 */
 		this.manager = new LoadingManager();
 

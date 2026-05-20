@@ -120,6 +120,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		/**
 		 * World-space point that remains visually fixed during the transition.
 		 * @type {Vector3}
+		 * @default new Vector3()
 		 */
 		this.fixedPoint = new Vector3();
 

@@ -376,7 +376,7 @@ Maximum number of items before eviction is triggered.
 ### .minBytesSize
 
 ```js
-minBytesSize: number
+minBytesSize: number = ~322MB
 ```
 
 Minimum total bytes to retain after eviction.
@@ -387,7 +387,7 @@ Minimum total bytes to retain after eviction.
 ### .maxBytesSize
 
 ```js
-maxBytesSize: number
+maxBytesSize: number = ~430MB
 ```
 
 Maximum total bytes before eviction is triggered.

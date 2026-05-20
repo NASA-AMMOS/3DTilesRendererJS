@@ -103,6 +103,7 @@ export class GlobeControls extends EnvironmentControls {
 		/**
 		 * Accumulated globe rotation inertia quaternion. Applied each frame when globe inertia is active.
 		 * @type {Quaternion}
+		 * @default new Quaternion()
 		 */
 		this.globeInertia = new Quaternion();
 
@@ -123,6 +124,7 @@ export class GlobeControls extends EnvironmentControls {
 		/**
 		 * The Three.js group whose world matrix defines the ellipsoid's coordinate frame.
 		 * @type {Group}
+		 * @default new Group()
 		 */
 		this.ellipsoidGroup = new Group();
 		this._ellipsoidFrameInverse = new Matrix4();

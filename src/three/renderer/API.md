@@ -125,7 +125,7 @@ Distance the orthographic camera is pushed back when `orthographicPositionalZoom
 ### .fixedPoint
 
 ```js
-fixedPoint: Vector3
+fixedPoint: Vector3 = new Vector3()
 ```
 
 World-space point that remains visually fixed during the transition.
@@ -793,7 +793,7 @@ Fraction of the far plane distance added as a buffer.
 ### .globeInertia
 
 ```js
-globeInertia: Quaternion
+globeInertia: Quaternion = new Quaternion()
 ```
 
 Accumulated globe rotation inertia quaternion. Applied each frame when globe inertia is active.
@@ -820,7 +820,7 @@ The ellipsoid model used for surface interaction and up-direction calculation.
 ### .ellipsoidGroup
 
 ```js
-ellipsoidGroup: Group
+ellipsoidGroup: Group = new Group()
 ```
 
 The Three.js group whose world matrix defines the ellipsoid's coordinate frame.
@@ -926,7 +926,7 @@ Add `tiles.group` to your scene and call `tiles.update()` each frame.
 ### .autoDisableRendererCulling
 
 ```js
-autoDisableRendererCulling: boolean
+autoDisableRendererCulling: boolean = true
 ```
 
 If `true`, all tile meshes automatically have `frustumCulled` set to `false` since the
@@ -967,7 +967,7 @@ Array of cameras registered with this renderer.
 ### .manager
 
 ```js
-manager: LoadingManager
+manager: LoadingManager = new LoadingManager()
 ```
 
 The `LoadingManager` used when loading tile geometry.

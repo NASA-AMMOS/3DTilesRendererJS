@@ -76,6 +76,7 @@ class LRUCache {
 		 * Minimum total bytes to retain after eviction.
 		 * @note Only works with three.js r166 or higher.
 		 * @type {number}
+		 * @default ~322MB
 		 */
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
 
@@ -83,6 +84,7 @@ class LRUCache {
 		 * Maximum total bytes before eviction is triggered.
 		 * @note Only works with three.js r166 or higher.
 		 * @type {number}
+		 * @default ~430MB
 		 */
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
 
