@@ -87,6 +87,7 @@ export class ImageOverlayPlugin {
 		this.processQueue = null;
 		this._onUpdateAfter = null;
 		this._onTileDownloadStart = null;
+		this._onTileVisibilityChange = null;
 		this._virtualChildResetId = 0;
 		this._bytesUsed = new WeakMap();
 
@@ -222,8 +223,22 @@ export class ImageOverlayPlugin {
 
 		};
 
+		this._onTileVisibilityChange = ( { tile, visible } ) => {
+
+			this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
+
+				const info = tileInfo.get( tile );
+				if ( ! info || ! info.range ) return;
+
+				overlay.setRegionVisible( info.range, visible );
+
+			} );
+
+		};
+
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
+		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 
 		this.overlays.forEach( overlay => {
 
@@ -292,6 +307,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null ) {
 
+					overlay.setRegionVisible( range, false );
 					overlay.releaseTexture( range );
 
 				}
@@ -312,22 +328,6 @@ export class ImageOverlayPlugin {
 
 	}
 
-	setTileVisible( tile, visible ) {
-
-		this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
-
-			const info = tileInfo.get( tile );
-			if ( ! info || ! info.range ) {
-
-				return;
-
-			}
-
-			overlay.setRegionVisible( info.range, visible );
-
-		} );
-
-	}
 
 	calculateBytesUsed( tile ) {
 
@@ -420,6 +420,8 @@ export class ImageOverlayPlugin {
 		} );
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+		tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
+		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 
 		this.resetVirtualChildren( true );
 
@@ -1032,6 +1034,7 @@ export class ImageOverlayPlugin {
 
 				info.range = range;
 				overlay.lockTexture( range );
+				overlay.setRegionVisible( range, true );
 
 			}
 
@@ -1124,6 +1127,7 @@ export class ImageOverlayPlugin {
 
 			info.range = range;
 			overlay.lockTexture( range );
+			overlay.setRegionVisible( range, true );
 
 		}
 
