@@ -2,6 +2,7 @@
 import { ImageOverlay } from './ImageOverlayPlugin.js';
 import { MVTImageSource } from './sources/MVTImageSource.js';
 import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
+import { PriorityQueue } from '3d-tiles-renderer/core';
 
 /**
  * @callback MVTGetStyleCallback
@@ -64,6 +65,10 @@ export class MVTOverlay extends ImageOverlay {
 		super( options );
 		this.imageSource = options.imageSource ?? new MVTImageSource( options );
 		this._dirtyRegions = new Map();
+
+		this._redrawQueue = new PriorityQueue();
+		this._redrawQueue.maxJobs = 4;
+		this._redrawQueue.priorityCallback = () => 0;
 
 	}
 
@@ -150,14 +155,16 @@ export class MVTOverlay extends ImageOverlay {
 			const {
 				imageSource,
 				_dirtyRegions,
+				_redrawQueue,
 			} = this;
 
 			const key = range.join( '_' );
 			if ( _dirtyRegions.has( key ) ) {
 
-				const range = _dirtyRegions.get( key );
-				imageSource.redraw( ...range, this.calculateLevel( range ) );
+				const args = _dirtyRegions.get( key );
 				_dirtyRegions.delete( key );
+				_redrawQueue.remove( args );
+				imageSource.redraw( ...args );
 
 			}
 
@@ -169,6 +176,7 @@ export class MVTOverlay extends ImageOverlay {
 
 		const {
 			imageSource,
+			_redrawQueue,
 			_visibleRegionCounts,
 			_dirtyRegions,
 		} = this;
@@ -182,9 +190,14 @@ export class MVTOverlay extends ImageOverlay {
 		imageSource.forEachItem( ( _, args ) => {
 
 			const key = args.slice( 0, 4 ).join( '_' );
-			if ( ! _visibleRegionCounts.has( key ) ) {
+			if ( ! _visibleRegionCounts.has( key ) && ! _dirtyRegions.has( key ) ) {
 
-				_dirtyRegions.set( key, args );
+				_redrawQueue.add( args, async args => {
+
+					_dirtyRegions.delete( key );
+					imageSource.redraw( ...args );
+
+				} );
 
 			}
 
