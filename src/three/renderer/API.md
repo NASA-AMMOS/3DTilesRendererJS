@@ -467,7 +467,7 @@ right-click-to-rotate, and optional damping/inertia. Works with any Three.js sce
 ### .enabled
 
 ```js
-enabled: boolean
+enabled: boolean = true
 ```
 
 Whether the controls are active. When set to false, all input is ignored

@@ -68,6 +68,7 @@ export class EnvironmentControls extends EventDispatcher {
 	 * Whether the controls are active. When set to false, all input is ignored
 	 * and inertia is cleared.
 	 * @type {boolean}
+	 * @default true
 	 */
 	get enabled() {
 

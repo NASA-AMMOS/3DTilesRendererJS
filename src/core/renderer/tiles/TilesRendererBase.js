@@ -403,6 +403,7 @@ export class TilesRendererBase {
 		/**
 		 * Options passed to `fetch` when loading tile and tileset resources.
 		 * @type {RequestInit}
+		 * @default {}
 		 */
 		this.fetchOptions = {};
 		this.plugins = [];
@@ -544,6 +545,7 @@ export class TilesRendererBase {
 		 * {@link https://github.com/CesiumGS/3d-tiles/tree/master/specification#geometric-error geometric error section}
 		 * of the 3D Tiles specification for more information.
 		 * @type {number}
+		 * @default 16
 		 */
 		this.errorTarget = 16.0;
 		this._errorThreshold = Infinity;
@@ -555,12 +557,14 @@ export class TilesRendererBase {
 		 * Setting this to `true` keeps them in the scene so they can be rendered from an outside
 		 * camera view not accounted for by the tiles renderer.
 		 * @type {boolean}
+		 * @default false
 		 */
 		this.displayActiveTiles = false;
 
 		/**
 		 * Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skipped.
 		 * @type {number}
+		 * @default Infinity
 		 */
 		this.maxDepth = Infinity;
 
@@ -588,6 +592,7 @@ export class TilesRendererBase {
 		 *
 		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.loadSiblings = true;
 
@@ -599,6 +604,7 @@ export class TilesRendererBase {
 		 *
 		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
+		 * @default false
 		 */
 		this.loadAncestors = false;
 
@@ -608,6 +614,7 @@ export class TilesRendererBase {
 		 * at once when a new tile set is available, while higher values process more tiles
 		 * immediately so data can be downloaded and displayed sooner.
 		 * @type {number}
+		 * @default 250
 		 */
 		this.maxTilesProcessed = 250;
 

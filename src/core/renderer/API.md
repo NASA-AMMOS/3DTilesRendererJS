@@ -773,7 +773,7 @@ The loaded root tileset object, or null if not yet loaded.
 ### .fetchOptions
 
 ```js
-fetchOptions: RequestInit
+fetchOptions: RequestInit = {}
 ```
 
 Options passed to `fetch` when loading tile and tileset resources.
@@ -863,7 +863,7 @@ Loading and rendering statistics updated each frame. Fields:
 ### .errorTarget
 
 ```js
-errorTarget: number
+errorTarget: number = 16
 ```
 
 Target screen-space error in pixels to aim for when updating the geometry. Tiles will
@@ -875,7 +875,7 @@ of the 3D Tiles specification for more information.
 ### .displayActiveTiles
 
 ```js
-displayActiveTiles: boolean
+displayActiveTiles: boolean = false
 ```
 
 "Active tiles" are those that are loaded and available but not necessarily visible.
@@ -888,7 +888,7 @@ camera view not accounted for by the tiles renderer.
 ### .maxDepth
 
 ```js
-maxDepth: number
+maxDepth: number = Infinity
 ```
 
 Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skipped.
@@ -916,7 +916,7 @@ Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-
 ### .loadSiblings
 
 ```js
-loadSiblings: boolean
+loadSiblings: boolean = true
 ```
 
 **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
@@ -930,7 +930,7 @@ Only applies when `optimizedLoadStrategy` is enabled.
 ### .loadAncestors
 
 ```js
-loadAncestors: boolean
+loadAncestors: boolean = false
 ```
 
 **Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
@@ -944,7 +944,7 @@ Only applies when `optimizedLoadStrategy` is enabled.
 ### .maxTilesProcessed
 
 ```js
-maxTilesProcessed: number
+maxTilesProcessed: number = 250
 ```
 
 The number of tiles to process immediately when traversing the tile set to determine
