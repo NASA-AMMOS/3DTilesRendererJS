@@ -385,6 +385,29 @@ export class TilesRendererBase {
 	}
 
 	/**
+	 * Enables an optimized tile loading strategy that loads only the tiles
+	 * needed for the current view, reducing memory usage and improving initial load times.
+	 * Tiles are loaded independently based on screen-space error without requiring all parent
+	 * tiles to load first. Prevents visual gaps and flashing during camera movement.
+	 *
+	 * Based in part on {@link https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html Cesium Native tile selection}.
+	 * @type {boolean}
+	 * @default true
+	 */
+	get optimizedLoadStrategy() {
+
+		return this._optimizedLoadStrategy;
+
+	}
+
+	set optimizedLoadStrategy( v ) {
+
+		console.warn( 'TilesRenderer: "optimizedLoadStrategy" has been deprecated. Please toggle "loadAncestors" to adjust the tile load behavior.' );
+		this._optimizedLoadStrategy = v;
+
+	}
+
+	/**
 	 * @param {string} [url] - URL of the root tileset JSON to load.
 	 */
 	constructor( url = null ) {
@@ -568,21 +591,7 @@ export class TilesRendererBase {
 		 */
 		this.maxDepth = Infinity;
 
-		/**
-		 * **Experimental.** Enables an optimized tile loading strategy that loads only the tiles
-		 * needed for the current view, reducing memory usage and improving initial load times.
-		 * Tiles are loaded independently based on screen-space error without requiring all parent
-		 * tiles to load first. Prevents visual gaps and flashing during camera movement.
-		 *
-		 * Based in part on {@link https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html Cesium Native tile selection}.
-		 * @warn Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
-		 * dispose of child tiles including the `ImageOverlayPlugin` `enableTileSplitting` setting,
-		 * `QuantizedMeshPlugin`, & `ImageFormatPlugin` subclasses (XYZ, TMS, etc). Any tile sets
-		 * that share caches or queues must also use the same setting.
-		 * @type {boolean}
-		 * @default false
-		 */
-		this.optimizedLoadStrategy = false;
+		this._optimizedLoadStrategy = true;
 
 		/**
 		 * **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
@@ -606,7 +615,7 @@ export class TilesRendererBase {
 		 * @type {boolean}
 		 * @default false
 		 */
-		this.loadAncestors = false;
+		this.loadAncestors = true;
 
 		/**
 		 * The number of tiles to process immediately when traversing the tile set to determine
