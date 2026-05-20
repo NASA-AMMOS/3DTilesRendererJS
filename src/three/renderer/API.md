@@ -600,6 +600,36 @@ useFallbackPlane: boolean
 When true, the fallback plane is used when raycasting misses scene geometry. Default is true.
 
 
+### .enableFlight
+
+```js
+enableFlight: boolean
+```
+
+When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
+up/down, and Shift multiplies speed by `flightSpeedMultiplier`. Right-click or Shift+left-click
+enters free-look mode, rotating the camera in place without requiring a surface hit. Only
+supported for perspective cameras. Default is false.
+
+
+### .flightSpeed
+
+```js
+flightSpeed: number
+```
+
+Base camera speed in world units per second during keyboard flight. Default is 10.
+
+
+### .flightSpeedMultiplier
+
+```js
+flightSpeedMultiplier: number
+```
+
+Speed multiplier applied when the fast key is held during flight. Default is 4.
+
+
 ### .constructor
 
 ```js
