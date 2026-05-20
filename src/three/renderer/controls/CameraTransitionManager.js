@@ -104,38 +104,44 @@ export class CameraTransitionManager extends EventDispatcher {
 		// settings
 
 		/**
-		 * When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
+		 * When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.orthographicPositionalZoom = true;
 
 		/**
-		 * Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
+		 * Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true.
 		 * @type {number}
+		 * @default 50
 		 */
 		this.orthographicOffset = 50;
 
 		/**
 		 * World-space point that remains visually fixed during the transition.
 		 * @type {Vector3}
+		 * @default new Vector3()
 		 */
 		this.fixedPoint = new Vector3();
 
 		/**
-		 * Duration of the animated transition in milliseconds. Default is 200.
+		 * Duration of the animated transition in milliseconds.
 		 * @type {number}
+		 * @default 200
 		 */
 		this.duration = 200;
 
 		/**
-		 * When true, cameras are synced automatically before each `update` call. Default is true.
+		 * When true, cameras are synced automatically before each `update` call.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.autoSync = true;
 
 		/**
-		 * Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
+		 * Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1].
 		 * @type {Function}
+		 * @default x => x
 		 */
 		this.easeFunction = x => x;
 

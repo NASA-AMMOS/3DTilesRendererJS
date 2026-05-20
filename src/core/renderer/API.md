@@ -85,7 +85,7 @@ Base class for all 3D Tiles content loaders. Handles fetching and parsing tile c
 ### .fetchOptions
 
 ```js
-fetchOptions: Object
+fetchOptions: Object = {}
 ```
 
 Options passed to `fetch` when loading tile content.
@@ -94,7 +94,7 @@ Options passed to `fetch` when loading tile content.
 ### .workingPath
 
 ```js
-workingPath: string
+workingPath: string = ''
 ```
 
 Base URL used to resolve relative external URLs.
@@ -348,17 +348,17 @@ are in use each frame and evicts unused items when the cache exceeds its size li
 ### .unloadPriorityCallback
 
 ```js
-unloadPriorityCallback: ( a: any, b: any ) => number | null
+unloadPriorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to determine eviction order. Items that sort last are evicted first.
-Defaults to `null` (eviction order is by last-used time).
+When `null`, eviction order is by last-used time.
 
 
 ### .minSize
 
 ```js
-minSize: number
+minSize: number = 6000
 ```
 
 Minimum number of items to keep in the cache after eviction.
@@ -367,7 +367,7 @@ Minimum number of items to keep in the cache after eviction.
 ### .maxSize
 
 ```js
-maxSize: number
+maxSize: number = 8000
 ```
 
 Maximum number of items before eviction is triggered.
@@ -376,7 +376,7 @@ Maximum number of items before eviction is triggered.
 ### .minBytesSize
 
 ```js
-minBytesSize: number
+minBytesSize: number = ~322MB
 ```
 
 Minimum total bytes to retain after eviction.
@@ -387,7 +387,7 @@ Minimum total bytes to retain after eviction.
 ### .maxBytesSize
 
 ```js
-maxBytesSize: number
+maxBytesSize: number = ~430MB
 ```
 
 Maximum total bytes before eviction is triggered.
@@ -398,7 +398,7 @@ Maximum total bytes before eviction is triggered.
 ### .unloadPercent
 
 ```js
-unloadPercent: number
+unloadPercent: number = 0.05
 ```
 
 Fraction of excess items/bytes to unload per eviction pass.
@@ -407,7 +407,7 @@ Fraction of excess items/bytes to unload per eviction pass.
 ### .autoMarkUnused
 
 ```js
-autoMarkUnused: boolean
+autoMarkUnused: boolean = true
 ```
 
 If true, items are automatically marked as unused at the start of each eviction pass.
@@ -551,7 +551,7 @@ returns whether tasks are queued or actively running
 ### .maxJobs
 
 ```js
-maxJobs: number
+maxJobs: number = 6
 ```
 
 Maximum number of jobs that can run concurrently.
@@ -560,7 +560,7 @@ Maximum number of jobs that can run concurrently.
 ### .autoUpdate
 
 ```js
-autoUpdate: boolean
+autoUpdate: boolean = true
 ```
 
 If true, job runs are automatically scheduled after `add` and after each job completes.
@@ -569,11 +569,11 @@ If true, job runs are automatically scheduled after `add` and after each job com
 ### .priorityCallback
 
 ```js
-priorityCallback: ( a: any, b: any ) => number | null
+priorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to sort queued items. Higher-priority items should sort last
-(i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
+(i.e. return positive when `itemA` should run before `itemB`).
 
 
 ### .sort
@@ -773,7 +773,7 @@ The loaded root tileset object, or null if not yet loaded.
 ### .fetchOptions
 
 ```js
-fetchOptions: RequestInit
+fetchOptions: RequestInit = {}
 ```
 
 Options passed to `fetch` when loading tile and tileset resources.
@@ -863,7 +863,7 @@ Loading and rendering statistics updated each frame. Fields:
 ### .errorTarget
 
 ```js
-errorTarget: number
+errorTarget: number = 16
 ```
 
 Target screen-space error in pixels to aim for when updating the geometry. Tiles will
@@ -875,7 +875,7 @@ of the 3D Tiles specification for more information.
 ### .displayActiveTiles
 
 ```js
-displayActiveTiles: boolean
+displayActiveTiles: boolean = false
 ```
 
 "Active tiles" are those that are loaded and available but not necessarily visible.
@@ -888,7 +888,7 @@ camera view not accounted for by the tiles renderer.
 ### .maxDepth
 
 ```js
-maxDepth: number
+maxDepth: number = Infinity
 ```
 
 Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skipped.
@@ -897,7 +897,7 @@ Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skip
 ### .optimizedLoadStrategy
 
 ```js
-optimizedLoadStrategy: boolean
+optimizedLoadStrategy: boolean = false
 ```
 
 **Experimental.** Enables an optimized tile loading strategy that loads only the tiles
@@ -906,9 +906,6 @@ Tiles are loaded independently based on screen-space error without requiring all
 tiles to load first. Prevents visual gaps and flashing during camera movement.
 
 Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
-
-Default is `false`, which uses the previous approach of loading all parent and sibling
-tiles for guaranteed smooth transitions.
 
 > [!WARNING]
 > Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
@@ -919,7 +916,7 @@ tiles for guaranteed smooth transitions.
 ### .loadSiblings
 
 ```js
-loadSiblings: boolean
+loadSiblings: boolean = true
 ```
 
 **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
@@ -933,7 +930,7 @@ Only applies when `optimizedLoadStrategy` is enabled.
 ### .loadAncestors
 
 ```js
-loadAncestors: boolean
+loadAncestors: boolean = false
 ```
 
 **Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
@@ -947,7 +944,7 @@ Only applies when `optimizedLoadStrategy` is enabled.
 ### .maxTilesProcessed
 
 ```js
-maxTilesProcessed: number
+maxTilesProcessed: number = 250
 ```
 
 The number of tiles to process immediately when traversing the tile set to determine

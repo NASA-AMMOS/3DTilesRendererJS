@@ -265,7 +265,8 @@ export function renderMember( doc, callbackMap = {} ) {
 
 	const type = formatType( doc.type, callbackMap );
 	const readonly = doc.readonly ? 'readonly ' : '';
-	lines.push( `${ readonly }${ doc.name }: ${ type }` );
+	const defaultStr = doc.defaultvalue !== undefined ? ` = ${ doc.defaultvalue }` : '';
+	lines.push( `${ readonly }${ doc.name }: ${ type }${ defaultStr }` );
 
 	lines.push( '```' );
 	lines.push( '' );

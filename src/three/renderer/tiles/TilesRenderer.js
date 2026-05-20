@@ -57,6 +57,7 @@ export class TilesRenderer extends TilesRendererBase {
 	 * tiles renderer performs its own frustum culling. If `displayActiveTiles` is `true` or
 	 * multiple cameras are being used, consider setting this to `false`.
 	 * @type {boolean}
+	 * @default true
 	 */
 	get autoDisableRendererCulling() {
 
@@ -105,10 +106,10 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group = new TilesGroup( this );
 
 		/**
-		 * The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
-		 * overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
-		 * `TilesRenderer.group`.
+		 * The ellipsoid definition used for the tileset. May be overridden by the
+		 * `3DTILES_ellipsoid` extension. Specified in the local frame of `TilesRenderer.group`.
 		 * @type {Ellipsoid}
+		 * @default WGS84_ELLIPSOID
 		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
@@ -129,6 +130,7 @@ export class TilesRenderer extends TilesRendererBase {
 		/**
 		 * The `LoadingManager` used when loading tile geometry.
 		 * @type {LoadingManager}
+		 * @default new LoadingManager()
 		 */
 		this.manager = new LoadingManager();
 

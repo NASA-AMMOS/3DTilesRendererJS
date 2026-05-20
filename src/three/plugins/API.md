@@ -709,7 +709,7 @@ order, and an unlit rendering mode. Color modes are available via the static
 ### .getDebugColor
 
 ```js
-getDebugColor: ( val: number, target: Color ) => void
+getDebugColor: ( val: number, target: Color ) => void = ( value, target ) => target.setRGB( value, value, value )
 ```
 
 Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
