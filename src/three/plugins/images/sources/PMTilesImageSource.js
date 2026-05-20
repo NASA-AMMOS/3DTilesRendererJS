@@ -124,6 +124,7 @@ class PMTilesContentCache extends MVTContentCache {
 
 }
 
+// TODO: this should probably be a form of proxy
 export class PMTilesImageSource extends RegionImageSource {
 
 	get tiling() {
@@ -246,6 +247,12 @@ export class PMTilesImageSource extends RegionImageSource {
 			this._deferredSource.redraw( ...args );
 
 		}
+
+	}
+
+	forEachItem( ...args ) {
+
+		return this._deferredSource.forEachItem( ...args );
 
 	}
 

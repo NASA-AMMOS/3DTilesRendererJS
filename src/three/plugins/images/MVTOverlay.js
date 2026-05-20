@@ -63,6 +63,7 @@ export class MVTOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = options.imageSource ?? new MVTImageSource( options );
+		this._dirtyRegions = new Map();
 
 	}
 
@@ -140,13 +141,54 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
-	redraw() {
+	setRegionVisible( range, visible ) {
 
-		for ( const { range } of this._visibleRegionCounts.values() ) {
+		super.setRegionVisible( range, visible );
 
-			this.imageSource.redraw( ...range, this.calculateLevel( range ) );
+		if ( visible ) {
+
+			const {
+				imageSource,
+				_dirtyRegions,
+			} = this;
+
+			const key = range.join( '_' );
+			if ( _dirtyRegions.has( key ) ) {
+
+				const range = _dirtyRegions.get( key );
+				imageSource.redraw( ...range, this.calculateLevel( range ) );
+				_dirtyRegions.delete( key );
+
+			}
 
 		}
+
+	}
+
+	redraw() {
+
+		const {
+			imageSource,
+			_visibleRegionCounts,
+			_dirtyRegions,
+		} = this;
+
+		for ( const { range } of _visibleRegionCounts.values() ) {
+
+			imageSource.redraw( ...range, this.calculateLevel( range ) );
+
+		}
+
+		imageSource.forEachItem( ( _, args ) => {
+
+			const key = args.slice( 0, 4 ).join( '_' );
+			if ( ! _visibleRegionCounts.has( key ) ) {
+
+				_dirtyRegions.set( key, args );
+
+			}
+
+		} );
 
 	}
 

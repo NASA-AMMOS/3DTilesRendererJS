@@ -305,7 +305,6 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null ) {
 
-					overlay.setRegionVisible( range, false );
 					overlay.releaseTexture( range );
 
 				}
@@ -1433,12 +1432,6 @@ export class ImageOverlay {
 
 	}
 
-	isRegionVisible( range ) {
-
-		return this._visibleRegionCounts.has( range.join( '_' ) );
-
-	}
-
 }
 
 /**
@@ -1737,6 +1730,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new GeoJSONImageSource( options );
+		this._dirtyRegions = new Map();
 
 	}
 
@@ -1783,13 +1777,54 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
-	redraw() {
+	setRegionVisible( range, visible ) {
 
-		for ( const { range } of this._visibleRegionCounts.values() ) {
+		super.setRegionVisible( range, visible );
 
-			this.imageSource.redraw( range );
+		if ( visible ) {
+
+			const {
+				imageSource,
+				_dirtyRegions,
+			} = this;
+
+			const key = range.join( '_' );
+			if ( _dirtyRegions.has( key ) ) {
+
+				const args = _dirtyRegions.get( key );
+				imageSource.redraw( ...args );
+				_dirtyRegions.delete( key );
+
+			}
 
 		}
+
+	}
+
+	redraw() {
+
+		const {
+			imageSource,
+			_visibleRegionCounts,
+			_dirtyRegions,
+		} = this;
+
+		for ( const { range } of _visibleRegionCounts.values() ) {
+
+			imageSource.redraw( ...range );
+
+		}
+
+		imageSource.forEachItem( ( _, args ) => {
+
+			const key = args.join( '_' );
+			if ( ! _visibleRegionCounts.has( key ) ) {
+
+				_dirtyRegions.set( key, args );
+
+			}
+
+		} );
 
 	}
 
