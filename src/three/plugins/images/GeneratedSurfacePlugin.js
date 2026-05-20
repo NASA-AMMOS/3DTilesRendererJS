@@ -22,7 +22,7 @@ const _sphere = /* @__PURE__ */ new Sphere();
  * both planar and ellipsoidal geometry via the `shape` option.
  *
  * @param {Object} [options]
- * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from.
+ * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from and used to define surface imagery.
  * @param {string} [options.shape='ellipsoid'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
  *   meaningful for cartographic sources.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
