@@ -1198,6 +1198,11 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Retries any overlay texture fetches that previously failed. Successfully loaded textures
+	 * are applied to their tiles without requiring a geometry reload. Pairs with the `load-error`
+	 * event, which fires on the `TilesRenderer` when an overlay texture fetch fails.
+	 */
 	resetFailedOverlays() {
 
 		const { processedTiles, overlayInfo, overlays } = this;

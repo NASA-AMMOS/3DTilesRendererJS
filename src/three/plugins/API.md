@@ -1195,6 +1195,17 @@ deleteOverlay( overlay: ImageOverlay ): void
 Removes the given overlay from the plugin.
 
 
+### .resetFailedOverlays
+
+```js
+resetFailedOverlays(): void
+```
+
+Retries any overlay texture fetches that previously failed. Successfully loaded textures
+are applied to their tiles without requiring a geometry reload. Pairs with the `load-error`
+event, which fires on the `TilesRenderer` when an overlay texture fetch fails.
+
+
 ## LoadRegionPlugin
 
 Plugin that restricts tile loading and traversal to one or more geometric regions

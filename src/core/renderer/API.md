@@ -631,6 +631,16 @@ tryRunJobs(): void
 Immediately attempts to dequeue and run pending jobs up to `maxJobs` concurrency.
 
 
+### .flush
+
+```js
+flush( item: any ): Promise<any> | any
+```
+
+Immediately runs the callback for the given item, removing it from the queue.
+Does nothing if the item is not queued.
+
+
 ### .scheduleJobRun
 
 ```js
