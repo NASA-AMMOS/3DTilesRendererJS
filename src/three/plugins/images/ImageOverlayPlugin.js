@@ -325,7 +325,6 @@ export class ImageOverlayPlugin {
 
 	}
 
-
 	calculateBytesUsed( tile ) {
 
 		const { overlayInfo } = this;
