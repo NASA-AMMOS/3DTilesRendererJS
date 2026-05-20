@@ -122,15 +122,17 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	}
 
-	redraw() {
+	redraw( args ) {
 
-		this._updateCache( true );
-		this.forEachItem( ( tex, args ) => {
+		const tex = this.get( ...args );
+		if ( ! tex ) {
 
-			this._drawToCanvas( tex.image, args );
-			tex.needsUpdate = true;
+			return;
 
-		} );
+		}
+
+		this._drawToCanvas( tex.image, args );
+		tex.needsUpdate = true;
 
 	}
 

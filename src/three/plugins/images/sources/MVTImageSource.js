@@ -290,32 +290,35 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
-	redraw() {
+	redraw( args ) {
 
-		this.forEachItem( ( tex, args ) => {
+		const [ minX, minY, maxX, maxY, level ] = args;
+		const tex = this.get( minX, minY, maxX, maxY, level );
+		if ( ! tex ) {
 
-			const [ minX, minY, maxX, maxY, level ] = args;
-			const regionBounds = [ minX, minY, maxX, maxY ];
-			const canvas = tex.image;
-			const ctx = canvas.getContext( '2d' );
-			ctx.clearRect( 0, 0, canvas.width, canvas.height );
+			return;
 
-			forEachTileInBounds( regionBounds, level, this._contentCache.tiling, ( tx, ty, tl ) => {
+		}
 
-				const vectorTile = this._contentCache.get( tx, ty, tl );
-				if ( vectorTile ) {
+		const regionBounds = [ minX, minY, maxX, maxY ];
+		const canvas = tex.image;
+		const ctx = canvas.getContext( '2d' );
+		ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
-					const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					this._canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
-					this._renderVectorTile( vectorTile );
+		forEachTileInBounds( regionBounds, level, this._contentCache.tiling, ( tx, ty, tl ) => {
 
-				}
+			const vectorTile = this._contentCache.get( tx, ty, tl );
+			if ( vectorTile ) {
 
-			} );
+				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
+				this._canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
+				this._renderVectorTile( vectorTile );
 
-			tex.needsUpdate = true;
+			}
 
 		} );
+
+		tex.needsUpdate = true;
 
 	}
 

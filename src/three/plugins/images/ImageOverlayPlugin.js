@@ -228,8 +228,6 @@ export class ImageOverlayPlugin {
 			this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
 
 				const info = tileInfo.get( tile );
-				if ( ! info || ! info.range ) return;
-
 				overlay.setRegionVisible( info.range, visible );
 
 			} );
@@ -1034,7 +1032,6 @@ export class ImageOverlayPlugin {
 
 				info.range = range;
 				overlay.lockTexture( range );
-				overlay.setRegionVisible( range, true );
 
 			}
 
@@ -1127,7 +1124,12 @@ export class ImageOverlayPlugin {
 
 			info.range = range;
 			overlay.lockTexture( range );
-			overlay.setRegionVisible( range, true );
+
+		}
+
+		if ( tile.traversal.visible ) {
+
+			overlay.setRegionVisible( info.range, true );
 
 		}
 

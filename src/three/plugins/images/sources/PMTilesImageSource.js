@@ -239,11 +239,11 @@ export class PMTilesImageSource extends RegionImageSource {
 
 	}
 
-	redraw() {
+	redraw( ...args ) {
 
 		if ( this._deferredSource instanceof MVTImageSource ) {
 
-			this._deferredSource.redraw();
+			this._deferredSource.redraw( ...args );
 
 		}
 
