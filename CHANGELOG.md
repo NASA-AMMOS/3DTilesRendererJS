@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - StructuralMetadata: Throw an error in `getPropertyTableData` when non-matching argument types are passed.
 - MVTOverlay, PMTilesOverlay: Overlays for reading and rendering vector tilee formats as tile overlays.
 - TilesRenderer: Added "loadAncestors" option.
+- GlobeControls, EnvironmentControls: Add "enableFlight" option for free controls.
 
 ### Fixed
 - ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
