@@ -64,7 +64,6 @@ export class MVTOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = options.imageSource ?? new MVTImageSource( options );
-		this._dirtyRegions = new Map();
 
 		this._redrawQueue = new PriorityQueue();
 		this._redrawQueue.maxJobs = 4;
@@ -152,19 +151,11 @@ export class MVTOverlay extends ImageOverlay {
 
 		if ( visible ) {
 
-			const {
-				imageSource,
-				_dirtyRegions,
-				_redrawQueue,
-			} = this;
-
+			const { _redrawQueue } = this;
 			const key = range.join( '_' );
-			if ( _dirtyRegions.has( key ) ) {
+			if ( _redrawQueue.has( key ) ) {
 
-				const args = _dirtyRegions.get( key );
-				_dirtyRegions.delete( key );
-				_redrawQueue.remove( args );
-				imageSource.redraw( ...args );
+				_redrawQueue.flush( key );
 
 			}
 
@@ -178,7 +169,6 @@ export class MVTOverlay extends ImageOverlay {
 			imageSource,
 			_redrawQueue,
 			_visibleRegionCounts,
-			_dirtyRegions,
 		} = this;
 
 		for ( const { range } of _visibleRegionCounts.values() ) {
@@ -190,12 +180,10 @@ export class MVTOverlay extends ImageOverlay {
 		imageSource.forEachItem( ( _, args ) => {
 
 			const key = args.slice( 0, 4 ).join( '_' );
-			if ( ! _visibleRegionCounts.has( key ) && ! _dirtyRegions.has( key ) ) {
+			if ( ! _visibleRegionCounts.has( key ) && ! _redrawQueue.has( key ) ) {
 
-				_dirtyRegions.set( key, args );
-				_redrawQueue.add( args, async args => {
+				_redrawQueue.add( key, () => {
 
-					_dirtyRegions.delete( key );
 					imageSource.redraw( ...args );
 
 				} );
