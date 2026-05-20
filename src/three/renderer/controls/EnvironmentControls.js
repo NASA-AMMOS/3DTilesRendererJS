@@ -376,7 +376,6 @@ export class EnvironmentControls extends EventDispatcher {
 				_keysDown,
 			} = this;
 
-
 			// exit early if the controls are disabled
 			if ( ! this.enabled ) {
 
@@ -693,6 +692,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			_keysDown.add( e.key.toLowerCase() );
 
+			// reset any activities if a key is pressed unless FREE_ROTATE is being used
 			const anyFlightKey =
 				_keysDown.has( 'w' ) ||
 				_keysDown.has( 's' ) ||
@@ -710,7 +710,6 @@ export class EnvironmentControls extends EventDispatcher {
 				this.resetState();
 
 			}
-
 
 		};
 
