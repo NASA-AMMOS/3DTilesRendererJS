@@ -22,8 +22,9 @@ class LRUCache {
 
 	/**
 	 * Comparator used to determine eviction order. Items that sort last are evicted first.
-	 * Defaults to `null` (eviction order is by last-used time).
+	 * When `null`, eviction order is by last-used time.
 	 * @type {UnloadPriorityCallback|null}
+	 * @default null
 	 */
 	get unloadPriorityCallback() {
 
@@ -60,12 +61,14 @@ class LRUCache {
 		/**
 		 * Minimum number of items to keep in the cache after eviction.
 		 * @type {number}
+		 * @default 6000
 		 */
 		this.minSize = 6000;
 
 		/**
 		 * Maximum number of items before eviction is triggered.
 		 * @type {number}
+		 * @default 8000
 		 */
 		this.maxSize = 8000;
 
@@ -73,6 +76,7 @@ class LRUCache {
 		 * Minimum total bytes to retain after eviction.
 		 * @note Only works with three.js r166 or higher.
 		 * @type {number}
+		 * @default ~322MB
 		 */
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
 
@@ -80,18 +84,21 @@ class LRUCache {
 		 * Maximum total bytes before eviction is triggered.
 		 * @note Only works with three.js r166 or higher.
 		 * @type {number}
+		 * @default ~430MB
 		 */
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
 
 		/**
 		 * Fraction of excess items/bytes to unload per eviction pass.
 		 * @type {number}
+		 * @default 0.05
 		 */
 		this.unloadPercent = 0.05;
 
 		/**
 		 * If true, items are automatically marked as unused at the start of each eviction pass.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.autoMarkUnused = true;
 

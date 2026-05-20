@@ -10,12 +10,14 @@ export class LoaderBase {
 		/**
 		 * Options passed to `fetch` when loading tile content.
 		 * @type {Object}
+		 * @default {}
 		 */
 		this.fetchOptions = {};
 
 		/**
 		 * Base URL used to resolve relative external URLs.
 		 * @type {string}
+		 * @default ''
 		 */
 		this.workingPath = '';
 

@@ -107,25 +107,25 @@ animation. Use `toggle()` to animate the transition.
 ### .orthographicPositionalZoom
 
 ```js
-orthographicPositionalZoom: boolean
+orthographicPositionalZoom: boolean = true
 ```
 
-When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
+When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain.
 
 
 ### .orthographicOffset
 
 ```js
-orthographicOffset: number
+orthographicOffset: number = 50
 ```
 
-Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
+Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true.
 
 
 ### .fixedPoint
 
 ```js
-fixedPoint: Vector3
+fixedPoint: Vector3 = new Vector3()
 ```
 
 World-space point that remains visually fixed during the transition.
@@ -134,28 +134,28 @@ World-space point that remains visually fixed during the transition.
 ### .duration
 
 ```js
-duration: number
+duration: number = 200
 ```
 
-Duration of the animated transition in milliseconds. Default is 200.
+Duration of the animated transition in milliseconds.
 
 
 ### .autoSync
 
 ```js
-autoSync: boolean
+autoSync: boolean = true
 ```
 
-When true, cameras are synced automatically before each `update` call. Default is true.
+When true, cameras are synced automatically before each `update` call.
 
 
 ### .easeFunction
 
 ```js
-easeFunction: function
+easeFunction: function = x => x
 ```
 
-Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
+Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1].
 
 
 ### .constructor
@@ -467,7 +467,7 @@ right-click-to-rotate, and optional damping/inertia. Works with any Three.js sce
 ### .enabled
 
 ```js
-enabled: boolean
+enabled: boolean = true
 ```
 
 Whether the controls are active. When set to false, all input is ignored
@@ -477,127 +477,157 @@ and inertia is cleared.
 ### .cameraRadius
 
 ```js
-cameraRadius: number
+cameraRadius: number = 5
 ```
 
-Minimum camera distance above the surface in world units. Prevents clipping into terrain. Default is 5.
+Minimum camera distance above the surface in world units. Prevents clipping into terrain.
 
 
 ### .rotationSpeed
 
 ```js
-rotationSpeed: number
+rotationSpeed: number = 1
 ```
 
-Rotation sensitivity multiplier. Default is 1.
+Rotation sensitivity multiplier.
 
 
 ### .minAltitude
 
 ```js
-minAltitude: number
+minAltitude: number = 0
 ```
 
-Minimum camera angle above the horizon in radians. Default is 0.
+Minimum camera angle above the horizon in radians.
 
 
 ### .maxAltitude
 
 ```js
-maxAltitude: number
+maxAltitude: number = 0.45 * Math.PI
 ```
 
-Maximum camera angle above the horizon in radians. Default is 0.45π.
+Maximum camera angle above the horizon in radians.
 
 
 ### .minDistance
 
 ```js
-minDistance: number
+minDistance: number = 10
 ```
 
-Minimum zoom distance in world units. Default is 10.
+Minimum zoom distance in world units.
 
 
 ### .maxDistance
 
 ```js
-maxDistance: number
+maxDistance: number = Infinity
 ```
 
-Maximum zoom distance in world units. Default is Infinity.
+Maximum zoom distance in world units.
 
 
 ### .minZoom
 
 ```js
-minZoom: number
+minZoom: number = 0
 ```
 
-Minimum orthographic zoom level. Default is 0.
+Minimum orthographic zoom level.
 
 
 ### .maxZoom
 
 ```js
-maxZoom: number
+maxZoom: number = Infinity
 ```
 
-Maximum orthographic zoom level. Default is Infinity.
+Maximum orthographic zoom level.
 
 
 ### .zoomSpeed
 
 ```js
-zoomSpeed: number
+zoomSpeed: number = 1
 ```
 
-Zoom sensitivity multiplier. Default is 1.
+Zoom sensitivity multiplier.
 
 
 ### .adjustHeight
 
 ```js
-adjustHeight: boolean
+adjustHeight: boolean = true
 ```
 
-When true, the camera height is automatically adjusted to avoid clipping into the terrain. Default is true.
+When true, the camera height is automatically adjusted to avoid clipping into the terrain.
 
 
 ### .enableDamping
 
 ```js
-enableDamping: boolean
+enableDamping: boolean = false
 ```
 
-When true, camera movements decelerate gradually after input ends. Default is false.
+When true, camera movements decelerate gradually after input ends.
 
 
 ### .dampingFactor
 
 ```js
-dampingFactor: number
+dampingFactor: number = 0.15
 ```
 
-Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting. Default is 0.15.
+Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting.
 
 
 ### .fallbackPlane
 
 ```js
-fallbackPlane: Plane
+fallbackPlane: Plane = new Plane( UP, 0 )
 ```
 
-Fallback plane used for drag/zoom when no scene geometry is hit. Default is the XZ plane (y=0).
+Fallback plane used for drag/zoom when no scene geometry is hit.
 
 
 ### .useFallbackPlane
 
 ```js
-useFallbackPlane: boolean
+useFallbackPlane: boolean = true
 ```
 
-When true, the fallback plane is used when raycasting misses scene geometry. Default is true.
+When true, the fallback plane is used when raycasting misses scene geometry.
+
+
+### .enableFlight
+
+```js
+enableFlight: boolean = false
+```
+
+When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
+up/down, and Shift multiplies speed by `flightSpeedMultiplier`. Right-click or Shift+left-click
+enters free-look mode, rotating the camera in place without requiring a surface hit. Only
+supported for perspective cameras.
+
+
+### .flightSpeed
+
+```js
+flightSpeed: number = 10
+```
+
+Base camera speed in world units per second during keyboard flight.
+
+
+### .flightSpeedMultiplier
+
+```js
+flightSpeedMultiplier: number = 4
+```
+
+Speed multiplier applied when the fast key is held during flight.
 
 
 ### .constructor
@@ -745,25 +775,25 @@ The inverse of `ellipsoidFrame`.
 ### .nearMargin
 
 ```js
-nearMargin: number
+nearMargin: number = 0.25
 ```
 
-Fraction of the near plane distance added as a buffer. Default is 0.25.
+Fraction of the near plane distance added as a buffer.
 
 
 ### .farMargin
 
 ```js
-farMargin: number
+farMargin: number = 0
 ```
 
-Fraction of the far plane distance added as a buffer. Default is 0.
+Fraction of the far plane distance added as a buffer.
 
 
 ### .globeInertia
 
 ```js
-globeInertia: Quaternion
+globeInertia: Quaternion = new Quaternion()
 ```
 
 Accumulated globe rotation inertia quaternion. Applied each frame when globe inertia is active.
@@ -772,7 +802,7 @@ Accumulated globe rotation inertia quaternion. Applied each frame when globe ine
 ### .globeInertiaFactor
 
 ```js
-globeInertiaFactor: number
+globeInertiaFactor: number = 0
 ```
 
 Magnitude of the current globe rotation inertia. Decays to zero over time.
@@ -781,16 +811,16 @@ Magnitude of the current globe rotation inertia. Decays to zero over time.
 ### .ellipsoid
 
 ```js
-ellipsoid: Ellipsoid
+ellipsoid: Ellipsoid = WGS84_ELLIPSOID
 ```
 
-The ellipsoid model used for surface interaction and up-direction calculation. Defaults to WGS84.
+The ellipsoid model used for surface interaction and up-direction calculation.
 
 
 ### .ellipsoidGroup
 
 ```js
-ellipsoidGroup: Group
+ellipsoidGroup: Group = new Group()
 ```
 
 The Three.js group whose world matrix defines the ellipsoid's coordinate frame.
@@ -896,7 +926,7 @@ Add `tiles.group` to your scene and call `tiles.update()` each frame.
 ### .autoDisableRendererCulling
 
 ```js
-autoDisableRendererCulling: boolean
+autoDisableRendererCulling: boolean = true
 ```
 
 If `true`, all tile meshes automatically have `frustumCulled` set to `false` since the
@@ -918,12 +948,11 @@ tileset frame.
 ### .ellipsoid
 
 ```js
-ellipsoid: Ellipsoid
+ellipsoid: Ellipsoid = WGS84_ELLIPSOID
 ```
 
-The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
-overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
-`TilesRenderer.group`.
+The ellipsoid definition used for the tileset. May be overridden by the
+`3DTILES_ellipsoid` extension. Specified in the local frame of `TilesRenderer.group`.
 
 
 ### .cameras
@@ -938,7 +967,7 @@ Array of cameras registered with this renderer.
 ### .manager
 
 ```js
-manager: LoadingManager
+manager: LoadingManager = new LoadingManager()
 ```
 
 The `LoadingManager` used when loading tile geometry.
