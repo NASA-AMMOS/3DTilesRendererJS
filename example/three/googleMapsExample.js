@@ -135,6 +135,9 @@ function init() {
 	// controls
 	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
 	controls.enableDamping = true;
+	controls.enableFlight = true;
+	controls.flightSpeed = 0.5;
+	controls.maxAltitude = Math.PI / 2;
 
 	// initialize tiles
 	reinstantiateTiles();

@@ -192,13 +192,12 @@ export class EnvironmentControls extends EventDispatcher {
 		 */
 		this.useFallbackPlane = true;
 
-		// settings for GlobeControls
-		this.scaleZoomOrientationAtEdges = false;
-		this.autoAdjustCameraRotation = true;
-
 		// flight
 		/**
-		 * When true, WASD/QE keys move the camera freely through space. Default is false.
+		 * When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
+		 * up/down, and Shift multiplies speed by `flightSpeedMultiplier`. Right-click or Shift+left-click
+		 * enters free-look mode, rotating the camera in place without requiring a surface hit. Only
+		 * supported for perspective cameras. Default is false.
 		 * @type {boolean}
 		 */
 		this.enableFlight = false;
@@ -215,7 +214,10 @@ export class EnvironmentControls extends EventDispatcher {
 		 */
 		this.flightSpeedMultiplier = 4;
 
-		this._keysDown = new Set();
+
+		// settings for GlobeControls
+		this.scaleZoomOrientationAtEdges = false;
+		this.autoAdjustCameraRotation = true;
 
 		// internal state
 		this.state = NONE;
@@ -251,6 +253,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.up = new Vector3( 0, 1, 0 );
 		this._lastTime = performance.now();
+
+		this._keysDown = new Set();
 
 		this._detachCallback = null;
 		this._upInitialized = false;
@@ -370,6 +374,8 @@ export class EnvironmentControls extends EventDispatcher {
 				scene,
 				pivotPoint,
 				enabled,
+				enableFlight,
+				_keysDown,
 			} = this;
 
 			// init the pointer
@@ -411,12 +417,25 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			// flight mode with shift held: free-look around the camera origin, skip raycasting
+			// free-look around the camera origin when flight is active with any flight key held, or shift/right-click
+			const anyFlightKey =
+				_keysDown.has( 'w' ) ||
+				_keysDown.has( 's' ) ||
+				_keysDown.has( 'a' ) ||
+				_keysDown.has( 'd' ) ||
+				_keysDown.has( 'q' ) ||
+				_keysDown.has( 'e' ) ||
+				_keysDown.has( 'arrowup' ) ||
+				_keysDown.has( 'arrowdown' ) ||
+				_keysDown.has( 'arrowleft' ) ||
+				_keysDown.has( 'arrowright' ) ||
+				_keysDown.has( 'shift' );
+
 			if (
-				this.enableFlight &&
+				enableFlight && anyFlightKey &&
 				! pointerTracker.isPointerTouch() && (
 					pointerTracker.isRightClicked() ||
-					pointerTracker.isLeftClicked() && e.shiftKey
+					pointerTracker.isLeftClicked()
 				)
 			) {
 
@@ -661,7 +680,28 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const keydownCallback = e => {
 
-			this._keysDown.add( e.key.toLowerCase() );
+			const { _keysDown, state } = this;
+
+			_keysDown.add( e.key.toLowerCase() );
+
+			const anyFlightKey =
+				_keysDown.has( 'w' ) ||
+				_keysDown.has( 's' ) ||
+				_keysDown.has( 'a' ) ||
+				_keysDown.has( 'd' ) ||
+				_keysDown.has( 'q' ) ||
+				_keysDown.has( 'e' ) ||
+				_keysDown.has( 'arrowup' ) ||
+				_keysDown.has( 'arrowdown' ) ||
+				_keysDown.has( 'arrowleft' ) ||
+				_keysDown.has( 'arrowright' );
+
+			if ( anyFlightKey && state !== FREE_ROTATE ) {
+
+				this.resetState();
+
+			}
+
 
 		};
 
@@ -1129,6 +1169,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	_getFlightSpeedScale() {
+
+		return 1;
+
+	}
+
 	_updateFlight( deltaTime ) {
 
 		const {
@@ -1139,7 +1185,7 @@ export class EnvironmentControls extends EventDispatcher {
 			_keysDown,
 		} = this;
 
-		if ( ! enableFlight ) {
+		if ( ! enableFlight || camera.isOrthographicCamera ) {
 
 			return false;
 
@@ -1155,7 +1201,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// calculate speed
 		const mult = _keysDown.has( 'shift' ) ? flightSpeedMultiplier : 1;
-		const speed = mult * flightSpeed * deltaTime;
+		const speed = mult * flightSpeed * this._getFlightSpeedScale() * deltaTime;
 
 		// calculate direction
 		_flightDir.set(
