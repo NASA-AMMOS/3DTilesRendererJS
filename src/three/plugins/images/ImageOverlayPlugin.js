@@ -1005,6 +1005,7 @@ export class ImageOverlayPlugin {
 			range: null,
 			target: null,
 			meshInfo: new Map(),
+			failed: false,
 		};
 
 		overlayInfo
@@ -1046,7 +1047,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles, overlayInfo, tileControllers, processQueue } = this;
+		const { tiles, overlayInfo, tileControllers } = this;
 		const { ellipsoid } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
@@ -1136,38 +1137,7 @@ export class ImageOverlayPlugin {
 		let target = null;
 		if ( heightInRange && overlay.hasContent( range ) ) {
 
-			target = await processQueue
-				.add( { tile, overlay }, async () => {
-
-					// check if the overlay has been disposed since starting this function
-					if ( controller.signal.aborted || tileController.signal.aborted ) {
-
-						return null;
-
-					}
-
-					// Get the texture from the overlay
-					const regionTarget = await overlay.getTexture( range );
-
-					// check if the overlay has been disposed since starting this function
-					if ( controller.signal.aborted || tileController.signal.aborted ) {
-
-						return null;
-
-					}
-
-					return regionTarget;
-
-				} )
-				.catch( err => {
-
-					if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
-
-						throw err;
-
-					}
-
-				} );
+			target = await this._fetchTileOverlayTexture( tile, overlay, info );
 
 		}
 
@@ -1178,6 +1148,77 @@ export class ImageOverlayPlugin {
 			const array = new Float32Array( uvs[ i ] );
 			const attribute = new BufferAttribute( array, 3 );
 			info.meshInfo.set( mesh, { attribute } );
+
+		} );
+
+	}
+
+	async _fetchTileOverlayTexture( tile, overlay, info ) {
+
+		const { tiles, overlayInfo, tileControllers, processQueue } = this;
+		const { controller } = overlayInfo.get( overlay );
+		const tileController = tileControllers.get( tile );
+		const { range } = info;
+
+		return processQueue
+			.add( { tile, overlay }, async () => {
+
+				// check if the overlay has been disposed since starting this function
+				if ( controller.signal.aborted || tileController.signal.aborted ) {
+
+					return null;
+
+				}
+
+				// Get the texture from the overlay
+				const regionTarget = await overlay.getTexture( range );
+
+				// check if the overlay has been disposed since starting this function
+				if ( controller.signal.aborted || tileController.signal.aborted ) {
+
+					return null;
+
+				}
+
+				return regionTarget;
+
+			} )
+			.catch( err => {
+
+				if ( err instanceof PriorityQueueItemRemovedError ) {
+
+					return null;
+
+				}
+
+				info.failed = true;
+				tiles.dispatchEvent( { type: 'load-error', tile, overlay, error: err } );
+				return null;
+
+			} );
+
+	}
+
+	resetFailedOverlays() {
+
+		const { processedTiles, overlayInfo, overlays } = this;
+		processedTiles.forEach( tile => {
+
+			overlays.forEach( overlay => {
+
+				const { tileInfo } = overlayInfo.get( overlay );
+				const info = tileInfo.get( tile );
+				if ( ! info || ! info.failed ) return;
+
+				info.failed = false;
+				this._fetchTileOverlayTexture( tile, overlay, info ).then( target => {
+
+					info.target = target;
+					this._updateLayers( tile );
+
+				} );
+
+			} );
 
 		} );
 
