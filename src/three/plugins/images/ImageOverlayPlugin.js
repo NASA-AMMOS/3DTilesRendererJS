@@ -312,6 +312,23 @@ export class ImageOverlayPlugin {
 
 	}
 
+	setTileVisible( tile, visible ) {
+
+		this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
+
+			const info = tileInfo.get( tile );
+			if ( ! info || ! info.range ) {
+
+				return;
+
+			}
+
+			overlay.setRegionVisible( info.range, visible );
+
+		} );
+
+	}
+
 	calculateBytesUsed( tile ) {
 
 		const { overlayInfo } = this;
@@ -1306,6 +1323,7 @@ export class ImageOverlay {
 		this._whenReady = null;
 		this.isReady = false;
 		this.isInitialized = false;
+		this._visibleRegionCounts = new Map();
 
 	}
 
@@ -1380,6 +1398,43 @@ export class ImageOverlay {
 	}
 
 	setResolution( resolution ) {
+
+	}
+
+	setRegionVisible( range, visible ) {
+
+		const { _visibleRegionCounts } = this;
+		const key = range.join( '_' );
+		let count = _visibleRegionCounts.get( key ) || 0;
+		if ( visible ) {
+
+			count ++;
+
+		} else {
+
+			count --;
+
+		}
+
+		if ( count < 0 ) {
+
+			throw new Error();
+
+		} else if ( count === 0 ) {
+
+			_visibleRegionCounts.delete( key );
+
+		} else {
+
+			_visibleRegionCounts.set( key, count );
+
+		}
+
+	}
+
+	isRegionVisible( range ) {
+
+		return this._visibleRegionCounts.has( range.join( '_' ) );
 
 	}
 
