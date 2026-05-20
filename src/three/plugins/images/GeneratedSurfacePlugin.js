@@ -93,6 +93,7 @@ export class GeneratedSurfacePlugin {
 
 		}
 
+		const { overlay } = this;
 		let res;
 		if ( this._useEllipsoid() ) {
 
@@ -101,6 +102,37 @@ export class GeneratedSurfacePlugin {
 		} else {
 
 			res = this._createPlanarMesh( tile );
+
+		}
+
+		if ( overlay ) {
+
+			const x = tile[ TILE_X ];
+			const y = tile[ TILE_Y ];
+			const level = tile[ TILE_LEVEL ];
+			const range = this._tiling.getTileBounds( x, y, level, true, false );
+
+			if ( overlay.hasContent( range, level ) ) {
+
+				await overlay.lockTexture( range, level );
+
+				const texture = overlay.getTexture( range, level );
+				tile.overlayRange = range;
+				tile.overlayLevel = level;
+
+				if ( abortSignal.aborted ) {
+
+					overlay.releaseTexture( range, level );
+					tile.overlayRange = null;
+					tile.overlayLevel = null;
+					return null;
+
+				}
+
+				res.material.map = texture;
+				res.material.needsUpdate = true;
+
+			}
 
 		}
 
@@ -116,6 +148,19 @@ export class GeneratedSurfacePlugin {
 		if ( level < maxLevel && tile.parent !== null ) {
 
 			this.expandChildren( tile );
+
+		}
+
+	}
+
+	disposeTile( tile ) {
+
+		const { overlayRange, overlayLevel } = tile;
+		if ( this.overlay && overlayRange ) {
+
+			this.overlay.releaseTexture( overlayRange, overlayLevel );
+			tile.overlayRange = null;
+			tile.overlayLevel = null;
 
 		}
 
