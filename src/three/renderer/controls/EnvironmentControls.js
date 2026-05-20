@@ -192,7 +192,6 @@ export class EnvironmentControls extends EventDispatcher {
 		 */
 		this.useFallbackPlane = true;
 
-		// flight
 		/**
 		 * When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
 		 * up/down, and Shift multiplies speed by `flightSpeedMultiplier`. Right-click or Shift+left-click
@@ -213,7 +212,6 @@ export class EnvironmentControls extends EventDispatcher {
 		 * @type {number}
 		 */
 		this.flightSpeedMultiplier = 4;
-
 
 		// settings for GlobeControls
 		this.scaleZoomOrientationAtEdges = false;
