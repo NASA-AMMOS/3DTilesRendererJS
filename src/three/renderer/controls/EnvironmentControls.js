@@ -109,86 +109,100 @@ export class EnvironmentControls extends EventDispatcher {
 		this._enabled = true;
 
 		/**
-		 * Minimum camera distance above the surface in world units. Prevents clipping into terrain. Default is 5.
+		 * Minimum camera distance above the surface in world units. Prevents clipping into terrain.
 		 * @type {number}
+		 * @default 5
 		 */
 		this.cameraRadius = 5;
 
 		/**
-		 * Rotation sensitivity multiplier. Default is 1.
+		 * Rotation sensitivity multiplier.
 		 * @type {number}
+		 * @default 1
 		 */
 		this.rotationSpeed = 1;
 
 		/**
-		 * Minimum camera angle above the horizon in radians. Default is 0.
+		 * Minimum camera angle above the horizon in radians.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.minAltitude = 0;
 
 		/**
-		 * Maximum camera angle above the horizon in radians. Default is 0.45π.
+		 * Maximum camera angle above the horizon in radians.
 		 * @type {number}
+		 * @default 0.45 * Math.PI
 		 */
 		this.maxAltitude = 0.45 * Math.PI;
 
 		/**
-		 * Minimum zoom distance in world units. Default is 10.
+		 * Minimum zoom distance in world units.
 		 * @type {number}
+		 * @default 10
 		 */
 		this.minDistance = 10;
 
 		/**
-		 * Maximum zoom distance in world units. Default is Infinity.
+		 * Maximum zoom distance in world units.
 		 * @type {number}
+		 * @default Infinity
 		 */
 		this.maxDistance = Infinity;
 
 		/**
-		 * Minimum orthographic zoom level. Default is 0.
+		 * Minimum orthographic zoom level.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.minZoom = 0;
 
 		/**
-		 * Maximum orthographic zoom level. Default is Infinity.
+		 * Maximum orthographic zoom level.
 		 * @type {number}
+		 * @default Infinity
 		 */
 		this.maxZoom = Infinity;
 
 		/**
-		 * Zoom sensitivity multiplier. Default is 1.
+		 * Zoom sensitivity multiplier.
 		 * @type {number}
+		 * @default 1
 		 */
 		this.zoomSpeed = 1;
 
 		/**
-		 * When true, the camera height is automatically adjusted to avoid clipping into the terrain. Default is true.
+		 * When true, the camera height is automatically adjusted to avoid clipping into the terrain.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.adjustHeight = true;
 
 		/**
-		 * When true, camera movements decelerate gradually after input ends. Default is false.
+		 * When true, camera movements decelerate gradually after input ends.
 		 * @type {boolean}
+		 * @default false
 		 */
 		this.enableDamping = false;
 
 		/**
-		 * Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting. Default is 0.15.
+		 * Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting.
 		 * @type {number}
+		 * @default 0.15
 		 */
 		this.dampingFactor = 0.15;
 
 		/**
-		 * Fallback plane used for drag/zoom when no scene geometry is hit. Default is the XZ plane (y=0).
+		 * Fallback plane used for drag/zoom when no scene geometry is hit.
 		 * @type {Plane}
+		 * @default new Plane( UP, 0 )
 		 */
 		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
 
 		/**
-		 * When true, the fallback plane is used when raycasting misses scene geometry. Default is true.
+		 * When true, the fallback plane is used when raycasting misses scene geometry.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.useFallbackPlane = true;
 
@@ -196,20 +210,23 @@ export class EnvironmentControls extends EventDispatcher {
 		 * When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
 		 * up/down, and Shift multiplies speed by `flightSpeedMultiplier`. Right-click or Shift+left-click
 		 * enters free-look mode, rotating the camera in place without requiring a surface hit. Only
-		 * supported for perspective cameras. Default is false.
+		 * supported for perspective cameras.
 		 * @type {boolean}
+		 * @default false
 		 */
 		this.enableFlight = false;
 
 		/**
-		 * Base camera speed in world units per second during keyboard flight. Default is 10.
+		 * Base camera speed in world units per second during keyboard flight.
 		 * @type {number}
+		 * @default 10
 		 */
 		this.flightSpeed = 10;
 
 		/**
-		 * Speed multiplier applied when the fast key is held during flight. Default is 4.
+		 * Speed multiplier applied when the fast key is held during flight.
 		 * @type {number}
+		 * @default 4
 		 */
 		this.flightSpeedMultiplier = 4;
 

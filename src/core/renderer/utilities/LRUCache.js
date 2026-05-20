@@ -22,8 +22,9 @@ class LRUCache {
 
 	/**
 	 * Comparator used to determine eviction order. Items that sort last are evicted first.
-	 * Defaults to `null` (eviction order is by last-used time).
+	 * When `null`, eviction order is by last-used time.
 	 * @type {UnloadPriorityCallback|null}
+	 * @default null
 	 */
 	get unloadPriorityCallback() {
 

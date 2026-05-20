@@ -110,7 +110,7 @@ animation. Use `toggle()` to animate the transition.
 orthographicPositionalZoom: boolean
 ```
 
-When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
+When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain.
 
 
 ### .orthographicOffset
@@ -119,7 +119,7 @@ When true, the orthographic camera position is offset backwards along the view d
 orthographicOffset: number
 ```
 
-Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
+Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true.
 
 
 ### .fixedPoint
@@ -137,7 +137,7 @@ World-space point that remains visually fixed during the transition.
 duration: number
 ```
 
-Duration of the animated transition in milliseconds. Default is 200.
+Duration of the animated transition in milliseconds.
 
 
 ### .autoSync
@@ -146,7 +146,7 @@ Duration of the animated transition in milliseconds. Default is 200.
 autoSync: boolean
 ```
 
-When true, cameras are synced automatically before each `update` call. Default is true.
+When true, cameras are synced automatically before each `update` call.
 
 
 ### .easeFunction
@@ -155,7 +155,7 @@ When true, cameras are synced automatically before each `update` call. Default i
 easeFunction: function
 ```
 
-Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
+Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1].
 
 
 ### .constructor
@@ -480,7 +480,7 @@ and inertia is cleared.
 cameraRadius: number
 ```
 
-Minimum camera distance above the surface in world units. Prevents clipping into terrain. Default is 5.
+Minimum camera distance above the surface in world units. Prevents clipping into terrain.
 
 
 ### .rotationSpeed
@@ -489,7 +489,7 @@ Minimum camera distance above the surface in world units. Prevents clipping into
 rotationSpeed: number
 ```
 
-Rotation sensitivity multiplier. Default is 1.
+Rotation sensitivity multiplier.
 
 
 ### .minAltitude
@@ -498,7 +498,7 @@ Rotation sensitivity multiplier. Default is 1.
 minAltitude: number
 ```
 
-Minimum camera angle above the horizon in radians. Default is 0.
+Minimum camera angle above the horizon in radians.
 
 
 ### .maxAltitude
@@ -507,7 +507,7 @@ Minimum camera angle above the horizon in radians. Default is 0.
 maxAltitude: number
 ```
 
-Maximum camera angle above the horizon in radians. Default is 0.45π.
+Maximum camera angle above the horizon in radians.
 
 
 ### .minDistance
@@ -516,7 +516,7 @@ Maximum camera angle above the horizon in radians. Default is 0.45π.
 minDistance: number
 ```
 
-Minimum zoom distance in world units. Default is 10.
+Minimum zoom distance in world units.
 
 
 ### .maxDistance
@@ -525,7 +525,7 @@ Minimum zoom distance in world units. Default is 10.
 maxDistance: number
 ```
 
-Maximum zoom distance in world units. Default is Infinity.
+Maximum zoom distance in world units.
 
 
 ### .minZoom
@@ -534,7 +534,7 @@ Maximum zoom distance in world units. Default is Infinity.
 minZoom: number
 ```
 
-Minimum orthographic zoom level. Default is 0.
+Minimum orthographic zoom level.
 
 
 ### .maxZoom
@@ -543,7 +543,7 @@ Minimum orthographic zoom level. Default is 0.
 maxZoom: number
 ```
 
-Maximum orthographic zoom level. Default is Infinity.
+Maximum orthographic zoom level.
 
 
 ### .zoomSpeed
@@ -552,7 +552,7 @@ Maximum orthographic zoom level. Default is Infinity.
 zoomSpeed: number
 ```
 
-Zoom sensitivity multiplier. Default is 1.
+Zoom sensitivity multiplier.
 
 
 ### .adjustHeight
@@ -561,7 +561,7 @@ Zoom sensitivity multiplier. Default is 1.
 adjustHeight: boolean
 ```
 
-When true, the camera height is automatically adjusted to avoid clipping into the terrain. Default is true.
+When true, the camera height is automatically adjusted to avoid clipping into the terrain.
 
 
 ### .enableDamping
@@ -570,7 +570,7 @@ When true, the camera height is automatically adjusted to avoid clipping into th
 enableDamping: boolean
 ```
 
-When true, camera movements decelerate gradually after input ends. Default is false.
+When true, camera movements decelerate gradually after input ends.
 
 
 ### .dampingFactor
@@ -579,7 +579,7 @@ When true, camera movements decelerate gradually after input ends. Default is fa
 dampingFactor: number
 ```
 
-Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting. Default is 0.15.
+Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting.
 
 
 ### .fallbackPlane
@@ -588,7 +588,7 @@ Rate of inertia decay per frame when damping is enabled. Lower values produce lo
 fallbackPlane: Plane
 ```
 
-Fallback plane used for drag/zoom when no scene geometry is hit. Default is the XZ plane (y=0).
+Fallback plane used for drag/zoom when no scene geometry is hit.
 
 
 ### .useFallbackPlane
@@ -597,7 +597,7 @@ Fallback plane used for drag/zoom when no scene geometry is hit. Default is the 
 useFallbackPlane: boolean
 ```
 
-When true, the fallback plane is used when raycasting misses scene geometry. Default is true.
+When true, the fallback plane is used when raycasting misses scene geometry.
 
 
 ### .enableFlight
@@ -609,7 +609,7 @@ enableFlight: boolean
 When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
 up/down, and Shift multiplies speed by `flightSpeedMultiplier`. Right-click or Shift+left-click
 enters free-look mode, rotating the camera in place without requiring a surface hit. Only
-supported for perspective cameras. Default is false.
+supported for perspective cameras.
 
 
 ### .flightSpeed
@@ -618,7 +618,7 @@ supported for perspective cameras. Default is false.
 flightSpeed: number
 ```
 
-Base camera speed in world units per second during keyboard flight. Default is 10.
+Base camera speed in world units per second during keyboard flight.
 
 
 ### .flightSpeedMultiplier
@@ -627,7 +627,7 @@ Base camera speed in world units per second during keyboard flight. Default is 1
 flightSpeedMultiplier: number
 ```
 
-Speed multiplier applied when the fast key is held during flight. Default is 4.
+Speed multiplier applied when the fast key is held during flight.
 
 
 ### .constructor
@@ -778,7 +778,7 @@ The inverse of `ellipsoidFrame`.
 nearMargin: number
 ```
 
-Fraction of the near plane distance added as a buffer. Default is 0.25.
+Fraction of the near plane distance added as a buffer.
 
 
 ### .farMargin
@@ -787,7 +787,7 @@ Fraction of the near plane distance added as a buffer. Default is 0.25.
 farMargin: number
 ```
 
-Fraction of the far plane distance added as a buffer. Default is 0.
+Fraction of the far plane distance added as a buffer.
 
 
 ### .globeInertia
@@ -814,7 +814,7 @@ Magnitude of the current globe rotation inertia. Decays to zero over time.
 ellipsoid: Ellipsoid
 ```
 
-The ellipsoid model used for surface interaction and up-direction calculation. Defaults to WGS84.
+The ellipsoid model used for surface interaction and up-direction calculation.
 
 
 ### .ellipsoidGroup
@@ -951,9 +951,8 @@ tileset frame.
 ellipsoid: Ellipsoid
 ```
 
-The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
-overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
-`TilesRenderer.group`.
+The ellipsoid definition used for the tileset. May be overridden by the
+`3DTILES_ellipsoid` extension. Specified in the local frame of `TilesRenderer.group`.
 
 
 ### .cameras

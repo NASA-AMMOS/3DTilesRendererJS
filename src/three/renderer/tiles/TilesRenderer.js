@@ -105,10 +105,10 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group = new TilesGroup( this );
 
 		/**
-		 * The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
-		 * overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
-		 * `TilesRenderer.group`.
+		 * The ellipsoid definition used for the tileset. May be overridden by the
+		 * `3DTILES_ellipsoid` extension. Specified in the local frame of `TilesRenderer.group`.
 		 * @type {Ellipsoid}
+		 * @default WGS84_ELLIPSOID
 		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 

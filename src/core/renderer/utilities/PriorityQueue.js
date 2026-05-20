@@ -60,10 +60,10 @@ export class PriorityQueue {
 
 	/**
 	 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
-	 * single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
-	 * overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
-	 * running in WebXR.
+	 * single frame than there is time for. Should be overridden in scenarios where
+	 * `requestAnimationFrame` is not reliable, such as when running in WebXR.
 	 * @type {SchedulingCallback}
+	 * @default requestAnimationFrame
 	 * @deprecated
 	 */
 	get schedulingCallback() {
@@ -100,8 +100,9 @@ export class PriorityQueue {
 
 		/**
 		 * Comparator used to sort queued items. Higher-priority items should sort last
-		 * (i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
+		 * (i.e. return positive when `itemA` should run before `itemB`).
 		 * @type {PriorityCallback|null}
+		 * @default null
 		 */
 		this.priorityCallback = null;
 

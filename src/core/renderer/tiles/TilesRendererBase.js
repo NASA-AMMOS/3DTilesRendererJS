@@ -571,14 +571,12 @@ export class TilesRendererBase {
 		 * tiles to load first. Prevents visual gaps and flashing during camera movement.
 		 *
 		 * Based in part on {@link https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html Cesium Native tile selection}.
-		 *
-		 * Default is `false`, which uses the previous approach of loading all parent and sibling
-		 * tiles for guaranteed smooth transitions.
 		 * @warn Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
 		 * dispose of child tiles including the `ImageOverlayPlugin` `enableTileSplitting` setting,
 		 * `QuantizedMeshPlugin`, & `ImageFormatPlugin` subclasses (XYZ, TMS, etc). Any tile sets
 		 * that share caches or queues must also use the same setting.
 		 * @type {boolean}
+		 * @default false
 		 */
 		this.optimizedLoadStrategy = false;
 

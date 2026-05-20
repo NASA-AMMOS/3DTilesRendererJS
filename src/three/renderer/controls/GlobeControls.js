@@ -85,14 +85,16 @@ export class GlobeControls extends EnvironmentControls {
 		this.maxZoom = 0.01;
 
 		/**
-		 * Fraction of the near plane distance added as a buffer. Default is 0.25.
+		 * Fraction of the near plane distance added as a buffer.
 		 * @type {number}
+		 * @default 0.25
 		 */
 		this.nearMargin = 0.25;
 
 		/**
-		 * Fraction of the far plane distance added as a buffer. Default is 0.
+		 * Fraction of the far plane distance added as a buffer.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
@@ -111,8 +113,9 @@ export class GlobeControls extends EnvironmentControls {
 		this.globeInertiaFactor = 0;
 
 		/**
-		 * The ellipsoid model used for surface interaction and up-direction calculation. Defaults to WGS84.
+		 * The ellipsoid model used for surface interaction and up-direction calculation.
 		 * @type {Ellipsoid}
+		 * @default WGS84_ELLIPSOID
 		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 

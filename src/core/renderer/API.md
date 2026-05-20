@@ -352,7 +352,7 @@ unloadPriorityCallback: ( a: any, b: any ) => number | null
 ```
 
 Comparator used to determine eviction order. Items that sort last are evicted first.
-Defaults to `null` (eviction order is by last-used time).
+When `null`, eviction order is by last-used time.
 
 
 ### .minSize
@@ -573,7 +573,7 @@ priorityCallback: ( a: any, b: any ) => number | null
 ```
 
 Comparator used to sort queued items. Higher-priority items should sort last
-(i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
+(i.e. return positive when `itemA` should run before `itemB`).
 
 
 ### .sort
@@ -906,9 +906,6 @@ Tiles are loaded independently based on screen-space error without requiring all
 tiles to load first. Prevents visual gaps and flashing during camera movement.
 
 Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
-
-Default is `false`, which uses the previous approach of loading all parent and sibling
-tiles for guaranteed smooth transitions.
 
 > [!WARNING]
 > Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
