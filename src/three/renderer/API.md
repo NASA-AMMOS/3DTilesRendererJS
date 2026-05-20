@@ -802,7 +802,7 @@ Accumulated globe rotation inertia quaternion. Applied each frame when globe ine
 ### .globeInertiaFactor
 
 ```js
-globeInertiaFactor: number
+globeInertiaFactor: number = 0
 ```
 
 Magnitude of the current globe rotation inertia. Decays to zero over time.

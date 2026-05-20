@@ -84,6 +84,7 @@ export class PriorityQueue {
 		/**
 		 * Maximum number of jobs that can run concurrently.
 		 * @type {number}
+		 * @default 6
 		 */
 		this.maxJobs = 6;
 
@@ -95,6 +96,7 @@ export class PriorityQueue {
 		/**
 		 * If true, job runs are automatically scheduled after `add` and after each job completes.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.autoUpdate = true;
 

@@ -358,7 +358,7 @@ When `null`, eviction order is by last-used time.
 ### .minSize
 
 ```js
-minSize: number
+minSize: number = 6000
 ```
 
 Minimum number of items to keep in the cache after eviction.
@@ -367,7 +367,7 @@ Minimum number of items to keep in the cache after eviction.
 ### .maxSize
 
 ```js
-maxSize: number
+maxSize: number = 8000
 ```
 
 Maximum number of items before eviction is triggered.
@@ -398,7 +398,7 @@ Maximum total bytes before eviction is triggered.
 ### .unloadPercent
 
 ```js
-unloadPercent: number
+unloadPercent: number = 0.05
 ```
 
 Fraction of excess items/bytes to unload per eviction pass.
@@ -407,7 +407,7 @@ Fraction of excess items/bytes to unload per eviction pass.
 ### .autoMarkUnused
 
 ```js
-autoMarkUnused: boolean
+autoMarkUnused: boolean = true
 ```
 
 If true, items are automatically marked as unused at the start of each eviction pass.
@@ -551,7 +551,7 @@ returns whether tasks are queued or actively running
 ### .maxJobs
 
 ```js
-maxJobs: number
+maxJobs: number = 6
 ```
 
 Maximum number of jobs that can run concurrently.
@@ -560,7 +560,7 @@ Maximum number of jobs that can run concurrently.
 ### .autoUpdate
 
 ```js
-autoUpdate: boolean
+autoUpdate: boolean = true
 ```
 
 If true, job runs are automatically scheduled after `add` and after each job completes.

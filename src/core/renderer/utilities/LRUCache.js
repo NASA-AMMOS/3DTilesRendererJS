@@ -61,12 +61,14 @@ class LRUCache {
 		/**
 		 * Minimum number of items to keep in the cache after eviction.
 		 * @type {number}
+		 * @default 6000
 		 */
 		this.minSize = 6000;
 
 		/**
 		 * Maximum number of items before eviction is triggered.
 		 * @type {number}
+		 * @default 8000
 		 */
 		this.maxSize = 8000;
 
@@ -87,12 +89,14 @@ class LRUCache {
 		/**
 		 * Fraction of excess items/bytes to unload per eviction pass.
 		 * @type {number}
+		 * @default 0.05
 		 */
 		this.unloadPercent = 0.05;
 
 		/**
 		 * If true, items are automatically marked as unused at the start of each eviction pass.
 		 * @type {boolean}
+		 * @default true
 		 */
 		this.autoMarkUnused = true;
 

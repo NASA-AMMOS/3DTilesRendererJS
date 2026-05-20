@@ -109,6 +109,7 @@ export class GlobeControls extends EnvironmentControls {
 		/**
 		 * Magnitude of the current globe rotation inertia. Decays to zero over time.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.globeInertiaFactor = 0;
 
