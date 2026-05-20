@@ -40,6 +40,7 @@ const _mouseBefore = /* @__PURE__ */ new Vector3();
 const _mouseAfter = /* @__PURE__ */ new Vector3();
 const _identityQuat = /* @__PURE__ */ new Quaternion();
 const _ray = /* @__PURE__ */ new Ray();
+const _flightDir = /* @__PURE__ */ new Vector3();
 
 const _zoomPointPointer = /* @__PURE__ */ new Vector2();
 const _pointer = /* @__PURE__ */ new Vector2();
@@ -193,6 +194,27 @@ export class EnvironmentControls extends EventDispatcher {
 		// settings for GlobeControls
 		this.scaleZoomOrientationAtEdges = false;
 		this.autoAdjustCameraRotation = true;
+
+		// flight
+		/**
+		 * When true, WASD/QE keys move the camera freely through space. Default is false.
+		 * @type {boolean}
+		 */
+		this.enableFlight = false;
+
+		/**
+		 * Base camera speed in world units per second during keyboard flight. Default is 10.
+		 * @type {number}
+		 */
+		this.flightSpeed = 10;
+
+		/**
+		 * Speed multiplier applied when the fast key is held during flight. Default is 4.
+		 * @type {number}
+		 */
+		this.flightSpeedMultiplier = 4;
+
+		this._keysDown = new Set();
 
 		// internal state
 		this.state = NONE;
@@ -621,6 +643,28 @@ export class EnvironmentControls extends EventDispatcher {
 		document.addEventListener( 'pointerup', pointerupCallback );
 		document.addEventListener( 'pointerleave', pointerleaveCallback );
 
+		const keydownCallback = e => {
+
+			this._keysDown.add( e.key.toLowerCase() );
+
+		};
+
+		const keyupCallback = e => {
+
+			this._keysDown.delete( e.key.toLowerCase() );
+
+		};
+
+		const blurCallback = () => {
+
+			this._keysDown.clear();
+
+		};
+
+		window.addEventListener( 'keydown', keydownCallback );
+		window.addEventListener( 'keyup', keyupCallback );
+		window.addEventListener( 'blur', blurCallback );
+
 		this._detachCallback = () => {
 
 			domElement.removeEventListener( 'contextmenu', contextMenuCallback );
@@ -630,6 +674,10 @@ export class EnvironmentControls extends EventDispatcher {
 			document.removeEventListener( 'pointermove', pointermoveCallback );
 			document.removeEventListener( 'pointerup', pointerupCallback );
 			document.removeEventListener( 'pointerleave', pointerleaveCallback );
+
+			window.removeEventListener( 'keydown', keydownCallback );
+			window.removeEventListener( 'keyup', keyupCallback );
+			window.removeEventListener( 'blur', blurCallback );
 
 		};
 
@@ -850,10 +898,19 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		const didFly = this._updateFlight( deltaTime );
+		if ( didFly ) {
+
+			this.dragInertia.set( 0, 0, 0 );
+			this.rotationInertia.set( 0, 0, 0 );
+			this.dispatchEvent( _changeEvent );
+
+		}
+
 		// update the up direction based on where the camera moved to
 		// if using an orthographic camera then rotate around drag pivot
 		// reuse the "hit" information since it can be slow to perform multiple hits
-		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
+		const hit = camera.isOrthographicCamera ? null : ( adjustHeight && ! didFly && this._getPointBelowCamera() ) || null;
 		this.getCameraUpDirection( _localUp );
 		this._setFrame( _localUp );
 
@@ -893,14 +950,13 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.pointerTracker.updateFrame();
 
-		if ( adjustCameraRotation && autoAdjustCameraRotation ) {
+		if ( ( adjustCameraRotation && autoAdjustCameraRotation ) || didFly ) {
 
 			this.getCameraUpDirection( _localUp );
 			this._alignCameraUp( _localUp, 1 );
 
 			this.getCameraUpDirection( _localUp );
 			this._clampRotation( _localUp );
-
 
 		}
 
@@ -1054,6 +1110,60 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const { rotationInertia, dragInertia } = this;
 		return rotationInertia.lengthSq() !== 0 || dragInertia.lengthSq() !== 0;
+
+	}
+
+	_updateFlight( deltaTime ) {
+
+		const {
+			camera,
+			enableFlight,
+			flightSpeed,
+			flightSpeedMultiplier,
+			_keysDown,
+		} = this;
+
+		if ( ! enableFlight ) {
+
+			return false;
+
+		}
+
+		// get key state
+		const forward = _keysDown.has( 'w' ) || _keysDown.has( 'arrowup' );
+		const back = _keysDown.has( 's' ) || _keysDown.has( 'arrowdown' );
+		const left = _keysDown.has( 'a' ) || _keysDown.has( 'arrowleft' );
+		const right = _keysDown.has( 'd' ) || _keysDown.has( 'arrowright' );
+		const up = _keysDown.has( 'q' );
+		const down = _keysDown.has( 'e' );
+
+		// calculate speed
+		const mult = _keysDown.has( 'shift' ) ? flightSpeedMultiplier : 1;
+		const speed = mult * flightSpeed * deltaTime;
+
+		// calculate direction
+		_flightDir.set(
+			( right ? 1 : 0 ) - ( left ? 1 : 0 ),
+			( up ? 1 : 0 ) - ( down ? 1 : 0 ),
+			( back ? 1 : 0 ) - ( forward ? 1 : 0 ),
+		);
+
+		// early out if there's no flight direction
+		if ( _flightDir.lengthSq() === 0 ) {
+
+			return false;
+
+		}
+
+		// fly relative to the camera direction
+		_flightDir
+			.normalize()
+			.transformDirection( camera.matrixWorld );
+
+		camera.position.addScaledVector( _flightDir, speed );
+		camera.updateMatrixWorld();
+
+		return true;
 
 	}
 
