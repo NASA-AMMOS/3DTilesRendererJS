@@ -1134,14 +1134,11 @@ export class ImageOverlayPlugin {
 
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
-		let target = null;
 		if ( heightInRange && overlay.hasContent( range ) ) {
 
-			target = await this._fetchTileOverlayTexture( tile, overlay, info );
+			await this._fetchTileOverlayTexture( tile, overlay, info );
 
 		}
-
-		info.target = target;
 
 		meshes.forEach( ( mesh, i ) => {
 
@@ -1153,6 +1150,8 @@ export class ImageOverlayPlugin {
 
 	}
 
+	// Queues an overlay texture fetch for the given tile, writing the result into info.target.
+	// Never throws — failures mark info.failed and dispatch a load-error event instead.
 	async _fetchTileOverlayTexture( tile, overlay, info ) {
 
 		const { tiles, overlayInfo, tileControllers, processQueue } = this;
@@ -1160,7 +1159,7 @@ export class ImageOverlayPlugin {
 		const tileController = tileControllers.get( tile );
 		const { range } = info;
 
-		return processQueue
+		info.target = await processQueue
 			.add( { tile, overlay }, async () => {
 
 				// check if the overlay has been disposed since starting this function
@@ -1208,15 +1207,19 @@ export class ImageOverlayPlugin {
 
 				const { tileInfo } = overlayInfo.get( overlay );
 				const info = tileInfo.get( tile );
-				if ( ! info || ! info.failed ) return;
+				if ( ! info.failed ) {
+
+					return;
+
+				}
 
 				info.failed = false;
-				this._fetchTileOverlayTexture( tile, overlay, info ).then( target => {
+				this._fetchTileOverlayTexture( tile, overlay, info )
+					.then( () => {
 
-					info.target = target;
-					this._updateLayers( tile );
+						this._updateLayers( tile );
 
-				} );
+					} );
 
 			} );
 
