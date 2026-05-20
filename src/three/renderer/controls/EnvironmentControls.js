@@ -340,6 +340,15 @@ export class EnvironmentControls extends EventDispatcher {
 		this.pointerTracker.domElement = domElement;
 		domElement.style.touchAction = 'none';
 
+		// Ensure the element can receive keyboard focus. If no tabindex attribute is
+		// present, set it to -1 so the element is programmatically focusable without
+		// being inserted into the tab order.
+		if ( ! domElement.hasAttribute( 'tabindex' ) ) {
+
+			domElement.tabIndex = - 1;
+
+		}
+
 		const contextMenuCallback = e => {
 
 			// exit early if the controls are disabled
@@ -355,15 +364,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const pointerdownCallback = e => {
 
-			// exit early if the controls are disabled
-			if ( ! this.enabled ) {
-
-				return;
-
-			}
-
-			e.preventDefault();
-
 			const {
 				camera,
 				raycaster,
@@ -377,6 +377,17 @@ export class EnvironmentControls extends EventDispatcher {
 				enableFlight,
 				_keysDown,
 			} = this;
+
+
+			// exit early if the controls are disabled
+			if ( ! this.enabled ) {
+
+				return;
+
+			}
+
+			e.preventDefault();
+			domElement.focus();
 
 			// init the pointer
 			pointerTracker.addPointer( e );
@@ -717,7 +728,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		};
 
-		window.addEventListener( 'keydown', keydownCallback );
+		domElement.addEventListener( 'keydown', keydownCallback );
 		window.addEventListener( 'keyup', keyupCallback );
 		window.addEventListener( 'blur', blurCallback );
 
@@ -731,7 +742,7 @@ export class EnvironmentControls extends EventDispatcher {
 			document.removeEventListener( 'pointerup', pointerupCallback );
 			document.removeEventListener( 'pointerleave', pointerleaveCallback );
 
-			window.removeEventListener( 'keydown', keydownCallback );
+			domElement.removeEventListener( 'keydown', keydownCallback );
 			window.removeEventListener( 'keyup', keyupCallback );
 			window.removeEventListener( 'blur', blurCallback );
 
