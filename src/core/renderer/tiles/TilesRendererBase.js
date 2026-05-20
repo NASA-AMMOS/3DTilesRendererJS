@@ -391,6 +391,9 @@ export class TilesRendererBase {
 	 * tiles to load first. Prevents visual gaps and flashing during camera movement.
 	 *
 	 * Based in part on {@link https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html Cesium Native tile selection}.
+	 *
+	 * @warn This option has been deprecated and will be removed in upcoming releases. The "optimized
+	 * load strategy" will be the only option with "loadSiblings" and "loadAncestors" as toggles.
 	 * @type {boolean}
 	 * @default true
 	 */

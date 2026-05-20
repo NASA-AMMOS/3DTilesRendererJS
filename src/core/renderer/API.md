@@ -631,6 +631,16 @@ tryRunJobs(): void
 Immediately attempts to dequeue and run pending jobs up to `maxJobs` concurrency.
 
 
+### .flush
+
+```js
+flush( item: any ): Promise<any> | any
+```
+
+Immediately runs the callback for the given item, removing it from the queue.
+Does nothing if the item is not queued.
+
+
 ### .scheduleJobRun
 
 ```js
@@ -760,6 +770,23 @@ readonly loadProgress: number
 
 Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 
+
+### .optimizedLoadStrategy
+
+```js
+optimizedLoadStrategy: boolean = true
+```
+
+Enables an optimized tile loading strategy that loads only the tiles
+needed for the current view, reducing memory usage and improving initial load times.
+Tiles are loaded independently based on screen-space error without requiring all parent
+tiles to load first. Prevents visual gaps and flashing during camera movement.
+
+Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
+
+> [!WARNING]
+> This option has been deprecated and will be removed in upcoming releases. The "optimized
+> load strategy" will be the only option with "loadSiblings" and "loadAncestors" as toggles.
 
 ### .rootTileset
 
@@ -893,25 +920,6 @@ maxDepth: number = Infinity
 
 Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skipped.
 
-
-### .optimizedLoadStrategy
-
-```js
-optimizedLoadStrategy: boolean = false
-```
-
-**Experimental.** Enables an optimized tile loading strategy that loads only the tiles
-needed for the current view, reducing memory usage and improving initial load times.
-Tiles are loaded independently based on screen-space error without requiring all parent
-tiles to load first. Prevents visual gaps and flashing during camera movement.
-
-Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
-
-> [!WARNING]
-> Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
-> dispose of child tiles including the `ImageOverlayPlugin` `enableTileSplitting` setting,
-> `QuantizedMeshPlugin`, & `ImageFormatPlugin` subclasses (XYZ, TMS, etc). Any tile sets
-> that share caches or queues must also use the same setting.
 
 ### .loadSiblings
 
