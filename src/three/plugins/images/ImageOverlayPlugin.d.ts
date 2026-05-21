@@ -15,6 +15,7 @@ export class ImageOverlayPlugin {
 	addOverlay( overlay: ImageOverlay, order?: number ): void;
 	setOverlayOrder( overlay: ImageOverlay, order?: number ): void;
 	deleteOverlay( overlay: ImageOverlay ): void;
+	resetFailedOverlays(): void;
 
 }
 

@@ -47,8 +47,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 		this.tiledImageSource = tiledImageSource;
 		this.tileComposer = new TiledTextureComposer();
 		this.resolution = 256;
-		this.IS_DIRECT_TILE = Symbol( 'IS_DIRECT_TILE' );
-		this.LOCK_TOKENS = Symbol( 'LOCK_TOKENS' );
 
 	}
 
@@ -68,10 +66,9 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 	async fetchItem( [ minX, minY, maxX, maxY, level ], signal ) {
 
-		const { tiledImageSource, tileComposer, IS_DIRECT_TILE, LOCK_TOKENS } = this;
+		const { tiledImageSource, tileComposer } = this;
 		const range = [ minX, minY, maxX, maxY ];
 		const tiling = tiledImageSource.tiling;
-		const tokens = [ ...range, level ];
 
 		// lock tiles for the requested level
 		await this._markImages( range, level, false );
@@ -95,14 +92,11 @@ export class TiledRegionImageSource extends RegionImageSource {
 		if ( singleTileBounds !== null ) {
 
 			// Clone rather than returning the texture directly so each region cache entry owns
-			// a distinct object. Returning the shared texture would cause symbol properties
-			// to be overwritten or deleted by concurrent cache entries during race conditions,
-			// (create, delete, create) leading to errors on disposal.
+			// a distinct object. Returning the shared texture would cause concurrent cache entries
+			// to alias the same object, leading to errors on disposal.
 			// Cloning shares the underlying Source so no extra GPU memory is used.
 			const [ tx, ty, tl ] = singleTileBounds;
 			const clone = tiledImageSource.get( tx, ty, tl ).clone();
-			clone[ IS_DIRECT_TILE ] = true;
-			clone[ LOCK_TOKENS ] = tokens;
 
 			return clone;
 
@@ -118,7 +112,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 		const target = new CanvasTexture( canvas );
 		target.colorSpace = SRGBColorSpace;
 		target.generateMipmaps = false;
-		target[ LOCK_TOKENS ] = tokens;
 
 		// TODO: we could draw the parent tile data here if it's available just to make sure we
 		// have something to display but the texture is not usable until it returns. Though it
@@ -142,14 +135,13 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 	}
 
-	disposeItem( target ) {
+	disposeItem( target, [ minX, minY, maxX, maxY, level ] ) {
 
-		const { IS_DIRECT_TILE, LOCK_TOKENS } = this;
-		const [ minX, minY, maxX, maxY, level ] = target[ LOCK_TOKENS ];
+		if ( target ) {
 
-		target.dispose();
-		delete target[ IS_DIRECT_TILE ];
-		delete target[ LOCK_TOKENS ];
+			target.dispose();
+
+		}
 
 		// Unlock the component tiles using the stored tokens
 		this._markImages( [ minX, minY, maxX, maxY ], level, true );

@@ -206,21 +206,23 @@ export class MVTImageSource extends RegionImageSource {
 		tex.colorSpace = SRGBColorSpace;
 		tex.generateMipmaps = false;
 		tex.needsUpdate = true;
-		tex._regionArgs = [ minX, minY, maxX, maxY, level ];
 		return tex;
 
 	}
 
-	disposeItem( texture ) {
+	disposeItem( texture, [ minX, minY, maxX, maxY, level ] ) {
 
-		const [ minX, minY, maxX, maxY, level ] = texture._regionArgs;
 		forEachTileInBounds( [ minX, minY, maxX, maxY ], level, this._contentCache.tiling, ( tx, ty, tl ) => {
 
 			this._contentCache.release( tx, ty, tl );
 
 		} );
 
-		texture.dispose();
+		if ( texture ) {
+
+			texture.dispose();
+
+		}
 
 	}
 
