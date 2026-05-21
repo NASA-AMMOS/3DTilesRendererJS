@@ -69,16 +69,17 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 
 ¹ Requires a [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) or [Cesium Ion API Key](https://cesium.com/platform/cesium-ion/)
 
-# Communtiy Resources
+# Community Resources
 
 Here is a reference to existing 3DTilesRendererJS integrations:
- - [takram-design-engineering/three-geospatial](https://github.com/takram-design-engineering/three-geospatial) clouds and atmosphere rendering 
- - [maplibre](https://github.com/maplibre/maplibre-gl-js/) example for [3Dtiles](https://maplibre.org/maplibre-gl-js/docs/examples/add-3d-tiles-using-threejs/) via synced threejs renderer - also discussions for an upcoming [maplibre/3DTilesRendererJS plugin](https://github.com/maplibre/maplibre-gl-js/pull/7198#issuecomment-4440200346)
- - [Giro3D](https://gitlab.com/giro3d/giro3d) integration [starting v0.42](https://oslandia.com/en/2025/02/26/les-nouveautes-giro3d-0-42/)
- - [iTowns](https://github.com/iTowns/itowns/) integration [Example of 3D Tiles loader](https://www.itowns-project.org/itowns/examples/#3dtiles_loader)
- - [threepipe](https://github.com/repalash/threepipe) plugin [3d-tiles-renderer](https://threepipe.org/package/plugin-3d-tiles-renderer.html)
- - Also see the threejs [community-plugins](https://github.com/NASA-AMMOS/3DTilesRendererJS/tree/master/src/three/plugins#community-plugins) section.
 
+- [three-geospatial](https://github.com/takram-design-engineering/three-geospatial): Clouds and atmosphere rendering via a three.js geospatial rendering modules, alongside 3DTilesRendererJS.
+- [3D Tiles in MapLibre Guide](https://maplibre.org/maplibre-gl-js/docs/examples/add-3d-tiles-using-threejs/): Official example showing how to render 3D tiles using a synced Three.js layer.
+- [Giro3D](https://gitlab.com/giro3d/giro3d): Framework for visualizing and interacting with heterogenous geospatial data in the browser, 2D, 2.5D and 3D data.
+- [iTowns](https://github.com/iTowns/itowns/): Framework designed for the efficient visualization, navigation, and interaction with 2D and 3D geospatial data on the web.
+- [threepipe 3D Tiles Plugin](https://threepipe.org/package/plugin-3d-tiles-renderer.html): Plugin for the threepipe rendering framework integrating 3DTilesRendererJS.
+- [3DBAG Viewer](https://github.com/3DBAG/3dbag-viewer): Web viewer for the 3DBAG dataset, a nationwide 3D model of all buildings in the Netherlands built with roofer.
+- [Community Plugins](https://github.com/NASA-AMMOS/3DTilesRendererJS/tree/master/src/three/plugins#community-plugins): Additional community-maintained threejs plugins for 3DTilesRendererJS.
 
 # LICENSE
 
