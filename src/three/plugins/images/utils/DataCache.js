@@ -18,9 +18,9 @@ export class DataCache {
 	}
 
 	// overridable
-	fetchItem() {}
-	// called with null if the fetch failed — implementations must handle it
-	disposeItem() {}
+	fetchItem( keys, signal ) {}
+	// called with null if the fetch failed
+	disposeItem( item, keys ) {}
 	getMemoryUsage( item ) {
 
 		return 0;
