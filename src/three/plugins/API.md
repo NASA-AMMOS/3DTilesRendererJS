@@ -1019,7 +1019,9 @@ both planar and ellipsoidal geometry via the `shape` option.
 ```js
 constructor(
 	{
-		// Overlay instance to derive the tiling scheme from.
+		// Overlay instance to derive the tiling scheme from. When
+		// `applyOverlayTexture` is enabled, also used to texture the
+		// generated tile meshes.
 		overlay = null: ImageOverlay,
 
 		// Geometry shape: `'planar'` or `'ellipsoid'`. Only  
@@ -1034,6 +1036,10 @@ constructor(
 
 		// Apply recommended TilesRenderer settings.
 		useRecommendedSettings = true: boolean,
+
+		// Whether to apply the overlay's texture to the generated tile
+		// meshes.
+		applyOverlayTexture = false: boolean,
 	}
 )
 ```

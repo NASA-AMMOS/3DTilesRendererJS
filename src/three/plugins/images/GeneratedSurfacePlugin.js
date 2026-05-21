@@ -22,12 +22,13 @@ const _sphere = /* @__PURE__ */ new Sphere();
  * both planar and ellipsoidal geometry via the `shape` option.
  *
  * @param {Object} [options]
- * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from and used to define surface imagery.
+ * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from. When `applyOverlayTexture` is enabled, also used to texture the generated tile meshes.
  * @param {string} [options.shape='ellipsoid'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
  *   meaningful for cartographic sources.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
+ * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay's texture to the generated tile meshes.
  */
 export class GeneratedSurfacePlugin {
 
@@ -39,6 +40,7 @@ export class GeneratedSurfacePlugin {
 			endCaps = true,
 			center = true,
 			useRecommendedSettings = true,
+			applyOverlayTexture = false,
 		} = options;
 
 		this.priority = - 10;
@@ -49,6 +51,7 @@ export class GeneratedSurfacePlugin {
 		this.endCaps = endCaps;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
+		this.applyOverlayTexture = applyOverlayTexture;
 
 		this._tiling = null;
 
@@ -93,7 +96,6 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		const { overlay } = this;
 		let res;
 		if ( this._useEllipsoid() ) {
 
@@ -105,7 +107,8 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		if ( overlay ) {
+		const { overlay, applyOverlayTexture } = this;
+		if ( overlay && applyOverlayTexture ) {
 
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
