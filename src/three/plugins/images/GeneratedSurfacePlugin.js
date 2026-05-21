@@ -9,6 +9,9 @@ const MIN_LON_VERTS = 30;
 const MIN_LAT_VERTS = 15;
 const DEFAULT_LEVELS = 20;
 
+const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
+const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
+
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
@@ -120,14 +123,14 @@ export class GeneratedSurfacePlugin {
 				await overlay.lockTexture( range, level );
 
 				const texture = overlay.getTexture( range, level );
-				tile.overlayRange = range;
-				tile.overlayLevel = level;
+				tile[ OVERLAY_RANGE ] = range;
+				tile[ OVERLAY_LEVEL ] = level;
 
 				if ( abortSignal.aborted ) {
 
 					overlay.releaseTexture( range, level );
-					tile.overlayRange = null;
-					tile.overlayLevel = null;
+					delete tile[ OVERLAY_RANGE ];
+					delete tile[ OVERLAY_LEVEL ];
 					return null;
 
 				}
@@ -158,14 +161,24 @@ export class GeneratedSurfacePlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayRange, overlayLevel } = tile;
-		if ( this.overlay && overlayRange ) {
+		const range = tile[ OVERLAY_RANGE ];
+		if ( this.overlay && range ) {
 
-			this.overlay.releaseTexture( overlayRange, overlayLevel );
-			tile.overlayRange = null;
-			tile.overlayLevel = null;
+			this.overlay.releaseTexture( range, tile[ OVERLAY_LEVEL ] );
+			delete tile[ OVERLAY_RANGE ];
+			delete tile[ OVERLAY_LEVEL ];
 
 		}
+
+	}
+
+	dispose() {
+
+		this.tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			this.disposeTile( tile );
+
+		} );
 
 	}
 
