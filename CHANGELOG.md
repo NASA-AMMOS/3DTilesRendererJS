@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
 - Converted remaining "three/examples/jsm/" paths to "three/addons/"
+- ImageOverlayPlugin: Geometry tiles will now continue to load and display even if an overlay texture fails to load.
+- ImageOverlayPlugin: If an overlay fails to load then a "load-error" will be thrown on TilesRenderer.
 
 ### Changed
 - Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin" & "ImageOverlayPlugin", instead.
