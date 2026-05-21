@@ -96,6 +96,7 @@ function initTiles() {
 	surfacePlugin = new GeneratedSurfacePlugin( {
 		overlay,
 		shape: params.planar ? 'planar' : 'ellipsoid',
+		applyOverlayTexture: true,
 	} );
 	tiles.registerPlugin( surfacePlugin );
 

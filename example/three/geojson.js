@@ -106,6 +106,7 @@ function init() {
 			} ),
 			center: true,
 			shape: 'ellipsoid',
+			applyOverlayTexture: true,
 		} ),
 	);
 

@@ -182,6 +182,7 @@ function rebuildTiles() {
 		} ),
 		shape: params.planar ? 'planar' : 'ellipsoid',
 		center: true,
+		applyOverlayTexture: true,
 	} ) );
 
 	tiles.setCamera( camera );

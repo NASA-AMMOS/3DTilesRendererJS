@@ -56,6 +56,7 @@ function init() {
 		overlay: new DeepZoomOverlay( {
 			url: 'https://openseadragon.github.io/example-images/duomo/duomo.dzi',
 		} ),
+		applyOverlayTexture: true,
 	} ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.fetchOptions.mode = 'cors';
