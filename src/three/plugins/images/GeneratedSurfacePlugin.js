@@ -9,6 +9,9 @@ const MIN_LON_VERTS = 30;
 const MIN_LAT_VERTS = 15;
 const DEFAULT_LEVELS = 20;
 
+const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
+const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
+
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
@@ -22,12 +25,13 @@ const _sphere = /* @__PURE__ */ new Sphere();
  * both planar and ellipsoidal geometry via the `shape` option.
  *
  * @param {Object} [options]
- * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from and used to define surface imagery.
+ * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from. When `applyOverlayTexture` is enabled, also used to texture the generated tile meshes.
  * @param {string} [options.shape='ellipsoid'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
  *   meaningful for cartographic sources.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
+ * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay's texture to the generated tile meshes.
  */
 export class GeneratedSurfacePlugin {
 
@@ -39,6 +43,7 @@ export class GeneratedSurfacePlugin {
 			endCaps = true,
 			center = true,
 			useRecommendedSettings = true,
+			applyOverlayTexture = false,
 		} = options;
 
 		this.priority = - 10;
@@ -49,6 +54,7 @@ export class GeneratedSurfacePlugin {
 		this.endCaps = endCaps;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
+		this.applyOverlayTexture = applyOverlayTexture;
 
 		this._tiling = null;
 
@@ -93,7 +99,6 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		const { overlay } = this;
 		let res;
 		if ( this._useEllipsoid() ) {
 
@@ -105,7 +110,8 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		if ( overlay ) {
+		const { overlay, applyOverlayTexture } = this;
+		if ( overlay && applyOverlayTexture ) {
 
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
@@ -117,14 +123,14 @@ export class GeneratedSurfacePlugin {
 				await overlay.lockTexture( range, level );
 
 				const texture = overlay.getTexture( range, level );
-				tile.overlayRange = range;
-				tile.overlayLevel = level;
+				tile[ OVERLAY_RANGE ] = range;
+				tile[ OVERLAY_LEVEL ] = level;
 
 				if ( abortSignal.aborted ) {
 
 					overlay.releaseTexture( range, level );
-					tile.overlayRange = null;
-					tile.overlayLevel = null;
+					delete tile[ OVERLAY_RANGE ];
+					delete tile[ OVERLAY_LEVEL ];
 					return null;
 
 				}
@@ -155,14 +161,24 @@ export class GeneratedSurfacePlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayRange, overlayLevel } = tile;
-		if ( this.overlay && overlayRange ) {
+		const range = tile[ OVERLAY_RANGE ];
+		if ( this.overlay && range ) {
 
-			this.overlay.releaseTexture( overlayRange, overlayLevel );
-			tile.overlayRange = null;
-			tile.overlayLevel = null;
+			this.overlay.releaseTexture( range, tile[ OVERLAY_LEVEL ] );
+			delete tile[ OVERLAY_RANGE ];
+			delete tile[ OVERLAY_LEVEL ];
 
 		}
+
+	}
+
+	dispose() {
+
+		this.tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			this.disposeTile( tile );
+
+		} );
 
 	}
 
