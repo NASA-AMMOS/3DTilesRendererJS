@@ -118,7 +118,11 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	disposeItem( texture ) {
 
-		texture.dispose();
+		if ( texture ) {
+
+			texture.dispose();
+
+		}
 
 	}
 

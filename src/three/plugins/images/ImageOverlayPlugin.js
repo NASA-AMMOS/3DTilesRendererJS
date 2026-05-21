@@ -1206,6 +1206,10 @@ export class ImageOverlayPlugin {
 	resetFailedOverlays() {
 
 		const { processedTiles, overlayInfo, overlays } = this;
+		const failed = [];
+
+		// Release all failed entries synchronously so their DataCache disposal
+		// microtasks are queued before we re-lock below.
 		processedTiles.forEach( tile => {
 
 			overlays.forEach( overlay => {
@@ -1219,6 +1223,19 @@ export class ImageOverlayPlugin {
 				}
 
 				info.failed = false;
+				overlay.releaseTexture( info.range );
+				failed.push( { tile, overlay, info } );
+
+			} );
+
+		} );
+
+		// Re-lock and re-fetch after the disposal microtasks have run.
+		Promise.resolve().then( () => {
+
+			failed.forEach( ( { tile, overlay, info } ) => {
+
+				overlay.lockTexture( info.range );
 				this._fetchTileOverlayTexture( tile, overlay, info )
 					.then( () => {
 
