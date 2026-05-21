@@ -1230,8 +1230,9 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// Re-lock and re-fetch after the disposal microtasks have run.
-		Promise.resolve().then( () => {
+		// Defer to the next frame so all disposal microtasks — including nested sub-cache
+		// cleanup — have fully drained before re-locking.
+		requestAnimationFrame( () => {
 
 			failed.forEach( ( { tile, overlay, info } ) => {
 
