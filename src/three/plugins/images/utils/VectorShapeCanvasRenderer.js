@@ -124,6 +124,8 @@ export class VectorShapeCanvasRenderer {
 		const offsetX = tileLeft - localOriginX * scaleX;
 		const offsetY = tileTop - localOriginY * scaleY;
 
+		ctx.save();
+
 		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
 
 		ctx.beginPath();
