@@ -405,8 +405,13 @@ export class TilesRendererBase {
 
 	set optimizedLoadStrategy( v ) {
 
-		console.warn( 'TilesRenderer: "optimizedLoadStrategy" has been deprecated. Please toggle "loadAncestors" to adjust the tile load behavior.' );
-		this._optimizedLoadStrategy = v;
+		if ( v !== this._optimizedLoadStrategy ) {
+
+			console.warn( 'TilesRenderer: "optimizedLoadStrategy" has been deprecated. Please toggle "loadAncestors" to adjust the tile load behavior.' );
+			this._optimizedLoadStrategy = v;
+
+		}
+
 
 	}
 
