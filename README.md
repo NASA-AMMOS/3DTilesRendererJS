@@ -79,6 +79,7 @@ Here is a reference to existing 3DTilesRendererJS integrations:
 - [iTowns](https://github.com/iTowns/itowns/): Framework designed for the efficient visualization, navigation, and interaction with 2D and 3D geospatial data on the web.
 - [threepipe Plugin](https://threepipe.org/package/plugin-3d-tiles-renderer.html): Plugin for the threepipe rendering framework integrating 3DTilesRendererJS.
 - [3DBAG Viewer](https://github.com/3DBAG/3dbag-viewer): Web viewer for the 3DBAG dataset, a nationwide 3D model of all buildings in the Netherlands built with roofer.
+- [Babylon.js Guide](https://doc.babylonjs.com/features/featuresDeepDive/geospatial/loading3dTiles/): Official documention on integrating 3DTilesRendererJS into your Babylon.js project.
 - [Community Plugins](https://github.com/NASA-AMMOS/3DTilesRendererJS/tree/master/src/three/plugins#community-plugins): Additional community-maintained threejs plugins for 3DTilesRendererJS.
 
 # LICENSE
