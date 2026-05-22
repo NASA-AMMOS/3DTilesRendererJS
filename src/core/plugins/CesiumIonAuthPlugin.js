@@ -138,20 +138,20 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	preprocessURL( uri ) {
+	preprocessURL( url ) {
 
-		uri = new URL( uri );
-		if ( /^http/.test( uri.protocol ) && this._tileSetVersion != - 1 ) {
+		url = new URL( url );
+		if ( /^http/.test( url.protocol ) && this._tileSetVersion != - 1 ) {
 
-			uri.searchParams.set( 'v', this._tileSetVersion );
+			url.searchParams.set( 'v', this._tileSetVersion );
 
 		}
 
-		return uri.toString();
+		return url.toString();
 
 	}
 
-	fetchData( uri, options ) {
+	fetchData( url, options ) {
 
 		const tiles = this.tiles;
 		if ( tiles.getPluginByName( 'GOOGLE_CLOUD_AUTH_PLUGIN' ) !== null ) {
@@ -160,7 +160,7 @@ export class CesiumIonAuthPlugin {
 
 		} else {
 
-			return this.auth.fetch( uri, options );
+			return this.auth.fetch( url, options );
 
 		}
 
