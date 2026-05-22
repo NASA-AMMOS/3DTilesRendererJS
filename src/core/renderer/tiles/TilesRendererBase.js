@@ -1319,6 +1319,10 @@ export class TilesRendererBase {
 
 	}
 
+	setEmptyTileVisible( tile, visible ) {
+
+	}
+
 	setTileVisible( tile, visible ) {
 
 		visible ? this.visibleTiles.add( tile ) : this.visibleTiles.delete( tile );
