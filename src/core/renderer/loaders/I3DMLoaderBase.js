@@ -97,17 +97,17 @@ export class I3DMLoaderBase extends LoaderBase {
 
 		} else {
 
-			const externalUri = this.resolveExternalURL( arrayToString( bodyBytes ) );
+			const externalUrl = this.resolveExternalURL( arrayToString( bodyBytes ) );
 
 			//Store the gltf working path
-			gltfWorkingPath = getWorkingPath( externalUri );
+			gltfWorkingPath = getWorkingPath( externalUrl );
 
-			promise = fetch( externalUri, this.fetchOptions )
+			promise = fetch( externalUrl, this.fetchOptions )
 				.then( res => {
 
 					if ( ! res.ok ) {
 
-						throw new Error( `I3DMLoaderBase : Failed to load file "${ externalUri }" with status ${ res.status } : ${ res.statusText }` );
+						throw new Error( `I3DMLoaderBase : Failed to load file "${ externalUrl }" with status ${ res.status } : ${ res.statusText }` );
 
 					}
 

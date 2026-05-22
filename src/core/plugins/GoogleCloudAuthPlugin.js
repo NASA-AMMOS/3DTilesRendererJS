@@ -137,9 +137,9 @@ export class GoogleCloudAuthPlugin {
 
 	}
 
-	async fetchData( uri, options ) {
+	async fetchData( url, options ) {
 
-		return this.auth.fetch( uri, options );
+		return this.auth.fetch( url, options );
 
 	}
 

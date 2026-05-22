@@ -644,10 +644,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	async parseTile( buffer, tile, extension, uri, abortSignal ) {
+	async parseTile( buffer, tile, extension, url, abortSignal ) {
 
 		const engineData = tile.engineData;
-		const workingPath = LoaderUtils.getWorkingPath( uri );
+		const workingPath = LoaderUtils.getWorkingPath( url );
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
@@ -758,7 +758,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			default: {
 
-				promise = this.invokeOnePlugin( plugin => plugin.parseToMesh && plugin.parseToMesh( buffer, tile, extension, uri, abortSignal ) );
+				promise = this.invokeOnePlugin( plugin => plugin.parseToMesh && plugin.parseToMesh( buffer, tile, extension, url, abortSignal ) );
 				break;
 
 			}

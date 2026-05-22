@@ -91,7 +91,7 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
+	async parseToMesh( buffer, tile, extension, url, abortSignal ) {
 
 		if ( extension !== 'generated_surface' ) {
 
@@ -452,9 +452,9 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	fetchData( uri ) {
+	fetchData( url ) {
 
-		if ( /generated_surface/.test( uri ) ) {
+		if ( /generated_surface/.test( url ) ) {
 
 			return new ArrayBuffer();
 
