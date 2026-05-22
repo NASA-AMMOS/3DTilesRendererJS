@@ -377,12 +377,12 @@ function markVisibleTiles( tile, renderer ) {
 	if ( tile.traversal.isLeaf ) {
 
 		// if we're allowed to stop at this tile then mark it as active and allow any previously active tiles to
-		// continue to be displayed
+		// continue to be displayed in case this tiles content hasn't downloaded.
 		if ( ! canUnconditionallyRefine( tile ) ) {
 
 			tile.traversal.active = true;
 
-			if ( areChildrenProcessed( tile ) && ( ! tile.internal.hasContent || ! isDownloadFinished( tile.internal.loadingState ) ) ) {
+			if ( areChildrenProcessed( tile ) && tile.internal.hasContent && ! isDownloadFinished( tile.internal.loadingState ) ) {
 
 				for ( let i = 0, l = children.length; i < l; i ++ ) {
 
