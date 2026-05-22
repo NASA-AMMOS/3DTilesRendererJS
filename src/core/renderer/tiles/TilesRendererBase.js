@@ -1321,6 +1321,9 @@ export class TilesRendererBase {
 
 	setEmptyTileVisible( tile, visible ) {
 
+		// callback specifically for indicating whether an "empty", non geometry tile is visible. Ued specifically
+		// for the DebugTilesPlugin to show intermediate parent tiles.
+
 	}
 
 	setTileVisible( tile, visible ) {

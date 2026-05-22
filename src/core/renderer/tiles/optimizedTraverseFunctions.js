@@ -494,7 +494,7 @@ function toggleTiles( tile, renderer ) {
 
 	}
 
-	if ( isUsed || isProcessed( tile ) && tile.traversal?.usedLastFrame ) {
+	if ( isUsed || isProcessed( tile ) && tile.traversal.usedLastFrame ) {
 
 		let setActive = false;
 		let setVisible = false;
@@ -550,6 +550,7 @@ function toggleTiles( tile, renderer ) {
 
 		} else if ( ! tile.internal.hasRenderableContent ) {
 
+			// Empty tiles are not tracked in activeTiles so setTileActive is not called here.
 			if ( tile.traversal.wasSetVisible !== setVisible ) {
 
 				renderer.invokeOnePlugin( plugin => plugin.setEmptyTileVisible && plugin.setEmptyTileVisible( tile, setVisible ) );
