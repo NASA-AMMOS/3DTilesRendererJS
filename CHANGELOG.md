@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - EnvironmentControls: Zooming into nothing now works when geometry is not below the camera.
 
+### Changed
+- TilesRendererBase: "tile-download-start" event now specifies "url" rather than "uri" as a field.
+
 ## [0.4.25] - 2026.05.21
 ### Added
 - "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
