@@ -439,7 +439,7 @@ function toggleTiles( tile, renderer ) {
 	if ( isUsed ) {
 
 		// any internal tileset and additive tile must be marked as active and loaded
-		if ( tile.internal.hasUnrenderableContent || tile.internal.hasRenderableContent && tile.refine === 'ADD' ) {
+		if ( tile.internal.hasUnrenderableContent || ( tile.internal.hasRenderableContent && tile.refine === 'ADD' ) ) {
 
 			tile.traversal.active = true;
 
@@ -498,7 +498,7 @@ function toggleTiles( tile, renderer ) {
 
 	}
 
-	if ( isUsed || isProcessed( tile ) && tile.traversal?.usedLastFrame ) {
+	if ( isUsed || isProcessed( tile ) && tile.traversal.usedLastFrame ) {
 
 		let setActive = false;
 		let setVisible = false;
