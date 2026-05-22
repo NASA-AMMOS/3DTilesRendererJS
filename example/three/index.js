@@ -56,6 +56,8 @@ const params = {
 
 	errorTarget: 6,
 	maxDepth: 15,
+	loadSiblings: true,
+	loadAncestors: true,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 
@@ -142,7 +144,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
 	camera.position.set( 400, 400, 400 );
 	camera.lookAt( 0, 0, 0 );
 	cameraHelper = new CameraHelper( camera );
@@ -173,14 +175,14 @@ function init() {
 	secondControls.enableFlight = true;
 	secondControls.flightSpeed = 200;
 	secondControls.minDistance = 1;
-	secondControls.maxDistance = 5000;
+	secondControls.maxDistance = 50000;
 	secondControls.useFallbackPlane = false;
 
 	secondCameraHelper = new CameraHelper( secondCamera );
 	scene.add( secondCameraHelper );
 
 	// Third person camera view
-	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 40000 );
 	thirdPersonCamera.position.set( 50, 40, 40 );
 	thirdPersonCamera.lookAt( 0, 0, 0 );
 
@@ -199,7 +201,7 @@ function init() {
 	thirdPersonControls.enableFlight = true;
 	thirdPersonControls.flightSpeed = 200;
 	thirdPersonControls.minDistance = 1;
-	thirdPersonControls.maxDistance = 5000;
+	thirdPersonControls.maxDistance = 50000;
 	thirdPersonControls.useFallbackPlane = false;
 
 	// controls
@@ -207,7 +209,7 @@ function init() {
 	controls.enableFlight = true;
 	controls.flightSpeed = 200;
 	controls.minDistance = 1;
-	controls.maxDistance = 5000;
+	controls.maxDistance = 50000;
 	controls.useFallbackPlane = false;
 
 	// lights
@@ -270,7 +272,9 @@ function init() {
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
-	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
+	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 ).step( 1 );
+	tileOptions.add( params, 'loadAncestors' );
+	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 	tileOptions.open();
 
@@ -460,6 +464,8 @@ function animate() {
 	tiles.errorTarget = params.errorTarget;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
+	tiles.loadAncestors = params.loadAncestors;
+	tiles.loadSiblings = params.loadSiblings;
 
 	// update plugin
 	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
