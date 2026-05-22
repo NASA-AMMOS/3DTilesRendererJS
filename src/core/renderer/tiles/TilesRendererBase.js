@@ -284,7 +284,7 @@ const unifiedPriorityCallback = ( a, b ) => {
  * Fired when a tile content download begins.
  * @event TilesRendererBase#tile-download-start
  * @property {Tile} tile - The tile being downloaded.
- * @property {string} uri - The URI being fetched.
+ * @property {string} url - The URL being fetched.
  */
 
 /**
@@ -1691,7 +1691,17 @@ export class TilesRendererBase {
 			stats.queued --;
 
 			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, { ...this.fetchOptions, signal } ) );
-			this.dispatchEvent( { type: 'tile-download-start', tile, uri: url } );
+			this.dispatchEvent( {
+				type: 'tile-download-start',
+				tile,
+				url,
+				get uri() {
+
+					console.warn( 'tile-download-start event: "uri" has been renamed to "url".' );
+					return this.url;
+
+				},
+			} );
 			return res;
 
 		} )

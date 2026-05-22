@@ -13,7 +13,7 @@ export interface TilesRendererBaseEventMap<TScene = unknown> {
 	'load-root-tileset': { tileset : Tileset, url : string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
-	'tile-download-start': { tile : Tile, uri : string };
+	'tile-download-start': { tile : Tile, url : string, /** @deprecated Use url instead. */ uri : string };
 	'load-model': { scene : TScene, tile : Tile, url : string };
 	'dispose-model': { scene : TScene, tile : Tile };
 	'tile-visibility-change': { scene : TScene, tile : Tile, visible : boolean };
