@@ -437,7 +437,7 @@ export class ImageOverlayPlugin {
 
 	}
 
-	parseToMesh( buffer, tile, extension, uri ) {
+	parseToMesh( buffer, tile, extension, url ) {
 
 		if ( extension === 'image_overlay_tile_split' ) {
 
@@ -780,10 +780,10 @@ export class ImageOverlayPlugin {
 
 	}
 
-	fetchData( uri, options ) {
+	fetchData( url, options ) {
 
 		// if this is our custom url indicating a tile split then return fake response
-		if ( /image_overlay_tile_split/.test( uri ) ) {
+		if ( /image_overlay_tile_split/.test( url ) ) {
 
 			return new ArrayBuffer();
 

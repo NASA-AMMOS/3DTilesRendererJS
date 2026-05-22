@@ -1586,15 +1586,15 @@ export class TilesRendererBase {
 
 		let isExternalTileset = false;
 		let externalTileset = null;
-		let uri = new URL( tile.content.uri, tile.internal.basePath + '/' ).toString();
-		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
+		let url = new URL( tile.content.uri, tile.internal.basePath + '/' ).toString();
+		this.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, tile ) : url );
 
 		const stats = this.stats;
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
 		const loadingTiles = this.loadingTiles;
-		const extension = getUrlExtension( uri );
+		const extension = getUrlExtension( url );
 
 		// track an abort controller and pass-through the below conditions if aborted
 		const controller = new AbortController();
@@ -1690,8 +1690,8 @@ export class TilesRendererBase {
 			stats.downloading ++;
 			stats.queued --;
 
-			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
-			this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
+			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, { ...this.fetchOptions, signal } ) );
+			this.dispatchEvent( { type: 'tile-download-start', tile, uri: url } );
 			return res;
 
 		} )
@@ -1742,7 +1742,7 @@ export class TilesRendererBase {
 
 					if ( extension === 'json' && content.root ) {
 
-						this.preprocessTileset( content, uri, tile );
+						this.preprocessTileset( content, url, tile );
 						tile.children.push( content.root );
 						externalTileset = content;
 						isExternalTileset = true;
@@ -1750,7 +1750,7 @@ export class TilesRendererBase {
 
 					} else {
 
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, uri, signal ) );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, url, signal ) );
 
 					}
 
@@ -1796,7 +1796,7 @@ export class TilesRendererBase {
 					this.dispatchEvent( {
 						type: 'load-tileset',
 						tileset: externalTileset,
-						url: uri,
+						url,
 					} );
 
 				}
@@ -1807,7 +1807,7 @@ export class TilesRendererBase {
 						type: 'load-model',
 						scene: tile.engineData.scene,
 						tile,
-						url: uri,
+						url,
 					} );
 
 				}
@@ -1857,7 +1857,7 @@ export class TilesRendererBase {
 						type: 'load-error',
 						tile,
 						error,
-						url: uri,
+						url,
 					} );
 
 				} else {
