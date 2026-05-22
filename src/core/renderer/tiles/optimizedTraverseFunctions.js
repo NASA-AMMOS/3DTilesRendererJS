@@ -487,7 +487,7 @@ function toggleTiles( tile, renderer ) {
 		}
 
 		// if the tile is loaded and in frustum we can mark it as visible
-		tile.traversal.visible = tile.traversal.active && tile.traversal.inFrustum && ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED || ! tile.internal.hasContent );
+		tile.traversal.visible = tile.traversal.active && tile.traversal.inFrustum && ( ! tile.internal.hasRenderableContent || tile.internal.loadingState === LOADED );
 		renderer.stats.used ++;
 
 		if ( tile.traversal.inFrustum ) {
@@ -526,8 +526,7 @@ function toggleTiles( tile, renderer ) {
 		}
 
 		// If the active or visible state changed then call the functions.
-		// Fire for tiles with loaded renderable content, or for empty tiles (no content at all).
-		if ( ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED ) || ! tile.internal.hasContent ) {
+		if ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED ) {
 
 			if ( setActive ) {
 
@@ -550,6 +549,14 @@ function toggleTiles( tile, renderer ) {
 			if ( tile.traversal.wasSetVisible !== setVisible ) {
 
 				renderer.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, setVisible ) );
+
+			}
+
+		} else if ( ! tile.internal.hasRenderableContent ) {
+
+			if ( tile.traversal.wasSetVisible !== setVisible ) {
+
+				renderer.invokeOnePlugin( plugin => plugin.setEmptyTileVisible && plugin.setEmptyTileVisible( tile, setVisible ) );
 
 			}
 

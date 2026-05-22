@@ -98,15 +98,9 @@ export class TileFlatteningPlugin {
 	_updateTile( tile ) {
 
 		const { positionsUpdated, positionsMap, shapes, tiles } = this;
-		const { scene } = tile.engineData;
 		positionsUpdated.add( tile );
 
-		if ( ! scene ) {
-
-			return;
-
-		}
-
+		const scene = tile.engineData.scene;
 		if ( ! positionsMap.has( tile ) ) {
 
 			// save the geometry positions for resetting after

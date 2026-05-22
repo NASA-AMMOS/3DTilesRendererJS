@@ -14,12 +14,6 @@ function distanceSort( a, b ) {
 function intersectTileScene( tile, raycaster, renderer, intersects ) {
 
 	const { scene } = tile.engineData;
-	if ( ! scene ) {
-
-		return;
-
-	}
-
 	const didRaycast = renderer.invokeOnePlugin( plugin => plugin.raycastTile && plugin.raycastTile( tile, scene, raycaster, intersects ) );
 	if ( ! didRaycast ) {
 

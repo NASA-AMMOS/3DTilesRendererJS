@@ -327,7 +327,7 @@ function markVisibleTiles( tile, renderer ) {
 	// Request the tile contents or mark it as visible if we've found a leaf.
 	if ( tile.traversal.isLeaf ) {
 
-		if ( tile.internal.loadingState === LOADED || ! tile.internal.hasContent ) {
+		if ( tile.internal.loadingState === LOADED ) {
 
 			if ( tile.traversal.inFrustum ) {
 
@@ -338,6 +338,16 @@ function markVisibleTiles( tile, renderer ) {
 
 			tile.traversal.active = true;
 			stats.active ++;
+
+		} else if ( ! tile.internal.hasRenderableContent ) {
+
+			if ( tile.traversal.inFrustum ) {
+
+				tile.traversal.visible = true;
+
+			}
+
+			tile.traversal.active = true;
 
 		} else if ( tile.internal.hasContent ) {
 
@@ -449,8 +459,7 @@ function toggleTiles( tile, renderer ) {
 		}
 
 		// If the active or visible state changed then call the functions.
-		// Fire for tiles with loaded renderable content, or for empty tiles (no content at all).
-		if ( ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED ) || ! tile.internal.hasContent ) {
+		if ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED ) {
 
 			if ( tile.traversal.wasSetActive !== setActive ) {
 
@@ -461,6 +470,14 @@ function toggleTiles( tile, renderer ) {
 			if ( tile.traversal.wasSetVisible !== setVisible ) {
 
 				renderer.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, setVisible ) );
+
+			}
+
+		} else if ( ! tile.internal.hasRenderableContent ) {
+
+			if ( tile.traversal.wasSetVisible !== setVisible ) {
+
+				renderer.invokeOnePlugin( plugin => plugin.setEmptyTileVisible && plugin.setEmptyTileVisible( tile, setVisible ) );
 
 			}
 
