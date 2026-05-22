@@ -1376,6 +1376,11 @@ export class EnvironmentControls extends EventDispatcher {
 					camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
 					camera.updateMatrixWorld();
 
+				} else {
+
+					camera.position.addScaledVector( zoomDirection, scale );
+					camera.updateMatrixWorld();
+
 				}
 
 			}
