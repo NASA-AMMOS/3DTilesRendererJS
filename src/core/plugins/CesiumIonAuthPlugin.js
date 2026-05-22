@@ -1,3 +1,4 @@
+/** @import { TilesRendererBase } from '3d-tiles-renderer/core' */
 import { CesiumIonAuth } from './auth/CesiumIonAuth.js';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 

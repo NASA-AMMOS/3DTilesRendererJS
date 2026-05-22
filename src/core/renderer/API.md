@@ -77,7 +77,138 @@ WGS84_HEIGHT: number
 
 WGS84 ellipsoid height offset (difference between equatorial and polar radii) in meters.
 
+## LoaderBase
+
+Base class for all 3D Tiles content loaders. Handles fetching and parsing tile content.
+
+
+### .fetchOptions
+
+```js
+fetchOptions: Object = {}
+```
+
+Options passed to `fetch` when loading tile content.
+
+
+### .workingPath
+
+```js
+workingPath: string = ''
+```
+
+Base URL used to resolve relative external URLs.
+
+
+### .loadAsync
+
+```js
+loadAsync( url: string ): Promise<any>
+```
+
+Fetches and parses content from the given URL.
+
+
+### .resolveExternalURL
+
+```js
+resolveExternalURL( url: string ): string
+```
+
+Resolves a relative URL against `workingPath`.
+
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): any
+```
+
+Parses a raw buffer into a tile result object. Must be implemented by subclasses.
+
+
+## CMPTLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the CMPT (Composite) tile format. Parses the CMPT binary structure
+and returns the individual inner tile buffers with their format types. Extend this
+class to integrate CMPT loading into a specific rendering engine.
+
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): Object
+```
+
+Parses a CMPT buffer and returns an object containing each inner tile's type and raw buffer.
+
+
+## I3DMLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the I3DM (Instanced 3D Model) tile format. Parses the I3DM binary
+structure and extracts the embedded GLB bytes (or fetches an external GLTF) along
+with batch and feature tables. Extend this class to integrate I3DM loading into a
+specific rendering engine.
+
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array, gltfWorkingPath: string}>
+```
+
+Parses an I3DM buffer and returns the raw tile data.
+
+
+## PNTSLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the PNTS (Point Cloud) tile format. Parses the PNTS binary
+structure and extracts the feature and batch tables containing point positions,
+colors, and normals. Extend this class to integrate PNTS loading into a specific
+rendering engine.
+
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable}>
+```
+
+Parses a PNTS buffer and returns the raw tile data.
+
+
+## B3DMLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the B3DM (Batched 3D Model) tile format. Parses the B3DM binary
+structure and extracts the embedded GLB bytes along with batch and feature tables.
+Extend this class to integrate B3DM loading into a specific rendering engine.
+
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): Object
+```
+
+Parses a B3DM buffer and returns the raw tile data.
+
+
 ## FeatureTable
+
+Parses a 3D Tiles feature table from a binary buffer, providing access to
+per-feature properties stored as JSON scalars or typed binary arrays.
 
 
 ### .buffer
@@ -155,71 +286,79 @@ getBuffer( byteOffset: number, byteLength: number ): ArrayBuffer
 Returns a slice of the binary body at the given offset and length.
 
 
-## LoaderBase
+## BatchTable
+
+_extends [`FeatureTable`](#featuretable)_
+
+Extends FeatureTable to provide indexed access to per-feature batch properties,
+as found in B3DM and PNTS tiles.
 
 
-### .fetchOptions
-
-```js
-fetchOptions: Object
-```
-
-Options passed to `fetch` when loading tile content.
-
-
-### .workingPath
+### .count
 
 ```js
-workingPath: string
+count: number
 ```
 
-Base URL used to resolve relative external URLs.
+Total number of features in the batch.
 
 
-### .loadAsync
+### .extensions
 
 ```js
-loadAsync( url: string ): Promise<any>
+extensions: Object
 ```
 
-Fetches and parses content from the given URL.
+Parsed extension objects keyed by extension name.
 
 
-### .resolveExternalURL
+### .constructor
 
 ```js
-resolveExternalURL( url: string ): string
+constructor( buffer: ArrayBuffer, count: number, start: number, headerLength: number, binLength: number )
 ```
 
-Resolves a relative URL against `workingPath`.
-
-
-### .parse
+### .getDataFromId
 
 ```js
-parse( buffer: ArrayBuffer ): any
+getDataFromId( id: number, target = {}: Object ): Object
 ```
 
-Parses a raw buffer into a tile result object. Must be implemented by subclasses.
+Returns an object with all properties of the batch table and its extensions for the
+given feature id. A `target` object can be specified to store the result. Throws if
+`id` is out of bounds.
+
+
+### .getPropertyArray
+
+```js
+getPropertyArray( key: string ): Array | TypedArray | null
+```
+
+Returns the array of values for the given property key across all features. Returns
+`null` if the key is not in the table.
 
 
 ## LRUCache
+
+Least-recently-used cache for managing tile content lifecycle. Tracks which items
+are in use each frame and evicts unused items when the cache exceeds its size limits.
 
 
 ### .unloadPriorityCallback
 
 ```js
-unloadPriorityCallback: ( a: any, b: any ) => number | null
+unloadPriorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to determine eviction order. Items that sort last are evicted first.
-Defaults to `null` (eviction order is by last-used time).
+When `null`, eviction order is by last-used time.
 
 
 ### .minSize
 
 ```js
-minSize: number
+minSize: number = 6000
 ```
 
 Minimum number of items to keep in the cache after eviction.
@@ -228,7 +367,7 @@ Minimum number of items to keep in the cache after eviction.
 ### .maxSize
 
 ```js
-maxSize: number
+maxSize: number = 8000
 ```
 
 Maximum number of items before eviction is triggered.
@@ -237,7 +376,7 @@ Maximum number of items before eviction is triggered.
 ### .minBytesSize
 
 ```js
-minBytesSize: number
+minBytesSize: number = ~322MB
 ```
 
 Minimum total bytes to retain after eviction.
@@ -248,7 +387,7 @@ Minimum total bytes to retain after eviction.
 ### .maxBytesSize
 
 ```js
-maxBytesSize: number
+maxBytesSize: number = ~430MB
 ```
 
 Maximum total bytes before eviction is triggered.
@@ -259,7 +398,7 @@ Maximum total bytes before eviction is triggered.
 ### .unloadPercent
 
 ```js
-unloadPercent: number
+unloadPercent: number = 0.05
 ```
 
 Fraction of excess items/bytes to unload per eviction pass.
@@ -268,7 +407,7 @@ Fraction of excess items/bytes to unload per eviction pass.
 ### .autoMarkUnused
 
 ```js
-autoMarkUnused: boolean
+autoMarkUnused: boolean = true
 ```
 
 If true, items are automatically marked as unused at the start of each eviction pass.
@@ -396,11 +535,23 @@ Schedules `unloadUnusedContent` to run asynchronously via microtask.
 
 ## PriorityQueue
 
+Priority queue for scheduling async work with a concurrency limit. Items are
+sorted by `priorityCallback` and dispatched up to `maxJobs` at a time.
+
+
+### .running
+
+```js
+readonly running: boolean
+```
+
+returns whether tasks are queued or actively running
+
 
 ### .maxJobs
 
 ```js
-maxJobs: number
+maxJobs: number = 6
 ```
 
 Maximum number of jobs that can run concurrently.
@@ -409,7 +560,7 @@ Maximum number of jobs that can run concurrently.
 ### .autoUpdate
 
 ```js
-autoUpdate: boolean
+autoUpdate: boolean = true
 ```
 
 If true, job runs are automatically scheduled after `add` and after each job completes.
@@ -418,23 +569,11 @@ If true, job runs are automatically scheduled after `add` and after each job com
 ### .priorityCallback
 
 ```js
-priorityCallback: ( a: any, b: any ) => number | null
+priorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to sort queued items. Higher-priority items should sort last
-(i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
-
-
-### .schedulingCallback
-
-```js
-schedulingCallback: ( func: function ) => void
-```
-
-Callback used to schedule when to run jobs next, so more work doesn't happen in a
-single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
-overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
-running in WebXR.
+(i.e. return positive when `itemA` should run before `itemB`).
 
 
 ### .sort
@@ -492,6 +631,16 @@ tryRunJobs(): void
 Immediately attempts to dequeue and run pending jobs up to `maxJobs` concurrency.
 
 
+### .flush
+
+```js
+flush( item: any ): Promise<any> | any
+```
+
+Immediately runs the callback for the given item, removing it from the queue.
+Does nothing if the item is not queued.
+
+
 ### .scheduleJobRun
 
 ```js
@@ -501,7 +650,61 @@ scheduleJobRun(): void
 Schedules a deferred call to `tryRunJobs` via `schedulingCallback`.
 
 
+## PriorityQueueItemRemovedError
+
+_extends `Error`_
+
+Error thrown when a queued item's promise is rejected because the item was removed
+before its callback could run.
+
+
+## Scheduler
+
+Class used within TilesRenderer for scheduling requestAnimationFrame events and
+toggling between XRSession rAF and window rAF toggles.
+
+
+### static .setXRSession
+
+```js
+static setXRSession( session: XRSession ): void
+```
+
+Sets the active "XRSession" value to use to scheduling rAF callbacks.
+
+
+### static .requestAnimationFrame
+
+```js
+static requestAnimationFrame( cb: function ): number
+```
+
+Request animation frame (defer to XR session if set)
+
+
+### static .cancelAnimationFrame
+
+```js
+static cancelAnimationFrame( handle: number ): void
+```
+
+Cancel animation frame via handle (defer to XR session if set)
+
+
+### static .flushPending
+
+```js
+static flushPending(): void
+```
+
+Flush and complete pending AFs (defer to XR session if set)
+
+
 ## TilesRendererBase
+
+Base class for 3D Tiles renderers. Manages tile loading, caching, traversal,
+and a plugin system for extending rendering behavior. Engine-specific renderers
+extend this class to add camera projection, scene management, and tile display.
 
 
 ### events
@@ -553,7 +756,7 @@ Schedules a deferred call to `tryRunJobs` via `schedulingCallback`.
 ### .root
 
 ```js
-root: Tile | null
+readonly root: Tile | null
 ```
 
 Root tile of the loaded root tileset, or null if not yet loaded.
@@ -562,11 +765,28 @@ Root tile of the loaded root tileset, or null if not yet loaded.
 ### .loadProgress
 
 ```js
-loadProgress: number
+readonly loadProgress: number
 ```
 
 Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 
+
+### .optimizedLoadStrategy
+
+```js
+optimizedLoadStrategy: boolean = true
+```
+
+Enables an optimized tile loading strategy that loads only the tiles
+needed for the current view, reducing memory usage and improving initial load times.
+Tiles are loaded independently based on screen-space error without requiring all parent
+tiles to load first. Prevents visual gaps and flashing during camera movement.
+
+Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
+
+> [!WARNING]
+> This option has been deprecated and will be removed in upcoming releases. The "optimized
+> load strategy" will be the only option with "loadSiblings" and "loadAncestors" as toggles.
 
 ### .rootTileset
 
@@ -580,7 +800,7 @@ The loaded root tileset object, or null if not yet loaded.
 ### .fetchOptions
 
 ```js
-fetchOptions: RequestInit
+fetchOptions: RequestInit = {}
 ```
 
 Options passed to `fetch` when loading tile and tileset resources.
@@ -670,7 +890,7 @@ Loading and rendering statistics updated each frame. Fields:
 ### .errorTarget
 
 ```js
-errorTarget: number
+errorTarget: number = 16
 ```
 
 Target screen-space error in pixels to aim for when updating the geometry. Tiles will
@@ -682,7 +902,7 @@ of the 3D Tiles specification for more information.
 ### .displayActiveTiles
 
 ```js
-displayActiveTiles: boolean
+displayActiveTiles: boolean = false
 ```
 
 "Active tiles" are those that are loaded and available but not necessarily visible.
@@ -695,43 +915,36 @@ camera view not accounted for by the tiles renderer.
 ### .maxDepth
 
 ```js
-maxDepth: number
+maxDepth: number = Infinity
 ```
 
 Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skipped.
 
 
-### .optimizedLoadStrategy
-
-```js
-optimizedLoadStrategy: boolean
-```
-
-**Experimental.** Enables an optimized tile loading strategy that loads only the tiles
-needed for the current view, reducing memory usage and improving initial load times.
-Tiles are loaded independently based on screen-space error without requiring all parent
-tiles to load first. Prevents visual gaps and flashing during camera movement.
-
-Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
-
-Default is `false`, which uses the previous approach of loading all parent and sibling
-tiles for guaranteed smooth transitions.
-
-> [!WARN]
-> Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
-> dispose of child tiles including the `ImageOverlayPlugin` `enableTileSplitting` setting,
-> `QuantizedMeshPlugin`, & `ImageFormatPlugin` subclasses (XYZ, TMS, etc). Any tile sets
-> that share caches or queues must also use the same setting.
-
 ### .loadSiblings
 
 ```js
-loadSiblings: boolean
+loadSiblings: boolean = true
 ```
 
 **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
 camera movement. When `false`, only visible tiles are loaded, minimizing memory but
-potentially causing brief gaps during rapid movement.
+potentially causing brief gaps during rapid movement. Implicitly treated as `true` when
+`loadAncestors` is enabled.
+
+Only applies when `optimizedLoadStrategy` is enabled.
+
+
+### .loadAncestors
+
+```js
+loadAncestors: boolean = false
+```
+
+**Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
+fallback while children are loading — similar to the behavior of the standard load
+strategy. Increases memory usage but provides smoother transitions on first load.
+Implicitly enables sibling loading to prevent flickering during camera movement.
 
 Only applies when `optimizedLoadStrategy` is enabled.
 
@@ -739,7 +952,7 @@ Only applies when `optimizedLoadStrategy` is enabled.
 ### .maxTilesProcessed
 
 ```js
-maxTilesProcessed: number
+maxTilesProcessed: number = 250
 ```
 
 The number of tiles to process immediately when traversing the tile set to determine
@@ -865,121 +1078,6 @@ removeEventListener( name: string, callback: ( event: Object ) => void ): void
 ```
 
 Removes a previously registered event listener.
-
-
-## B3DMLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse( buffer: ArrayBuffer ): Object
-```
-
-Parses a B3DM buffer and returns the raw tile data.
-
-
-## BatchTable
-
-_extends [`FeatureTable`](#featuretable)_
-
-
-### .count
-
-```js
-count: number
-```
-
-Total number of features in the batch.
-
-
-### .extensions
-
-```js
-extensions: Object
-```
-
-Parsed extension objects keyed by extension name.
-
-
-### .constructor
-
-```js
-constructor( buffer: ArrayBuffer, count: number, start: number, headerLength: number, binLength: number )
-```
-
-### .getDataFromId
-
-```js
-getDataFromId( id: number, target = {}: Object ): Object
-```
-
-Returns an object with all properties of the batch table and its extensions for the
-given feature id. A `target` object can be specified to store the result. Throws if
-`id` is out of bounds.
-
-
-### .getPropertyArray
-
-```js
-getPropertyArray( key: string ): Array | TypedArray | null
-```
-
-Returns the array of values for the given property key across all features. Returns
-`null` if the key is not in the table.
-
-
-## CMPTLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse( buffer: ArrayBuffer ): Object
-```
-
-Parses a CMPT buffer and returns an object containing each inner tile's type and raw buffer.
-
-
-## I3DMLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array, gltfWorkingPath: string}>
-```
-
-Parses an I3DM buffer and returns the raw tile data.
-
-
-## PNTSLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable}>
-```
-
-Parses a PNTS buffer and returns the raw tile data.
-
-
-## PriorityQueueItemRemovedError
-
-_extends `Error`_
 
 
 ## Tile
@@ -1152,6 +1250,14 @@ virtualChildCount: number
 
 Number of virtual children appended to this tile by plugins.
 
+### .renderer
+
+```js
+renderer: TilesRendererBase
+```
+
+The renderer instance that owns this tile.
+
 ## Tileset
 
 A loaded 3D Tiles tileset JSON object.
@@ -1281,3 +1387,14 @@ visible: boolean
 ```
 
 Whether this tile is currently visible (loaded, in frustum, meets SSE).
+
+## Functions
+
+### getUrlExtension
+
+```js
+getUrlExtension( url: string ): string
+```
+
+Returns the file extension of the path component of a URL
+

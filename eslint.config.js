@@ -67,6 +67,7 @@ export default [
 			'@typescript-eslint/no-unused-vars': [ 'error', { args: 'none' } ],
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-empty-object-type': 'off',
+			'@typescript-eslint/no-unsafe-function-type': 'off',
 		},
 	},
 
@@ -125,8 +126,16 @@ export default [
 			},
 		},
 		rules: {
-			'jsdoc/check-tag-names': [ 'error', { definedTags: [ 'component', 'warn', 'note' ] } ],
+			'jsdoc/check-tag-names': [ 'error', { definedTags: [ 'component', 'warn', 'note', 'section' ] } ],
 			'jsdoc/check-types': 'error',
+			'jsdoc/no-undefined-types': [ 'error', {
+				definedTypes: [
+					'ArrayBufferView',
+					'RequestInit',
+					'TypedArray',
+					'TypedArrayConstructor',
+				],
+			} ],
 			'jsdoc/require-param-type': 'error',
 			'jsdoc/require-returns-type': 'error',
 			'jsdoc/require-returns': 'off',

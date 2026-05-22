@@ -4,8 +4,8 @@ import {
 	PerspectiveCamera,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, WMTSCapabilitiesLoader, WMTSTilesPlugin } from '3d-tiles-renderer/plugins';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { TilesFadePlugin, UpdateOnChangePlugin, WMTSCapabilitiesLoader, WMTSTilesOverlay, GeneratedSurfacePlugin } from '3d-tiles-renderer/plugins';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
 const compatibleCRSList = [ 'EPSG:4326', 'EPSG:3857' ];
@@ -160,15 +160,29 @@ function rebuildTiles() {
 
 	}
 
+	const layer = capabilities.layers.find( l => l.identifier === params.layer );
+	const tileMatrixSet = layer.tileMatrixSets.find( tms => tms.identifier === params.tileMatrixSet );
+	const url = layer.resourceUrls[ 0 ].template;
+	const contentBoundingBox = layer.boundingBox.bounds;
+
 	// tiles
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new WMTSTilesPlugin( {
+	tiles.registerPlugin( new GeneratedSurfacePlugin( {
+		overlay: new WMTSTilesOverlay( {
+			url,
+			tileMatrices: tileMatrixSet.tileMatrices,
+			contentBoundingBox,
+			projection: 'EPSG:4326',
+			dimensions: params.dimensions,
+			style: params.style,
+			layer: params.layer,
+			tileMatrixSet: params.tileMatrixSet,
+		} ),
 		shape: params.planar ? 'planar' : 'ellipsoid',
 		center: true,
-		capabilities,
-		...params,
+		applyOverlayTexture: true,
 	} ) );
 
 	tiles.setCamera( camera );

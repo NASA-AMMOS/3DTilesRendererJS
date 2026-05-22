@@ -1,10 +1,12 @@
 <!-- This file is generated automatically. Do not edit it directly. -->
 # 3d-tiles-renderer/babylonjs
 
-
 ## B3DMLoader
 
 _extends [`B3DMLoaderBase`](../../core/renderer/API.md#b3dmloaderbase)_
+
+Babylon.js loader for B3DM (Batched 3D Model) tile content. Parses the B3DM binary
+structure and delegates embedded GLB loading to GLTFLoader.
 
 
 ### .scene
@@ -34,7 +36,7 @@ constructor( scene: Scene )
 ### .parse
 
 ```js
-parse( buffer: ArrayBuffer, uri: string ): Promise<Object>
+async parse( buffer: ArrayBuffer, uri: string ): Promise<Object>
 ```
 
 
@@ -42,6 +44,9 @@ parse( buffer: ArrayBuffer, uri: string ): Promise<Object>
 
 _extends [`LoaderBase`](../../core/renderer/API.md#loaderbase)_
 
+Babylon.js loader for GLTF and GLB tile content. Loads a buffer into a Babylon.js scene
+and applies an optional adjustment transform for coordinate-system correction.
+
 
 ### .scene
 
@@ -70,7 +75,7 @@ constructor( scene: Scene )
 ### .parse
 
 ```js
-parse(
+async parse(
 	buffer: ArrayBuffer,
 	uri: string,
 	extension: string
@@ -82,7 +87,11 @@ parse(
 
 _extends [`TilesRendererBase`](../../core/renderer/API.md#tilesrendererbase)_
 
-> [!WARN]
+Babylon.js implementation of the 3D Tiles renderer. Manages tile loading, caching, traversal,
+and scene management using the Babylon.js scene graph and camera APIs. Dispatches all events
+defined by TilesRendererBase via Babylon.js Observables.
+
+> [!WARNING]
 > Left-handed coordinate systems are not currently supported.
 
 ### .scene

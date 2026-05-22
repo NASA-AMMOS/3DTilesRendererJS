@@ -1,5 +1,5 @@
 import { Color, Matrix4, WebGLRenderer } from 'three';
-import { WMTSCapabilitiesResult, WMTSLayer, WMTSTileMatrixSet } from '../loaders/WMTSCapabilitiesLoader.js';
+import { WMTSTileMatrix } from '../loaders/WMTSCapabilitiesLoader.js';
 
 export class ImageOverlayPlugin {
 
@@ -15,6 +15,7 @@ export class ImageOverlayPlugin {
 	addOverlay( overlay: ImageOverlay, order?: number ): void;
 	setOverlayOrder( overlay: ImageOverlay, order?: number ): void;
 	deleteOverlay( overlay: ImageOverlay ): void;
+	resetFailedOverlays(): void;
 
 }
 
@@ -23,23 +24,37 @@ export class ImageOverlay {
 	color: number | Color;
 	opacity: number;
 	frame: Matrix4 | null;
-	fetchOptions: any;
 	preprocessURL: ( url: string ) => string | null;
+	alphaMask: boolean;
+	alphaInvert: boolean;
+	isReady: boolean;
+	readonly isPlanarProjection: boolean;
 
 }
 
-export class XYZTilesOverlay extends ImageOverlay {
+export class TiledImageOverlay extends ImageOverlay {
+
+	readonly tiling: any;
+	readonly projection: any;
+	readonly aspectRatio: number;
+	fetchOptions: any;
+
+}
+
+export class XYZTilesOverlay extends TiledImageOverlay {
 
 	constructor( options: {
-		levels: number,
-		dimension: number,
-		projection: string;
 		url: string,
+		levels?: number,
+		tileDimension?: number,
+		projection?: string;
 
-		color: number | Color,
-		opacity: number,
+		color?: number | Color,
+		opacity?: number,
 		frame?: Matrix4 | null,
 		preprocessURL?: ( url: string ) => string | null;
+		alphaMask?: boolean,
+		alphaInvert?: boolean,
 	} );
 
 }
@@ -47,25 +62,25 @@ export class XYZTilesOverlay extends ImageOverlay {
 export class GeoJSONOverlay extends ImageOverlay {
 
 	constructor( options: {
-		// rasterize GeoJSON per tile (forwarded to GeoJSONImageSource)
 		geojson?: any, // FeatureCollection or null (if url provided)
 		url?: string, // optional URL alternative to geojson object
-		tileDimension?: number, // tile size in px (runtime name: tileDimension)
-		levels?: number, // max rasterization zoom
+		resolution?: number,
 		pointRadius?: number,
 		strokeStyle?: string,
 		strokeWidth?: number,
 		fillStyle?: string,
+
 		color?: number | Color,
 		opacity?: number,
-
 		frame?: Matrix4 | null,
-
+		preprocessURL?: ( url: string ) => string | null;
+		alphaMask?: boolean,
+		alphaInvert?: boolean,
 	} );
 
 }
 
-export class WMSTilesOverlay extends ImageOverlay {
+export class WMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options: {
 		url: string,
@@ -78,61 +93,75 @@ export class WMSTilesOverlay extends ImageOverlay {
 		levels?: number,
 		transparent?: boolean,
 		contentBoundingBox?: [ number, number, number, number ],
-		color: number | Color,
-		opacity: number,
+
+		color?: number | Color,
+		opacity?: number,
 		frame?: Matrix4 | null,
 		preprocessURL?: ( url: string ) => string | null;
+		alphaMask?: boolean,
+		alphaInvert?: boolean,
 	} );
 
 }
 
-export class WMTSTilesOverlay extends ImageOverlay {
+export class WMTSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options: {
-		dimensions?: { [ key: string ]: any } | null,
 		url?: string | null,
-		capabilities?: WMTSCapabilitiesResult | null,
-		layer?: WMTSLayer | string | null,
-		tileMatrixSet?: WMTSTileMatrixSet | string | null,
+		layer?: string | null,
+		tileMatrixSet?: string | null,
 		style?: string,
+		tileMatrixLabels?: Array<string>,
+		tileMatrices: Array<WMTSTileMatrix>,
+		dimensions?: { [ key: string ]: any } | null,
+		projection?: string,
+		levels?: number,
+		tileDimension?: number,
+		contentBoundingBox?: Array<number>,
 
-		color: number | Color,
-		opacity: number,
+		color?: number | Color,
+		opacity?: number,
 		frame?: Matrix4 | null,
 		preprocessURL?: ( url: string ) => string | null;
+		alphaMask?: boolean,
+		alphaInvert?: boolean,
 	} );
 
 }
 
-export class TMSTilesOverlay extends ImageOverlay {
+export class TMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options: {
 		url: string,
 
-		color: number | Color,
-		opacity: number,
+		color?: number | Color,
+		opacity?: number,
 		frame?: Matrix4 | null,
 		preprocessURL?: ( url: string ) => string | null;
+		alphaMask?: boolean,
+		alphaInvert?: boolean,
 	} );
 
 }
 
-export class CesiumIonOverlay extends ImageOverlay {
+export class CesiumIonOverlay extends TiledImageOverlay {
 
 	constructor( options: {
 		assetId: number | string,
 		apiToken: string,
 		autoRefreshToken?: boolean,
 
-		color: number | Color,
-		opacity: number,
+		color?: number | Color,
+		opacity?: number,
 		frame?: Matrix4 | null,
 		preprocessURL?: ( url: string ) => string | null;
+		alphaMask?: boolean,
+		alphaInvert?: boolean,
 	} );
 
 }
 
-export class GoogleMapsOverlay extends ImageOverlay {
+export class GoogleMapsOverlay extends TiledImageOverlay {
 
 	constructor( options: {
 		apiToken: string,
@@ -140,10 +169,12 @@ export class GoogleMapsOverlay extends ImageOverlay {
 		logoUrl?: string,
 		sessionOptions: { mapType: string, language: string, region: string, [key: string]: any },
 
-		color: number | Color,
-		opacity: number,
+		color?: number | Color,
+		opacity?: number,
 		frame?: Matrix4 | null,
 		preprocessURL?: ( url: string ) => string | null;
+		alphaMask?: boolean,
+		alphaInvert?: boolean,
 	} );
 
 }

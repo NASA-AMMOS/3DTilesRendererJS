@@ -11,7 +11,7 @@ import {
 	MeshBasicMaterial,
 	SRGBColorSpace,
 } from 'three';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/jpl/JPLLandformSceneLoader.js';
 import { TextureOverlayMaterialMixin } from './src/plugins/overlays/TextureOverlayMaterial.js';
 import { TextureOverlayPlugin } from './src/plugins/overlays/TextureOverlayPlugin.js';

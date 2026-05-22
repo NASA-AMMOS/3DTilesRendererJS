@@ -36,6 +36,7 @@ export class TilesRendererBase<TEventMap extends TilesRendererBaseEventMap = Til
 	displayActiveTiles : boolean;
 	maxDepth : number;
 	loadSiblings : boolean;
+	loadAncestors : boolean;
 	optimizedLoadStrategy : boolean;
 	maxTilesProcessed : number;
 

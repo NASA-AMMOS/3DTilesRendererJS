@@ -1,3 +1,5 @@
+/** @import { ReactNode } from 'react' */
+/** @import { Object3D } from 'three' */
 import { cloneElement, createContext, forwardRef, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { OBJECT_FRAME } from '3d-tiles-renderer/three';
 import { Matrix4, Ray, Vector3 } from 'three';

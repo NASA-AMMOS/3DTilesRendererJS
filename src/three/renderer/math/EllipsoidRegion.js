@@ -1,3 +1,4 @@
+/** @import { Sphere } from 'three' */
 import { Matrix4, Vector3, Box3 } from 'three';
 import { Ellipsoid } from './Ellipsoid.js';
 

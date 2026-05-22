@@ -18,8 +18,9 @@ export class DataCache {
 	}
 
 	// overridable
-	fetchItem() {}
-	disposeItem() {}
+	fetchItem( keys, signal ) {}
+	// called with null if the fetch failed
+	disposeItem( item, keys ) {}
 	getMemoryUsage( item ) {
 
 		return 0;
@@ -207,17 +208,27 @@ export class DataCache {
 					if ( result instanceof Promise ) {
 
 						// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
-						result.then( item => {
+						result
+							.then( item => {
 
-							this.disposeItem( item );
-							this.count --;
-							this.cachedBytes -= info.bytes;
+								this.disposeItem( item, info.args );
 
-						} ).catch( () => {} );
+							} )
+							.catch( () => {
+
+								this.disposeItem( null, info.args );
+
+							} )
+							.finally( () => {
+
+								this.count --;
+								this.cachedBytes -= info.bytes;
+
+							} );
 
 					} else {
 
-						this.disposeItem( result );
+						this.disposeItem( result, info.args );
 						this.count --;
 						this.cachedBytes -= info.bytes;
 

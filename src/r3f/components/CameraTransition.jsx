@@ -1,3 +1,4 @@
+/** @import { PerspectiveCamera, OrthographicCamera } from 'three' */
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { CameraTransitionManager } from '3d-tiles-renderer/three';

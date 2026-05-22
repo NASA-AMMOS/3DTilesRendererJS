@@ -1,3 +1,4 @@
+/** @import { WGS84_ELLIPSOID } from './GeoConstants.js' */
 import { Vector3, Spherical, MathUtils, Ray, Matrix4, Sphere, Euler } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
@@ -24,23 +25,22 @@ const CENTER_EPS = 0.1;
 /**
  * Frame constant for the East-North-Up (ENU) coordinate frame, with X pointing east,
  * Y pointing north, and Z pointing up (away from the ellipsoid surface).
- * @type {Frames}
  */
 export const ENU_FRAME = 0;
 
 /**
  * Frame constant for a camera-convention frame relative to the ENU frame, oriented with
  * "+Y" up and "-Z" forward (matching three.js camera conventions).
- * @type {Frames}
  */
 export const CAMERA_FRAME = 1;
 
 /**
  * Frame constant for an object-convention frame relative to the ENU frame, oriented with
  * "+Y" up and "+Z" forward (matching three.js object conventions).
- * @type {Frames}
  */
 export const OBJECT_FRAME = 2;
+
+/** @typedef { ENU_FRAME | CAMERA_FRAME | OBJECT_FRAME } Frames */
 
 /**
  * Represents a triaxial ellipsoid defined by three semi-axis radii. Used to model planet-scale
@@ -353,7 +353,7 @@ export class Ellipsoid {
 		// From Cesium function Ellipsoid.cartesianToCartographic
 		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/core/renderer/Ellipsoid.js#L463
 		this.getPositionToSurfacePoint( pos, _vec );
-		this.getPositionToNormal( pos, _norm );
+		this.getPositionToNormal( _vec, _norm );
 
 		const heightDelta = _vec2.subVectors( pos, _vec );
 

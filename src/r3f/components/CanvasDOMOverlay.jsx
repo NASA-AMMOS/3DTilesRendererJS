@@ -1,3 +1,4 @@
+/** @import { ReactNode } from 'react' */
 import { useMemo, useEffect, StrictMode, forwardRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useThree } from '@react-three/fiber';

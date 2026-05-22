@@ -1,3 +1,4 @@
+/** @import { LoadingManager } from 'three' */
 import { Group, DefaultLoadingManager, Matrix4 } from 'three';
 import { CMPTLoaderBase } from '3d-tiles-renderer/core';
 import { B3DMLoader } from './B3DMLoader.js';

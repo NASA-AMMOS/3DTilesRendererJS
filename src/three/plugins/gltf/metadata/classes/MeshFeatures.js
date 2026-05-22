@@ -1,3 +1,4 @@
+/** @import { BufferGeometry, Texture, Vector3 } from 'three' */
 import { Vector2 } from 'three';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../utilities/TexCoordUtilities.js';

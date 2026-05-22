@@ -1,3 +1,4 @@
+/** @import { Object3D } from 'three' */
 import { Box3, DoubleSide, MathUtils, Matrix4, MeshBasicMaterial, Raycaster, Sphere, Vector3 } from 'three';
 
 // Limitations:

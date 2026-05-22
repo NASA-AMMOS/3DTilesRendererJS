@@ -1,5 +1,5 @@
 import { Vector3, BufferGeometry, Texture } from 'three';
-import { GLTFLoaderPlugin } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoaderPlugin } from 'three/addons/loaders/GLTFLoader.js';
 
 export class GLTFMeshFeaturesExtension implements GLTFLoaderPlugin {
 

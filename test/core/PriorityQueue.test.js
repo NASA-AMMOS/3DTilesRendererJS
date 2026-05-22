@@ -276,4 +276,62 @@ describe( 'PriorityQueue', () => {
 
 	} );
 
+	it( 'should immediately run the callback for the flushed item.', () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+
+		const order = [];
+		const A = {};
+		const B = {};
+		const C = {};
+		queue.add( A, () => order.push( 'A' ) );
+		queue.add( B, () => order.push( 'B' ) );
+		queue.add( C, () => order.push( 'C' ) );
+
+		queue.flush( B );
+
+		expect( order ).toEqual( [ 'B' ] );
+		expect( queue.items ).toHaveLength( 2 );
+		expect( queue.callbacks.size ).toEqual( 2 );
+		expect( queue.items ).toHaveLength( queue.callbacks.size );
+
+	} );
+
+	it( 'should resolve the promise returned by add when flushed.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+
+		const key = {};
+		let resolved = false;
+		const promise = queue.add( key, () => 42 ).then( val => {
+
+			expect( val ).toEqual( 42 );
+			resolved = true;
+
+		} );
+
+		queue.flush( key );
+
+		await promise;
+
+		expect( resolved ).toEqual( true );
+
+	} );
+
+	it( 'should do nothing when flushing an item not in the queue.', () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+
+		const A = {};
+		const B = {};
+		queue.add( A, () => {} );
+
+		expect( () => queue.flush( B ) ).not.toThrow();
+		expect( queue.items ).toHaveLength( 1 );
+
+	} );
+
 } );

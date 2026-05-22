@@ -1,3 +1,5 @@
+/** @import { Camera, WebGLRenderer, Box3, Sphere, Raycaster } from 'three' */
+/** @import { Ellipsoid } from '../math/Ellipsoid.js' */
 import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { PNTSLoader } from '../loaders/PNTSLoader.js';
@@ -18,7 +20,7 @@ import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
 import { estimateBytesUsed } from '../utils/MemoryUtils.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const _mat = /* @__PURE__ */ new Matrix4();
 const _euler = /* @__PURE__ */ new Euler();
@@ -55,6 +57,7 @@ export class TilesRenderer extends TilesRendererBase {
 	 * tiles renderer performs its own frustum culling. If `displayActiveTiles` is `true` or
 	 * multiple cameras are being used, consider setting this to `false`.
 	 * @type {boolean}
+	 * @default true
 	 */
 	get autoDisableRendererCulling() {
 
@@ -103,10 +106,10 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group = new TilesGroup( this );
 
 		/**
-		 * The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
-		 * overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
-		 * `TilesRenderer.group`.
+		 * The ellipsoid definition used for the tileset. May be overridden by the
+		 * `3DTILES_ellipsoid` extension. Specified in the local frame of `TilesRenderer.group`.
 		 * @type {Ellipsoid}
+		 * @default WGS84_ELLIPSOID
 		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
@@ -127,6 +130,7 @@ export class TilesRenderer extends TilesRendererBase {
 		/**
 		 * The `LoadingManager` used when loading tile geometry.
 		 * @type {LoadingManager}
+		 * @default new LoadingManager()
 		 */
 		this.manager = new LoadingManager();
 
@@ -557,7 +561,7 @@ export class TilesRenderer extends TilesRendererBase {
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
 
-			frustum.setFromProjectionMatrix( tempMat );
+			frustum.setFromProjectionMatrix( tempMat, camera.coordinateSystem, camera.reversedDepth );
 
 			// get transform position in group root frame
 			position.set( 0, 0, 0 );

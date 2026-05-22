@@ -12,9 +12,9 @@ import {
 	PCFSoftShadowMap,
 	Sphere,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import Stats from 'three/addons/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, orthoCamera;
 let offsetParent, box, sphere, dirLight;
@@ -116,7 +116,7 @@ function init() {
 	scene.add( offsetParent );
 
 	// tiles
-	const url = window.location.hash.replace( /^#/, '' ) || '../../data/tileset.json';
+	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
 	tiles = new TilesRenderer( url );
 	tiles.addEventListener( 'load-model', onLoadModel );
 	tiles.addEventListener( 'dispose-model', onDisposeModel );

@@ -35,6 +35,11 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 	fallbackPlane: Plane;
 	up: Vector3;
 
+	// flight
+	enableFlight: boolean;
+	flightSpeed: number;
+	flightSpeedMultiplier: number;
+
 	constructor(
 		scene?: Object3D,
 		camera?: Camera,

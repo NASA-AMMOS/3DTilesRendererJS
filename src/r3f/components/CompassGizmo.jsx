@@ -1,3 +1,4 @@
+/** @import { ReactNode } from 'react' */
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { BackSide, Matrix4, OrthographicCamera, Ray, Scene, Vector3 } from 'three';

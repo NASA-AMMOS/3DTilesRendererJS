@@ -1,7 +1,6 @@
 <!-- This file is generated automatically. Do not edit it directly. -->
 # 3d-tiles-renderer/r3f
 
-
 ## CanvasDOMOverlay
 
 Creates a DOM overlay positioned absolutely over the canvas. Children are rendered into a

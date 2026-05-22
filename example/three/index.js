@@ -1,5 +1,6 @@
 import {
 	TilesRenderer,
+	EnvironmentControls,
 } from '3d-tiles-renderer';
 import {
 	DebugTilesPlugin,
@@ -24,12 +25,11 @@ import {
 	OrthographicCamera,
 	Sphere,
 } from 'three';
-import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import Stats from 'three/addons/libs/stats.module.js';
 
 const NONE = 0;
 const ALL_HITS = 1;
@@ -79,7 +79,7 @@ animate();
 
 function reinstantiateTiles() {
 
-	const url = hashUrl || '../../data/tileset.json';
+	const url = hashUrl || '../data/tileset.json';
 
 	if ( tiles ) {
 
@@ -144,6 +144,7 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
 	camera.position.set( 400, 400, 400 );
+	camera.lookAt( 0, 0, 0 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
 
@@ -168,10 +169,12 @@ function init() {
 	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
 	secondRenderer.domElement.tabIndex = 1;
 
-	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
-	secondControls.screenSpacePanning = false;
+	secondControls = new EnvironmentControls( null, secondCamera, secondRenderer.domElement );
+	secondControls.enableFlight = true;
+	secondControls.flightSpeed = 200;
 	secondControls.minDistance = 1;
 	secondControls.maxDistance = 5000;
+	secondControls.useFallbackPlane = false;
 
 	secondCameraHelper = new CameraHelper( secondCamera );
 	scene.add( secondCameraHelper );
@@ -192,16 +195,20 @@ function init() {
 	thirdPersonRenderer.domElement.style.bottom = '5px';
 	thirdPersonRenderer.domElement.tabIndex = 1;
 
-	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
-	thirdPersonControls.screenSpacePanning = false;
+	thirdPersonControls = new EnvironmentControls( null, thirdPersonCamera, thirdPersonRenderer.domElement );
+	thirdPersonControls.enableFlight = true;
+	thirdPersonControls.flightSpeed = 200;
 	thirdPersonControls.minDistance = 1;
 	thirdPersonControls.maxDistance = 5000;
+	thirdPersonControls.useFallbackPlane = false;
 
 	// controls
-	controls = new FlyOrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
+	controls = new EnvironmentControls( null, camera, renderer.domElement );
+	controls.enableFlight = true;
+	controls.flightSpeed = 200;
 	controls.minDistance = 1;
 	controls.maxDistance = 5000;
+	controls.useFallbackPlane = false;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff, 4 );
@@ -216,6 +223,10 @@ function init() {
 
 	offsetParent = new Group();
 	scene.add( offsetParent );
+
+	controls.setScene( offsetParent );
+	secondControls.setScene( offsetParent );
+	thirdPersonControls.setScene( offsetParent );
 
 	geospatialRotationParent = new Group();
 	offsetParent.add( geospatialRotationParent );
@@ -405,28 +416,12 @@ function onPointerUp( e ) {
 	if ( results.length ) {
 
 		const object = results[ 0 ].object;
-		const info = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).getTileInformationFromActiveObject( object );
+		const tile = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).getTileFromObject3D( object );
 
 		let str = '';
-		for ( const key in info ) {
-
-			let val = info[ key ];
-			if ( typeof val === 'number' ) {
-
-				val = Math.floor( val * 1e5 ) / 1e5;
-
-			}
-
-			let name = key;
-			while ( name.length < 20 ) {
-
-				name += ' ';
-
-			}
-
-			str += `${ name } : ${ val }\n`;
-
-		}
+		str += `geometricError : ${ tile.geometricError.toFixed( 3 ) }\n`;
+		str += `error          : ${ tile.traversal.error.toFixed( 3 ) }\n`;
+		str += `refine         : ${ tile.refine }\n`;
 
 		console.log( str );
 
@@ -439,7 +434,7 @@ function updateOrthoCamera() {
 	orthoCamera.position.copy( camera.position );
 	orthoCamera.rotation.copy( camera.rotation );
 
-	const scale = camera.position.distanceTo( controls.target ) / 2.0;
+	const scale = camera.position.distanceTo( controls.pivotPoint ) / 2.0;
 	let aspect = window.innerWidth / window.innerHeight;
 	if ( params.showSecondView ) {
 
@@ -589,6 +584,10 @@ function animate() {
 	// update tiles
 	window.tiles = tiles;
 	if ( params.enableUpdate ) {
+
+		controls.update();
+		secondControls.update();
+		thirdPersonControls.update();
 
 		secondCamera.updateMatrixWorld();
 		camera.updateMatrixWorld();

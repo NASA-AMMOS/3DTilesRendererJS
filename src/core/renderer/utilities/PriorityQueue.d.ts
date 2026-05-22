@@ -9,6 +9,7 @@ export class PriorityQueue {
 	get running(): boolean;
 
 	sort() : void;
+	flush( item : any ) : any;
 	has( item : any ) : boolean;
 	add( item : any, callback : ( item : any ) => any ) : Promise< any >;
 	remove( item : any ) : void;

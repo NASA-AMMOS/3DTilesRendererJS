@@ -1,3 +1,5 @@
+/** @import { LoadingManager } from 'three' */
+/** @import { BatchTable, FeatureTable } from '3d-tiles-renderer/core' */
 import { PNTSLoaderBase } from '3d-tiles-renderer/core';
 import {
 	Points,

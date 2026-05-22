@@ -4,15 +4,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.23] - Unreleased
+## [0.4.25] - 2026.05.21
+### Added
+- "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
+- Improved support for ExternalTexture memory tracking.
+- StructuralMetadata: Throw an error in `getPropertyTableData` when non-matching argument types are passed.
+- MVTOverlay, PMTilesOverlay: Overlays for reading and rendering vector tile formats as tile overlays.
+- TilesRenderer: Added "loadAncestors" option.
+- GlobeControls, EnvironmentControls: Add "enableFlight" option for free controls.
+
+### Fixed
+- ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
+- Converted remaining "three/examples/jsm/" paths to "three/addons/"
+- ImageOverlayPlugin: Geometry tiles will now continue to load and display even if an overlay texture fails to load.
+- ImageOverlayPlugin: If an overlay fails to load then a "load-error" will be thrown on TilesRenderer.
+
+### Changed
+- Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin" & "ImageOverlayPlugin", instead.
+
+## [0.4.24] - 2026.04.10
+### Added
+- TilesRenderer: Added support for reverse depth buffer.
+- Scheduler class for setting an XR session to use for rAF callbacks.
+
+### Changed
+- EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
+- ImageOverlayPlugin: Do not allocate a render target for compositing if only a single tile is returned that exactly matches the tile bounds.
+- WMTSImageOverlay, WMTSTilesPlugin: Deprecated "capabilities" argument, adjusted options so literals can be passed.
+- Changed "three/examples/jsm" paths to "three/addons"
+- ImageOverlayPlugin: Image overlay tile levels are now determined using image resolution rather than depth.
+
+### Fixed
+- Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
+- ImageOverlayPlugin: Fix case where UVs can be generated as NaN.
+- ImageFormatPlugin: Adjust root tile geometricError to be Infinity.
+- ImageOverlays: Updated types.
+- EnvironmentControls: Removed use of "THREE.Clock"
+
+## [0.4.23] - 2026-03-18
 ### Added
 - DebugTilesPlugin: Added support for "boundsColorMode".
-- Auto-generated documenttion via JSDoc.
+- Auto-generated documentation via JSDoc.
+- DebugTilesPlugin: Add partially transparent solid geometry for region & sphere helpers.
 
 ### Fixed
 - QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
 - QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
 - ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
+- BatchedMesh: Fix instances not being released when "discardOriginalContent" is true.
 
 ## [0.4.22] - 2026-03-06
 ### Added
@@ -35,6 +74,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.20] - 2026-02-03
 ### Added
+- Added support for Babylon.js
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
 - I3DMLoader: Added support for oct-encoded normals.

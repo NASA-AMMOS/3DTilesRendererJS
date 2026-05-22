@@ -6,7 +6,7 @@
 ### ENU_FRAME
 
 ```js
-ENU_FRAME: Frames
+ENU_FRAME: number
 ```
 
 Frame constant for the East-North-Up (ENU) coordinate frame, with X pointing east,
@@ -15,7 +15,7 @@ Y pointing north, and Z pointing up (away from the ellipsoid surface).
 ### CAMERA_FRAME
 
 ```js
-CAMERA_FRAME: Frames
+CAMERA_FRAME: number
 ```
 
 Frame constant for a camera-convention frame relative to the ENU frame, oriented with
@@ -24,13 +24,204 @@ Frame constant for a camera-convention frame relative to the ENU frame, oriented
 ### OBJECT_FRAME
 
 ```js
-OBJECT_FRAME: Frames
+OBJECT_FRAME: number
 ```
 
 Frame constant for an object-convention frame relative to the ENU frame, oriented with
 "+Y" up and "+Z" forward (matching three.js object conventions).
 
+## B3DMLoader
+
+_extends [`B3DMLoaderBase`](../../core/renderer/API.md#b3dmloaderbase)_
+
+Loader for the legacy 3D Tiles Batched 3D Model (b3dm) format. Parses the b3dm
+container and returns a GLTF result with `batchTable` and `featureTable` attached
+to the resolved scene object.
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
+```
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{scene: Group, scenes: Array, batchTable: BatchTable, featureTable: FeatureTable}>
+```
+
+Parses a b3dm buffer and resolves to a GLTF result object extended with legacy
+tile metadata. Both `model` and `model.scene` receive the extra fields.
+
+
+## CameraTransitionManager
+
+_extends `EventDispatcher`_
+
+Manages an animated transition between a perspective and an orthographic camera.
+During the transition a blended `transitionCamera` is used. Fires events for the
+transition lifecycle and the active camera change.
+
+
+### .animating
+
+```js
+readonly animating: boolean
+```
+
+Whether a transition animation is currently in progress.
+
+
+### .alpha
+
+```js
+readonly alpha: number
+```
+
+Transition progress from 0 (at perspective) to 1 (at orthographic).
+
+
+### .camera
+
+```js
+readonly camera: Camera
+```
+
+The currently active camera. Returns `perspectiveCamera`, `orthographicCamera`, or the
+blended `transitionCamera` depending on the current transition state.
+
+
+### .mode
+
+```js
+mode: string
+```
+
+The target camera mode. Set to `'perspective'` or `'orthographic'` to jump instantly without
+animation. Use `toggle()` to animate the transition.
+
+
+### .orthographicPositionalZoom
+
+```js
+orthographicPositionalZoom: boolean = true
+```
+
+When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain.
+
+
+### .orthographicOffset
+
+```js
+orthographicOffset: number = 50
+```
+
+Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true.
+
+
+### .fixedPoint
+
+```js
+fixedPoint: Vector3 = new Vector3()
+```
+
+World-space point that remains visually fixed during the transition.
+
+
+### .duration
+
+```js
+duration: number = 200
+```
+
+Duration of the animated transition in milliseconds.
+
+
+### .autoSync
+
+```js
+autoSync: boolean = true
+```
+
+When true, cameras are synced automatically before each `update` call.
+
+
+### .easeFunction
+
+```js
+easeFunction: function = x => x
+```
+
+Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1].
+
+
+### .constructor
+
+```js
+constructor( perspectiveCamera: PerspectiveCamera, orthographicCamera: OrthographicCamera )
+```
+
+### .toggle
+
+```js
+toggle(): void
+```
+
+Begins an animated transition to the opposite camera mode. Dispatches a `'toggle'` event.
+
+
+### .update
+
+```js
+update( deltaTime: number ): void
+```
+
+Advances the transition animation and updates the active camera. Must be called each frame.
+
+
+### .syncCameras
+
+```js
+syncCameras(): void
+```
+
+Synchronises the non-active camera so that both cameras represent the same viewpoint.
+Called automatically by `update` when `autoSync` is true.
+
+
+## CMPTLoader
+
+_extends [`CMPTLoaderBase`](../../core/renderer/API.md#cmptloaderbase)_
+
+Loader for the legacy 3D Tiles Composite (cmpt) format. Parses a cmpt container
+that bundles multiple b3dm, i3dm, and pnts tiles, returning a scene Group containing
+all sub-tile scenes.
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
+```
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): Promise<{scene: Group, tiles: Array}>
+```
+
+Parses a cmpt buffer and resolves to an object containing a `Group` with all
+sub-tile scenes added as children, and the individual sub-tile results.
+
+
 ## Ellipsoid
+
+Represents a triaxial ellipsoid defined by three semi-axis radii. Used to model planet-scale
+surfaces such as the Earth (see [WGS84_ELLIPSOID](WGS84_ELLIPSOID)). All geographic coordinates use
+latitude and longitude in radians.
 
 
 ### .name
@@ -265,190 +456,18 @@ clone(): Ellipsoid
 Returns a new Ellipsoid with the same radius as this one.
 
 
-## B3DMLoader
-
-_extends [`B3DMLoaderBase`](../../core/renderer/API.md#b3dmloaderbase)_
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
-```
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{scene: Group, scenes: Array, batchTable: BatchTable, featureTable: FeatureTable}>
-```
-
-Parses a b3dm buffer and resolves to a GLTF result object extended with legacy
-tile metadata. Both `model` and `model.scene` receive the extra fields.
-
-
-## CameraTransitionManager
-
-_extends `EventDispatcher`_
-
-
-### .animating
-
-```js
-readonly animating: boolean
-```
-
-Whether a transition animation is currently in progress.
-
-
-### .alpha
-
-```js
-readonly alpha: number
-```
-
-Transition progress from 0 (at perspective) to 1 (at orthographic).
-
-
-### .camera
-
-```js
-readonly camera: Camera
-```
-
-The currently active camera. Returns `perspectiveCamera`, `orthographicCamera`, or the
-blended `transitionCamera` depending on the current transition state.
-
-
-### .mode
-
-```js
-mode: string
-```
-
-The target camera mode. Set to `'perspective'` or `'orthographic'` to jump instantly without
-animation. Use `toggle()` to animate the transition.
-
-
-### .orthographicPositionalZoom
-
-```js
-orthographicPositionalZoom: boolean
-```
-
-When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
-
-
-### .orthographicOffset
-
-```js
-orthographicOffset: number
-```
-
-Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
-
-
-### .fixedPoint
-
-```js
-fixedPoint: Vector3
-```
-
-World-space point that remains visually fixed during the transition.
-
-
-### .duration
-
-```js
-duration: number
-```
-
-Duration of the animated transition in milliseconds. Default is 200.
-
-
-### .autoSync
-
-```js
-autoSync: boolean
-```
-
-When true, cameras are synced automatically before each `update` call. Default is true.
-
-
-### .easeFunction
-
-```js
-easeFunction: function
-```
-
-Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
-
-
-### .constructor
-
-```js
-constructor( perspectiveCamera: PerspectiveCamera, orthographicCamera: OrthographicCamera )
-```
-
-### .toggle
-
-```js
-toggle(): void
-```
-
-Begins an animated transition to the opposite camera mode. Dispatches a `'toggle'` event.
-
-
-### .update
-
-```js
-update( deltaTime: number ): void
-```
-
-Advances the transition animation and updates the active camera. Must be called each frame.
-
-
-### .syncCameras
-
-```js
-syncCameras(): void
-```
-
-Synchronises the non-active camera so that both cameras represent the same viewpoint.
-Called automatically by `update` when `autoSync` is true.
-
-
-## CMPTLoader
-
-_extends [`CMPTLoaderBase`](../../core/renderer/API.md#cmptloaderbase)_
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
-```
-
-### .parse
-
-```js
-parse( buffer: ArrayBuffer ): Promise<{scene: Group, tiles: Array}>
-```
-
-Parses a cmpt buffer and resolves to an object containing a `Group` with all
-sub-tile scenes added as children, and the individual sub-tile results.
-
-
 ## EnvironmentControls
 
 _extends `EventDispatcher`_
+
+Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
+right-click-to-rotate, and optional damping/inertia. Works with any Three.js scene.
 
 
 ### .enabled
 
 ```js
-enabled: boolean
+enabled: boolean = true
 ```
 
 Whether the controls are active. When set to false, all input is ignored
@@ -458,127 +477,157 @@ and inertia is cleared.
 ### .cameraRadius
 
 ```js
-cameraRadius: number
+cameraRadius: number = 5
 ```
 
-Minimum camera distance above the surface in world units. Prevents clipping into terrain. Default is 5.
+Minimum camera distance above the surface in world units. Prevents clipping into terrain.
 
 
 ### .rotationSpeed
 
 ```js
-rotationSpeed: number
+rotationSpeed: number = 1
 ```
 
-Rotation sensitivity multiplier. Default is 1.
+Rotation sensitivity multiplier.
 
 
 ### .minAltitude
 
 ```js
-minAltitude: number
+minAltitude: number = 0
 ```
 
-Minimum camera angle above the horizon in radians. Default is 0.
+Minimum camera angle above the horizon in radians.
 
 
 ### .maxAltitude
 
 ```js
-maxAltitude: number
+maxAltitude: number = 0.45 * Math.PI
 ```
 
-Maximum camera angle above the horizon in radians. Default is 0.45π.
+Maximum camera angle above the horizon in radians.
 
 
 ### .minDistance
 
 ```js
-minDistance: number
+minDistance: number = 10
 ```
 
-Minimum zoom distance in world units. Default is 10.
+Minimum zoom distance in world units.
 
 
 ### .maxDistance
 
 ```js
-maxDistance: number
+maxDistance: number = Infinity
 ```
 
-Maximum zoom distance in world units. Default is Infinity.
+Maximum zoom distance in world units.
 
 
 ### .minZoom
 
 ```js
-minZoom: number
+minZoom: number = 0
 ```
 
-Minimum orthographic zoom level. Default is 0.
+Minimum orthographic zoom level.
 
 
 ### .maxZoom
 
 ```js
-maxZoom: number
+maxZoom: number = Infinity
 ```
 
-Maximum orthographic zoom level. Default is Infinity.
+Maximum orthographic zoom level.
 
 
 ### .zoomSpeed
 
 ```js
-zoomSpeed: number
+zoomSpeed: number = 1
 ```
 
-Zoom sensitivity multiplier. Default is 1.
+Zoom sensitivity multiplier.
 
 
 ### .adjustHeight
 
 ```js
-adjustHeight: boolean
+adjustHeight: boolean = true
 ```
 
-When true, the camera height is automatically adjusted to avoid clipping into the terrain. Default is true.
+When true, the camera height is automatically adjusted to avoid clipping into the terrain.
 
 
 ### .enableDamping
 
 ```js
-enableDamping: boolean
+enableDamping: boolean = false
 ```
 
-When true, camera movements decelerate gradually after input ends. Default is false.
+When true, camera movements decelerate gradually after input ends.
 
 
 ### .dampingFactor
 
 ```js
-dampingFactor: number
+dampingFactor: number = 0.15
 ```
 
-Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting. Default is 0.15.
+Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting.
 
 
 ### .fallbackPlane
 
 ```js
-fallbackPlane: Plane
+fallbackPlane: Plane = new Plane( UP, 0 )
 ```
 
-Fallback plane used for drag/zoom when no scene geometry is hit. Default is the XZ plane (y=0).
+Fallback plane used for drag/zoom when no scene geometry is hit.
 
 
 ### .useFallbackPlane
 
 ```js
-useFallbackPlane: boolean
+useFallbackPlane: boolean = true
 ```
 
-When true, the fallback plane is used when raycasting misses scene geometry. Default is true.
+When true, the fallback plane is used when raycasting misses scene geometry.
+
+
+### .enableFlight
+
+```js
+enableFlight: boolean = false
+```
+
+When true, enables keyboard flight: W/A/S/D and arrow keys move forward/back/strafe, Q/E move
+up/down, and Shift multiplies speed by `flightSpeedMultiplier`. Right-click or Shift+left-click
+enters free-look mode, rotating the camera in place without requiring a surface hit. Only
+supported for perspective cameras.
+
+
+### .flightSpeed
+
+```js
+flightSpeed: number = 10
+```
+
+Base camera speed in world units per second during keyboard flight.
+
+
+### .flightSpeedMultiplier
+
+```js
+flightSpeedMultiplier: number = 4
+```
+
+Speed multiplier applied when the fast key is held during flight.
 
 
 ### .constructor
@@ -701,6 +750,9 @@ Disposes of event listeners and internal resources. Calls `detach` if currently 
 
 _extends [`EnvironmentControls`](../../r3f/API.md#environmentcontrols)_
 
+Camera controls for navigating a globe-shaped tileset. Extends EnvironmentControls with
+ellipsoid-aware rotation, globe inertia, and automatic near/far plane adjustment.
+
 
 ### .ellipsoidFrame
 
@@ -723,25 +775,25 @@ The inverse of `ellipsoidFrame`.
 ### .nearMargin
 
 ```js
-nearMargin: number
+nearMargin: number = 0.25
 ```
 
-Fraction of the near plane distance added as a buffer. Default is 0.25.
+Fraction of the near plane distance added as a buffer.
 
 
 ### .farMargin
 
 ```js
-farMargin: number
+farMargin: number = 0
 ```
 
-Fraction of the far plane distance added as a buffer. Default is 0.
+Fraction of the far plane distance added as a buffer.
 
 
 ### .globeInertia
 
 ```js
-globeInertia: Quaternion
+globeInertia: Quaternion = new Quaternion()
 ```
 
 Accumulated globe rotation inertia quaternion. Applied each frame when globe inertia is active.
@@ -750,7 +802,7 @@ Accumulated globe rotation inertia quaternion. Applied each frame when globe ine
 ### .globeInertiaFactor
 
 ```js
-globeInertiaFactor: number
+globeInertiaFactor: number = 0
 ```
 
 Magnitude of the current globe rotation inertia. Decays to zero over time.
@@ -759,16 +811,16 @@ Magnitude of the current globe rotation inertia. Decays to zero over time.
 ### .ellipsoid
 
 ```js
-ellipsoid: Ellipsoid
+ellipsoid: Ellipsoid = WGS84_ELLIPSOID
 ```
 
-The ellipsoid model used for surface interaction and up-direction calculation. Defaults to WGS84.
+The ellipsoid model used for surface interaction and up-direction calculation.
 
 
 ### .ellipsoidGroup
 
 ```js
-ellipsoidGroup: Group
+ellipsoidGroup: Group = new Group()
 ```
 
 The Three.js group whose world matrix defines the ellipsoid's coordinate frame.
@@ -811,6 +863,10 @@ Returns the distance from the camera to the center of the ellipsoid.
 
 _extends [`I3DMLoaderBase`](../../core/renderer/API.md#i3dmloaderbase)_
 
+Loader for the legacy 3D Tiles Instanced 3D Model (i3dm) format. Parses the i3dm
+container and returns instanced meshes with `batchTable` and `featureTable` attached
+to the resolved scene object.
+
 
 ### .constructor
 
@@ -835,6 +891,10 @@ metadata attached to both `model` and `model.scene`.
 
 _extends [`PNTSLoaderBase`](../../core/renderer/API.md#pntsloaderbase)_
 
+Loader for the legacy 3D Tiles Point Cloud (pnts) format. Parses the pnts container
+and returns a three.js Points object with `batchTable` and `featureTable` attached
+to the resolved scene object.
+
 
 ### .constructor
 
@@ -858,11 +918,15 @@ three.js `Points` scene with metadata attached.
 
 _extends [`TilesRendererBase`](../../core/renderer/API.md#tilesrendererbase)_
 
+Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
+camera management, three.js scene integration, and GPU-accelerated tile loading.
+Add `tiles.group` to your scene and call `tiles.update()` each frame.
+
 
 ### .autoDisableRendererCulling
 
 ```js
-autoDisableRendererCulling: boolean
+autoDisableRendererCulling: boolean = true
 ```
 
 If `true`, all tile meshes automatically have `frustumCulled` set to `false` since the
@@ -884,12 +948,11 @@ tileset frame.
 ### .ellipsoid
 
 ```js
-ellipsoid: Ellipsoid
+ellipsoid: Ellipsoid = WGS84_ELLIPSOID
 ```
 
-The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
-overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
-`TilesRenderer.group`.
+The ellipsoid definition used for the tileset. May be overridden by the
+`3DTILES_ellipsoid` extension. Specified in the local frame of `TilesRenderer.group`.
 
 
 ### .cameras
@@ -904,7 +967,7 @@ Array of cameras registered with this renderer.
 ### .manager
 
 ```js
-manager: LoadingManager
+manager: LoadingManager = new LoadingManager()
 ```
 
 The `LoadingManager` used when loading tile geometry.
@@ -1000,4 +1063,24 @@ deleteCamera( camera: Camera ): boolean
 ```
 
 Unregisters a camera from the renderer.
+
+
+## Frames
+
+_extends `ENU_FRAME`_
+
+
+## Functions
+
+### decodeOctNormal
+
+```js
+decodeOctNormal( x: number, y: number, target: Vector3 ): void
+```
+
+Decode an octahedron-encoded normal (as a pair of 8-bit unsigned numbers) into a Vector3.
+
+Resources:
+- https://stackoverflow.com/a/74745666/2704779
+- https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 

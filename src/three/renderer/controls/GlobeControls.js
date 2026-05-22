@@ -1,3 +1,4 @@
+/** @import { Object3D, Camera } from 'three' */
 import {
 	Matrix4,
 	Quaternion,
@@ -7,7 +8,7 @@ import {
 	Ray,
 	Group,
 } from 'three';
-import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
+import { DRAG, ZOOM, FREE_ROTATE, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { makeRotateAroundPoint, adjustedPointerToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
@@ -84,14 +85,16 @@ export class GlobeControls extends EnvironmentControls {
 		this.maxZoom = 0.01;
 
 		/**
-		 * Fraction of the near plane distance added as a buffer. Default is 0.25.
+		 * Fraction of the near plane distance added as a buffer.
 		 * @type {number}
+		 * @default 0.25
 		 */
 		this.nearMargin = 0.25;
 
 		/**
-		 * Fraction of the far plane distance added as a buffer. Default is 0.
+		 * Fraction of the far plane distance added as a buffer.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
@@ -100,24 +103,28 @@ export class GlobeControls extends EnvironmentControls {
 		/**
 		 * Accumulated globe rotation inertia quaternion. Applied each frame when globe inertia is active.
 		 * @type {Quaternion}
+		 * @default new Quaternion()
 		 */
 		this.globeInertia = new Quaternion();
 
 		/**
 		 * Magnitude of the current globe rotation inertia. Decays to zero over time.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.globeInertiaFactor = 0;
 
 		/**
-		 * The ellipsoid model used for surface interaction and up-direction calculation. Defaults to WGS84.
+		 * The ellipsoid model used for surface interaction and up-direction calculation.
 		 * @type {Ellipsoid}
+		 * @default WGS84_ELLIPSOID
 		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
 		/**
 		 * The Three.js group whose world matrix defines the ellipsoid's coordinate frame.
 		 * @type {Group}
+		 * @default new Group()
 		 */
 		this.ellipsoidGroup = new Group();
 		this._ellipsoidFrameInverse = new Matrix4();
@@ -241,7 +248,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
+	update( deltaTime = Math.min( this._getDeltaTime(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.camera || deltaTime === 0 ) {
 
@@ -278,7 +285,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.adjustCamera( camera );
 
 		// align the camera up vector if the camera as updated
-		if ( adjustCameraRotation && this._isNearControls() ) {
+		if ( adjustCameraRotation && ( this._isNearControls() || this.state === FREE_ROTATE ) ) {
 
 			this.getCameraUpDirection( _globalUp );
 			this._alignCameraUp( _globalUp, 1 );
@@ -458,6 +465,54 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	_getFlightSpeedScale() {
+
+		// Scale speed proportionally to altitude so movement feels consistent at any distance.
+		// The 1000 m floor prevents movement becoming imperceptibly slow near the surface.
+		const altitude = this.getDistanceToCenter() - this._getMaxWorldRadius();
+		return 2 * Math.max( altitude, 1000 );
+
+	}
+
+	_updateFlight( deltaTime ) {
+
+		const { camera } = this;
+
+		const didFly = super._updateFlight( deltaTime );
+		if ( didFly ) {
+
+			// prevent flying past the point where the globe would be too small, just like mouse zoom.
+			const maxDistance = this._getMaxPerspectiveDistance();
+			const distToCenter = this.getDistanceToCenter();
+			if ( distToCenter > maxDistance ) {
+
+				this.getVectorToCenter( _vec ).normalize();
+				camera.position.addScaledVector( _vec, distToCenter - maxDistance );
+				camera.updateMatrixWorld();
+
+			}
+
+			// Outside the near-controls zone (high altitude / space view), gently nudge the
+			// camera to keep the globe centered and the horizon level — matching the behavior
+			// of scroll-zoom at the same distance. Alpha scales from 0 at the transition
+			// threshold to full strength at maxDistance.
+			if ( ! this._isNearControls() ) {
+
+				const distanceAlpha = MathUtils.clamp(
+					MathUtils.mapLinear( this.getDistanceToCenter(), this._getPerspectiveTransitionDistance(), maxDistance, 0, 1 ),
+					0, 1,
+				);
+				this._tiltTowardsCenter( 0.02 * distanceAlpha );
+				this._alignCameraUpToNorth( 0.01 * distanceAlpha );
+
+			}
+
+		}
+
+		return didFly;
+
+	}
+
 	_updatePosition( deltaTime ) {
 
 		if ( this.state === DRAG ) {
@@ -539,6 +594,14 @@ export class GlobeControls extends EnvironmentControls {
 	// disable rotation once we're outside the control transition
 	_updateRotation( ...args ) {
 
+		// FREE_ROTATE is always allowed regardless of globe proximity
+		if ( this.state === FREE_ROTATE ) {
+
+			super._updateRotation( ...args );
+			return;
+
+		}
+
 		if ( this._rotationMode === 1 || this._isNearControls() ) {
 
 			this._rotationMode = 1;
@@ -550,7 +613,6 @@ export class GlobeControls extends EnvironmentControls {
 			this._rotationMode = - 1;
 
 		}
-
 
 	}
 
