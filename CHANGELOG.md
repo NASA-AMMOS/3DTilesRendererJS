@@ -5,11 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.4.26] - Unreleased
+### Added
+- DebugTilesPlugin: Added support for displaying empty tiles that stop traversal so tile set structure is more clear.
+
 ### Fixed
 - EnvironmentControls: Zooming into nothing now works when geometry is not below the camera.
+- ImageOverlayPlugin: Fixed plugin firing "needs-rerender" rather than a "needs-render" event.
 
 ### Changed
 - TilesRendererBase: "tile-download-start" event now specifies "url" rather than "uri" as a field.
+- TilesRendererBase: Deprecated "load-content" plugin.
 
 ## [0.4.25] - 2026.05.21
 ### Added
