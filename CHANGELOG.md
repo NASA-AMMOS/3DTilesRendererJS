@@ -5,8 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.5.0] - Unreleased
-### Fixed
+### Changed
 - Deprecated APIs and fields have been removed.
+- CesiumIonPlugin: Removed warning logs.
+- TilesRenderer: All instances will now share "processNodeQueue", "lruCache", "downloadQueue" and "priorityQueue" instances by default until assigned.
 
 ## [0.4.27] - 2026.05.25
 ### Fixed
