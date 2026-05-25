@@ -325,6 +325,17 @@ const unifiedPriorityCallback = ( a, b ) => {
  * @property {string|URL} url - The URL that failed to load.
  */
 
+export const DEFAULT_LRU_CACHE = new LRUCache();
+DEFAULT_LRU_CACHE.unloadPriorityCallback = lruPriorityCallback;
+
+export const DEFAULT_DOWNLOAD_QUEUE = new PriorityQueue();
+DEFAULT_DOWNLOAD_QUEUE.maxJobs = 25;
+DEFAULT_DOWNLOAD_QUEUE.priorityCallback = unifiedPriorityCallback;
+
+export const DEFAULT_PARSE_QUEUE = new PriorityQueue();
+DEFAULT_PARSE_QUEUE.maxJobs = 5;
+DEFAULT_PARSE_QUEUE.priorityCallback = unifiedPriorityCallback;
+
 /**
  * Base class for 3D Tiles renderers. Manages tile loading, caching, traversal,
  * and a plugin system for extending rendering behavior. Engine-specific renderers
@@ -385,17 +396,6 @@ export class TilesRendererBase {
 		this.cachedSinceLoadComplete = new Set();
 		this.isLoading = false;
 
-		const lruCache = new LRUCache();
-		lruCache.unloadPriorityCallback = lruPriorityCallback;
-
-		const downloadQueue = new PriorityQueue();
-		downloadQueue.maxJobs = 25;
-		downloadQueue.priorityCallback = errorPriorityCallback;
-
-		const parseQueue = new PriorityQueue();
-		parseQueue.maxJobs = 5;
-		parseQueue.priorityCallback = errorPriorityCallback;
-
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
 		processNodeQueue.priorityCallback = ( a, b ) => {
@@ -417,7 +417,7 @@ export class TilesRendererBase {
 			} else {
 
 				// fall back to the priority used for tile loads and parsing
-				return downloadQueue.priorityCallback( aParent, bParent );
+				return this.downloadQueue.priorityCallback( aParent, bParent );
 
 			}
 
@@ -446,23 +446,21 @@ export class TilesRendererBase {
 		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {LRUCache}
 		 */
-		this.lruCache = lruCache;
+		this.lruCache = DEFAULT_LRU_CACHE;
 
 		/**
 		 * Priority queue controlling concurrent tile downloads. Max jobs defaults to `25`.
 		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
-		this.downloadQueue = downloadQueue;
-		this.downloadQueue.priorityCallback = unifiedPriorityCallback;
+		this.downloadQueue = DEFAULT_DOWNLOAD_QUEUE;
 
 		/**
 		 * Priority queue controlling concurrent tile parsing. Max jobs defaults to `5`.
 		 * @note Cannot be modified once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
-		this.parseQueue = parseQueue;
-		this.parseQueue.priorityCallback = unifiedPriorityCallback;
+		this.parseQueue = DEFAULT_PARSE_QUEUE;
 
 		/**
 		 * Priority queue for expanding and initializing tiles for traversal. Max jobs defaults to `25`.
