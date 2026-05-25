@@ -8,7 +8,6 @@ const _vec = /* @__PURE__ */ new Vector3();
 const _vec2 = /* @__PURE__ */ new Vector3();
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _matrix2 = /* @__PURE__ */ new Matrix4();
-const _matrix3 = /* @__PURE__ */ new Matrix4();
 const _sphere = /* @__PURE__ */ new Sphere();
 const _euler = /* @__PURE__ */ new Euler();
 
