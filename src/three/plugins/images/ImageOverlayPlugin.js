@@ -1191,7 +1191,7 @@ export class ImageOverlayPlugin {
 				}
 
 				info.failed = true;
-				tiles.dispatchEvent( { type: 'load-error', tile, overlay, error: err } );
+				tiles.dispatchEvent( { type: 'load-error', tile, overlay, error: err, url: null } );
 				return null;
 
 			} );
