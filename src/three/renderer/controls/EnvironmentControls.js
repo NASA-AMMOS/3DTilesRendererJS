@@ -325,19 +325,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	setTilesRenderer( tilesRenderer ) {
-
-		console.warn( 'EnvironmentControls: "setTilesRenderer" has been deprecated. Use "setScene" and "setEllipsoid", instead.' );
-
-		this.tilesRenderer = tilesRenderer;
-		if ( this.tilesRenderer !== null ) {
-
-			this.setScene( this.tilesRenderer.group );
-
-		}
-
-	}
-
 	/**
 	 * Attaches the controls to a DOM element, registering all pointer and keyboard event listeners.
 	 * @param {HTMLElement} domElement

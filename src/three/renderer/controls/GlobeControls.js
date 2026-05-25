@@ -41,13 +41,6 @@ const MIN_ELEVATION = 2550;
  */
 export class GlobeControls extends EnvironmentControls {
 
-	get tilesGroup() {
-
-		console.warn( 'GlobeControls: "tilesGroup" has been deprecated. Use "ellipsoidGroup", instead.' );
-		return this.ellipsoidFrame;
-
-	}
-
 	/**
 	 * The world matrix of `ellipsoidGroup`, representing the ellipsoid's coordinate frame.
 	 * @type {Matrix4}

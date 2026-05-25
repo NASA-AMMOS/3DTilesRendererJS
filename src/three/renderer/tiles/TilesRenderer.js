@@ -10,7 +10,6 @@ import {
 	Matrix4,
 	Vector3,
 	Vector2,
-	Euler,
 	LoadingManager,
 	EventDispatcher,
 	Group,
@@ -22,8 +21,6 @@ import { estimateBytesUsed } from '../utils/MemoryUtils.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-const _mat = /* @__PURE__ */ new Matrix4();
-const _euler = /* @__PURE__ */ new Euler();
 
 // In three.js r165 and higher raycast traversal can be ended early
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
@@ -80,19 +77,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	get optimizeRaycast() {
-
-		return this._optimizeRaycast;
-
-	}
-
-	set optimizeRaycast( v ) {
-
-		console.warn( 'TilesRenderer: The "optimizeRaycast" option has been deprecated.' );
-		this._optimizeRaycast = v;
-
-	}
-
 	constructor( ...args ) {
 
 		super( ...args );
@@ -120,7 +104,6 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
-		this._optimizeRaycast = true;
 		this._upRotationMatrix = new Matrix4();
 		this._bytesUsed = new WeakMap();
 
@@ -141,33 +124,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	addEventListener( type, listener ) {
 
-		if ( type === 'load-tile-set' ) {
-
-			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
-			type = 'load-tileset';
-
-		} else if ( type === 'load-content' ) {
-
-			console.warn( 'TilesRenderer: "load-content" event has been deprecated. Use "load-model" or "load-tileset" instead.' );
-
-		}
-
 		EventDispatcher.prototype.addEventListener.call( this, type, listener );
 
 	}
 
 	hasEventListener( type, listener ) {
-
-		if ( type === 'load-tile-set' ) {
-
-			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
-			type = 'load-tileset';
-
-		} else if ( type === 'load-content' ) {
-
-			console.warn( 'TilesRenderer: "load-content" event has been deprecated. Use "load-model" or "load-tileset" instead.' );
-
-		}
 
 		return EventDispatcher.prototype.hasEventListener.call( this, type, listener );
 
@@ -175,37 +136,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	removeEventListener( type, listener ) {
 
-		if ( type === 'load-tile-set' ) {
-
-			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
-			type = 'load-tileset';
-
-		} else if ( type === 'load-content' ) {
-
-			console.warn( 'TilesRenderer: "load-content" event has been deprecated. Use "load-model" or "load-tileset" instead.' );
-
-		}
-
 		EventDispatcher.prototype.removeEventListener.call( this, type, listener );
 
 	}
 
 	dispatchEvent( e ) {
-
-		if ( 'tileset' in e ) {
-
-			Object.defineProperty( e, 'tileSet', {
-				get() {
-
-					console.warn( 'TilesRenderer: "event.tileSet" has been deprecated. Use "event.tileset" instead.' );
-					return e.tileset;
-
-				},
-				enumerable: false,
-				configurable: true,
-			} );
-
-		}
 
 		EventDispatcher.prototype.dispatchEvent.call( this, e );
 
@@ -1066,29 +1001,6 @@ export class TilesRenderer extends TilesRendererBase {
 			target.distanceFromCamera = minCameraDistance;
 
 		}
-
-	}
-
-	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
-	setLatLonToYUp( lat, lon ) {
-
-		console.warn( 'TilesRenderer: setLatLonToYUp is deprecated. Use the ReorientationPlugin, instead.' );
-
-		const { ellipsoid, group } = this;
-
-		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
-		_mat.makeRotationFromEuler( _euler );
-
-		ellipsoid.getEastNorthUpFrame( lat, lon, 0, group.matrix )
-			.multiply( _mat )
-			.invert()
-			.decompose(
-				group.position,
-				group.quaternion,
-				group.scale,
-			);
-
-		group.updateMatrixWorld( true );
 
 	}
 
