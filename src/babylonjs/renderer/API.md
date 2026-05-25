@@ -36,7 +36,7 @@ constructor( scene: Scene )
 ### .parse
 
 ```js
-async parse( buffer: ArrayBuffer, uri: string ): Promise<Object>
+async parse( buffer: ArrayBuffer, url: string ): Promise<Object>
 ```
 
 
@@ -77,7 +77,7 @@ constructor( scene: Scene )
 ```js
 async parse(
 	buffer: ArrayBuffer,
-	uri: string,
+	url: string,
 	extension: string
 ): Promise<{scene: TransformNode, container: AssetContainer, metadata: (Object|null)}>
 ```

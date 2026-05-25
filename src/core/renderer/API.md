@@ -713,9 +713,6 @@ extend this class to add camera projection, scene management, and tile display.
 // Fired when the renderer determines a new render is required — e.g. after a tile loads.
 { type: 'needs-update' }
 
-// Fired when any tile content (model or external tileset) finishes loading.
-{ type: 'load-content' }
-
 // Fired when any tileset JSON finishes loading.
 { type: 'load-tileset', tileset: Tileset, url: string }
 
@@ -729,7 +726,7 @@ extend this class to add camera projection, scene management, and tile display.
 { type: 'tiles-load-end' }
 
 // Fired when a tile content download begins.
-{ type: 'tile-download-start', tile: Tile, uri: string }
+{ type: 'tile-download-start', tile: Tile, url: string }
 
 // Fired when a tile's renderable content (model/scene) is created.
 // The `scene` type is engine-specific (e.g. `THREE.Group` in three.js).
