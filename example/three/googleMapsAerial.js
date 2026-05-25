@@ -10,7 +10,7 @@ import {
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let camera, controls, scene, renderer, tiles;
+let camera, controls, scene, renderer, tiles, reorientPlugin;
 
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
@@ -37,7 +37,8 @@ function reinstantiateTiles() {
 		// We use unpkg here but in practice should be provided by the application.
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
-	tiles.registerPlugin( new ReorientationPlugin( { lat: 35.6586 * MathUtils.DEG2RAD, lon: 139.7454 * MathUtils.DEG2RAD } ) );
+	reorientPlugin = new ReorientationPlugin( { lat: 35.6586 * MathUtils.DEG2RAD, lon: 139.7454 * MathUtils.DEG2RAD } );
+	tiles.registerPlugin( reorientPlugin );
 
 	// 35.3606, 138.7274 // Mt Fuji
 	// 48.8584, 2.2945 // Eiffel Tower
@@ -112,7 +113,7 @@ function initFromHash() {
 
 
 	const [ lat, lon ] = tokens;
-	tiles.setLatLonToYUp( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD );
+	reorientPlugin.transformLatLonHeightToOrigin( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD );
 
 }
 
