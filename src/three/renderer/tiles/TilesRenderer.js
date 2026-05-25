@@ -146,6 +146,10 @@ export class TilesRenderer extends TilesRendererBase {
 			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
 			type = 'load-tileset';
 
+		} else if ( type === 'load-content' ) {
+
+			console.warn( 'TilesRenderer: "load-content" event has been deprecated. Use "load-model" or "load-tileset" instead.' );
+
 		}
 
 		EventDispatcher.prototype.addEventListener.call( this, type, listener );
@@ -158,6 +162,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
 			type = 'load-tileset';
+
+		} else if ( type === 'load-content' ) {
+
+			console.warn( 'TilesRenderer: "load-content" event has been deprecated. Use "load-model" or "load-tileset" instead.' );
 
 		}
 
