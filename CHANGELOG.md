@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Deprecated APIs and fields have been removed.
 - CesiumIonPlugin: Removed warning logs.
-- TilesRenderer: All instances will now share "processNodeQueue", "lruCache", "downloadQueue" and "priorityQueue" instances by default until assigned.
+- TilesRenderer: All instances will now share "processNodeQueue", "lruCache", "downloadQueue" and "priorityQueue" instances by default until optionally reassigned.
 
 ## [0.4.27] - 2026.05.25
 ### Fixed
