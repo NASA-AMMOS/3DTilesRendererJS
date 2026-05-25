@@ -67,7 +67,7 @@ function tupleToRadians( tuple ) {
 
 /**
  * Loader that fetches and parses a WMTS `GetCapabilities` XML document into a structured
- * JavaScript object. The result can be passed directly to `WMTSTilesPlugin`.
+ * JavaScript object. The result can be used to configure `WMTSImageSource`.
  *
  * The parsed result has the shape:
  * ```
