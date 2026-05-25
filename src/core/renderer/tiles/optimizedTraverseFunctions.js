@@ -548,6 +548,17 @@ function toggleTiles( tile, renderer ) {
 
 			}
 
+		} else {
+
+			// For non-renderable tiles, notify plugins when the tile becomes or stops being a traversal leaf so we
+			// can display "empty" tiles in plugins like the DebugTilesPlugin.
+			setVisible = tile.traversal.isLeaf;
+			if ( tile.traversal.wasSetVisible !== setVisible ) {
+
+				renderer.invokeOnePlugin( plugin => plugin.setEmptyTileVisible && plugin.setEmptyTileVisible( tile, setVisible ) );
+
+			}
+
 		}
 
 		tile.traversal.wasSetActive = setActive;
