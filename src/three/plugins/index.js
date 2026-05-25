@@ -15,8 +15,6 @@ export * from './DebugTilesPlugin.js';
 
 // other formats
 export * from './images/GeneratedSurfacePlugin.js';
-export * from './images/DeepZoomImagePlugin.js';
-export * from './images/EPSGTilesPlugin.js';
 export * from './images/MVTOverlay.js';
 
 // gltf extensions

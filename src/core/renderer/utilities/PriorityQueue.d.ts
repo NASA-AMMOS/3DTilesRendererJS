@@ -4,8 +4,6 @@ export class PriorityQueue {
 	autoUpdate : boolean;
 	priorityCallback : ( itemA : any, itemB : any ) => number;
 
-	schedulingCallback : ( func : () => void ) => void;
-
 	get running(): boolean;
 
 	sort() : void;

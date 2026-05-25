@@ -14,9 +14,6 @@ export * from './images/ImageOverlayPlugin.js';
 export * from './LoadRegionPlugin.js';
 export * from './DebugTilesPlugin.js';
 
-// other formats
-export * from './images/DeepZoomImagePlugin.js';
-export * from './images/EPSGTilesPlugin.js';
 
 // gltf extensions
 export * from './gltf/GLTFCesiumRTCExtension.js';

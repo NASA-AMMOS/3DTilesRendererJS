@@ -41,13 +41,6 @@ const MIN_ELEVATION = 2550;
  */
 export class GlobeControls extends EnvironmentControls {
 
-	get tilesGroup() {
-
-		console.warn( 'GlobeControls: "tilesGroup" has been deprecated. Use "ellipsoidGroup", instead.' );
-		return this.ellipsoidFrame;
-
-	}
-
 	/**
 	 * The world matrix of `ellipsoidGroup`, representing the ellipsoid's coordinate frame.
 	 * @type {Matrix4}
@@ -73,7 +66,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	constructor( scene = null, camera = null, domElement = null, tilesRenderer = null ) {
+	constructor( scene = null, camera = null, domElement = null ) {
 
 		// store which mode the drag stats are in
 		super( scene, camera, domElement );
@@ -128,23 +121,6 @@ export class GlobeControls extends EnvironmentControls {
 		 */
 		this.ellipsoidGroup = new Group();
 		this._ellipsoidFrameInverse = new Matrix4();
-
-		if ( tilesRenderer !== null ) {
-
-			this.setTilesRenderer( tilesRenderer );
-
-		}
-
-	}
-
-	setTilesRenderer( tilesRenderer ) {
-
-		super.setTilesRenderer( tilesRenderer );
-		if ( tilesRenderer !== null ) {
-
-			this.setEllipsoid( tilesRenderer.ellipsoid, tilesRenderer.group );
-
-		}
 
 	}
 
