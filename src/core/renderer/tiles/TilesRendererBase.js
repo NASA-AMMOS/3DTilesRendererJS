@@ -325,6 +325,46 @@ const unifiedPriorityCallback = ( a, b ) => {
  * @property {string|URL} url - The URL that failed to load.
  */
 
+// Default shared caches and queues
+const DEFAULT_LRU_CACHE = new LRUCache();
+DEFAULT_LRU_CACHE.unloadPriorityCallback = lruPriorityCallback;
+
+const DEFAULT_DOWNLOAD_QUEUE = new PriorityQueue();
+DEFAULT_DOWNLOAD_QUEUE.maxJobs = 25;
+DEFAULT_DOWNLOAD_QUEUE.priorityCallback = unifiedPriorityCallback;
+
+const DEFAULT_PARSE_QUEUE = new PriorityQueue();
+DEFAULT_PARSE_QUEUE.maxJobs = 5;
+DEFAULT_PARSE_QUEUE.priorityCallback = unifiedPriorityCallback;
+
+const DEFAULT_NODE_QUEUE = new PriorityQueue();
+DEFAULT_NODE_QUEUE.maxJobs = 25;
+DEFAULT_NODE_QUEUE.priorityCallback = ( a, b ) => {
+
+	const aParent = a.parent;
+	const bParent = b.parent;
+	if ( aParent === bParent ) {
+
+		return 0;
+
+	} else if ( ! aParent ) {
+
+		return 1;
+
+	} else if ( ! bParent ) {
+
+		return - 1;
+
+	} else {
+
+		// fall back to the priority used for tile loads and parsing
+		return unifiedPriorityCallback( aParent, bParent );
+
+	}
+
+};
+
+
 /**
  * Base class for 3D Tiles renderers. Manages tile loading, caching, traversal,
  * and a plugin system for extending rendering behavior. Engine-specific renderers
@@ -385,44 +425,6 @@ export class TilesRendererBase {
 		this.cachedSinceLoadComplete = new Set();
 		this.isLoading = false;
 
-		const lruCache = new LRUCache();
-		lruCache.unloadPriorityCallback = lruPriorityCallback;
-
-		const downloadQueue = new PriorityQueue();
-		downloadQueue.maxJobs = 25;
-		downloadQueue.priorityCallback = errorPriorityCallback;
-
-		const parseQueue = new PriorityQueue();
-		parseQueue.maxJobs = 5;
-		parseQueue.priorityCallback = errorPriorityCallback;
-
-		const processNodeQueue = new PriorityQueue();
-		processNodeQueue.maxJobs = 25;
-		processNodeQueue.priorityCallback = ( a, b ) => {
-
-			const aParent = a.parent;
-			const bParent = b.parent;
-			if ( aParent === bParent ) {
-
-				return 0;
-
-			} else if ( ! aParent ) {
-
-				return 1;
-
-			} else if ( ! bParent ) {
-
-				return - 1;
-
-			} else {
-
-				// fall back to the priority used for tile loads and parsing
-				return downloadQueue.priorityCallback( aParent, bParent );
-
-			}
-
-		};
-
 		this.processedTiles = new WeakSet();
 
 		/**
@@ -446,30 +448,28 @@ export class TilesRendererBase {
 		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {LRUCache}
 		 */
-		this.lruCache = lruCache;
+		this.lruCache = DEFAULT_LRU_CACHE;
 
 		/**
 		 * Priority queue controlling concurrent tile downloads. Max jobs defaults to `25`.
 		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
-		this.downloadQueue = downloadQueue;
-		this.downloadQueue.priorityCallback = unifiedPriorityCallback;
+		this.downloadQueue = DEFAULT_DOWNLOAD_QUEUE;
 
 		/**
 		 * Priority queue controlling concurrent tile parsing. Max jobs defaults to `5`.
 		 * @note Cannot be modified once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
-		this.parseQueue = parseQueue;
-		this.parseQueue.priorityCallback = unifiedPriorityCallback;
+		this.parseQueue = DEFAULT_PARSE_QUEUE;
 
 		/**
 		 * Priority queue for expanding and initializing tiles for traversal. Max jobs defaults to `25`.
 		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
-		this.processNodeQueue = processNodeQueue;
+		this.processNodeQueue = DEFAULT_PARSE_QUEUE;
 
 		/**
 		 * Loading and rendering statistics updated each frame. Fields:
