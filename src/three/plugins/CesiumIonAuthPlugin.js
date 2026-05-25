@@ -1,5 +1,6 @@
 import { CesiumIonAuthPlugin as CesiumIonAuthPluginImpl } from '3d-tiles-renderer/core/plugins';
 import { GeneratedSurfacePlugin } from './images/GeneratedSurfacePlugin.js';
+import { TMSTilesOverlay } from './images/ImageOverlayPlugin.js';
 import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
 
 /**
@@ -38,7 +39,8 @@ export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 						'CesiumIonAuthPlugin: CesiumIonAuthPlugin plugin auto-registration has been deprecated. ' +
 						'Please implement a custom "assetTypeHandler" for "IMAGERY" using "GeneratedSurfacePlugin", instead.'
 					);
-					tiles.registerPlugin( new GeneratedSurfacePlugin( { shape: 'ellipsoid' } ) );
+					const overlay = new TMSTilesOverlay( { url: tiles.rootURL } );
+					tiles.registerPlugin( new GeneratedSurfacePlugin( { shape: 'ellipsoid', overlay } ) );
 
 				} else {
 
