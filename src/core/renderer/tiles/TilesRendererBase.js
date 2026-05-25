@@ -251,12 +251,6 @@ const unifiedPriorityCallback = ( a, b ) => {
  */
 
 /**
- * Fired when any tile content (model or external tileset) finishes loading.
- * @deprecated
- * @event TilesRendererBase#load-content
- */
-
-/**
  * Fired when any tileset JSON finishes loading.
  * @event TilesRendererBase#load-tileset
  * @property {Tileset} tileset - The loaded tileset object.
