@@ -204,7 +204,7 @@ export class ImageOverlayPlugin {
 				this.resetVirtualChildren( ! this.enableTileSplitting );
 				tiles.recalculateBytesUsed();
 
-				tiles.dispatchEvent( { type: 'needs-rerender' } );
+				tiles.dispatchEvent( { type: 'needs-render' } );
 
 			}
 
