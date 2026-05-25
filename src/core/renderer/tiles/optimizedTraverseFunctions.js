@@ -463,10 +463,6 @@ function toggleTiles( tile, renderer ) {
 
 			}
 
-		} else {
-
-			tile.traversal.active = false;
-
 		}
 
 		// when loading parent tiles as fallbacks, keep all used tiles downloaded
