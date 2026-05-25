@@ -768,23 +768,6 @@ readonly loadProgress: number
 Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 
 
-### .optimizedLoadStrategy
-
-```js
-optimizedLoadStrategy: boolean = true
-```
-
-Enables an optimized tile loading strategy that loads only the tiles
-needed for the current view, reducing memory usage and improving initial load times.
-Tiles are loaded independently based on screen-space error without requiring all parent
-tiles to load first. Prevents visual gaps and flashing during camera movement.
-
-Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
-
-> [!WARNING]
-> This option has been deprecated and will be removed in upcoming releases. The "optimized
-> load strategy" will be the only option with "loadSiblings" and "loadAncestors" as toggles.
-
 ### .rootTileset
 
 ```js
@@ -929,8 +912,6 @@ camera movement. When `false`, only visible tiles are loaded, minimizing memory 
 potentially causing brief gaps during rapid movement. Implicitly treated as `true` when
 `loadAncestors` is enabled.
 
-Only applies when `optimizedLoadStrategy` is enabled.
-
 
 ### .loadAncestors
 
@@ -942,8 +923,6 @@ loadAncestors: boolean = false
 fallback while children are loading — similar to the behavior of the standard load
 strategy. Increases memory usage but provides smoother transitions on first load.
 Implicitly enables sibling loading to prevent flickering during camera movement.
-
-Only applies when `optimizedLoadStrategy` is enabled.
 
 
 ### .maxTilesProcessed
