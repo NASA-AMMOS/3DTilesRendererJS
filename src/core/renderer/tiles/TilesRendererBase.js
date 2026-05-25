@@ -2,7 +2,6 @@ import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { runTraversal as optimizedRunTraversal } from './optimizedTraverseFunctions.js';
-import { runTraversal } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
@@ -169,8 +168,8 @@ const unifiedPriorityCallback = ( a, b ) => {
 	const aRenderer = a.internal.renderer;
 	const bRenderer = b.internal.renderer;
 
-	const aOptimized = aRenderer.optimizedLoadStrategy && ! aRenderer.loadAncestors;
-	const bOptimized = bRenderer.optimizedLoadStrategy && ! bRenderer.loadAncestors;
+	const aOptimized = ! aRenderer.loadAncestors;
+	const bOptimized = ! bRenderer.loadAncestors;
 
 	if ( aOptimized && bOptimized ) {
 
@@ -351,13 +350,6 @@ export class TilesRendererBase {
 
 	}
 
-	get rootTileSet() {
-
-		console.warn( 'TilesRenderer: "rootTileSet" has been deprecated. Use "rootTileset" instead.' );
-		return this.rootTileset;
-
-	}
-
 	/**
 	 * Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 	 * @type {number}
@@ -369,45 +361,6 @@ export class TilesRendererBase {
 		const loading = stats.queued + stats.downloading + stats.parsing;
 		const total = stats.inCacheSinceLoad + ( isLoading ? 1 : 0 );
 		return total === 0 ? 1.0 : 1.0 - loading / total;
-
-	}
-
-	get errorThreshold() {
-
-		return this._errorThreshold;
-
-	}
-
-	set errorThreshold( v ) {
-
-		console.warn( 'TilesRenderer: The "errorThreshold" option has been deprecated.' );
-		this._errorThreshold = v;
-
-	}
-
-	/**
-	 * Enables an optimized tile loading strategy that loads only the tiles
-	 * needed for the current view, reducing memory usage and improving initial load times.
-	 * Tiles are loaded independently based on screen-space error without requiring all parent
-	 * tiles to load first. Prevents visual gaps and flashing during camera movement.
-	 *
-	 * Based in part on {@link https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html Cesium Native tile selection}.
-	 *
-	 * @warn This option has been deprecated and will be removed in upcoming releases. The "optimized
-	 * load strategy" will be the only option with "loadSiblings" and "loadAncestors" as toggles.
-	 * @type {boolean}
-	 * @default true
-	 */
-	get optimizedLoadStrategy() {
-
-		return this._optimizedLoadStrategy;
-
-	}
-
-	set optimizedLoadStrategy( v ) {
-
-		console.warn( 'TilesRenderer: "optimizedLoadStrategy" has been deprecated. Please toggle "loadAncestors" to adjust the tile load behavior.' );
-		this._optimizedLoadStrategy = v;
 
 	}
 
@@ -575,7 +528,6 @@ export class TilesRendererBase {
 		 * @default 16
 		 */
 		this.errorTarget = 16.0;
-		this._errorThreshold = Infinity;
 
 		/**
 		 * "Active tiles" are those that are loaded and available but not necessarily visible.
@@ -595,15 +547,11 @@ export class TilesRendererBase {
 		 */
 		this.maxDepth = Infinity;
 
-		this._optimizedLoadStrategy = true;
-
 		/**
 		 * **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
 		 * camera movement. When `false`, only visible tiles are loaded, minimizing memory but
 		 * potentially causing brief gaps during rapid movement. Implicitly treated as `true` when
 		 * `loadAncestors` is enabled.
-		 *
-		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
 		 * @default true
 		 */
@@ -614,8 +562,6 @@ export class TilesRendererBase {
 		 * fallback while children are loading — similar to the behavior of the standard load
 		 * strategy. Increases memory usage but provides smoother transitions on first load.
 		 * Implicitly enables sibling loading to prevent flickering during camera movement.
-		 *
-		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
 		 * @default false
 		 */
@@ -646,21 +592,6 @@ export class TilesRendererBase {
 		if ( plugin[ PLUGIN_REGISTERED ] === true ) {
 
 			throw new Error( 'TilesRendererBase: A plugin can only be registered to a single tileset' );
-
-		}
-
-		// warn if plugin implements deprecated loadRootTileSet method
-		if ( plugin.loadRootTileSet && ! plugin.loadRootTileset ) {
-
-			console.warn( 'TilesRendererBase: Plugin implements deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".' );
-			plugin.loadRootTileset = plugin.loadRootTileSet;
-
-		}
-
-		if ( plugin.preprocessTileSet && ! plugin.preprocessTileset ) {
-
-			console.warn( 'TilesRendererBase: Plugin implements deprecated "preprocessTileSet" method. Please rename to "preprocessTileset".' );
-			plugin.preprocessTileset = plugin.preprocessTileSet;
 
 		}
 
@@ -819,7 +750,7 @@ export class TilesRendererBase {
 	update() {
 
 		// load root
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -836,7 +767,6 @@ export class TilesRendererBase {
 					this.rootLoadingState = LOADED;
 					this.rootTileset = root;
 					this.dispatchEvent( { type: 'needs-update' } );
-					this.dispatchEvent( { type: 'load-content' } ); // @deprecated
 					this.dispatchEvent( {
 						type: 'load-tileset',
 						tileset: root,
@@ -920,15 +850,7 @@ export class TilesRendererBase {
 		this.prepareForTraversal();
 
 		// run traversal
-		if ( optimizedLoadStrategy ) {
-
-			optimizedRunTraversal( root, this );
-
-		} else {
-
-			runTraversal( root, this );
-
-		}
+		optimizedRunTraversal( root, this );
 
 		// remove any tiles that are loading but no longer used
 		this.removeUnusedPendingTiles();
@@ -1488,14 +1410,6 @@ export class TilesRendererBase {
 
 	preprocessTileset( json, url, parent = null ) {
 
-		// check for deprecated function usage
-		const proto = Object.getPrototypeOf( this );
-		if ( Object.hasOwn( proto, 'preprocessTileSet' ) ) {
-
-			console.warn( `${ proto.constructor.name }: Class overrides deprecated "preprocessTileSet" method. Please rename to "preprocessTileset".` );
-
-		}
-
 		const version = json.asset.version;
 		const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
 		console.assert(
@@ -1516,22 +1430,7 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessTileSet( ...args ) {
-
-		console.warn( 'TilesRenderer: "preprocessTileSet" has been deprecated. Use "preprocessTileset" instead.' );
-		return this.preprocessTileset( ...args );
-
-	}
-
 	loadRootTileset() {
-
-		// check for deprecated function usage
-		const proto = Object.getPrototypeOf( this );
-		if ( Object.hasOwn( proto, 'loadRootTileSet' ) ) {
-
-			console.warn( `${ proto.constructor.name }: Class overrides deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".` );
-
-		}
 
 		// transform the url
 		let processedUrl = this.rootURL;
@@ -1565,13 +1464,6 @@ export class TilesRendererBase {
 			} );
 
 		return pr;
-
-	}
-
-	loadRootTileSet( ...args ) {
-
-		console.warn( 'TilesRenderer: "loadRootTileSet" has been deprecated. Use "loadRootTileset" instead.' );
-		return this.loadRootTileSet( ...args );
 
 	}
 
@@ -1801,7 +1693,6 @@ export class TilesRendererBase {
 				// dispatch an event indicating that this model has completed and that a new
 				// call to "update" is needed.
 				this.dispatchEvent( { type: 'needs-update' } );
-				this.dispatchEvent( { type: 'load-content' } ); // @deprecated
 				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {

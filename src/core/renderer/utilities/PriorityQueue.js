@@ -58,27 +58,6 @@ export class PriorityQueue {
 
 	}
 
-	/**
-	 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
-	 * single frame than there is time for. Should be overridden in scenarios where
-	 * `requestAnimationFrame` is not reliable, such as when running in WebXR.
-	 * @type {SchedulingCallback}
-	 * @default requestAnimationFrame
-	 * @deprecated
-	 */
-	get schedulingCallback() {
-
-		return this._schedulingCallback;
-
-	}
-
-	set schedulingCallback( cb ) {
-
-		console.log( 'PriorityQueue: Setting "schedulingCallback" has been deprecated. Use Scheduler to switch to an XRSession rAF, instead.' );
-		this._schedulingCallback = cb;
-
-	}
-
 	constructor() {
 
 		/**
