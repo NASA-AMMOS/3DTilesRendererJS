@@ -1,6 +1,8 @@
 /** @import { ImageOverlay } from './ImageOverlayPlugin.js' */
 import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector3, Sphere } from 'three';
-import { TILE_X, TILE_Y, TILE_LEVEL } from './ImageFormatPlugin.js';
+export const TILE_X = Symbol( 'TILE_X' );
+export const TILE_Y = Symbol( 'TILE_Y' );
+export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
 import { TilingScheme } from './utils/TilingScheme.js';
 import { ProjectionScheme } from './utils/ProjectionScheme.js';
