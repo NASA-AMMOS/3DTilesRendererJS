@@ -25,20 +25,12 @@ export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 
 				if ( type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
 
-					console.warn(
-						'CesiumIonAuthPlugin: CesiumIonAuthPlugin plugin auto-registration has been deprecated. ' +
-						'Please implement a custom "assetTypeHandler" for "TERRAIN" using "QuantizedMeshPlugin", instead.'
-					);
 					tiles.registerPlugin( new QuantizedMeshPlugin( {
 						useRecommendedSettings: this.useRecommendedSettings,
 					} ) );
 
 				} else if ( type === 'IMAGERY' && tiles.getPluginByName( 'GENERATED_SURFACE_PLUGIN' ) === null ) {
 
-					console.warn(
-						'CesiumIonAuthPlugin: CesiumIonAuthPlugin plugin auto-registration has been deprecated. ' +
-						'Please implement a custom "assetTypeHandler" for "IMAGERY" using "GeneratedSurfacePlugin", instead.'
-					);
 					const overlay = new TMSTilesOverlay( { url: tiles.rootURL } );
 					tiles.registerPlugin( new GeneratedSurfacePlugin( { shape: 'ellipsoid', overlay } ) );
 
@@ -51,14 +43,6 @@ export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 			},
 			...options,
 		} );
-
-		if ( options.__suppress_warning__ ) {
-
-			console.warn(
-				'CesiumIonAuthPlugin: Plugin has been moved to "3d-tiles-renderer/core/plugins".'
-			);
-
-		}
 
 	}
 
