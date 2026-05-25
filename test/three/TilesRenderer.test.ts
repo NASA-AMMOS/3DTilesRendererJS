@@ -33,7 +33,6 @@ function typecheck( renderer: TilesRenderer ) {
 	renderer.addEventListener( 'load-tileset', loadTileset );
 	renderer.addEventListener( 'tiles-load-start', emptyEvent );
 	renderer.addEventListener( 'tiles-load-end', emptyEvent );
-	renderer.addEventListener( 'load-content', emptyEvent );
 	renderer.addEventListener( 'load-model', loadModel );
 	renderer.addEventListener( 'dispose-model', disposeModel );
 	renderer.addEventListener( 'tile-visibility-change', tileVisibilityChange );

@@ -6,6 +6,7 @@ import { Tileset } from './Tileset.js';
 // Events dispatched by TilesRendererBase, available across all renderer implementations.
 export interface TilesRendererBaseEventMap<TScene = unknown> {
 	'needs-update': {};
+	/** @deprecated */
 	'load-content': {};
 	'load-tileset': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
 	/* @deprecated Use 'load-tileset' instead */

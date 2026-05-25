@@ -252,11 +252,6 @@ const unifiedPriorityCallback = ( a, b ) => {
  */
 
 /**
- * Fired when any tile content (model or external tileset) finishes loading.
- * @event TilesRendererBase#load-content
- */
-
-/**
  * Fired when any tileset JSON finishes loading.
  * @event TilesRendererBase#load-tileset
  * @property {Tileset} tileset - The loaded tileset object.
@@ -835,7 +830,6 @@ export class TilesRendererBase {
 					this.rootLoadingState = LOADED;
 					this.rootTileset = root;
 					this.dispatchEvent( { type: 'needs-update' } );
-					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
 						type: 'load-tileset',
 						tileset: root,
@@ -1800,7 +1794,6 @@ export class TilesRendererBase {
 				// dispatch an event indicating that this model has completed and that a new
 				// call to "update" is needed.
 				this.dispatchEvent( { type: 'needs-update' } );
-				this.dispatchEvent( { type: 'load-content' } );
 				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {
