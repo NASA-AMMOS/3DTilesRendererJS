@@ -204,7 +204,7 @@ export class ImageOverlayPlugin {
 				this.resetVirtualChildren( ! this.enableTileSplitting );
 				tiles.recalculateBytesUsed();
 
-				tiles.dispatchEvent( { type: 'needs-rerender' } );
+				tiles.dispatchEvent( { type: 'needs-render' } );
 
 			}
 
@@ -1191,7 +1191,7 @@ export class ImageOverlayPlugin {
 				}
 
 				info.failed = true;
-				tiles.dispatchEvent( { type: 'load-error', tile, overlay, error: err } );
+				tiles.dispatchEvent( { type: 'load-error', tile, overlay, error: err, url: null } );
 				return null;
 
 			} );
