@@ -325,6 +325,7 @@ const unifiedPriorityCallback = ( a, b ) => {
  * @property {string|URL} url - The URL that failed to load.
  */
 
+// Default shared caches and queues
 const DEFAULT_LRU_CACHE = new LRUCache();
 DEFAULT_LRU_CACHE.unloadPriorityCallback = lruPriorityCallback;
 
@@ -468,7 +469,7 @@ export class TilesRendererBase {
 		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
-		this.processNodeQueue = processNodeQueue;
+		this.processNodeQueue = DEFAULT_PARSE_QUEUE;
 
 		/**
 		 * Loading and rendering statistics updated each frame. Fields:
