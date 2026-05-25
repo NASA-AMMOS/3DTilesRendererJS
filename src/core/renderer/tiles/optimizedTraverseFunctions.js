@@ -548,7 +548,7 @@ function toggleTiles( tile, renderer ) {
 
 			}
 
-		} else {
+		} else if ( ! tile.internal.hasRenderableContent ) {
 
 			// For non-renderable tiles, notify plugins when the tile becomes or stops being a traversal leaf so we
 			// can display "empty" tiles in plugins like the DebugTilesPlugin.
