@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.26] - Unreleased
+## [0.4.26] - 2026.05.25
 ### Added
 - DebugTilesPlugin: Added support for displaying empty tiles that stop traversal so tile set structure is more clear.
 
