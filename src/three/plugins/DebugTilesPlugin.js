@@ -393,6 +393,12 @@ export class DebugTilesPlugin {
 
 	}
 
+	setEmptyTileVisible( tile, visible ) {
+
+		this._onTileVisibilityChange( tile, visible );
+
+	}
+
 	_initExtremes() {
 
 		if ( ! ( this.tiles && this.tiles.root ) ) {
