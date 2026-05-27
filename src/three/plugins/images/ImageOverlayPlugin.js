@@ -854,7 +854,7 @@ export class ImageOverlayPlugin {
 	 */
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo, processQueue, processedTiles } = this;
+		const { overlays, overlayInfo, processQueue, processedTiles, tiles } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
@@ -878,7 +878,7 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
-					if ( tile.traversal.visible ) {
+					if ( tiles.visibleTiles.has( tile ) ) {
 
 						overlay.setRegionVisible( range, false );
 
@@ -930,6 +930,8 @@ export class ImageOverlayPlugin {
 			// Set resolution on the overlay
 			overlay.setResolution( this.resolution );
 
+			// TODO: we should move away from reaching into specific "tiles renderer" download queue.
+			// We should prefer an overarching, common download system.
 			const overlayFetch = overlay.fetch.bind( overlay );
 			overlay.fetch = ( ...args ) => tiles
 				.downloadQueue
@@ -1136,7 +1138,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		if ( tile.traversal.visible ) {
+		if ( tiles.visibleTiles.has( tile ) ) {
 
 			overlay.setRegionVisible( info.range, true );
 
