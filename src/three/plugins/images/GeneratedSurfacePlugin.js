@@ -317,6 +317,7 @@ export class GeneratedSurfacePlugin {
 		const geometry = new PlaneGeometry( 1, 1, lonVerts + 2, latVerts + 2 );
 
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
+		const uvRange = tiling.getTileContentUVBounds( x, y, level );
 
 		// adjust the geometry to position it at the region
 		const { position, normal, uv } = geometry.attributes;
@@ -389,8 +390,8 @@ export class GeneratedSurfacePlugin {
 			}
 
 			// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
-			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
-			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
+			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
+			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
 
 			// update the geometry
 			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
