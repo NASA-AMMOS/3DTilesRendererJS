@@ -874,6 +874,12 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
+					if ( tile.traversal.visible ) {
+
+						overlay.setRegionVisible( range, false );
+
+					}
+
 					overlay.releaseTexture( range );
 
 				}
