@@ -2,7 +2,7 @@
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 /** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
-import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
+import { PriorityQueue, PriorityQueueItemRemovedError, unifiedPriorityCallback } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { QuadKeyImageSource } from './sources/QuadKeyImageSource.js';
@@ -27,6 +27,32 @@ const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
+
+const PROCESS_QUEUE = /* @__PURE__ */ new PriorityQueue();
+PROCESS_QUEUE.maxJobs = 10;
+PROCESS_QUEUE.priorityCallback = ( a, b ) => {
+
+	const tileA = a.tile;
+	const tileB = b.tile;
+
+	const rendererA = tileA.internal.renderer;
+	const rendererB = tileB.internal.renderer;
+
+	const visibleA = rendererA.visibleTiles.has( tileA );
+	const visibleB = rendererB.visibleTiles.has( tileB );
+	if ( visibleA !== visibleB ) {
+
+		// load visible tiles first
+		return visibleA ? 1 : - 1;
+
+	} else {
+
+		// the fallback to the download queue tile priority
+		return unifiedPriorityCallback( tileA, tileB );
+
+	}
+
+};
 
 /**
  * Plugin that composites one or more tiled image overlays onto 3D tile geometry by
@@ -103,33 +129,11 @@ export class ImageOverlayPlugin {
 	init( tiles ) {
 
 		const tileComposer = new TiledTextureComposer();
-		const processQueue = new PriorityQueue();
-		processQueue.maxJobs = 10;
-		processQueue.priorityCallback = ( a, b ) => {
-
-			const tileA = a.tile;
-			const tileB = b.tile;
-
-			const visibleA = tiles.visibleTiles.has( tileA );
-			const visibleB = tiles.visibleTiles.has( tileB );
-			if ( visibleA !== visibleB ) {
-
-				// load visible tiles first
-				return visibleA ? 1 : - 1;
-
-			} else {
-
-				// the fallback to the download queue tile priority
-				return tiles.downloadQueue.priorityCallback( tileA, tileB );
-
-			}
-
-		};
 
 		// save variables
 		this.tiles = tiles;
 		this.tileComposer = tileComposer;
-		this.processQueue = processQueue;
+		this.processQueue = PROCESS_QUEUE;
 
 		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -163,6 +167,7 @@ export class ImageOverlayPlugin {
 			// trigger redraws for visible tiles if overlays updated
 			if ( overlayChanged ) {
 
+				const { processQueue } = this;
 				const maxJobs = processQueue.maxJobs;
 				let count = 0;
 				processQueue.items.forEach( info => {
@@ -897,10 +902,11 @@ export class ImageOverlayPlugin {
 			overlayInfo.delete( overlay );
 			controller.abort();
 
-			// Remove any items that reference the overlay being disposed
+			// Remove any items that reference the overlay being disposed - we check if the tiles
+			// is in this "processedTiles" map since the queue can be shared among plugin instances.
 			processQueue.removeByFilter( item => {
 
-				return item.overlay === overlay;
+				return item.overlay === overlay && processedTiles.has( item.tile );
 
 			} );
 

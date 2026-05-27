@@ -148,7 +148,7 @@ const lruPriorityCallback = ( a, b ) => {
 // Unified priority callback for shared queues — delegates to the appropriate per-tile callback
 // based on each tile's renderer settings. Falls back to errorPriorityCallback for cross-renderer
 // comparisons or when renderer settings differ.
-const unifiedPriorityCallback = ( a, b ) => {
+export const unifiedPriorityCallback = ( a, b ) => {
 
 	// handle non-tile cases
 	const aPriority = a.priority ?? Infinity;
