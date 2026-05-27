@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Deprecated APIs and fields have been removed.
 - CesiumIonPlugin: Removed warning logs.
 - TilesRenderer: All instances will now share "processNodeQueue", "lruCache", "downloadQueue" and "priorityQueue" instances by default until optionally reassigned.
-- ImageOvlerayPlugin: Fix plugins not tracking tile visibility correctly.
+- ImageOverlayPlugin: All image overlay instances share tile download & processing queues.
 
 ### Fixed
 - GeneratedSurfacePlugin: Fix the plugin not applying uv ranges correctly.
+- ImageOverlayPlugin: Fix plugins not tracking tile visibility correctly.
 
 ## [0.4.27] - 2026.05.25
 ### Fixed
