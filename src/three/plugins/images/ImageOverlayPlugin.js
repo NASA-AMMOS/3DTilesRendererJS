@@ -923,7 +923,7 @@ export class ImageOverlayPlugin {
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
-		const { tiles } = this;
+		const { tiles, processedTiles } = this;
 
 		overlay.init().then( () => {
 
@@ -957,15 +957,9 @@ export class ImageOverlayPlugin {
 
 		};
 
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		processedTiles.forEach( tile => {
 
-			initTile( scene, tile );
-
-		} );
-
-		this.pendingTiles.forEach( ( scene, tile ) => {
-
-			initTile( scene, tile );
+			initTile( tile.engineData.scene, tile );
 
 		} );
 
