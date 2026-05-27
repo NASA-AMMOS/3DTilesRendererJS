@@ -944,8 +944,9 @@ export class ImageOverlayPlugin {
 		} );
 
 		const promises = [];
-		const initTile = async ( scene, tile ) => {
+		processedTiles.forEach( async tile => {
 
+			const scene = tile.engineData.scene;
 			this._initTileOverlayInfo( tile, overlay );
 
 			const promise = this._initTileSceneOverlayInfo( scene, tile, overlay );
@@ -954,12 +955,6 @@ export class ImageOverlayPlugin {
 			// mark tiles as needing an update after initialized so we get a trickle in of tiles
 			await promise;
 			this._updateLayers( tile );
-
-		};
-
-		processedTiles.forEach( tile => {
-
-			initTile( tile.engineData.scene, tile );
 
 		} );
 
