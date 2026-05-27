@@ -227,8 +227,12 @@ export class ImageOverlayPlugin {
 
 			this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
 
-				const info = tileInfo.get( tile );
-				overlay.setRegionVisible( info.range, visible );
+				if ( tileInfo.has( tile ) ) {
+
+					const { range } = tileInfo.get( tile );
+					overlay.setRegionVisible( range, visible, tile );
+
+				}
 
 			} );
 
@@ -850,7 +854,7 @@ export class ImageOverlayPlugin {
 	 */
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo, processQueue, processedTiles } = this;
+		const { overlays, overlayInfo, processQueue, processedTiles, tiles } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
@@ -873,6 +877,12 @@ export class ImageOverlayPlugin {
 
 				// release the ranges
 				if ( range !== null ) {
+
+					if ( tiles.visibleTiles.has( tile ) ) {
+
+						overlay.setRegionVisible( range, false );
+
+					}
 
 					overlay.releaseTexture( range );
 
@@ -913,13 +923,15 @@ export class ImageOverlayPlugin {
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
-		const { tiles } = this;
+		const { tiles, processedTiles } = this;
 
 		overlay.init().then( () => {
 
 			// Set resolution on the overlay
 			overlay.setResolution( this.resolution );
 
+			// TODO: we should move away from reaching into specific "tiles renderer" download queue.
+			// We should prefer an overarching, common download system.
 			const overlayFetch = overlay.fetch.bind( overlay );
 			overlay.fetch = ( ...args ) => tiles
 				.downloadQueue
@@ -932,8 +944,9 @@ export class ImageOverlayPlugin {
 		} );
 
 		const promises = [];
-		const initTile = async ( scene, tile ) => {
+		processedTiles.forEach( async tile => {
 
+			const scene = tile.engineData.scene;
 			this._initTileOverlayInfo( tile, overlay );
 
 			const promise = this._initTileSceneOverlayInfo( scene, tile, overlay );
@@ -942,18 +955,6 @@ export class ImageOverlayPlugin {
 			// mark tiles as needing an update after initialized so we get a trickle in of tiles
 			await promise;
 			this._updateLayers( tile );
-
-		};
-
-		tiles.forEachLoadedModel( ( scene, tile ) => {
-
-			initTile( scene, tile );
-
-		} );
-
-		this.pendingTiles.forEach( ( scene, tile ) => {
-
-			initTile( scene, tile );
 
 		} );
 
@@ -1126,7 +1127,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		if ( tile.traversal.visible ) {
+		if ( tiles.visibleTiles.has( tile ) ) {
 
 			overlay.setRegionVisible( info.range, true );
 

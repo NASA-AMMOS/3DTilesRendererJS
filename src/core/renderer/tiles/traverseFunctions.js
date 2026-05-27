@@ -561,9 +561,16 @@ function toggleTiles( tile, renderer ) {
 
 		}
 
+		// save the current status for the next frame
 		tile.traversal.wasSetActive = setActive;
 		tile.traversal.wasSetVisible = setVisible;
 		tile.traversal.usedLastFrame = isUsed;
+
+		// TODO: clean this up since "traversal.active" and "traversal.visible" fields are
+		// overloaded and overused above.
+		// ensure the visible and active fields are set consistently
+		tile.traversal.visible = setVisible;
+		tile.traversal.active = setActive;
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
