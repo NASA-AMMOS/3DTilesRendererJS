@@ -227,8 +227,12 @@ export class ImageOverlayPlugin {
 
 			this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
 
-				const info = tileInfo.get( tile );
-				overlay.setRegionVisible( info.range, visible );
+				if ( tileInfo.has( tile ) ) {
+
+					const { range } = tileInfo.get( tile );
+					overlay.setRegionVisible( range, visible, tile );
+
+				}
 
 			} );
 
