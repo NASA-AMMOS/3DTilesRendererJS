@@ -45,6 +45,22 @@ export class MVTAnnotationsPlugin {
 
 		};
 
+		this._onRegionChange = ( { range, visible } ) => {
+
+			// TODO: iterate over tiles within region, mark locks
+
+			if ( visible ) {
+
+				// locks.lock( x, y, l );
+
+			} else {
+
+				// locks.unlock( x, y, l );
+
+			}
+
+		};
+
 		// TODO: calculate "visible" regions and "lock" them on the overlay, similar to
 		// the image overlay plugin.
 
@@ -59,6 +75,7 @@ export class MVTAnnotationsPlugin {
 		} );
 
 		tiles.addEventListener( 'after-update', this._onUpdateAfter );
+		overlay.addEventListener( 'region-visibility-change', this._onRegionChange );
 
 	}
 
@@ -66,6 +83,7 @@ export class MVTAnnotationsPlugin {
 
 		this.group.removeFromParent();
 		this.tiles.removeEventListener( 'after-update', this._onUpdateAfter );
+		this.overlay.removeEventListener( 'region-visibility-change', this._onRegionChange );
 
 	}
 

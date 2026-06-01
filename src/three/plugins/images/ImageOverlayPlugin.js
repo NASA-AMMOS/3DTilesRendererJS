@@ -1,7 +1,7 @@
 /** @import { WebGLRenderer } from 'three' */
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 /** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
-import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
+import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture, EventDispatcher } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError, unifiedPriorityCallback } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { XYZImageSource } from './sources/XYZImageSource.js';
@@ -1373,7 +1373,7 @@ export class ImageOverlayPlugin {
  * @param {boolean} [options.alphaInvert=false] If true, inverts the alpha channel before
  * applying the mask or blend.
  */
-export class ImageOverlay {
+export class ImageOverlay extends EventDispatcher {
 
 	get isPlanarProjection() {
 
@@ -1382,6 +1382,8 @@ export class ImageOverlay {
 	}
 
 	constructor( options = {} ) {
+
+		super();
 
 		const {
 			opacity = 1,
@@ -1488,6 +1490,11 @@ export class ImageOverlay {
 
 			entry = { range: [ ...range ], count: 0 };
 			_visibleRegionCounts.set( key, entry );
+			this.dispatchEvent( {
+				type: 'region-visibility-change',
+				range,
+				visible,
+			} );
 
 		}
 
@@ -1500,6 +1507,11 @@ export class ImageOverlay {
 		} else if ( entry.count === 0 ) {
 
 			_visibleRegionCounts.delete( key );
+			this.dispatchEvent( {
+				type: 'region-visibility-change',
+				range,
+				visible,
+			} );
 
 		}
 
