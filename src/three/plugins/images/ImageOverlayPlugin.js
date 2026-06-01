@@ -1373,7 +1373,7 @@ export class ImageOverlayPlugin {
  * @param {boolean} [options.alphaInvert=false] If true, inverts the alpha channel before
  * applying the mask or blend.
  */
-export class ImageOverlay extends EventDispatcher {
+export class ImageOverlay {
 
 	get isPlanarProjection() {
 
@@ -1382,8 +1382,6 @@ export class ImageOverlay extends EventDispatcher {
 	}
 
 	constructor( options = {} ) {
-
-		super();
 
 		const {
 			opacity = 1,
@@ -1490,11 +1488,6 @@ export class ImageOverlay extends EventDispatcher {
 
 			entry = { range: [ ...range ], count: 0 };
 			_visibleRegionCounts.set( key, entry );
-			this.dispatchEvent( {
-				type: 'region-visibility-change',
-				range,
-				visible,
-			} );
 
 		}
 
@@ -1507,11 +1500,6 @@ export class ImageOverlay extends EventDispatcher {
 		} else if ( entry.count === 0 ) {
 
 			_visibleRegionCounts.delete( key );
-			this.dispatchEvent( {
-				type: 'region-visibility-change',
-				range,
-				visible,
-			} );
 
 		}
 
