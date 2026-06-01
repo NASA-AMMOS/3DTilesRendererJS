@@ -1,5 +1,27 @@
 import { EventDispatcher, Vector2 } from 'three';
 
+// ScreenOccupationManager handles screen-space collision de-confliction for annotations.
+//
+// LoD transition strategy:
+// When the active MVT tile set changes (LoD change), annotations are reconciled by feature ID:
+//
+// 1. STABLE annotations (feature ID present in both old and new LoD):
+//    - Remain registered and visible at their existing world position.
+//    - Their elevation is updated asynchronously via the raycast queue once the new terrain
+//      tile mesh is available. The occupancy grid is updated in-place when the new position settles.
+//
+// 2. DISAPPEARED annotations (feature ID present in old LoD, absent in new):
+//    - Unregistered and faded out immediately when the old MVT tile is released.
+//
+// 3. NEW annotations (feature ID absent in old LoD, present in new):
+//    - Queued for elevation raycasting. Not registered until raycasting is complete.
+//    - Processed in descending priority order (rank / importance) so that high-priority
+//      annotations claim grid cells first, preventing low-priority annotations from
+//      blocking them and then being evicted.
+//
+// The occupancy grid is always in a valid state — stable annotations never leave the grid
+// during a transition, so there are no frames where previously visible content disappears.
+
 export class ScreenOccupationManager extends EventDispatcher {
 
 	constructor() {
