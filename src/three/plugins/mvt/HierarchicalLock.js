@@ -45,11 +45,9 @@ export class HierarchicalLock extends EventDispatcher {
 				x,
 				y,
 				level: l,
-				present: 0,
 				ref: 0,
 				override: 0,
-				activeDispatched: false,
-				presentDispatched: false,
+				dispatched: false,
 			};
 
 		}
@@ -85,29 +83,18 @@ export class HierarchicalLock extends EventDispatcher {
 		const { locks } = this;
 		const lock = locks[ key ];
 		const active = lock.ref > 0 && lock.override === 0;
-		if ( active !== lock.activeDispatched ) {
+		if ( active !== lock.dispatched ) {
 
 			const { x, y, level } = lock;
-			lock.activeDispatched = active;
+			lock.dispatched = active;
 			this.dispatchEvent( {
-				type: 'active-toggle',
+				type: 'toggle',
 				active, x, y, level,
 			} );
 
 		}
 
-		if ( Boolean( lock.present ) !== lock.presentDispatched ) {
-
-			const { x, y, level } = lock;
-			lock.activeDispatched = lock.present;
-			this.dispatchEvent( {
-				type: 'present-toggle',
-				active, x, y, level,
-			} );
-
-		}
-
-		if ( lock.ref === 0 && lock.override === 0 && lock.present === 0 ) {
+		if ( lock.ref === 0 && lock.override === 0 ) {
 
 			delete locks[ key ];
 

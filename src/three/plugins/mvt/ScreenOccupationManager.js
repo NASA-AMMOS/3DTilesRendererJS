@@ -85,7 +85,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			} else if ( prevVisible.has( item ) ) {
 
-				removed.delete( item );
+				removed.add( item );
 
 			}
 

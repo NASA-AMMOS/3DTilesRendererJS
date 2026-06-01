@@ -88,7 +88,7 @@ export class MVTAnnotationsPlugin {
 		this.tiles = tiles;
 		tiles.group.add( group );
 
-		this._onDownloadStart = ( { tile } ) => {
+		this._onTileDownloadStart = ( { tile } ) => {
 
 			const info = {
 				range: null,
@@ -186,6 +186,7 @@ export class MVTAnnotationsPlugin {
 		locks.addEventListener( 'toggle', this._onLockToggle );
 		tiles.addEventListener( 'after-update', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		//
 
@@ -204,6 +205,7 @@ export class MVTAnnotationsPlugin {
 		this.locks.removeEventListener( 'toggle', this._onLockToggle );
 		this.tiles.removeEventListener( 'after-update', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		this.tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
@@ -256,7 +258,15 @@ export class MVTAnnotationsPlugin {
 
 		} );
 
-		await Promise.all( promises );
+		try {
+
+			await Promise.all( promises );
+
+		} catch {
+
+			return;
+
+		}
 
 		info.loaded = true;
 		if ( info.disposed ) {
