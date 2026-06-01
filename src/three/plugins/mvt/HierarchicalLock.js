@@ -1,0 +1,120 @@
+import { EventDispatcher } from 'three';
+
+const getKey = ( x, y, l ) => {
+
+	return `${ x }_${ y }_${ l }`;
+
+};
+
+export class HierarchicalLock extends EventDispatcher {
+
+	constructor() {
+
+		super();
+
+		this.locks = {};
+
+	}
+
+	lock( x, y, level ) {
+
+		this._accrueLock( x, y, level, true );
+
+	}
+
+	unlock( x, y, level ) {
+
+		this._accrueLock( x, y, level, false );
+
+	}
+
+	_initLock( x, y, l ) {
+
+		const { locks } = this;
+		const key = getKey( x, y, l );
+		if ( ! ( key in locks ) ) {
+
+			locks[ key ] = {
+				x,
+				y,
+				level: l,
+				ref: 0,
+				override: 0,
+				dispatched: false,
+			};
+
+		}
+
+	}
+
+	_accrueRef( key, incr ) {
+
+		const { locks } = this;
+		locks[ key ].ref += incr ? 1 : - 1;
+		if ( locks[ key ].ref < 0 ) {
+
+			throw new Error();
+
+		}
+
+	}
+
+	_accrueOverride( key, incr ) {
+
+		const { locks } = this;
+		locks[ key ].override += incr ? 1 : - 1;
+		if ( locks[ key ].override < 0 ) {
+
+			throw new Error();
+
+		}
+
+	}
+
+	_resolveEvents( key ) {
+
+		const { locks } = this;
+		const lock = locks[ key ];
+		const active = lock.ref > 0 && lock.override === 0;
+		if ( active !== lock.dispatched ) {
+
+			const { x, y, level } = lock;
+			lock.dispatched = true;
+			this.dispatchEvent( {
+				type: 'toggle',
+				active, x, y, level,
+			} );
+
+		}
+
+		if ( lock.ref === 0 && lock.override === 0 ) {
+
+			delete locks[ key ];
+
+		}
+
+	}
+
+	_accrueLock( x, y, level, incr ) {
+
+		let key = getKey( x, y, level );
+		this._initLock( x, y, level );
+		this._accrueRef( key, incr );
+		this._resolveEvents( key );
+
+		while ( level > 0 ) {
+
+			level --;
+			x >>= 1;
+			y >>= 1;
+
+			let key = getKey( x, y, level );
+			this._initLock( x, y, level );
+			this._accrueOverride( key, incr );
+			this._resolveEvents( key );
+
+		}
+
+	}
+
+}
