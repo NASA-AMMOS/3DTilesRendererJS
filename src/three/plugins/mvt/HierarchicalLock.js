@@ -23,49 +23,13 @@ export class HierarchicalLock extends EventDispatcher {
 
 	markActive( x, y, level ) {
 
-		const bx = Math.floor( x / 2 ) * 2;
-		const by = Math.floor( y / 2 ) * 2;
-
-		this._accrueActive( bx + 0, by + 0, level, true );
-		this._accrueActive( bx + 1, by + 0, level, true );
-		this._accrueActive( bx + 0, by + 1, level, true );
-		this._accrueActive( bx + 1, by + 1, level, true );
+		this._accrueActive( x, y, level, true );
 
 	}
 
 	markInactive( x, y, level ) {
 
-		const bx = Math.floor( x / 2 ) * 2;
-		const by = Math.floor( y / 2 ) * 2;
-
-		this._accrueActive( bx + 0, by + 0, level, false );
-		this._accrueActive( bx + 1, by + 0, level, false );
-		this._accrueActive( bx + 0, by + 1, level, false );
-		this._accrueActive( bx + 1, by + 1, level, false );
-
-	}
-
-	lock( x, y, level ) {
-
-		const bx = Math.floor( x / 2 ) * 2;
-		const by = Math.floor( y / 2 ) * 2;
-
-		this._accrueAvailable( bx + 0, by + 0, level, true );
-		this._accrueAvailable( bx + 1, by + 0, level, true );
-		this._accrueAvailable( bx + 0, by + 1, level, true );
-		this._accrueAvailable( bx + 1, by + 1, level, true );
-
-	}
-
-	unlock( x, y, level ) {
-
-		const bx = Math.floor( x / 2 ) * 2;
-		const by = Math.floor( y / 2 ) * 2;
-
-		this._accrueAvailable( bx + 0, by + 0, level, false );
-		this._accrueAvailable( bx + 1, by + 0, level, false );
-		this._accrueAvailable( bx + 0, by + 1, level, false );
-		this._accrueAvailable( bx + 1, by + 1, level, false );
+		this._accrueActive( x, y, level, false );
 
 	}
 
@@ -170,17 +134,6 @@ export class HierarchicalLock extends EventDispatcher {
 			this._resolveEvents( key );
 
 		}
-
-	}
-
-	_accrueAvailable( x, y, level, incr ) {
-
-		const { locks } = this;
-		const key = getKey( x, y, level );
-		this._initLock( x, y, level );
-		locks[ key ].present += incr ? 1 : - 1;
-
-		this._resolveEvents( key );
 
 	}
 
