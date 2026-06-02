@@ -149,6 +149,13 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
+			// sync camera resolution into occupancy grid
+			if ( this.camera !== null ) {
+
+				tiles.getResolution( this.camera, occupancy.resolution );
+
+			}
+
 			// update visible text, points based on screen space conflicts
 			occupancy.update();
 
@@ -184,7 +191,7 @@ export class MVTAnnotationsPlugin {
 
 		// register events
 		locks.addEventListener( 'toggle', this._onLockToggle );
-		tiles.addEventListener( 'after-update', this._onUpdateAfter );
+		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
@@ -203,7 +210,7 @@ export class MVTAnnotationsPlugin {
 
 		this.group.removeFromParent();
 		this.locks.removeEventListener( 'toggle', this._onLockToggle );
-		this.tiles.removeEventListener( 'after-update', this._onUpdateAfter );
+		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		this.tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
 

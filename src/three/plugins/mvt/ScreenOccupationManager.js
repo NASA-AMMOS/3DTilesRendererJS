@@ -1,4 +1,4 @@
-import { EventDispatcher, Vector2 } from 'three';
+import { EventDispatcher, Vector2, Vector3, WebGPUCoordinateSystem } from 'three';
 
 // ScreenOccupationManager handles screen-space collision de-confliction for annotations.
 //
@@ -27,10 +27,12 @@ export class AnnotationItem {
 	constructor() {
 
 		this.id = '';
+		this.layer = '';
+		this.properties = null;
 
 	}
 
-	updateTransform( camera ) {
+	updateTransform( camera, resolution ) {
 
 	}
 
@@ -41,6 +43,58 @@ export class AnnotationItem {
 	}
 
 }
+
+export class PointAnnotationItem extends AnnotationItem {
+
+	constructor() {
+
+		super();
+
+		this.position = new Vector3();
+		this.radius = 10;
+
+		// x/y = screen pixels, z = NDC depth (z > 1 means behind camera)
+		this._screenPos = new Vector3();
+
+	}
+
+	updateTransform( camera, resolution ) {
+
+		const screenPos = this._screenPos;
+		const position = this.position;
+
+		screenPos.copy( position ).project( camera );
+
+		const zMin = camera.coordinateSystem === WebGPUCoordinateSystem ? 0 : - 1;
+		const z = screenPos.z;
+		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
+		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
+		screenPos.z = ( z < zMin || z > 1 ) ? 1 : 0;
+
+	}
+
+	evaluate( handle ) {
+
+		const { _screenPos, radius } = this;
+		if ( _screenPos.z !== 0 ) {
+
+			return false;
+
+		}
+
+		if ( handle.test( _screenPos.x, _screenPos.y, radius ) ) {
+
+			return false;
+
+		}
+
+		handle.mark( _screenPos.x, _screenPos.y, radius );
+		return true;
+
+	}
+
+}
+
 
 export class ScreenOccupationManager extends EventDispatcher {
 
@@ -148,7 +202,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
 
-				items[ i ].updateTransform( camera );
+				items[ i ].updateTransform( camera, resolution );
 
 			}
 
