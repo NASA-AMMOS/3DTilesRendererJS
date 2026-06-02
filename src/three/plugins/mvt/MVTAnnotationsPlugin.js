@@ -164,17 +164,16 @@ export class MVTAnnotationsPlugin {
 		group.add( this.points );
 
 		const visibleItems = new Set();
-		let pointsDirty = false;
 		occupancy.addEventListener( 'added', ( { items } ) => {
 
 			for ( const item of items ) visibleItems.add( item );
-			pointsDirty = true;
+			this._pointsDirty = true;
 
 		} );
 		occupancy.addEventListener( 'removed', ( { items } ) => {
 
 			for ( const item of items ) visibleItems.delete( item );
-			pointsDirty = true;
+			this._pointsDirty = true;
 
 		} );
 		this._visibleItems = visibleItems;
@@ -217,9 +216,9 @@ export class MVTAnnotationsPlugin {
 			// update visible text, points based on screen space conflicts
 			occupancy.update();
 
-			if ( pointsDirty ) {
+			if ( this._pointsDirty ) {
 
-				pointsDirty = false;
+				this._pointsDirty = false;
 				this._rebuildPoints( [ ...this._visibleItems ], this.POINTS );
 
 			}
