@@ -26,19 +26,8 @@ function collectMeshes( object ) {
 }
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 export class MVTAnnotationsPlugin {
-
-	get camera() {
-
-		return this.occupancy.camera;
-
-	}
-
-	set camera( v ) {
-
-		this.occupancy.camera = v;
-
-	}
 
 	get contentCache() {
 
@@ -55,6 +44,7 @@ export class MVTAnnotationsPlugin {
 			overlay,
 			camera = null,
 			scene = null,
+			displayOccupancyGrid = true,
 		} = options;
 
 		this.overlay = overlay;
@@ -68,11 +58,11 @@ export class MVTAnnotationsPlugin {
 
 		this.tileInfo = new Map();
 		this.tileItems = new Map();
-		this.tilePoints = new Map();
 
 		// callback to filter which features become annotations:
 		// getAnnotation( layerName, properties ) → boolean
 		this.getAnnotation = null;
+		this.displayOccupancyGrid = displayOccupancyGrid;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -88,6 +78,20 @@ export class MVTAnnotationsPlugin {
 	init( tiles ) {
 
 		const { locks, group, overlay, occupancy, tileInfo } = this;
+
+		// debug occupancy grid overlay
+		const debugCanvas = document.createElement( 'canvas' );
+		debugCanvas.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;opacity:0.5;';
+		document.body.appendChild( debugCanvas );
+		this._debugCanvas = debugCanvas;
+
+		const points = new Points();
+		points.material.size = 10;
+		points.material.sizeAttenuation = false;
+		points.frustumCulled = false;
+		group.add( points );
+		points.updateMatrixWorld( true );
+		this.POINTS = points;
 
 		// init container
 		this.tiles = tiles;
@@ -152,17 +156,77 @@ export class MVTAnnotationsPlugin {
 
 		};
 
+		// single Points object updated from the occupancy visible set
+		const pointsGeometry = new BufferGeometry();
+		this.points = new Points( pointsGeometry, new PointsMaterial( { size: 10, sizeAttenuation: false } ) );
+		group.add( this.points );
+
+		const visibleItems = new Set();
+		let pointsDirty = false;
+		occupancy.addEventListener( 'added', ( { items } ) => {
+
+			for ( const item of items ) visibleItems.add( item );
+			pointsDirty = true;
+
+		} );
+		occupancy.addEventListener( 'removed', ( { items } ) => {
+
+			for ( const item of items ) visibleItems.delete( item );
+			pointsDirty = true;
+
+		} );
+		this._visibleItems = visibleItems;
+
+		// sort: stable (already visible) items first so they hold their cells (hysteresis),
+		// then closest to camera, then bottom-to-top on screen
+		occupancy.sortCallback = ( a, b ) => {
+
+			if ( a._depth !== b._depth ) {
+
+				return a._depth - b._depth;
+
+			} else {
+
+				return b._screenPos.y - a._screenPos.y;
+
+			}
+
+		};
+
 		this._onUpdateAfter = () => {
 
-			// sync camera resolution into occupancy grid
+			// sync camera resolution and NDC matrix into occupancy grid
 			if ( this.camera !== null ) {
 
 				tiles.getResolution( this.camera, occupancy.resolution );
+
+				_ndcMatrix
+					.copy( tiles.group.matrixWorld )
+					.premultiply( this.camera.matrixWorldInverse )
+					.premultiply( this.camera.projectionMatrix );
+				occupancy.matrix = _ndcMatrix;
+
+			} else {
+
+				occupancy.matrix = null;
 
 			}
 
 			// update visible text, points based on screen space conflicts
 			occupancy.update();
+
+			if ( pointsDirty ) {
+
+				// console.log( occupancy.items, [ ...this._visibleItems ] );
+				this._rebuildPoints( [ ...this._visibleItems ], this.POINTS );
+
+			}
+
+			if ( this.displayOccupancyGrid ) {
+
+				this._drawDebugGrid();
+
+			}
 
 		};
 
@@ -226,7 +290,7 @@ export class MVTAnnotationsPlugin {
 							item.id = 'id' in feature ? `${ layerName }_${ feature.id }` : `${ x }_${ y }_${ level }_${ layerName }_${ i }`;
 							item.layer = layerName;
 							item.properties = feature.properties;
-							tiles.ellipsoid.getCartographicToPosition( lat, lon, 100000, item.position );
+							tiles.ellipsoid.getCartographicToPosition( lat, lon, 10, item.position );
 
 							occupancy.register( item );
 							items.push( item );
@@ -239,23 +303,9 @@ export class MVTAnnotationsPlugin {
 
 				tileItems.set( key, items );
 
-				const positions = new Float32Array( items.length * 3 );
-				for ( let j = 0; j < items.length; j ++ ) {
-
-					items[ j ].position.toArray( positions, j * 3 );
-
-				}
-
-				const geometry = new BufferGeometry();
-				geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
-				const points = new Points( geometry, new PointsMaterial( { size: 10, sizeAttenuation: false } ) );
-				group.add( points );
-				points.updateMatrixWorld( true );
-				this.tilePoints.set( key, points );
-
 			} else {
 
-				const { occupancy, tileItems, tilePoints } = this;
+				const { occupancy, tileItems } = this;
 				const items = tileItems.get( key );
 				if ( items ) {
 
@@ -266,15 +316,6 @@ export class MVTAnnotationsPlugin {
 					}
 
 					tileItems.delete( key );
-
-				}
-
-				const points = tilePoints.get( key );
-				if ( points ) {
-
-					points.removeFromParent();
-					points.geometry.dispose();
-					tilePoints.delete( key );
 
 				}
 
@@ -301,6 +342,7 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
+		this._debugCanvas.remove();
 		this.group.removeFromParent();
 		this.locks.removeEventListener( 'toggle', this._onLockToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -376,12 +418,20 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		info.loaded = true;
 		if ( info.disposed ) {
 
+			// disposeTile already ran and skipped release because info.loaded was false —
+			// we own the locks now, so release them here
+			this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
+
+				contentCache.release( x, y, l );
+
+			} );
 			return;
 
 		}
+
+		info.loaded = true;
 
 		if ( tiles.visibleTiles.has( tile ) ) {
 
@@ -396,6 +446,51 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	_drawDebugGrid() {
+
+		const { occupancy, _debugCanvas } = this;
+		const { cells, size, resolution } = occupancy;
+		const dpr = window.devicePixelRatio;
+		const cols = Math.ceil( resolution.width / size );
+		const rows = Math.ceil( resolution.height / size );
+
+		_debugCanvas.width = dpr * resolution.width;
+		_debugCanvas.height = dpr * resolution.height;
+
+		const drawSize = size * dpr;
+		const ctx = _debugCanvas.getContext( '2d' );
+		for ( let cy = 0; cy < rows; cy ++ ) {
+
+			for ( let cx = 0; cx < cols; cx ++ ) {
+
+				const occupied = cells[ cy * cols + cx ] !== 0;
+				ctx.fillStyle = occupied ? 'rgba( 255, 80, 80, 0.6 )' : 'rgba( 80, 255, 80, 0.15 )';
+				ctx.fillRect( cx * drawSize + 0.5, cy * drawSize + 0.5, drawSize - 1, drawSize - 1 );
+				ctx.strokeStyle = occupied ? 'rgba( 255, 80, 80, 1 )' : 'rgba( 80, 255, 80, 0.25 )';
+				ctx.lineWidth = 1;
+				ctx.strokeRect( cx * drawSize + 0.5, cy * drawSize + 0.5, drawSize - 1, drawSize - 1 );
+
+			}
+
+		}
+
+	}
+
+	_rebuildPoints( items, target ) {
+
+		const visible = [ ...items ];
+		const positions = new Float32Array( visible.length * 3 );
+		for ( let i = 0; i < visible.length; i ++ ) {
+
+			visible[ i ].position.toArray( positions, i * 3 );
+
+		}
+
+		target.geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
+		target.geometry.dispose();
+
+	}
+
 	disposeTile( tile ) {
 
 		const { tileInfo, contentCache } = this;
@@ -406,12 +501,16 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
+		if ( info.loaded ) {
 
-			// unlock all MVT sub tiles in a 2x2 pattern
-			contentCache.release( x, y, l );
+			this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
 
-		} );
+				// unlock all MVT sub tiles in a 2x2 pattern
+				contentCache.release( x, y, l );
+
+			} );
+
+		}
 
 		tileInfo.delete( tile );
 		info.disposed = true;

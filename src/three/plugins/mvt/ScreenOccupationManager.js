@@ -1,4 +1,4 @@
-import { EventDispatcher, Vector2, Vector3, WebGPUCoordinateSystem } from 'three';
+import { EventDispatcher, Vector2, Vector3 } from 'three';
 
 // ScreenOccupationManager handles screen-space collision de-confliction for annotations.
 //
@@ -32,7 +32,7 @@ export class AnnotationItem {
 
 	}
 
-	updateTransform( camera, resolution ) {
+	updateTransform( matrix, resolution ) {
 
 	}
 
@@ -51,25 +51,25 @@ export class PointAnnotationItem extends AnnotationItem {
 		super();
 
 		this.position = new Vector3();
-		this.radius = 10;
+		this.radius = 5;
 
 		// x/y = screen pixels, z = NDC depth (z > 1 means behind camera)
 		this._screenPos = new Vector3();
+		this._depth = 0;
 
 	}
 
-	updateTransform( camera, resolution ) {
+	updateTransform( matrix, resolution ) {
 
 		const screenPos = this._screenPos;
-		const position = this.position;
 
-		screenPos.copy( position ).project( camera );
+		screenPos.copy( this.position ).applyMatrix4( matrix );
 
-		const zMin = camera.coordinateSystem === WebGPUCoordinateSystem ? 0 : - 1;
 		const z = screenPos.z;
 		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
-		screenPos.z = ( z < zMin || z > 1 ) ? 1 : 0;
+		screenPos.z = ( z < - 1 || z > 1 ) ? 1 : 0;
+		this._depth = z;
 
 	}
 
@@ -102,8 +102,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		super();
 
-		// camera
-		this.camera = null;
+		// projection matrix: projectionMatrix * matrixWorldInverse * tilesGroup.matrixWorld
+		this.matrix = null;
 
 		// occupancy cells
 		this.resolution = new Vector2( 1, 1 );
@@ -174,7 +174,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 	update() {
 
 		const {
-			camera,
+			matrix,
 			resolution,
 			size,
 			items,
@@ -198,11 +198,11 @@ export class ScreenOccupationManager extends EventDispatcher {
 		}
 
 		// transform the shape to the screen
-		if ( camera !== null ) {
+		if ( matrix !== null ) {
 
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
 
-				items[ i ].updateTransform( camera, resolution );
+				items[ i ].updateTransform( matrix, resolution );
 
 			}
 
@@ -221,7 +221,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 			const item = items[ i ];
 
 			// check & mark occupancy
-			if ( camera && item.evaluate( handle ) ) {
+			if ( matrix !== null && item.evaluate( handle ) ) {
 
 				visible.add( item );
 				if ( ! prevVisible.has( item ) ) {
