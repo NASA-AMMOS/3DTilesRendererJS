@@ -88,12 +88,6 @@ export class MVTAnnotationsPlugin {
 
 		const { locks, group, overlay, occupancy, tileInfo } = this;
 
-		// debug occupancy grid overlay
-		const debugCanvas = document.createElement( 'canvas' );
-		debugCanvas.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;opacity:0.5;';
-		document.body.appendChild( debugCanvas );
-		this._debugCanvas = debugCanvas;
-
 		const points = new Points();
 		points.material.size = 10;
 		points.material.sizeAttenuation = false;
@@ -238,12 +232,7 @@ export class MVTAnnotationsPlugin {
 			}
 
 			this._rebuildPoints( [ ...this._visibleItems ], this.POINTS );
-
-			if ( this.displayOccupancyGrid ) {
-
-				this._drawDebugGrid();
-
-			}
+			this._updateDebugGrid();
 
 		};
 
@@ -365,7 +354,12 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
-		this._debugCanvas.remove();
+		if ( this._debugCanvas ) {
+
+			this._debugCanvas.remove();
+
+		}
+
 		this.group.removeFromParent();
 		this.locks.removeEventListener( 'toggle', this._onLockToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -469,7 +463,29 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	_drawDebugGrid() {
+	_updateDebugGrid() {
+
+		const { displayOccupancyGrid } = this;
+		if ( ! displayOccupancyGrid ) {
+
+			if ( this._debugCanvas ) {
+
+				_debugCanvas.remove();
+
+			}
+
+			return;
+
+		} else if ( displayOccupancyGrid && ! this._debugCanvas ) {
+
+			// debug occupancy grid overlay
+			const debugCanvas = document.createElement( 'canvas' );
+			debugCanvas.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;opacity:0.5;';
+			document.body.appendChild( debugCanvas );
+			this._debugCanvas = debugCanvas;
+
+		}
+
 
 		const { occupancy, _debugCanvas } = this;
 		const { cells, size, resolution } = occupancy;
