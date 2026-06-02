@@ -1,4 +1,4 @@
-import { Group, MathUtils, Matrix4 } from 'three';
+import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial } from 'three';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem, ScreenOccupationManager } from './ScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
@@ -68,6 +68,7 @@ export class MVTAnnotationsPlugin {
 
 		this.tileInfo = new Map();
 		this.tileItems = new Map();
+		this.tilePoints = new Map();
 
 		// callback to filter which features become annotations:
 		// getAnnotation( layerName, properties ) → boolean
@@ -225,7 +226,7 @@ export class MVTAnnotationsPlugin {
 							item.id = 'id' in feature ? `${ layerName }_${ feature.id }` : `${ x }_${ y }_${ level }_${ layerName }_${ i }`;
 							item.layer = layerName;
 							item.properties = feature.properties;
-							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
+							tiles.ellipsoid.getCartographicToPosition( lat, lon, 100000, item.position );
 
 							occupancy.register( item );
 							items.push( item );
@@ -238,9 +239,23 @@ export class MVTAnnotationsPlugin {
 
 				tileItems.set( key, items );
 
+				const positions = new Float32Array( items.length * 3 );
+				for ( let j = 0; j < items.length; j ++ ) {
+
+					items[ j ].position.toArray( positions, j * 3 );
+
+				}
+
+				const geometry = new BufferGeometry();
+				geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
+				const points = new Points( geometry, new PointsMaterial( { size: 10, sizeAttenuation: false } ) );
+				group.add( points );
+				points.updateMatrixWorld( true );
+				this.tilePoints.set( key, points );
+
 			} else {
 
-				const { occupancy, tileItems } = this;
+				const { occupancy, tileItems, tilePoints } = this;
 				const items = tileItems.get( key );
 				if ( items ) {
 
@@ -251,6 +266,15 @@ export class MVTAnnotationsPlugin {
 					}
 
 					tileItems.delete( key );
+
+				}
+
+				const points = tilePoints.get( key );
+				if ( points ) {
+
+					points.removeFromParent();
+					points.geometry.dispose();
+					tilePoints.delete( key );
 
 				}
 
@@ -376,7 +400,11 @@ export class MVTAnnotationsPlugin {
 
 		const { tileInfo, contentCache } = this;
 		const info = tileInfo.get( tile );
-		if ( ! info ) return;
+		if ( ! info ) {
+
+			return;
+
+		}
 
 		this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
 
