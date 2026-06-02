@@ -91,6 +91,9 @@ export class MVTAnnotationsPlugin {
 		const points = new Points();
 		points.material.size = 10;
 		points.material.sizeAttenuation = false;
+		points.material.depthWrite = false;
+		points.material.depthTest = false;
+		points.renderOrder = 1000;
 		points.frustumCulled = false;
 		group.add( points );
 		points.updateMatrixWorld( true );
@@ -165,18 +168,7 @@ export class MVTAnnotationsPlugin {
 		this.points = new Points( pointsGeometry, new PointsMaterial( { size: 10, sizeAttenuation: false } ) );
 		group.add( this.points );
 
-		const visibleItems = new Set();
-		occupancy.addEventListener( 'added', ( { items } ) => {
-
-			for ( const item of items ) visibleItems.add( item );
-
-		} );
-		occupancy.addEventListener( 'removed', ( { items } ) => {
-
-			for ( const item of items ) visibleItems.delete( item );
-
-		} );
-		this._visibleItems = visibleItems;
+		this._visibleItems = occupancy.visible;
 
 		// sort: stable (already visible) items first so they hold their cells (hysteresis),
 		// then closest to camera, then bottom-to-top on screen
@@ -293,7 +285,9 @@ export class MVTAnnotationsPlugin {
 							const [ lon, lat ] = tiling.toCartographicPoint( u, v );
 
 							const item = new PointAnnotationItem();
-							item.id = 'id' in feature ? `${ layerName }_${ feature.id }` : `${ x }_${ y }_${ level }_${ layerName }_${ i }`;
+							// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
+							// across all zoom levels — stable and unique for cross-LoD annotation replacement.
+							item.id = `${ layerName }:${ feature.id }`;
 							item.layer = layerName;
 							item.properties = feature.properties;
 							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
