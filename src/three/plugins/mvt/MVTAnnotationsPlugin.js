@@ -44,7 +44,7 @@ export class MVTAnnotationsPlugin {
 			overlay,
 			camera = null,
 			scene = null,
-			displayOccupancyGrid = true,
+			displayOccupancyGrid = false,
 		} = options;
 
 		this.overlay = overlay;
@@ -66,6 +66,8 @@ export class MVTAnnotationsPlugin {
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
+		// TODO: debounce occupancy decisions — wait N frames before dispatching "added" / "removed"
+		//       so transient conflicts (camera micro-movement) don't cause visible flicker
 
 	}
 
@@ -217,7 +219,7 @@ export class MVTAnnotationsPlugin {
 
 			if ( pointsDirty ) {
 
-				// console.log( occupancy.items, [ ...this._visibleItems ] );
+				pointsDirty = false;
 				this._rebuildPoints( [ ...this._visibleItems ], this.POINTS );
 
 			}
