@@ -1,4 +1,5 @@
-import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial } from 'three';
+import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial, Raycaster } from 'three';
+import { PriorityQueue } from '3d-tiles-renderer/core';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem, ScreenOccupationManager } from './ScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
@@ -27,6 +28,7 @@ function collectMeshes( object ) {
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
+const _raycaster = /* @__PURE__ */ new Raycaster();
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {
@@ -63,6 +65,11 @@ export class MVTAnnotationsPlugin {
 		// getAnnotation( layerName, properties ) → boolean
 		this.getAnnotation = null;
 		this.displayOccupancyGrid = displayOccupancyGrid;
+
+		this._raycastQueue = new PriorityQueue();
+		this._raycastQueue.maxJobs = 10;
+		this._raycastQueue.priorityCallback = () => 0;
+		this._pointsDirty = false;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -136,7 +143,8 @@ export class MVTAnnotationsPlugin {
 		// event callbacks
 		this._onVisibilityChange = ( { tile, visible } ) => {
 
-			const { loaded, range } = tileInfo.get( tile );
+			const info = tileInfo.get( tile );
+			const { loaded, range } = info;
 			if ( loaded ) {
 
 				this._forEach2x2TileInBounds( range, ( x, y, l ) => {
@@ -291,7 +299,7 @@ export class MVTAnnotationsPlugin {
 							item.id = 'id' in feature ? `${ layerName }_${ feature.id }` : `${ x }_${ y }_${ level }_${ layerName }_${ i }`;
 							item.layer = layerName;
 							item.properties = feature.properties;
-							tiles.ellipsoid.getCartographicToPosition( lat, lon, 10, item.position );
+							tiles.ellipsoid.getCartographicToPosition( lat, lon, 100, item.position );
 
 							occupancy.register( item );
 							items.push( item );
@@ -303,16 +311,22 @@ export class MVTAnnotationsPlugin {
 				}
 
 				tileItems.set( key, items );
+				for ( const item of items ) {
+
+					this._addToRaycastQueue( item );
+
+				}
 
 			} else {
 
-				const { occupancy, tileItems } = this;
+				const { occupancy, tileItems, _raycastQueue } = this;
 				const items = tileItems.get( key );
 				if ( items ) {
 
 					for ( const item of items ) {
 
 						occupancy.unregister( item );
+						_raycastQueue.remove( item );
 
 					}
 
@@ -474,6 +488,37 @@ export class MVTAnnotationsPlugin {
 			}
 
 		}
+
+	}
+
+	_addToRaycastQueue( item ) {
+
+		this._raycastQueue.add( item, () => {
+
+			const { tiles } = this;
+
+			// outward normal ≈ normalized position (WGS84 is <0.4% from spherical)
+			const { origin, direction } = _raycaster.ray;
+			direction.copy( item.position ).normalize();
+			origin.copy( item.position ).addScaledVector( direction, 1e7 );
+			direction.negate();
+
+			origin.applyMatrix4( tiles.group.matrixWorld );
+			direction.transformDirection( tiles.group.matrixWorld );
+
+			const hits = _raycaster.intersectObject( tiles.group, true );
+			if ( hits.length > 0 ) {
+
+				hits[ 0 ].point.applyMatrix4( tiles.group.matrixWorldInverse );
+				item.position.copy( hits[ 0 ].point );
+				this._pointsDirty = true;
+				return;
+
+			}
+
+			// NOTE: missed - leave where it is
+
+		} );
 
 	}
 

@@ -14,7 +14,10 @@ import {
 	GLTFExtensionsPlugin,
 	BatchedTilesPlugin,
 	CesiumIonAuthPlugin,
+	ImageOverlayPlugin,
+	PMTilesOverlay,
 } from '3d-tiles-renderer/plugins';
+import { MVTAnnotationsPlugin } from '../../src/three/plugins/mvt/MVTAnnotationsPlugin.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -89,6 +92,17 @@ function reinstantiateTiles() {
 
 	}
 
+	const overlay = new PMTilesOverlay( {
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+	} );
+
+	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], renderer } ) );
+	tiles.registerPlugin( new MVTAnnotationsPlugin( {
+		overlay,
+		camera: transition.camera,
+		scene,
+	} ) );
+
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
 
@@ -123,6 +137,7 @@ function init() {
 		tiles.deleteCamera( prevCamera );
 		tiles.setCamera( camera );
 		controls.setCamera( camera );
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' )?.setCamera( camera );
 
 	} );
 
