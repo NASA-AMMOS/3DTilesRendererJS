@@ -469,7 +469,7 @@ export class TilesRendererBase {
 		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
-		this.processNodeQueue = DEFAULT_PARSE_QUEUE;
+		this.processNodeQueue = DEFAULT_NODE_QUEUE;
 
 		/**
 		 * Loading and rendering statistics updated each frame. Fields:
