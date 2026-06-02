@@ -300,7 +300,15 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		const info = tileInfo.get( tile );
+		// we may have added the plugin after some tiles started loading
+		let info = tileInfo.get( tile );
+		if ( ! info ) {
+
+			info = { range: null, loaded: false, disposed: false };
+			tileInfo.set( tile, info );
+
+		}
+
 		if ( info.disposed ) {
 
 			return;
@@ -368,6 +376,7 @@ export class MVTAnnotationsPlugin {
 
 		const { tileInfo, contentCache } = this;
 		const info = tileInfo.get( tile );
+		if ( ! info ) return;
 
 		this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
 
