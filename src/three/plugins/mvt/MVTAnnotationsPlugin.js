@@ -1,6 +1,6 @@
-import { Group, Matrix4 } from 'three';
+import { Group, MathUtils, Matrix4 } from 'three';
 import { HierarchicalLock } from './HierarchicalLock.js';
-import { ScreenOccupationManager } from './ScreenOccupationManager.js';
+import { PointAnnotationItem, ScreenOccupationManager } from './ScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
 // TODO:
@@ -67,8 +67,12 @@ export class MVTAnnotationsPlugin {
 		this.camera = camera;
 
 		this.tileInfo = new Map();
+		this.tileItems = new Map();
 
-		// TODO: add "points" manager for icons
+		// callback to filter which features become annotations:
+		// getAnnotation( layerName, properties ) → boolean
+		this.getAnnotation = null;
+
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
 
@@ -163,27 +167,92 @@ export class MVTAnnotationsPlugin {
 
 		this._onLockToggle = ( { x, y, level, active } ) => {
 
-			const { contentCache } = this;
+			const key = `${ x }_${ y }_${ level }`;
+
 			if ( active ) {
 
-				const tile = contentCache.get( x, y, level );
+				const { contentCache, occupancy, getAnnotation, tileItems } = this;
+				const { tiling } = overlay;
+				const vectorTile = contentCache.get( x, y, level );
+				if ( ! vectorTile ) {
 
-				// TODO:
-				// - read content
-				// - settle content
-				// - create instances with unique ids
-				// - cache content associated with x y
-				// - add them to the occupancy grid
+					return;
 
-				// CONSIDERATIONS
-				// - pre-load and cache "loaded" versions of annotations
-				// - allow for "deferred" versions of these callbacks so that
-				// parent tiles can stick around while target tiles are settled
-				// - only settle those that are visible
+				}
+
+				// get the normalized tile bound
+				const tileBounds = tiling.getTileBounds( x, y, level, true, false );
+				const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
+				const items = [];
+
+				// iterate over all the layers
+				for ( const layerName in vectorTile.layers ) {
+
+					const layer = vectorTile.layers[ layerName ];
+					const extent = layer.extent;
+
+					for ( let i = 0; i < layer.length; i ++ ) {
+
+						// process only points
+						const feature = layer.feature( i );
+						if ( feature.type !== 1 ) {
+
+							continue;
+
+						}
+
+						if ( getAnnotation !== null && ! getAnnotation( layerName, layer.properties ) ) {
+
+							continue;
+
+						}
+
+						// retrieve the geometry
+						const geometry = feature.loadGeometry();
+						for ( const [ point ] of geometry ) {
+
+							const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
+							// tile Y=0 is geographic north; with flipY the V axis increases northward
+							// so we invert vf when flipY is set
+							const vf = point.y / extent;
+							const v = tiling.flipY
+								? MathUtils.lerp( tMaxY, tMinY, vf )
+								: MathUtils.lerp( tMinY, tMaxY, vf );
+
+							const [ lon, lat ] = tiling.toCartographicPoint( u, v );
+
+							const item = new PointAnnotationItem();
+							item.id = 'id' in feature ? `${ layerName }_${ feature.id }` : `${ x }_${ y }_${ level }_${ layerName }_${ i }`;
+							item.layer = layerName;
+							item.properties = feature.properties;
+							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
+
+							occupancy.register( item );
+							items.push( item );
+
+						}
+
+					}
+
+				}
+
+				tileItems.set( key, items );
 
 			} else {
 
-				// TODO: read instances from cache, release the content from grid
+				const { occupancy, tileItems } = this;
+				const items = tileItems.get( key );
+				if ( items ) {
+
+					for ( const item of items ) {
+
+						occupancy.unregister( item );
+
+					}
+
+					tileItems.delete( key );
+
+				}
 
 			}
 
