@@ -22,6 +22,9 @@ import { EventDispatcher, Vector2, Vector3 } from 'three';
 // The occupancy grid is always in a valid state — stable annotations never leave the grid
 // during a transition, so there are no frames where previously visible content disappears.
 
+// suppress annotations within ~6° of the globe horizon
+const PERSPECTIVE_CULL_THRESHOLD = 0.1;
+
 export class AnnotationItem {
 
 	constructor() {
@@ -32,7 +35,7 @@ export class AnnotationItem {
 
 	}
 
-	updateTransform( matrix, resolution ) {
+	updateTransform( matrix, resolution, cameraPosition ) {
 
 	}
 
@@ -56,10 +59,11 @@ export class PointAnnotationItem extends AnnotationItem {
 		// x/y = screen pixels, z = NDC depth (z > 1 means behind camera)
 		this._screenPos = new Vector3();
 		this._depth = 0;
+		this._facingRatio = 1;
 
 	}
 
-	updateTransform( matrix, resolution ) {
+	updateTransform( matrix, resolution, cameraPosition ) {
 
 		const screenPos = this._screenPos;
 
@@ -71,12 +75,36 @@ export class PointAnnotationItem extends AnnotationItem {
 		screenPos.z = ( z < - 1 || z > 1 ) ? 1 : 0;
 		this._depth = z;
 
+		// facing ratio: dot( surface normal, direction to camera )
+		// surface normal ≈ normalize( position ) for WGS84
+		if ( cameraPosition !== null ) {
+
+			const px = this.position.x, py = this.position.y, pz = this.position.z;
+			const pLen = Math.sqrt( px * px + py * py + pz * pz );
+			const dx = cameraPosition.x - px, dy = cameraPosition.y - py, dz = cameraPosition.z - pz;
+			const dLen = Math.sqrt( dx * dx + dy * dy + dz * dz );
+			this._facingRatio = ( pLen > 0 && dLen > 0 )
+				? ( px * dx + py * dy + pz * dz ) / ( pLen * dLen )
+				: 1;
+
+		} else {
+
+			this._facingRatio = 1;
+
+		}
+
 	}
 
 	evaluate( handle ) {
 
-		const { _screenPos, radius } = this;
+		const { _screenPos, radius, _facingRatio } = this;
 		if ( _screenPos.z !== 0 ) {
+
+			return false;
+
+		}
+
+		if ( _facingRatio < PERSPECTIVE_CULL_THRESHOLD ) {
 
 			return false;
 
@@ -104,6 +132,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		// projection matrix: projectionMatrix * matrixWorldInverse * tilesGroup.matrixWorld
 		this.matrix = null;
+
+		// camera position in tiles.group local space, for perspective culling
+		this.cameraPosition = null;
 
 		// occupancy cells
 		this.resolution = new Vector2( 1, 1 );
@@ -175,6 +206,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		const {
 			matrix,
+			cameraPosition,
 			resolution,
 			size,
 			items,
@@ -202,7 +234,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
 
-				items[ i ].updateTransform( matrix, resolution );
+				items[ i ].updateTransform( matrix, resolution, cameraPosition );
 
 			}
 

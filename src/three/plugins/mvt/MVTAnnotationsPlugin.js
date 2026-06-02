@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial, Raycaster } from 'three';
+import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial, Raycaster, Vector3 } from 'three';
 import { PriorityQueue } from '3d-tiles-renderer/core';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem, ScreenOccupationManager } from './ScreenOccupationManager.js';
@@ -29,6 +29,7 @@ function collectMeshes( object ) {
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
+const _cameraLocalPos = /* @__PURE__ */ new Vector3();
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {
@@ -69,7 +70,6 @@ export class MVTAnnotationsPlugin {
 		this._raycastQueue = new PriorityQueue();
 		this._raycastQueue.maxJobs = 10;
 		this._raycastQueue.priorityCallback = () => 0;
-		this._pointsDirty = false;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -175,13 +175,11 @@ export class MVTAnnotationsPlugin {
 		occupancy.addEventListener( 'added', ( { items } ) => {
 
 			for ( const item of items ) visibleItems.add( item );
-			this._pointsDirty = true;
 
 		} );
 		occupancy.addEventListener( 'removed', ( { items } ) => {
 
 			for ( const item of items ) visibleItems.delete( item );
-			this._pointsDirty = true;
 
 		} );
 		this._visibleItems = visibleItems;
@@ -204,7 +202,7 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
-			// sync camera resolution and NDC matrix into occupancy grid
+			// sync camera resolution, NDC matrix, and local camera position into occupancy grid
 			if ( this.camera !== null ) {
 
 				tiles.getResolution( this.camera, occupancy.resolution );
@@ -215,21 +213,31 @@ export class MVTAnnotationsPlugin {
 					.premultiply( this.camera.projectionMatrix );
 				occupancy.matrix = _ndcMatrix;
 
+				// camera position in tiles.group local space — used for perspective culling and RTE
+				_matrix.copy( tiles.group.matrixWorld ).invert();
+				_cameraLocalPos.setFromMatrixPosition( this.camera.matrixWorld ).applyMatrix4( _matrix );
+				occupancy.cameraPosition = _cameraLocalPos;
+
 			} else {
 
 				occupancy.matrix = null;
+				occupancy.cameraPosition = null;
 
 			}
 
-			// update visible text, points based on screen space conflicts
+			// update visible points based on screen-space conflicts
 			occupancy.update();
 
-			if ( this._pointsDirty ) {
+			// camera-relative rendering: position the Points object at the camera so that
+			// buffer coordinates are small offsets — avoids Float32 precision jitter at globe scale
+			if ( this.camera !== null ) {
 
-				this._pointsDirty = false;
-				this._rebuildPoints( [ ...this._visibleItems ], this.POINTS );
+				this.POINTS.position.copy( _cameraLocalPos );
+				this.POINTS.updateMatrixWorld( true );
 
 			}
+
+			this._rebuildPoints( [ ...this._visibleItems ], this.POINTS );
 
 			if ( this.displayOccupancyGrid ) {
 
@@ -299,7 +307,7 @@ export class MVTAnnotationsPlugin {
 							item.id = 'id' in feature ? `${ layerName }_${ feature.id }` : `${ x }_${ y }_${ level }_${ layerName }_${ i }`;
 							item.layer = layerName;
 							item.properties = feature.properties;
-							tiles.ellipsoid.getCartographicToPosition( lat, lon, 100, item.position );
+							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
 
 							occupancy.register( item );
 							items.push( item );
@@ -511,7 +519,6 @@ export class MVTAnnotationsPlugin {
 
 				hits[ 0 ].point.applyMatrix4( tiles.group.matrixWorldInverse );
 				item.position.copy( hits[ 0 ].point );
-				this._pointsDirty = true;
 				return;
 
 			}
@@ -524,16 +531,29 @@ export class MVTAnnotationsPlugin {
 
 	_rebuildPoints( items, target ) {
 
-		const visible = [ ...items ];
-		const positions = new Float32Array( visible.length * 3 );
-		for ( let i = 0; i < visible.length; i ++ ) {
+		const count = items.length;
+		const origin = target.position;
 
-			visible[ i ].position.toArray( positions, i * 3 );
+		let posAttr = target.geometry.getAttribute( 'position' );
+		if ( ! posAttr || posAttr.count !== count ) {
+
+			target.geometry.dispose();
+			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
+			target.geometry.setAttribute( 'position', posAttr );
 
 		}
 
-		target.geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
-		target.geometry.dispose();
+		const arr = posAttr.array;
+		for ( let i = 0; i < count; i ++ ) {
+
+			const p = items[ i ].position;
+			arr[ i * 3 + 0 ] = p.x - origin.x;
+			arr[ i * 3 + 1 ] = p.y - origin.y;
+			arr[ i * 3 + 2 ] = p.z - origin.z;
+
+		}
+
+		posAttr.needsUpdate = true;
 
 	}
 
