@@ -1064,7 +1064,7 @@ export class TilesRendererBase {
 
 	disposeTile( tile ) {
 
-		// TODO: are these necessary? Are we disposing tiles when they are currently visible?
+		// Need to mirror the "traverseFunctions" behavior for empty tiles (eg internal tile sets)
 		if ( tile.traversal.visible ) {
 
 			if ( tile.internal.hasRenderableContent ) {
