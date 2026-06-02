@@ -22,6 +22,26 @@ import { EventDispatcher, Vector2 } from 'three';
 // The occupancy grid is always in a valid state — stable annotations never leave the grid
 // during a transition, so there are no frames where previously visible content disappears.
 
+export class AnnotationItem {
+
+	constructor() {
+
+		this.id = '';
+
+	}
+
+	updateTransform( camera ) {
+
+	}
+
+	evaluate( handle ) {
+
+		return false;
+
+	}
+
+}
+
 export class ScreenOccupationManager extends EventDispatcher {
 
 	constructor() {
@@ -41,9 +61,59 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.visible = new Set();
 		this.prevVisible = new Set();
 		this.added = new Set();
-		this.removed = new Set();
 
+		this.handle = {
+			test: ( x, y, r ) => {
+
+				const { cells } = this;
+				return this._cellRange( x, y, r, ( x, y, i ) => {
+
+					return cells[ i ] !== 0;
+
+				} );
+
+			},
+			mark: ( x, y, r ) => {
+
+				const { cells } = this;
+				return this._cellRange( x, y, r, ( x, y, i ) => {
+
+					cells[ i ] = 1;
+					return false;
+
+				} );
+
+			},
+		};
 		this.sortCallback = () => 0;
+
+	}
+
+	_cellRange( x, y, r, callback ) {
+
+		const { size, resolution } = this;
+		const width = Math.ceil( resolution.width / size );
+		const height = Math.ceil( resolution.height / size );
+		const x0 = Math.max( 0, Math.floor( ( x - r ) / size ) );
+		const y0 = Math.max( 0, Math.floor( ( y - r ) / size ) );
+		const x1 = Math.min( width - 1, Math.floor( ( x + r ) / size ) );
+		const y1 = Math.min( height - 1, Math.floor( ( y + r ) / size ) );
+
+		for ( let cy = y0; cy <= y1; cy ++ ) {
+
+			for ( let cx = x0; cx <= x1; cx ++ ) {
+
+				if ( callback( cx, cy, cy * width + cx ) === true ) {
+
+					return true;
+
+				}
+
+			}
+
+		}
+
+		return false;
 
 	}
 
@@ -57,7 +127,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 			visible,
 			prevVisible,
 			added,
-			removed,
+			handle,
 		} = this;
 
 		// resize the occupation cells
@@ -73,48 +143,46 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		}
 
+		// transform the shape to the screen
+		if ( camera !== null ) {
+
+			for ( let i = 0, l = items.length; i < l; i ++ ) {
+
+				items[ i ].updateTransform( camera );
+
+			}
+
+		}
+
 		// sort the items
 		items.sort( this.sortCallback );
 
-		// save the visible set so we can know which had been removed
-		removed.clear();
+		// prevVisible starts as last frame's visible set; items placed this frame are
+		// deleted from it, leaving only items that disappeared (the removed set)
 		added.clear();
 		visible.clear();
 
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
-			let canDisplay = true;
 
-			if ( camera !== null ) {
-
-				// TODO:
-				// - transform the shape to the screen
-				// - check occupancy
-
-			}
-
-			if ( canDisplay ) {
-
-				// TODO: mark occupancy if possible
+			// check & mark occupancy
+			if ( camera && item.evaluate( handle ) ) {
 
 				visible.add( item );
 				if ( ! prevVisible.has( item ) ) {
 
 					added.add( item );
 
+				} else {
+
+					prevVisible.delete( item );
+
 				}
-
-			} else if ( prevVisible.has( item ) ) {
-
-				removed.add( item );
 
 			}
 
 		}
-
-		// swap the visibility
-		[ this.visible, this.prevVisible ] = [ this.prevVisible, this.visible ];
 
 		// events
 		if ( added.size > 0 ) {
@@ -123,11 +191,15 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		if ( removed.size > 0 ) {
+		if ( this.prevVisible.size > 0 ) {
 
-			this.dispatchEvent( { type: 'removed', items: removed } );
+			// prev visible now only contains the "removed" items
+			this.dispatchEvent( { type: 'removed', items: this.prevVisible } );
 
 		}
+
+		// swap the visibility for next update
+		[ this.visible, this.prevVisible ] = [ this.prevVisible, this.visible ];
 
 	}
 
