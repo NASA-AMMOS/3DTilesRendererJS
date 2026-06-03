@@ -1,29 +1,5 @@
 import { EventDispatcher, Vector2, Vector3 } from 'three';
 
-// ScreenOccupationManager handles screen-space collision de-confliction for annotations.
-//
-// LoD transition strategy:
-// When the active MVT tile set changes (LoD change), annotations are reconciled by feature ID:
-//
-// 1. STABLE annotations (feature ID present in both old and new LoD):
-//    - Remain registered and visible at their existing world position.
-//    - Their elevation is updated asynchronously via the raycast queue once the new terrain
-//      tile mesh is available. The occupancy grid is updated in-place when the new position settles.
-//
-// 2. DISAPPEARED annotations (feature ID present in old LoD, absent in new):
-//    - Unregistered and faded out immediately when the old MVT tile is released.
-//
-// 3. NEW annotations (feature ID absent in old LoD, present in new):
-//    - Queued for elevation raycasting. Not registered until raycasting is complete.
-//    - Processed in descending priority order (rank / importance) so that high-priority
-//      annotations claim grid cells first, preventing low-priority annotations from
-//      blocking them and then being evicted.
-//
-// The occupancy grid is always in a valid state — stable annotations never leave the grid
-// during a transition, so there are no frames where previously visible content disappears.
-
-// TODO: we need to handle delayed removal further. It's possible that these delays belong in the parent system, instead
-
 // suppress annotations within ~6 degrees of the globe horizon
 const PERSPECTIVE_CULL_THRESHOLD = 0.1;
 
@@ -34,7 +10,6 @@ export class AnnotationItem {
 		this.id = '';
 		this.layer = '';
 		this.properties = null;
-		this._visibleDuration = 0;
 
 	}
 
@@ -82,7 +57,6 @@ export class PointAnnotationItem extends AnnotationItem {
 		// surface normal ≈ normalize( position ) for WGS84
 		if ( cameraPosition !== null ) {
 
-			// TODO: fix this
 			const px = this.position.x, py = this.position.y, pz = this.position.z;
 			const pLen = Math.sqrt( px * px + py * py + pz * pz );
 			const dx = cameraPosition.x - px, dy = cameraPosition.y - py, dz = cameraPosition.z - pz;
@@ -148,16 +122,11 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// items
 		this.items = [];
 		this.visible = new Set();
+		this.prevVisible = new Set();
 		this.added = new Set();
-		this.removed = new Set();
 
-		// seconds an item must be continuously occupied/absent before show/hide fires
-		this.delay = 0.25;
-		this._lastUpdateTime = - 1;
-
-		// keyed registries for LoD-coherent replacement
+		// prevents duplicate items during simultaneous LoD tile swaps
 		this._itemsById = new Map();
-		this._savedDurations = new Map();
 
 		this.handle = {
 			test: ( x, y, r ) => {
@@ -216,23 +185,14 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	update() {
 
-		const {
-			matrix,
-			cameraPosition,
-			resolution,
-			size,
-			items,
-			visible,
-			added,
-			removed,
-			handle,
-			delay,
-		} = this;
+		const { matrix, cameraPosition, resolution, size, items, added, handle, sortCallback } = this;
 
-		// compute delta time, capped to avoid large jumps after tab suspension
-		const now = performance.now() / 1000;
-		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
-		this._lastUpdateTime = now;
+		// swap visible and prevVisible — prevVisible now holds last frame's result
+		[ this.visible, this.prevVisible ] = [ this.prevVisible, this.visible ];
+
+		const { visible, prevVisible } = this;
+		visible.clear();
+		added.clear();
 
 		// resize the occupation cells
 		const width = Math.ceil( resolution.width / size );
@@ -247,7 +207,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		// transform the shape to the screen
+		// transform items to screen space
 		if ( matrix !== null ) {
 
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
@@ -259,40 +219,24 @@ export class ScreenOccupationManager extends EventDispatcher {
 		}
 
 		// sort the items
-		items.sort( this.sortCallback );
+		items.sort( sortCallback );
 
-		added.clear();
-		removed.clear();
-
+		// evaluate occupancy into the fresh visible set
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
-			const occupied = matrix !== null && item.evaluate( handle );
-
-			// increment duration while occupied, decrement while absent (floored at 0)
-			if ( occupied ) {
-
-				item._visibleDuration = Math.min( item._visibleDuration + dt, delay );
-
-			} else {
-
-				item._visibleDuration = Math.max( item._visibleDuration - dt, 0 );
-
-			}
-
-			const wasVisible = visible.has( item );
-			const visibleDuration = item._visibleDuration;
-
-			// delay === 0: show only when currently occupied (avoids threshold=0 ambiguity)
-			if ( ! wasVisible && visibleDuration === delay ) {
+			if ( matrix !== null && item.evaluate( handle ) ) {
 
 				visible.add( item );
-				added.add( item );
+				if ( ! prevVisible.has( item ) ) {
 
-			} else if ( wasVisible && ! occupied && visibleDuration === 0 ) {
+					added.add( item );
 
-				visible.delete( item );
-				removed.add( item );
+				} else {
+
+					prevVisible.delete( item );
+
+				}
 
 			}
 
@@ -304,9 +248,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		if ( removed.size > 0 ) {
+		if ( prevVisible.size > 0 ) {
 
-			this.dispatchEvent( { type: 'removed', items: removed } );
+			this.dispatchEvent( { type: 'removed', items: prevVisible } );
 
 		}
 
@@ -314,14 +258,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	register( item ) {
 
-		// TODO: how to register / handle non-linear layouts for text - custom callback?
-		const { _itemsById, _savedDurations, items, visible } = this;
+		const { _itemsById, items, visible, prevVisible } = this;
 
 		const existing = _itemsById.get( item.id );
 		if ( existing ) {
 
-			// simultaneous replacement: silently swap — no events, same duration, same visible slot
-			item._visibleDuration = existing._visibleDuration;
+			// simultaneous LoD swap: replace the old item in-place
 			if ( visible.has( existing ) ) {
 
 				visible.delete( existing );
@@ -329,21 +271,19 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			}
 
-			const idx = items.indexOf( existing );
-			if ( idx !== - 1 ) items.splice( idx, 1 );
+			if ( prevVisible.has( existing ) ) {
 
-		} else if ( _savedDurations.has( item.id ) ) {
-
-			// sequential replacement: restore state from the item that was unregistered first
-			const saved = _savedDurations.get( item.id );
-			item._visibleDuration = saved.duration;
-			if ( saved.wasVisible ) {
-
-				visible.add( item );
+				prevVisible.delete( existing );
+				prevVisible.add( item );
 
 			}
 
-			_savedDurations.delete( item.id );
+			const idx = items.indexOf( existing );
+			if ( idx !== - 1 ) {
+
+				items.splice( idx, 1 );
+
+			}
 
 		}
 
@@ -354,7 +294,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	unregister( item ) {
 
-		const { items, visible, _itemsById, _savedDurations } = this;
+		const { items, visible, prevVisible, _itemsById } = this;
 		const index = items.indexOf( item );
 		if ( index !== - 1 ) {
 
@@ -364,13 +304,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		if ( _itemsById.get( item.id ) === item ) {
 
-			_savedDurations.set( item.id, { duration: item._visibleDuration, wasVisible: visible.has( item ) } );
 			_itemsById.delete( item.id );
 
 		}
 
 		visible.delete( item );
-		item._visibleDuration = 0;
+		prevVisible.delete( item );
 
 	}
 

@@ -1,40 +1,21 @@
-// Shelf-packer glyph atlas extending CanvasTexture so it can be passed directly
-// to any Three.js material. The canvas is accessible via the inherited .image field.
-//
-// Items are packed into horizontal shelves. Each shelf is as tall as the first
-// item placed on it; subsequent items on the same shelf must fit within that
-// height. Released slots are pooled and reused before opening new shelf space.
-//
-// Usage:
-//   const atlas = new GlyphAtlasTexture( 2048, 2048 );
-//   const slot  = atlas.allocate( 'my-key', 64, 64 );   // { x, y, w, h } in pixels
-//   atlas.draw( 'my-key', ( ctx, x, y, w, h ) => { ... } );
-//   atlas.release( 'my-key' );
-
 import { CanvasTexture } from 'three';
 
 export class GlyphAtlasTexture extends CanvasTexture {
 
-	constructor( width = 2048, height = 2048 ) {
+	constructor( slotCount, slotSize ) {
 
-		const canvas = document.createElement( 'canvas' );
-		canvas.width = width;
-		canvas.height = height;
+		super( null );
 
-		super( canvas );
+		this.slotSize = 0;
 
-		this.ctx = canvas.getContext( '2d' );
-
-		// key → { x, y, w, h }
+		// key → slot index
 		this._slots = new Map();
-
-		// active shelves: { y, h, nextX }
-		this._shelves = [];
-
-		// slots freed by release(), available for reuse
 		this._freeList = [];
+		this._nextIndex = 0;
+		this._capacity = 0;
+		this._columns = 0;
 
-		this._nextShelfY = 0;
+		this.resize( slotCount, slotSize );
 
 	}
 
@@ -45,99 +26,126 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Returns the slot for key, or null if not allocated.
+	// Returns the slot { x, y, w, h } for key, or null if not allocated.
 	get( key ) {
 
-		return this._slots.get( key ) ?? null;
-
-	}
-
-	// Allocates a w×h region for key and returns its { x, y, w, h } pixel rect.
-	// Returns the existing slot if key is already allocated.
-	// Returns null if the atlas is full.
-	allocate( key, width, height ) {
-
-		if ( this._slots.has( key ) ) {
-
-			return this._slots.get( key );
-
-		}
-
-		// prefer a previously freed slot that fits
-		for ( let i = 0; i < this._freeList.length; i ++ ) {
-
-			const free = this._freeList[ i ];
-			if ( free.w >= width && free.h >= height ) {
-
-				this._freeList.splice( i, 1 );
-				const slot = { x: free.x, y: free.y, w: width, h: height };
-				this._slots.set( key, slot );
-				return slot;
-
-			}
-
-		}
-
-		// try to extend an existing shelf
-		for ( const shelf of this._shelves ) {
-
-			if ( shelf.h >= height && this.image.width - shelf.nextX >= width ) {
-
-				const slot = { x: shelf.nextX, y: shelf.y, w: width, h: height };
-				shelf.nextX += width;
-				this._slots.set( key, slot );
-				return slot;
-
-			}
-
-		}
-
-		// open a new shelf
-		if ( this._nextShelfY + height > this.image.height ) {
+		const { _slots } = this;
+		if ( ! _slots.has( key ) ) {
 
 			return null;
 
 		}
 
-		const shelf = { y: this._nextShelfY, h: height, nextX: width };
-		this._shelves.push( shelf );
-		this._nextShelfY += height;
-
-		const slot = { x: 0, y: shelf.y, w: width, h: height };
-		this._slots.set( key, slot );
-		return slot;
+		return this._indexToSlot( _slots.get( key ) );
 
 	}
 
-	// Invokes callback( ctx, x, y, w, h ) clipped to the slot for key,
-	// then marks the texture as needing a GPU upload.
-	// No-op if key has no allocated slot.
-	draw( key, callback ) {
+	// Renders a single character centered in the slot using the given CSS font string and color.
+	// Returns the slot on success. Throws if the atlas is full.
+	drawGlyph( key, char, font, color = 'white' ) {
 
-		const slot = this._slots.get( key );
-		if ( ! slot ) return;
+		return this._draw( key, ( ctx, x, y, w, h ) => {
 
-		const { ctx } = this;
-		ctx.save();
-		ctx.beginPath();
-		ctx.rect( slot.x, slot.y, slot.w, slot.h );
-		ctx.clip();
-		callback( ctx, slot.x, slot.y, slot.w, slot.h );
-		ctx.restore();
+			ctx.font = font;
+			ctx.fillStyle = color;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			ctx.fillText( char, x + w / 2, y + h / 2 );
 
-		this.needsUpdate = true;
+		} );
+
+	}
+
+	// Draws any CanvasImageSource (ImageBitmap, HTMLImageElement, HTMLCanvasElement, etc.)
+	// into the slot, scaled to fit. Caller is responsible for loading the image.
+	// Returns the slot on success. Throws if the atlas is full.
+	drawImage( key, image ) {
+
+		return this._draw( key, ( ctx, x, y, w, h ) => {
+
+			ctx.drawImage( image, x, y, w, h );
+
+		} );
+
+	}
+
+	// Renders a Path2D into the slot. Path coordinates are slot-local (origin at top-left of slot).
+	// Returns the slot on success. Throws if the atlas is full.
+	drawPath( key, path2D, { fillStyle = null, strokeStyle = null, lineWidth = 1 } = {} ) {
+
+		return this._draw( key, ( ctx, x, y ) => {
+
+			ctx.save();
+			ctx.translate( x, y );
+
+			if ( fillStyle !== null ) {
+
+				ctx.fillStyle = fillStyle;
+				ctx.fill( path2D );
+
+			}
+
+			if ( strokeStyle !== null ) {
+
+				ctx.strokeStyle = strokeStyle;
+				ctx.lineWidth = lineWidth;
+				ctx.stroke( path2D );
+
+			}
+
+			ctx.restore();
+
+		} );
 
 	}
 
 	// Clears the slot for key and returns it to the free pool.
 	release( key ) {
 
-		const slot = this._slots.get( key );
-		if ( ! slot ) return;
+		const { _slots, _freeList } = this;
+		if ( ! _slots.has( key ) ) {
 
-		this.ctx.clearRect( slot.x, slot.y, slot.w, slot.h );
-		this._freeList.push( slot );
-		this._slots.delete( key );
+			return;
+
+		}
+
+		const index = _slots.get( key );
+		_freeList.push( index );
+		_slots.delete( key );
+
+	}
+
+	// Resizes the atlas to a new slot count and optional slot size, copying all
+	// existing slot content into their new positions on the resized canvas.
+	resize( slotCount, slotSize = this.slotSize ) {
+
+		const oldCanvas = this.image;
+		const oldColumns = this._columns;
+		const oldSlotSize = this.slotSize;
+
+		const columns = Math.ceil( Math.sqrt( slotCount ) );
+		const canvas = document.createElement( 'canvas' );
+		canvas.width = columns * slotSize;
+		canvas.height = columns * slotSize;
+
+		const ctx = canvas.getContext( '2d' );
+
+		// copy each allocated slot from its old grid position to its new one
+		for ( const index of this._slots.values() ) {
+
+			const srcX = ( index % oldColumns ) * oldSlotSize;
+			const srcY = Math.floor( index / oldColumns ) * oldSlotSize;
+			const dstX = ( index % columns ) * slotSize;
+			const dstY = Math.floor( index / columns ) * slotSize;
+			ctx.drawImage( oldCanvas, srcX, srcY, oldSlotSize, oldSlotSize, dstX, dstY, slotSize, slotSize );
+
+		}
+
+		this.image = canvas;
+		this.ctx = ctx;
+		this.slotSize = slotSize;
+		this._columns = columns;
+		this._capacity = slotCount;
 		this.needsUpdate = true;
 
 	}
@@ -146,11 +154,70 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	clear() {
 
 		this._slots.clear();
-		this._shelves.length = 0;
 		this._freeList.length = 0;
-		this._nextShelfY = 0;
+		this._nextIndex = 0;
 		this.ctx.clearRect( 0, 0, this.image.width, this.image.height );
 		this.needsUpdate = true;
+
+	}
+
+	get isFull() {
+
+		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
+
+	}
+
+	_draw( key, callback ) {
+
+		const { _freeList, _capacity, _slots, ctx } = this;
+
+		let index;
+		if ( _slots.has( key ) ) {
+
+			index = _slots.get( key );
+
+		} else {
+
+			if ( _freeList.length > 0 ) {
+
+				index = _freeList.pop();
+
+			} else if ( this._nextIndex < _capacity ) {
+
+				index = this._nextIndex ++;
+
+			} else {
+
+				throw new Error( 'GlyphAtlasTexture: atlas is full. Call resize() to increase capacity.' );
+
+			}
+
+			_slots.set( key, index );
+
+		}
+
+		const slot = this._indexToSlot( index );
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect( slot.x, slot.y, slot.w, slot.h );
+		ctx.clip();
+		callback( ctx, slot.x, slot.y, slot.w, slot.h );
+		ctx.restore();
+
+		this.needsUpdate = true;
+		return slot;
+
+	}
+
+	_indexToSlot( index ) {
+
+		const { _columns, slotSize } = this;
+		return {
+			x: ( index % _columns ) * slotSize,
+			y: Math.floor( index / _columns ) * slotSize,
+			w: slotSize,
+			h: slotSize,
+		};
 
 	}
 
