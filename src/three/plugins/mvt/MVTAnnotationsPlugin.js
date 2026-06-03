@@ -1,7 +1,8 @@
 import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial, Raycaster, Vector3 } from 'three';
 import { PriorityQueue } from '3d-tiles-renderer/core';
 import { HierarchicalLock } from './HierarchicalLock.js';
-import { PointAnnotationItem, ScreenOccupationManager } from './ScreenOccupationManager.js';
+import { PointAnnotationItem } from './ScreenOccupationManager.js';
+import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
 // TODO:
@@ -53,7 +54,7 @@ export class MVTAnnotationsPlugin {
 		this.overlay = overlay;
 
 		this.locks = new HierarchicalLock();
-		this.occupancy = new ScreenOccupationManager();
+		this.occupancy = new DelayedScreenOccupationManager();
 		this.group = new Group();
 
 		this.scene = scene;

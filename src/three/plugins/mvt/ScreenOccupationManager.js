@@ -294,7 +294,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	unregister( item ) {
 
-		const { items, visible, prevVisible, _itemsById } = this;
+		const { items, prevVisible, _itemsById } = this;
 		const index = items.indexOf( item );
 		if ( index !== - 1 ) {
 
@@ -308,7 +308,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		visible.delete( item );
 		prevVisible.delete( item );
 
 	}
