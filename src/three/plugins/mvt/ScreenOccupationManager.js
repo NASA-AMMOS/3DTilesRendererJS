@@ -256,6 +256,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	getById( id ) {
+
+		return this._itemsById.get( id );
+
+	}
+
 	register( item ) {
 
 		const { _itemsById, items, visible, prevVisible } = this;
