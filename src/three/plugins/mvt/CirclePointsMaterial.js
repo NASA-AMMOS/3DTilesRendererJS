@@ -28,7 +28,9 @@ export class CirclePointsMaterial extends PointsMaterial {
 				/* glsl */`
 				#include <color_pars_vertex>
 				attribute vec2 glyphUV;
+				attribute float alpha;
 				varying vec2 vGlyphUV;
+				varying float vAlpha;
 				`
 			);
 
@@ -37,6 +39,7 @@ export class CirclePointsMaterial extends PointsMaterial {
 				/* glsl */`
 				#include <color_vertex>
 				vGlyphUV = glyphUV;
+				vAlpha = alpha;
 				`
 			);
 
@@ -48,6 +51,7 @@ export class CirclePointsMaterial extends PointsMaterial {
 				uniform sampler2D glyphAtlas;
 				uniform vec2 glyphCellSize;
 				varying vec2 vGlyphUV;
+				varying float vAlpha;
 				`
 			);
 
@@ -66,6 +70,7 @@ export class CirclePointsMaterial extends PointsMaterial {
 					// outgoingLight = _glyph;
 					diffuseColor.a = _glyph.a;
 				}
+				diffuseColor.a *= vAlpha;
 				#include <opaque_fragment>
 				`
 			);

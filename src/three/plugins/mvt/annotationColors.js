@@ -121,19 +121,10 @@ export const KIND_CATEGORY = {
 
 export const DEFAULT_COLOR = 0xA0A0A0;
 
-const _unmatched = new Set();
-
 export function getAnnotationCategory( layer, properties ) {
 
 	const kind = properties.kind ?? properties[ 'pmap:kind' ] ?? layer;
 	const base = typeof kind === 'string' ? kind.split( '/' )[ 0 ] : kind;
-	if ( ! ( base in KIND_CATEGORY ) && ! _unmatched.has( base ) ) {
-
-		_unmatched.add( base );
-		console.log( `[annotationColors] unmatched kind: "${ base }"` );
-
-	}
-
 	return KIND_CATEGORY[ base ] ?? null;
 
 }

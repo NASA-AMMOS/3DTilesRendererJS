@@ -4,7 +4,7 @@ import { CATEGORY_COLORS } from './annotationColors.js';
 const CATEGORY_EMOJI = {
 	tangerine: '🍴',
 	green: '🌳',
-	lapis: '✈',
+	lapis: '✈️',
 	slategray: '🎓',
 	blue: '🛒',
 	pink: '🎭',

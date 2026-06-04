@@ -1,7 +1,7 @@
-import { BufferAttribute, BufferGeometry, Color, Group, MathUtils, Matrix4, Points, Raycaster, Vector3 } from 'three';
+import { Group, MathUtils, Matrix4, Raycaster, Vector3 } from 'three';
 import { CirclePointsMaterial } from './CirclePointsMaterial.js';
-import { getAnnotationColor, getAnnotationCategory } from './annotationColors.js';
 import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
+import { AnnotationsPoints } from './AnnotationsPoints.js';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -33,7 +33,6 @@ const _matrix = /* @__PURE__ */ new Matrix4();
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
-const _color = /* @__PURE__ */ new Color();
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {
@@ -104,12 +103,9 @@ export class MVTAnnotationsPlugin {
 		const { u, v } = this._glyphAtlas.glyphCellUVSize;
 		pointsMaterial.glyphCellSize.set( u, v );
 
-		const points = new Points( new BufferGeometry(), pointsMaterial );
-		points.renderOrder = 1000;
-		points.frustumCulled = false;
-		group.add( points );
-		points.updateMatrixWorld( true );
-		this.POINTS = points;
+		this._annotationsPoints = new AnnotationsPoints( pointsMaterial );
+		group.add( this._annotationsPoints );
+		this._lastUpdateTime = - 1;
 
 		// init container
 		this.tiles = tiles;
@@ -179,7 +175,8 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		this._visibleItems = occupancy.visible;
+		occupancy.addEventListener( 'added', ( { items } ) => this._annotationsPoints.addItems( items ) );
+		occupancy.addEventListener( 'removed', ( { items } ) => this._annotationsPoints.removeItems( items ) );
 
 		// sort: by pmap:rank ascending (lower = more important), then closest to camera, then bottom-to-top on screen
 		occupancy.sortCallback = ( a, b ) => {
@@ -227,20 +224,25 @@ export class MVTAnnotationsPlugin {
 
 			}
 
+			const now = performance.now() / 1000;
+			const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
+			this._lastUpdateTime = now;
+
 			// update visible points based on screen-space conflicts
 			this._processRaycastQueue();
+			// fires 'added'/'removed' → AnnotationsPoints.addItems/removeItems
 			occupancy.update();
 
-			// camera-relative rendering: position the Points object at the camera so that
-			// buffer coordinates are small offsets — avoids Float32 precision jitter at globe scale
+			// camera-relative rendering: position object at camera so buffer coords are
+			// small offsets — avoids Float32 precision jitter at globe scale
 			if ( this.camera !== null ) {
 
-				this.POINTS.position.copy( _cameraLocalPos );
-				this.POINTS.updateMatrixWorld( true );
+				this._annotationsPoints.position.copy( _cameraLocalPos );
+				this._annotationsPoints.updateMatrixWorld( true );
 
 			}
 
-			this._rebuildPoints( [ ...this._visibleItems ], this.POINTS );
+			this._annotationsPoints.update( dt, this._glyphAtlas );
 			this._updateDebugGrid();
 
 		};
@@ -542,7 +544,7 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		item.ready = false;
+		// item.ready = false;
 		this._raycastQueueSet.add( item );
 		this._raycastQueue.push( item );
 
@@ -606,7 +608,7 @@ export class MVTAnnotationsPlugin {
 		const { origin, direction } = _raycaster.ray;
 
 		// origin: 10,000km above the surface at this feature's geodetic position
-		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e7, origin );
+		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e6, origin );
 
 		// direction: from high altitude toward the ellipsoid surface (geodetically correct)
 		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, direction );
@@ -615,6 +617,8 @@ export class MVTAnnotationsPlugin {
 		origin.applyMatrix4( tiles.group.matrixWorld );
 		direction.transformDirection( tiles.group.matrixWorld );
 
+		_raycaster.firstHitOnly = true;
+		_raycaster.far = 2 * 1e6;
 		const hits = _raycaster.intersectObject( tiles.group, true );
 		if ( hits.length > 0 ) {
 
@@ -628,57 +632,6 @@ export class MVTAnnotationsPlugin {
 		}
 
 		item.ready = true;
-
-	}
-
-	_rebuildPoints( items, target ) {
-
-		const count = items.length;
-		const origin = target.position;
-
-		let posAttr = target.geometry.getAttribute( 'position' );
-		let colorAttr = target.geometry.getAttribute( 'color' );
-		let glyphUVAttr = target.geometry.getAttribute( 'glyphUV' );
-		if ( ! posAttr || posAttr.count !== count ) {
-
-			target.geometry.dispose();
-			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
-			colorAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
-			glyphUVAttr = new BufferAttribute( new Float32Array( count * 2 ), 2 );
-			target.geometry.setAttribute( 'position', posAttr );
-			target.geometry.setAttribute( 'color', colorAttr );
-			target.geometry.setAttribute( 'glyphUV', glyphUVAttr );
-
-		}
-
-		const posArr = posAttr.array;
-		const colorArr = colorAttr.array;
-		const glyphUVArr = glyphUVAttr.array;
-		const { _glyphAtlas } = this;
-
-		for ( let i = 0; i < count; i ++ ) {
-
-			const item = items[ i ];
-			const p = item.position;
-			posArr[ i * 3 + 0 ] = p.x - origin.x;
-			posArr[ i * 3 + 1 ] = p.y - origin.y;
-			posArr[ i * 3 + 2 ] = p.z - origin.z;
-
-			getAnnotationColor( item.layer, item.properties, _color );
-			colorArr[ i * 3 + 0 ] = _color.r;
-			colorArr[ i * 3 + 1 ] = _color.g;
-			colorArr[ i * 3 + 2 ] = _color.b;
-
-			const category = getAnnotationCategory( item.layer, item.properties );
-			const uv = category !== null ? _glyphAtlas.getCategoryUV( category ) : null;
-			glyphUVArr[ i * 2 + 0 ] = uv !== null ? uv.uvX : - 1;
-			glyphUVArr[ i * 2 + 1 ] = uv !== null ? uv.uvY : - 1;
-
-		}
-
-		posAttr.needsUpdate = true;
-		colorAttr.needsUpdate = true;
-		glyphUVAttr.needsUpdate = true;
 
 	}
 
