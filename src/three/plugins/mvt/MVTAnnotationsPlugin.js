@@ -171,19 +171,24 @@ export class MVTAnnotationsPlugin {
 
 		this._visibleItems = occupancy.visible;
 
-		// sort: stable (already visible) items first so they hold their cells (hysteresis),
-		// then closest to camera, then bottom-to-top on screen
+		// sort: by pmap:rank ascending (lower = more important), then closest to camera, then bottom-to-top on screen
 		occupancy.sortCallback = ( a, b ) => {
+
+			const rankA = a.properties[ 'rank' ] ?? a.properties[ 'pmap:rank' ] ?? Infinity;
+			const rankB = b.properties[ 'rank' ] ?? b.properties[ 'pmap:rank' ] ?? Infinity;
+			if ( rankA !== rankB ) {
+
+				return rankA - rankB;
+
+			}
 
 			if ( a._depth !== b._depth ) {
 
 				return a._depth - b._depth;
 
-			} else {
-
-				return b._screenPos.y - a._screenPos.y;
-
 			}
+
+			return b._screenPos.y - a._screenPos.y;
 
 		};
 
