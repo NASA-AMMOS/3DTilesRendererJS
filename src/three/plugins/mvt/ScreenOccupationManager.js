@@ -57,7 +57,11 @@ export class PointAnnotationItem extends AnnotationItem {
 		const z = screenPos.z;
 		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
-		screenPos.z = ( z < - 1 || z > 1 ) ? 1 : 0;
+		screenPos.z = (
+			z < - 1 || z > 1 ||
+			screenPos.x + this.radius < 0 || screenPos.x - this.radius > resolution.width ||
+			screenPos.y + this.radius < 0 || screenPos.y - this.radius > resolution.height
+		) ? 1 : 0;
 		this._depth = z;
 
 		// facing ratio: dot( surface normal, direction to camera )
