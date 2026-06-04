@@ -72,7 +72,7 @@ export class MVTAnnotationsPlugin {
 
 		this._raycastQueue = [];
 		this._raycastQueueSet = new Set();
-		this.maxRaycastsPerFrame = 100;
+		this.maxRaycastTimeMs = 2;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -566,7 +566,7 @@ export class MVTAnnotationsPlugin {
 
 	_processRaycastQueue() {
 
-		const { _raycastQueue, _raycastQueueSet, occupancy, maxRaycastsPerFrame } = this;
+		const { _raycastQueue, _raycastQueueSet, occupancy, maxRaycastTimeMs } = this;
 		const { visible, sortCallback } = occupancy;
 
 		// sort ascending: visible first, then by occupancy priority — highest priority ends up at tail for pop()
@@ -584,7 +584,10 @@ export class MVTAnnotationsPlugin {
 
 		} );
 
-		for ( let i = 0; i < maxRaycastsPerFrame && _raycastQueue.length > 0; i ++ ) {
+		const deadline = performance.now() + maxRaycastTimeMs;
+		while ( _raycastQueue.length > 0 ) {
+
+			if ( performance.now() >= deadline ) break;
 
 			const item = _raycastQueue.pop();
 			_raycastQueueSet.delete( item );
