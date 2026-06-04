@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry, Color, Group, MathUtils, Matrix4, Points, Raycaster, Vector3 } from 'three';
 import { CirclePointsMaterial } from './CirclePointsMaterial.js';
-import { getAnnotationColor } from './annotationColors.js';
+import { getAnnotationColor, getAnnotationCategory } from './annotationColors.js';
+import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -91,13 +92,19 @@ export class MVTAnnotationsPlugin {
 
 		const { locks, group, overlay, occupancy, tileInfo } = this;
 
-		const points = new Points();
-		points.material = new CirclePointsMaterial( {
-			size: 20,
+		this._glyphAtlas = new AnnotationGlyphAtlasTexture();
+
+		const pointsMaterial = new CirclePointsMaterial( {
+			size: 30,
 			sizeAttenuation: false,
 			depthWrite: false,
 			depthTest: false,
 		} );
+		pointsMaterial.glyphTexture = this._glyphAtlas;
+		const { u, v } = this._glyphAtlas.glyphCellUVSize;
+		pointsMaterial.glyphCellSize.set( u, v );
+
+		const points = new Points( new BufferGeometry(), pointsMaterial );
 		points.renderOrder = 1000;
 		points.frustumCulled = false;
 		group.add( points );
@@ -171,11 +178,6 @@ export class MVTAnnotationsPlugin {
 			}
 
 		};
-
-		// single Points object updated from the occupancy visible set
-		const pointsGeometry = new BufferGeometry();
-		this.points = new Points( pointsGeometry, new CirclePointsMaterial( { size: 10, sizeAttenuation: false } ) );
-		group.add( this.points );
 
 		this._visibleItems = occupancy.visible;
 
@@ -636,18 +638,24 @@ export class MVTAnnotationsPlugin {
 
 		let posAttr = target.geometry.getAttribute( 'position' );
 		let colorAttr = target.geometry.getAttribute( 'color' );
+		let glyphUVAttr = target.geometry.getAttribute( 'glyphUV' );
 		if ( ! posAttr || posAttr.count !== count ) {
 
 			target.geometry.dispose();
 			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
 			colorAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
+			glyphUVAttr = new BufferAttribute( new Float32Array( count * 2 ), 2 );
 			target.geometry.setAttribute( 'position', posAttr );
 			target.geometry.setAttribute( 'color', colorAttr );
+			target.geometry.setAttribute( 'glyphUV', glyphUVAttr );
 
 		}
 
 		const posArr = posAttr.array;
 		const colorArr = colorAttr.array;
+		const glyphUVArr = glyphUVAttr.array;
+		const { _glyphAtlas } = this;
+
 		for ( let i = 0; i < count; i ++ ) {
 
 			const item = items[ i ];
@@ -661,10 +669,16 @@ export class MVTAnnotationsPlugin {
 			colorArr[ i * 3 + 1 ] = _color.g;
 			colorArr[ i * 3 + 2 ] = _color.b;
 
+			const category = getAnnotationCategory( item.layer, item.properties );
+			const uv = category !== null ? _glyphAtlas.getCategoryUV( category ) : null;
+			glyphUVArr[ i * 2 + 0 ] = uv !== null ? uv.uvX : - 1;
+			glyphUVArr[ i * 2 + 1 ] = uv !== null ? uv.uvY : - 1;
+
 		}
 
 		posAttr.needsUpdate = true;
 		colorAttr.needsUpdate = true;
+		glyphUVAttr.needsUpdate = true;
 
 	}
 

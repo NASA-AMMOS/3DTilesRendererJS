@@ -1,153 +1,146 @@
 // Protomaps basemaps LIGHT theme palette (protomaps/basemaps)
-const GREEN = 0x20834D; // park, forest, nature
-const LAPIS = 0x315BCF; // transport
-const SLATEGRAY = 0x6A5B8F; // education, civic, public services
-const BLUE = 0x1A8CBD; // shopping, retail
-const TANGERINE = 0xCB6704; // food & drink
-const PINK = 0xEF56BA; // culture, tourism, attractions
-const RED = 0xF2567A; // healthcare, emergency
-const TURQUOISE = 0x00C3D4; // accommodation, leisure
+export const CATEGORY_COLORS = {
+	tangerine: 0xCB6704,
+	green: 0x20834D,
+	lapis: 0x315BCF,
+	slategray: 0x6A5B8F,
+	blue: 0x1A8CBD,
+	pink: 0xEF56BA,
+	red: 0xF2567A,
+	turquoise: 0x00C3D4,
+};
 
-const KIND_COLORS = {
+export const KIND_CATEGORY = {
 
-	// Food & Drink — tangerine
-	cafe: TANGERINE,
-	coffee_shop: TANGERINE,
-	restaurant: TANGERINE,
-	fast_food: TANGERINE,
-	bar: TANGERINE,
-	pub: TANGERINE,
-	biergarten: TANGERINE,
-	nightclub: TANGERINE,
-	bakery: TANGERINE,
-	food_court: TANGERINE,
-	ice_cream: TANGERINE,
+	// Food & Drink
+	cafe: 'tangerine',
+	coffee_shop: 'tangerine',
+	restaurant: 'tangerine',
+	fast_food: 'tangerine',
+	bar: 'tangerine',
+	pub: 'tangerine',
+	biergarten: 'tangerine',
+	nightclub: 'tangerine',
+	bakery: 'tangerine',
+	food_court: 'tangerine',
+	ice_cream: 'tangerine',
 
-	// Nature & Recreation — green
-	park: GREEN,
-	garden: GREEN,
-	forest: GREEN,
-	nature_reserve: GREEN,
-	beach: GREEN,
-	peak: GREEN,
-	volcano: GREEN,
-	marina: GREEN,
-	zoo: GREEN,
-	bench: GREEN,
-	picnic_site: GREEN,
-	wetland: GREEN,
+	// Nature & Recreation
+	park: 'green',
+	garden: 'green',
+	forest: 'green',
+	nature_reserve: 'green',
+	beach: 'green',
+	peak: 'green',
+	volcano: 'green',
+	marina: 'green',
+	zoo: 'green',
+	bench: 'green',
+	picnic_site: 'green',
+	wetland: 'green',
 
-	// Education & Civic — slategray
-	school: SLATEGRAY,
-	university: SLATEGRAY,
-	college: SLATEGRAY,
-	kindergarten: SLATEGRAY,
-	library: SLATEGRAY,
-	stadium: SLATEGRAY,
-	post_office: SLATEGRAY,
-	townhall: SLATEGRAY,
-	courthouse: SLATEGRAY,
-	community_centre: SLATEGRAY,
-	social_facility: SLATEGRAY,
-	place_of_worship: SLATEGRAY,
-	prison: SLATEGRAY,
-	drinking_water: SLATEGRAY,
-	toilets: SLATEGRAY,
+	// Education & Civic
+	school: 'slategray',
+	university: 'slategray',
+	college: 'slategray',
+	kindergarten: 'slategray',
+	library: 'slategray',
+	stadium: 'slategray',
+	post_office: 'slategray',
+	townhall: 'slategray',
+	courthouse: 'slategray',
+	community_centre: 'slategray',
+	social_facility: 'slategray',
+	place_of_worship: 'slategray',
+	prison: 'slategray',
+	drinking_water: 'slategray',
+	toilets: 'slategray',
 
-	// Shopping & Retail — blue
-	supermarket: BLUE,
-	grocery: BLUE,
-	convenience: BLUE,
-	mall: BLUE,
-	department_store: BLUE,
-	clothes: BLUE,
-	electronics: BLUE,
-	books: BLUE,
-	beauty: BLUE,
-	hairdresser: BLUE,
-	pharmacy: BLUE,
-	bank: BLUE,
-	atm: BLUE,
+	// Shopping & Retail
+	supermarket: 'blue',
+	grocery: 'blue',
+	convenience: 'blue',
+	mall: 'blue',
+	department_store: 'blue',
+	clothes: 'blue',
+	electronics: 'blue',
+	books: 'blue',
+	beauty: 'blue',
+	hairdresser: 'blue',
+	pharmacy: 'blue',
+	bank: 'blue',
+	atm: 'blue',
 
-	// Transport — lapis
-	airport: LAPIS,
-	airfield: LAPIS,
-	aerodrome: LAPIS,
-	train_station: LAPIS,
-	station: LAPIS,
-	subway_entrance: LAPIS,
-	bus_stop: LAPIS,
-	ferry_terminal: LAPIS,
-	helipad: LAPIS,
-	taxi: LAPIS,
+	// Transport
+	airport: 'lapis',
+	airfield: 'lapis',
+	aerodrome: 'lapis',
+	train_station: 'lapis',
+	station: 'lapis',
+	subway_entrance: 'lapis',
+	bus_stop: 'lapis',
+	ferry_terminal: 'lapis',
+	helipad: 'lapis',
+	taxi: 'lapis',
 
-	// Culture & Attractions — pink
-	museum: PINK,
-	theatre: PINK,
-	cinema: PINK,
-	gallery: PINK,
-	arts_centre: PINK,
-	attraction: PINK,
-	artwork: PINK,
-	theme_park: PINK,
-	viewpoint: PINK,
+	// Culture & Attractions
+	museum: 'pink',
+	theatre: 'pink',
+	cinema: 'pink',
+	gallery: 'pink',
+	arts_centre: 'pink',
+	attraction: 'pink',
+	artwork: 'pink',
+	theme_park: 'pink',
+	viewpoint: 'pink',
 
-	// Healthcare & Emergency — red
-	hospital: RED,
-	doctors: RED,
-	clinic: RED,
-	dentist: RED,
-	veterinary: RED,
-	fire_station: RED,
-	police: RED,
+	// Healthcare & Emergency
+	hospital: 'red',
+	doctors: 'red',
+	clinic: 'red',
+	dentist: 'red',
+	veterinary: 'red',
+	fire_station: 'red',
+	police: 'red',
 
-	// Accommodation & Leisure — turquoise
-	hotel: TURQUOISE,
-	motel: TURQUOISE,
-	hostel: TURQUOISE,
-	guest_house: TURQUOISE,
-	camp_site: TURQUOISE,
-	caravan_site: TURQUOISE,
-	aquarium: TURQUOISE,
-	sports_centre: TURQUOISE,
-	swimming_pool: TURQUOISE,
-	golf_course: TURQUOISE,
-	fitness_centre: TURQUOISE,
-	playground: TURQUOISE,
-
-	// Places layer — light neutral so they read on satellite without competing with POIs
-	country: 0xC8C8C8,
-	state: 0xC0C0C0,
-	county: 0xB8B8B8,
-	city: 0xE0E0E0,
-	town: 0xD0D0D0,
-	village: 0xC0C0C0,
-	suburb: 0xB0B0B0,
-	neighbourhood: 0xA8A8A8,
-	hamlet: 0xA0A0A0,
-	locality: 0x989898,
-	island: GREEN,
+	// Accommodation & Leisure
+	hotel: 'turquoise',
+	motel: 'turquoise',
+	hostel: 'turquoise',
+	guest_house: 'turquoise',
+	camp_site: 'turquoise',
+	caravan_site: 'turquoise',
+	aquarium: 'turquoise',
+	sports_centre: 'turquoise',
+	swimming_pool: 'turquoise',
+	golf_course: 'turquoise',
+	fitness_centre: 'turquoise',
+	playground: 'turquoise',
 
 };
 
-const DEFAULT_COLOR = 0xA0A0A0;
+export const DEFAULT_COLOR = 0xA0A0A0;
 
 const _unmatched = new Set();
 
-export function getAnnotationColor( layer, properties, target ) {
+export function getAnnotationCategory( layer, properties ) {
 
 	const kind = properties.kind ?? properties[ 'pmap:kind' ] ?? layer;
-	// compound kinds like "place_of_worship/christian" — use base segment
 	const base = typeof kind === 'string' ? kind.split( '/' )[ 0 ] : kind;
-	if ( ! ( base in KIND_COLORS ) && ! _unmatched.has( base ) ) {
+	if ( ! ( base in KIND_CATEGORY ) && ! _unmatched.has( base ) ) {
 
 		_unmatched.add( base );
 		console.log( `[annotationColors] unmatched kind: "${ base }"` );
 
 	}
 
-	return target.setHex( KIND_COLORS[ base ] ?? DEFAULT_COLOR );
+	return KIND_CATEGORY[ base ] ?? null;
 
 }
 
-export { KIND_COLORS, DEFAULT_COLOR };
+export function getAnnotationColor( layer, properties, target ) {
+
+	const category = getAnnotationCategory( layer, properties );
+	return target.setHex( category !== null ? CATEGORY_COLORS[ category ] : DEFAULT_COLOR );
+
+}

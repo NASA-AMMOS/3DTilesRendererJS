@@ -39,7 +39,7 @@ export class PointAnnotationItem extends AnnotationItem {
 		this.position = new Vector3();
 		this.lat = 0;
 		this.lon = 0;
-		this.radius = 13;
+		this.radius = 16;
 
 		// x/y = screen pixels, z = NDC depth (z > 1 means behind camera)
 		this._screenPos = new Vector3();
