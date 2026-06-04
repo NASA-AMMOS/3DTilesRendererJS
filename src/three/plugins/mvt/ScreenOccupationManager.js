@@ -11,6 +11,8 @@ export class AnnotationItem {
 		this.layer = '';
 		this.properties = null;
 		this.ready = false;
+		this.lodLevel = 0;
+		this._refCount = 0;
 
 	}
 
@@ -289,43 +291,35 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	register( item ) {
 
-		const { _itemsById, items, visible, prevVisible } = this;
+		const { _itemsById, items } = this;
 
 		const existing = _itemsById.get( item.id );
 		if ( existing ) {
 
-			// simultaneous LoD swap: carry over position so the item doesn't pop
-			item.copyPosition( existing );
+			existing._refCount ++;
+			if ( item.lodLevel > existing.lodLevel ) {
 
-			if ( visible.has( existing ) ) {
-
-				visible.delete( existing );
-				visible.add( item );
-
-			}
-
-			if ( prevVisible.has( existing ) ) {
-
-				prevVisible.delete( existing );
-				prevVisible.add( item );
+				existing.lodLevel = item.lodLevel;
+				existing.lat = item.lat;
+				existing.lon = item.lon;
 
 			}
 
-			const idx = items.indexOf( existing );
-			if ( idx !== - 1 ) {
-
-				items.splice( idx, 1 );
-
-			}
+			return existing;
 
 		}
 
+		item._refCount = 1;
 		_itemsById.set( item.id, item );
 		items.push( item );
+		return item;
 
 	}
 
 	unregister( item ) {
+
+		item._refCount --;
+		if ( item._refCount > 0 ) return;
 
 		const { items, prevVisible, _itemsById } = this;
 		const index = items.indexOf( item );

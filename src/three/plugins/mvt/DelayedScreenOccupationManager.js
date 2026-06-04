@@ -123,35 +123,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	register( item ) {
 
-		const { _showTimers, _hideTimers, visible } = this;
-		const existing = this._inner.getById( item.id );
-		if ( existing !== undefined ) {
-
-			// LoD swap: transfer timer and visibility state from old instance to new
-			if ( _showTimers.has( existing ) ) {
-
-				_showTimers.set( item, _showTimers.get( existing ) );
-				_showTimers.delete( existing );
-
-			}
-
-			if ( _hideTimers.has( existing ) ) {
-
-				_hideTimers.set( item, _hideTimers.get( existing ) );
-				_hideTimers.delete( existing );
-
-			}
-
-			if ( visible.has( existing ) ) {
-
-				visible.delete( existing );
-				visible.add( item );
-
-			}
-
-		}
-
-		this._inner.register( item );
+		return this._inner.register( item );
 
 	}
 

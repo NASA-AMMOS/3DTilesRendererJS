@@ -318,10 +318,11 @@ export class MVTAnnotationsPlugin {
 							item.properties = feature.properties;
 							item.lat = lat;
 							item.lon = lon;
+							item.lodLevel = level;
 							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
 
-							occupancy.register( item );
-							items.push( item );
+							const canonical = occupancy.register( item );
+							items.push( canonical );
 
 						}
 
