@@ -76,8 +76,8 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		this._inner = new ScreenOccupationManager();
 
 		this.visible = new Set();
-		this.showDelay = 0.1;
-		this.hideDelay = 0.5;
+		this.showDelay = 0.15;
+		this.hideDelay = 0.25;
 
 		// item -> timer
 		this._showTimers = new Map();

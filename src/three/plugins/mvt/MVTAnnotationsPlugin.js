@@ -89,7 +89,7 @@ export class MVTAnnotationsPlugin {
 		const { locks, group, overlay, occupancy, tileInfo } = this;
 
 		const points = new Points();
-		points.material.size = 10;
+		points.material.size = 25;
 		points.material.sizeAttenuation = false;
 		points.material.depthWrite = false;
 		points.material.depthTest = false;
@@ -533,6 +533,7 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		item.ready = false;
 		this._raycastQueueSet.add( item );
 		this._raycastQueue.push( item );
 
