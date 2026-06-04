@@ -50,7 +50,7 @@ export class MVTAnnotationsPlugin {
 			overlay,
 			camera = null,
 			scene = null,
-			displayOccupancyGrid = false,
+			displayOccupancyGrid = true,
 		} = options;
 
 		this.overlay = overlay;
@@ -175,8 +175,6 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		occupancy.addEventListener( 'added', ( { items } ) => this._annotationsPoints.addItems( items ) );
-		occupancy.addEventListener( 'removed', ( { items } ) => this._annotationsPoints.removeItems( items ) );
 
 		// sort: by pmap:rank ascending (lower = more important), then closest to camera, then bottom-to-top on screen
 		occupancy.sortCallback = ( a, b ) => {
@@ -242,7 +240,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			this._annotationsPoints.update( dt, this._glyphAtlas );
+			this._annotationsPoints.update( dt, occupancy.visible, this._glyphAtlas );
 			this._updateDebugGrid();
 
 		};

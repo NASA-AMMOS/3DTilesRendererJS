@@ -15,57 +15,58 @@ export class AnnotationsPoints extends Points {
 		this.fadeInDuration = 0.3;
 		this.fadeOutDuration = 0.3;
 
-		// Keyed by item.id (stable across LoD swaps) so stale object references
-		// never accumulate when the occupancy manager replaces items silently.
-		// Each entry: { item, fade: 0..1, state: 'in' | 'visible' | 'out' }
+		// Map<itemId, entry> — keyed by stable id, not object reference.
+		// entry: { item, fade: 0..1, state: 'in' | 'visible' | 'out' }
 		this._entryMap = new Map();
-		// Ordered parallel to geometry buffer indices.
 		this._orderedEntries = [];
 		this._structureDirty = false;
 
 	}
 
-	// Called when the occupancy manager emits 'added'.
-	addItems( items ) {
+	// Call every frame. visibleItems is DelayedScreenOccupationManager.visible (a Set<item>).
+	// Returns true while any point is still animating.
+	update( dt, visibleItems, glyphAtlas ) {
 
-		for ( const item of items ) {
+		// Build id→item map for the current visible set so we can look up by id.
+		const visibleById = new Map();
+		for ( const item of visibleItems ) {
 
-			const existing = this._entryMap.get( item.id );
-			if ( existing ) {
+			visibleById.set( item.id, item );
 
-				// LoD swap: the occupancy manager replaced the object silently —
-				// update the reference so position/properties stay fresh.
-				existing.item = item;
+		}
+
+		// Add new items, update LoD-swapped references, reverse in-progress fade-outs.
+		for ( const [ id, item ] of visibleById ) {
+
+			const existing = this._entryMap.get( id );
+			if ( ! existing ) {
+
+				const entry = { item, fade: 0, state: 'in' };
+				this._entryMap.set( id, entry );
+				this._orderedEntries.push( entry );
+				this._structureDirty = true;
 
 			} else {
 
-				const entry = { item, fade: 0, state: 'in' };
-				this._entryMap.set( item.id, entry );
-				this._orderedEntries.push( entry );
-				this._structureDirty = true;
+				existing.item = item; // keep reference fresh (LoD swap)
+				if ( existing.state === 'out' ) existing.state = 'in';
 
 			}
 
 		}
 
-	}
+		// Start fade-out for items that left the visible set.
+		for ( const [ id, entry ] of this._entryMap ) {
 
-	// Called when the occupancy manager emits 'removed'.
-	// Points stay in geometry until their fade-out completes.
-	removeItems( items ) {
+			if ( ! visibleById.has( id ) && entry.state !== 'out' ) {
 
-		for ( const item of items ) {
+				entry.state = 'out';
 
-			const entry = this._entryMap.get( item.id );
-			if ( entry ) entry.state = 'out';
+			}
 
 		}
 
-	}
-
-	// Tick fades, update geometry. Returns true while any point is still animating.
-	update( dt, glyphAtlas ) {
-
+		// Tick fades; collect fully-faded-out items for removal.
 		const toRemove = [];
 		for ( const [ id, entry ] of this._entryMap ) {
 
@@ -92,7 +93,6 @@ export class AnnotationsPoints extends Points {
 		}
 
 		const origin = this.position;
-
 		if ( this._structureDirty ) {
 
 			this._rebuildGeometry( origin, glyphAtlas );
@@ -155,8 +155,6 @@ export class AnnotationsPoints extends Points {
 
 	}
 
-	// Updates only position (camera-relative origin shifts every frame) and alpha
-	// (fade progress) without reallocating buffers.
 	_updateDynamic( origin ) {
 
 		const entries = this._orderedEntries;
