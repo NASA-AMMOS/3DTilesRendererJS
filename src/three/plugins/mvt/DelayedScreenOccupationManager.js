@@ -51,6 +51,12 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	getById( id ) {
+
+		return this._inner.getById( id );
+
+	}
+
 	get sortCallback() {
 
 		return this._inner.sortCallback;

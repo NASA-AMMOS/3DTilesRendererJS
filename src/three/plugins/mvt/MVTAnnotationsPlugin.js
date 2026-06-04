@@ -1,5 +1,4 @@
 import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial, Raycaster, Vector3 } from 'three';
-import { PriorityQueue } from '3d-tiles-renderer/core';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -68,9 +67,9 @@ export class MVTAnnotationsPlugin {
 		this.getAnnotation = null;
 		this.displayOccupancyGrid = displayOccupancyGrid;
 
-		this._raycastQueue = new PriorityQueue();
-		this._raycastQueue.maxJobs = 10;
-		this._raycastQueue.priorityCallback = () => 0;
+		this._raycastQueue = [];
+		this._raycastQueueSet = new Set();
+		this.maxRaycastsPerFrame = 100;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -142,6 +141,10 @@ export class MVTAnnotationsPlugin {
 		this._onVisibilityChange = ( { tile, visible } ) => {
 
 			const info = tileInfo.get( tile );
+
+			// TODO: the ImageOverlay Tile Splits is causing an issue here.
+			if ( ! info ) return;
+
 			const { loaded, range } = info;
 			if ( loaded ) {
 
@@ -218,6 +221,7 @@ export class MVTAnnotationsPlugin {
 			}
 
 			// update visible points based on screen-space conflicts
+			this._processRaycastQueue();
 			occupancy.update();
 
 			// camera-relative rendering: position the Points object at the camera so that
@@ -303,7 +307,16 @@ export class MVTAnnotationsPlugin {
 							item.id = `${ layerName }:${ feature.id }`;
 							item.layer = layerName;
 							item.properties = feature.properties;
+							item.lat = lat;
+							item.lon = lon;
 							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
+
+							const existing = occupancy.getById( item.id );
+							if ( existing !== undefined ) {
+
+								item.copyPosition( existing );
+
+							}
 
 							occupancy.register( item );
 							items.push( item );
@@ -315,28 +328,25 @@ export class MVTAnnotationsPlugin {
 				}
 
 				tileItems.set( key, items );
-				for ( const item of items ) {
-
-					this._addToRaycastQueue( item );
-
-				}
+				this._enqueueRaycastAll();
 
 			} else {
 
-				const { occupancy, tileItems, _raycastQueue } = this;
+				const { occupancy, tileItems } = this;
 				const items = tileItems.get( key );
 				if ( items ) {
 
 					for ( const item of items ) {
 
 						occupancy.unregister( item );
-						_raycastQueue.remove( item );
 
 					}
 
 					tileItems.delete( key );
 
 				}
+
+				this._enqueueRaycastAll();
 
 			}
 
@@ -522,33 +532,97 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	_addToRaycastQueue( item ) {
+	_enqueueRaycast( item ) {
 
-		this._raycastQueue.add( item, () => {
+		if ( this._raycastQueueSet.has( item ) ) {
 
-			const { tiles } = this;
+			return;
 
-			// outward normal ≈ normalized position (WGS84 is <0.4% from spherical)
-			const { origin, direction } = _raycaster.ray;
-			direction.copy( item.position ).normalize();
-			origin.copy( item.position ).addScaledVector( direction, 1e7 );
-			direction.negate();
+		}
 
-			origin.applyMatrix4( tiles.group.matrixWorld );
-			direction.transformDirection( tiles.group.matrixWorld );
+		this._raycastQueueSet.add( item );
+		this._raycastQueue.push( item );
 
-			const hits = _raycaster.intersectObject( tiles.group, true );
-			if ( hits.length > 0 ) {
+	}
 
-				hits[ 0 ].point.applyMatrix4( tiles.group.matrixWorldInverse );
-				item.position.copy( hits[ 0 ].point );
-				return;
+	_enqueueRaycastAll() {
+
+		for ( const items of this.tileItems.values() ) {
+
+			for ( const item of items ) {
+
+				this._enqueueRaycast( item );
 
 			}
 
-			// NOTE: missed - leave where it is
+		}
+
+	}
+
+	_processRaycastQueue() {
+
+		const { _raycastQueue, _raycastQueueSet, occupancy, maxRaycastsPerFrame } = this;
+		const { visible, sortCallback } = occupancy;
+
+		// sort ascending: visible first, then by occupancy priority — highest priority ends up at tail for pop()
+		_raycastQueue.sort( ( a, b ) => {
+
+			const aVis = visible.has( a ) ? 1 : 0;
+			const bVis = visible.has( b ) ? 1 : 0;
+			if ( aVis !== bVis ) {
+
+				return aVis - bVis;
+
+			}
+
+			return - sortCallback( a, b );
 
 		} );
+
+		for ( let i = 0; i < maxRaycastsPerFrame && _raycastQueue.length > 0; i ++ ) {
+
+			const item = _raycastQueue.pop();
+			_raycastQueueSet.delete( item );
+
+			// skip items replaced by a LoD swap
+			if ( occupancy.getById( item.id ) !== item ) {
+
+				continue;
+
+			}
+
+			this._raycastItem( item );
+
+		}
+
+	}
+
+	_raycastItem( item ) {
+
+		const { tiles } = this;
+		const { origin, direction } = _raycaster.ray;
+
+		// origin: 10,000km above the surface at this feature's geodetic position
+		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e7, origin );
+
+		// direction: from high altitude toward the ellipsoid surface (geodetically correct)
+		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, direction );
+		direction.sub( origin ).normalize();
+
+		origin.applyMatrix4( tiles.group.matrixWorld );
+		direction.transformDirection( tiles.group.matrixWorld );
+
+		const hits = _raycaster.intersectObject( tiles.group, true );
+		if ( hits.length > 0 ) {
+
+			hits[ 0 ].point.applyMatrix4( tiles.group.matrixWorldInverse );
+			item.position.copy( hits[ 0 ].point );
+
+		} else {
+
+			tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, item.position );
+
+		}
 
 	}
 

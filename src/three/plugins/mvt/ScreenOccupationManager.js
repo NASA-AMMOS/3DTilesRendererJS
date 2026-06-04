@@ -32,6 +32,8 @@ export class PointAnnotationItem extends AnnotationItem {
 		super();
 
 		this.position = new Vector3();
+		this.lat = 0;
+		this.lon = 0;
 		this.radius = 5;
 
 		// x/y = screen pixels, z = NDC depth (z > 1 means behind camera)
@@ -54,7 +56,8 @@ export class PointAnnotationItem extends AnnotationItem {
 		this._depth = z;
 
 		// facing ratio: dot( surface normal, direction to camera )
-		// surface normal ≈ normalize( position ) for WGS84
+		// TODO: store geodetic normal on the item at creation time and use it here instead of
+		// normalize( position ), which is only a spherical approximation (<0.2° error on WGS84)
 		if ( cameraPosition !== null ) {
 
 			const px = this.position.x, py = this.position.y, pz = this.position.z;
@@ -70,6 +73,12 @@ export class PointAnnotationItem extends AnnotationItem {
 			this._facingRatio = 1;
 
 		}
+
+	}
+
+	copyPosition( source ) {
+
+		this.position.copy( source.position );
 
 	}
 
