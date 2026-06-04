@@ -10,6 +10,7 @@ export class AnnotationItem {
 		this.id = '';
 		this.layer = '';
 		this.properties = null;
+		this.ready = false;
 
 	}
 
@@ -20,6 +21,10 @@ export class AnnotationItem {
 	evaluate( handle ) {
 
 		return false;
+
+	}
+
+	copyPosition( source ) {
 
 	}
 
@@ -79,6 +84,7 @@ export class PointAnnotationItem extends AnnotationItem {
 	copyPosition( source ) {
 
 		this.position.copy( source.position );
+		this.ready = true;
 
 	}
 
@@ -278,7 +284,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 		const existing = _itemsById.get( item.id );
 		if ( existing ) {
 
-			// simultaneous LoD swap: replace the old item in-place
+			// simultaneous LoD swap: carry over position so the item doesn't pop
+			item.copyPosition( existing );
+
 			if ( visible.has( existing ) ) {
 
 				visible.delete( existing );

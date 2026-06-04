@@ -311,13 +311,6 @@ export class MVTAnnotationsPlugin {
 							item.lon = lon;
 							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
 
-							const existing = occupancy.getById( item.id );
-							if ( existing !== undefined ) {
-
-								item.copyPosition( existing );
-
-							}
-
 							occupancy.register( item );
 							items.push( item );
 
@@ -623,6 +616,8 @@ export class MVTAnnotationsPlugin {
 			tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, item.position );
 
 		}
+
+		item.ready = true;
 
 	}
 
