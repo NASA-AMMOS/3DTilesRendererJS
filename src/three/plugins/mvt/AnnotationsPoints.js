@@ -15,10 +15,12 @@ export class AnnotationsPoints extends Points {
 		this.fadeInDuration = 0.3;
 		this.fadeOutDuration = 0.3;
 
-		// Ordered parallel to geometry buffer indices — never reordered, only appended/filtered.
-		this._orderedEntries = [];
-		// Map<item, entry> for O(1) state lookup on add/remove.
+		// Keyed by item.id (stable across LoD swaps) so stale object references
+		// never accumulate when the occupancy manager replaces items silently.
+		// Each entry: { item, fade: 0..1, state: 'in' | 'visible' | 'out' }
 		this._entryMap = new Map();
+		// Ordered parallel to geometry buffer indices.
+		this._orderedEntries = [];
 		this._structureDirty = false;
 
 	}
@@ -28,23 +30,33 @@ export class AnnotationsPoints extends Points {
 
 		for ( const item of items ) {
 
-			const entry = { fade: 0, state: 'in' };
-			this._entryMap.set( item, entry );
-			this._orderedEntries.push( [ item, entry ] );
+			const existing = this._entryMap.get( item.id );
+			if ( existing ) {
+
+				// LoD swap: the occupancy manager replaced the object silently —
+				// update the reference so position/properties stay fresh.
+				existing.item = item;
+
+			} else {
+
+				const entry = { item, fade: 0, state: 'in' };
+				this._entryMap.set( item.id, entry );
+				this._orderedEntries.push( entry );
+				this._structureDirty = true;
+
+			}
 
 		}
-
-		this._structureDirty = true;
 
 	}
 
 	// Called when the occupancy manager emits 'removed'.
-	// Points stay in the geometry until their fade-out completes.
+	// Points stay in geometry until their fade-out completes.
 	removeItems( items ) {
 
 		for ( const item of items ) {
 
-			const entry = this._entryMap.get( item );
+			const entry = this._entryMap.get( item.id );
 			if ( entry ) entry.state = 'out';
 
 		}
@@ -55,7 +67,7 @@ export class AnnotationsPoints extends Points {
 	update( dt, glyphAtlas ) {
 
 		const toRemove = [];
-		for ( const [ item, entry ] of this._entryMap ) {
+		for ( const [ id, entry ] of this._entryMap ) {
 
 			if ( entry.state === 'in' ) {
 
@@ -65,7 +77,7 @@ export class AnnotationsPoints extends Points {
 			} else if ( entry.state === 'out' ) {
 
 				entry.fade = Math.max( 0, entry.fade - dt / this.fadeOutDuration );
-				if ( entry.fade <= 0 ) toRemove.push( item );
+				if ( entry.fade <= 0 ) toRemove.push( id );
 
 			}
 
@@ -73,8 +85,8 @@ export class AnnotationsPoints extends Points {
 
 		if ( toRemove.length > 0 ) {
 
-			for ( const item of toRemove ) this._entryMap.delete( item );
-			this._orderedEntries = this._orderedEntries.filter( ( [ item ] ) => this._entryMap.has( item ) );
+			for ( const id of toRemove ) this._entryMap.delete( id );
+			this._orderedEntries = this._orderedEntries.filter( e => this._entryMap.has( e.item.id ) );
 			this._structureDirty = true;
 
 		}
@@ -121,7 +133,7 @@ export class AnnotationsPoints extends Points {
 
 		for ( let i = 0; i < count; i ++ ) {
 
-			const [ item, entry ] = entries[ i ];
+			const { item, fade } = entries[ i ];
 			const p = item.position;
 			posAttr.array[ i * 3 + 0 ] = p.x - origin.x;
 			posAttr.array[ i * 3 + 1 ] = p.y - origin.y;
@@ -137,7 +149,7 @@ export class AnnotationsPoints extends Points {
 			glyphUVAttr.array[ i * 2 + 0 ] = uv !== null ? uv.uvX : - 1;
 			glyphUVAttr.array[ i * 2 + 1 ] = uv !== null ? uv.uvY : - 1;
 
-			alphaAttr.array[ i ] = entry.fade;
+			alphaAttr.array[ i ] = fade;
 
 		}
 
@@ -157,12 +169,12 @@ export class AnnotationsPoints extends Points {
 
 		for ( let i = 0; i < count; i ++ ) {
 
-			const [ item, entry ] = entries[ i ];
+			const { item, fade } = entries[ i ];
 			const p = item.position;
 			posAttr.array[ i * 3 + 0 ] = p.x - origin.x;
 			posAttr.array[ i * 3 + 1 ] = p.y - origin.y;
 			posAttr.array[ i * 3 + 2 ] = p.z - origin.z;
-			alphaAttr.array[ i ] = entry.fade;
+			alphaAttr.array[ i ] = fade;
 
 		}
 
