@@ -1,4 +1,6 @@
-import { BufferAttribute, BufferGeometry, Group, MathUtils, Matrix4, Points, PointsMaterial, Raycaster, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, Color, Group, MathUtils, Matrix4, Points, Raycaster, Vector3 } from 'three';
+import { CirclePointsMaterial } from './CirclePointsMaterial.js';
+import { getAnnotationColor } from './annotationColors.js';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -30,6 +32,7 @@ const _matrix = /* @__PURE__ */ new Matrix4();
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
+const _color = /* @__PURE__ */ new Color();
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {
@@ -89,10 +92,12 @@ export class MVTAnnotationsPlugin {
 		const { locks, group, overlay, occupancy, tileInfo } = this;
 
 		const points = new Points();
-		points.material.size = 25;
-		points.material.sizeAttenuation = false;
-		points.material.depthWrite = false;
-		points.material.depthTest = false;
+		points.material = new CirclePointsMaterial( {
+			size: 20,
+			sizeAttenuation: false,
+			depthWrite: false,
+			depthTest: false,
+		} );
 		points.renderOrder = 1000;
 		points.frustumCulled = false;
 		group.add( points );
@@ -169,7 +174,7 @@ export class MVTAnnotationsPlugin {
 
 		// single Points object updated from the occupancy visible set
 		const pointsGeometry = new BufferGeometry();
-		this.points = new Points( pointsGeometry, new PointsMaterial( { size: 10, sizeAttenuation: false } ) );
+		this.points = new Points( pointsGeometry, new CirclePointsMaterial( { size: 10, sizeAttenuation: false } ) );
 		group.add( this.points );
 
 		this._visibleItems = occupancy.visible;
@@ -260,6 +265,8 @@ export class MVTAnnotationsPlugin {
 
 				// iterate over all the layers
 				for ( const layerName in vectorTile.layers ) {
+
+					if ( layerName === 'places' ) continue;
 
 					const layer = vectorTile.layers[ layerName ];
 					const extent = layer.extent;
@@ -628,25 +635,36 @@ export class MVTAnnotationsPlugin {
 		const origin = target.position;
 
 		let posAttr = target.geometry.getAttribute( 'position' );
+		let colorAttr = target.geometry.getAttribute( 'color' );
 		if ( ! posAttr || posAttr.count !== count ) {
 
 			target.geometry.dispose();
 			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
+			colorAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
 			target.geometry.setAttribute( 'position', posAttr );
+			target.geometry.setAttribute( 'color', colorAttr );
 
 		}
 
-		const arr = posAttr.array;
+		const posArr = posAttr.array;
+		const colorArr = colorAttr.array;
 		for ( let i = 0; i < count; i ++ ) {
 
-			const p = items[ i ].position;
-			arr[ i * 3 + 0 ] = p.x - origin.x;
-			arr[ i * 3 + 1 ] = p.y - origin.y;
-			arr[ i * 3 + 2 ] = p.z - origin.z;
+			const item = items[ i ];
+			const p = item.position;
+			posArr[ i * 3 + 0 ] = p.x - origin.x;
+			posArr[ i * 3 + 1 ] = p.y - origin.y;
+			posArr[ i * 3 + 2 ] = p.z - origin.z;
+
+			getAnnotationColor( item.layer, item.properties, _color );
+			colorArr[ i * 3 + 0 ] = _color.r;
+			colorArr[ i * 3 + 1 ] = _color.g;
+			colorArr[ i * 3 + 2 ] = _color.b;
 
 		}
 
 		posAttr.needsUpdate = true;
+		colorAttr.needsUpdate = true;
 
 	}
 
