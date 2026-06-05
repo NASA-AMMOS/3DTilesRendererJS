@@ -16,6 +16,10 @@ import {
 	PMTilesOverlay,
 } from '3d-tiles-renderer/plugins';
 import { MVTAnnotationsPlugin } from '../../src/three/plugins/mvt/MVTAnnotationsPlugin.js';
+import { AnnotationsPoints } from './src/plugins/mvt/AnnotationsPoints.js';
+import { CirclePointsMaterial } from './src/plugins/mvt/CirclePointsMaterial.js';
+import { AnnotationGlyphAtlasTexture } from './src/plugins/mvt/AnnotationGlyphAtlasTexture.js';
+import { defaultGetAnnotation } from './src/plugins/mvt/annotationColors.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -23,16 +27,22 @@ import {
 	OrthographicCamera,
 	Raycaster,
 	Vector2,
+	Matrix4,
+	Vector3,
 } from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer, tiles, transition;
+let annotationsPoints = null;
 
 const pointer = new Vector2();
 const raycaster = new Raycaster();
 const tooltip = document.getElementById( 'tooltip' );
 let lastClientX = 0, lastClientY = 0;
+
+const _annotationsMatrix = new Matrix4();
+const _annotationsCameraPos = new Vector3();
 
 const params = {
 
@@ -69,11 +79,37 @@ function reinstantiateTiles() {
 	} );
 
 	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], renderer } ) );
-	tiles.registerPlugin( new MVTAnnotationsPlugin( {
+	const annotPlugin = new MVTAnnotationsPlugin( {
 		overlay,
 		camera: transition.camera,
 		scene,
-	} ) );
+	} );
+	annotPlugin.getAnnotation = defaultGetAnnotation;
+	tiles.registerPlugin( annotPlugin );
+
+	const glyphAtlas = new AnnotationGlyphAtlasTexture();
+	const material = new CirclePointsMaterial( { size: 25, sizeAttenuation: false } );
+	material.glyphTexture = glyphAtlas;
+	const { u, v } = glyphAtlas.glyphCellUVSize;
+	material.glyphCellSize.set( u, v );
+	annotationsPoints = new AnnotationsPoints( material );
+	annotationsPoints.glyphAtlas = glyphAtlas;
+	tiles.group.add( annotationsPoints );
+	glyphAtlas._loadPromise.then( () => {
+
+		annotationsPoints._structureDirty = true;
+
+	} );
+
+	annotPlugin.onAnnotationsUpdate = ( visibleItems ) => {
+
+		_annotationsMatrix.copy( tiles.group.matrixWorld ).invert();
+		_annotationsCameraPos.setFromMatrixPosition( transition.camera.matrixWorld ).applyMatrix4( _annotationsMatrix );
+		annotationsPoints.position.copy( _annotationsCameraPos );
+		annotationsPoints.updateMatrixWorld( true );
+		annotationsPoints.update( visibleItems );
+
+	};
 
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
@@ -171,12 +207,10 @@ function onPointerMove( e ) {
 
 function updateTooltip() {
 
-	const plugin = tiles?.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
-	const points = plugin?._annotationsPoints;
-	if ( ! points ) return;
+	if ( ! annotationsPoints ) return;
 
 	raycaster.setFromCamera( pointer, transition.camera );
-	const hits = raycaster.intersectObject( points );
+	const hits = raycaster.intersectObject( annotationsPoints );
 
 	if ( hits.length > 0 ) {
 
