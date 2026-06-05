@@ -242,7 +242,7 @@ export class MVTAnnotationsPlugin {
 		};
 
 
-		// sort: already-visible items first, then by pmap:rank ascending, then closest to camera, then bottom-to-top on screen
+		// sort: already-visible items first, then by pmap:rank ascending, then higher LoD first, then closest to camera, then bottom-to-top on screen
 		occupancy.sortCallback = ( a, b ) => {
 
 			const aVis = occupancy.visible.has( a ) ? 0 : 1;
@@ -258,6 +258,12 @@ export class MVTAnnotationsPlugin {
 			if ( rankA !== rankB ) {
 
 				return rankA - rankB;
+
+			}
+
+			if ( a.lodLevel !== b.lodLevel ) {
+
+				return b.lodLevel - a.lodLevel;
 
 			}
 
