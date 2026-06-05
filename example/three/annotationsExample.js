@@ -103,13 +103,13 @@ function reinstantiateTiles() {
 
 	} );
 
-	annotPlugin.onAnnotationsUpdate = ( visibleItems ) => {
+	annotPlugin.onAnnotationsUpdate = ( added, removed ) => {
 
 		_annotationsMatrix.copy( tiles.group.matrixWorld ).invert();
 		_annotationsCameraPos.setFromMatrixPosition( transition.camera.matrixWorld ).applyMatrix4( _annotationsMatrix );
 		annotationsPoints.position.copy( _annotationsCameraPos );
 		annotationsPoints.updateMatrixWorld( true );
-		annotationsPoints.update( visibleItems );
+		annotationsPoints.update( added, removed );
 
 	};
 
