@@ -57,6 +57,7 @@ const ColorModes = Object.freeze( {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
+	INDEXED_COLOR,
 } );
 
 /**
