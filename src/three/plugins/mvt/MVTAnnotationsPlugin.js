@@ -100,8 +100,8 @@ function rayIntersectsFrustum( raycaster, frustum ) {
 
 /**
  * @callback AnnotationsUpdateCallback
- * @param {Set} visibleItems - The current set of `PointAnnotationItem` instances that passed
- *   screen-space occupation and should be rendered this frame.
+ * @param {Set} added - `PointAnnotationItem` instances that became visible this frame.
+ * @param {Set} removed - `PointAnnotationItem` instances that became hidden this frame.
  */
 
 /**

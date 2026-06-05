@@ -1,3 +1,4 @@
+/** @import { Object3D } from 'three' */
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, SphereGeometry, DoubleSide } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper, EllipsoidRegionHelper } from './objects/EllipsoidRegionHelper.js';
@@ -67,6 +68,12 @@ const ColorModes = Object.freeze( {
  */
 
 /**
+ * @callback CustomColorCallback
+ * @param {Object} tile The tile whose scene is being colored.
+ * @param {Object3D} child The object within the tile scene being colored. Has a `material` property.
+ */
+
+/**
  * Plugin that adds visual debugging aids to a `TilesRenderer`: bounding-volume
  * helpers (box, sphere, region), tile color modes based on depth/error/distance/load
  * order, and an unlit rendering mode. Color modes are available via the static
@@ -81,7 +88,7 @@ const ColorModes = Object.freeze( {
  * @param {number} [options.maxDebugDepth=-1] Maximum tree depth for depth-based coloring (`-1` = auto).
  * @param {number} [options.maxDebugDistance=-1] Maximum distance for distance-based coloring (`-1` = auto).
  * @param {number} [options.maxDebugError=-1] Maximum error for error-based coloring (`-1` = auto).
- * @param {Function|null} [options.customColorCallback=null] Callback `( tile, mesh )` used when `colorMode` is `CUSTOM_COLOR`.
+ * @param {CustomColorCallback|null} [options.customColorCallback=null] Callback invoked per-object when `colorMode` is `CUSTOM_COLOR`.
  * @param {boolean} [options.unlit=false] Replace tile materials with unlit `MeshBasicMaterial`.
  * @param {boolean} [options.enabled=true] Whether the plugin is active on init.
  */
