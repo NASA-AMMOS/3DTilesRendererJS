@@ -245,11 +245,11 @@ export class MVTAnnotationsPlugin {
 		// sort: already-visible items first, then by pmap:rank ascending, then higher LoD first, then closest to camera, then bottom-to-top on screen
 		occupancy.sortCallback = ( a, b ) => {
 
-			const aVis = occupancy.visible.has( a ) ? 0 : 1;
-			const bVis = occupancy.visible.has( b ) ? 0 : 1;
+			const aVis = occupancy.visible.has( a );
+			const bVis = occupancy.visible.has( b );
 			if ( aVis !== bVis ) {
 
-				return aVis - bVis;
+				return aVis ? - 1 : 1;
 
 			}
 
@@ -267,9 +267,15 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			if ( a._depth !== b._depth ) {
+			if ( a.depth !== b.depth ) {
 
-				return a._depth - b._depth;
+				return a.depth - b.depth;
+
+			}
+
+			if ( aVis && a.firstShownTime !== b.firstShownTime ) {
+
+				return a.firstShownTime - b.firstShownTime;
 
 			}
 

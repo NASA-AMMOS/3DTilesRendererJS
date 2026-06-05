@@ -12,6 +12,7 @@ export class AnnotationItem {
 		this.properties = null;
 		this.ready = false;
 		this.lodLevel = 0;
+		this.firstShownTime = Infinity;
 		this._refCount = 0;
 
 	}
@@ -45,7 +46,7 @@ export class PointAnnotationItem extends AnnotationItem {
 
 		// x/y = screen pixels, z = NDC depth (z > 1 means behind camera)
 		this._screenPos = new Vector3();
-		this._depth = 0;
+		this.depth = 0;
 		this._facingRatio = 1;
 
 	}
@@ -60,7 +61,7 @@ export class PointAnnotationItem extends AnnotationItem {
 		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 		screenPos.z = ( z < - 1 || z > 1 ) ? 1 : 0;
-		this._depth = z;
+		this.depth = z;
 
 		// facing ratio: dot( surface normal, direction to camera )
 		// TODO: store geodetic normal on the item at creation time and use it here instead of
@@ -257,6 +258,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		items.sort( sortCallback );
 
 		// evaluate occupancy into the fresh visible set
+		const currTime = performance.now();
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
@@ -265,6 +267,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 				visible.add( item );
 				if ( ! prevVisible.has( item ) ) {
 
+					item.firstShownTime = currTime;
 					added.add( item );
 
 				} else {
