@@ -93,6 +93,23 @@ export class DebugTilesPlugin {
 
 	}
 
+	get wireframe() {
+
+		return this._wireframe;
+
+	}
+
+	set wireframe( v ) {
+
+		if ( v !== this._wireframe ) {
+
+			this._wireframe = v;
+			this.materialsNeedUpdate = true;
+
+		}
+
+	}
+
 	get unlit() {
 
 		return this._unlit;
@@ -236,6 +253,7 @@ export class DebugTilesPlugin {
 		this._colorMode = null;
 		this._boundsColorMode = null;
 		this._unlit = null;
+		this._wireframe = null;
 		this.materialsNeedUpdate = false;
 
 		this.extremeDebugDepth = - 1;
@@ -257,6 +275,7 @@ export class DebugTilesPlugin {
 		this.maxDebugError = options.maxDebugError;
 		this.customColorCallback = options.customColorCallback;
 		this.unlit = options.unlit;
+		this.wireframe = options.wireframe;
 
 		/**
 		 * Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
@@ -988,7 +1007,7 @@ export class DebugTilesPlugin {
 	_updateMaterial( scene ) {
 
 		// update the materials for debug rendering
-		const { colorMode, unlit } = this;
+		const { colorMode, unlit, wireframe } = this;
 		scene.traverse( c => {
 
 			if ( ! c.material ) {
@@ -1019,11 +1038,11 @@ export class DebugTilesPlugin {
 
 				} else if ( unlit ) {
 
-					c.material = new MeshBasicMaterial();
+					c.material = new MeshBasicMaterial( { wireframe: wireframe } );
 
 				} else {
 
-					c.material = new MeshStandardMaterial();
+					c.material = new MeshStandardMaterial( { wireframe: wireframe } );
 					c.material.flatShading = true;
 
 				}
