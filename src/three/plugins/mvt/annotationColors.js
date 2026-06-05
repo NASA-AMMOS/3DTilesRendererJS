@@ -129,6 +129,14 @@ export function getAnnotationCategory( layer, properties ) {
 
 }
 
+export function getAnnotationKind( layer, properties ) {
+
+	const kind = properties.kind ?? properties[ 'pmap:kind' ] ?? layer;
+	if ( typeof kind !== 'string' ) return null;
+	return kind.split( '/' )[ 0 ];
+
+}
+
 export function getAnnotationColor( layer, properties, target ) {
 
 	const category = getAnnotationCategory( layer, properties );

@@ -14,12 +14,14 @@ export class CirclePointsMaterial extends PointsMaterial {
 		this._glyphTexture = null;
 		this._glyphCellSize = new Vector2();
 		this._uniforms = null;
+		this.iconScale = 0.6;
 
 		this.onBeforeCompile = ( shader ) => {
 
 			shader.uniforms.glyphAtlas = { value: this._glyphTexture };
 			// Pass the same Vector2 reference so in-place updates are reflected automatically
 			shader.uniforms.glyphCellSize = { value: this._glyphCellSize };
+			shader.uniforms.iconScale = { value: this.iconScale };
 			this._uniforms = shader.uniforms;
 
 			// Vertex: declare attribute + varying, assign in main
@@ -62,14 +64,12 @@ export class CirclePointsMaterial extends PointsMaterial {
 				float _fw = fwidth( _dist );
 				float _circleAlpha = 1.0 - smoothstep( 0.5 - _fw * 2.0, 0.5, _dist );
 				if ( _circleAlpha < 0.001 ) discard;
-				diffuseColor.a *= _circleAlpha;
+				diffuseColor.a *= _circleAlpha * vAlpha;
 				if ( vGlyphUV.x >= 0.0 ) {
 					vec4 _glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize );
 					outgoingLight = mix( outgoingLight, _glyph.rgb, _glyph.a );
-					// outgoingLight = _glyph;
 					// diffuseColor.a = _glyph.a;
 				}
-				diffuseColor.a *= vAlpha;
 				#include <opaque_fragment>
 				`
 			);

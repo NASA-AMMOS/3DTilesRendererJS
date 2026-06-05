@@ -154,7 +154,7 @@ export class MVTAnnotationsPlugin {
 		this._glyphAtlas = new AnnotationGlyphAtlasTexture();
 
 		const pointsMaterial = new CirclePointsMaterial( {
-			size: 30,
+			size: 25,
 			sizeAttenuation: false,
 			depthWrite: false,
 			depthTest: false,
@@ -166,6 +166,13 @@ export class MVTAnnotationsPlugin {
 		this._annotationsPoints = new AnnotationsPoints( pointsMaterial );
 		group.add( this._annotationsPoints );
 		this._lastUpdateTime = - 1;
+
+		// Rebuild geometry once the sprite sheet has loaded so icons appear on already-visible points
+		this._glyphAtlas._loadPromise.then( () => {
+
+			this._annotationsPoints._structureDirty = true;
+
+		} );
 
 		// init container
 		this.tiles = tiles;

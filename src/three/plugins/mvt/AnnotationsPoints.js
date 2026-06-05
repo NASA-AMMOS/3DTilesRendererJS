@@ -1,5 +1,5 @@
 import { BufferAttribute, BufferGeometry, Color, Points } from 'three';
-import { getAnnotationColor, getAnnotationCategory } from './annotationColors.js';
+import { getAnnotationColor, getAnnotationKind } from './annotationColors.js';
 
 const _color = /* @__PURE__ */ new Color();
 
@@ -144,8 +144,8 @@ export class AnnotationsPoints extends Points {
 			colorAttr.array[ i * 3 + 1 ] = _color.g;
 			colorAttr.array[ i * 3 + 2 ] = _color.b;
 
-			const category = getAnnotationCategory( item.layer, item.properties );
-			const uv = category !== null ? glyphAtlas.getCategoryUV( category ) : null;
+			const kind = getAnnotationKind( item.layer, item.properties );
+			const uv = kind !== null ? glyphAtlas.getKindUV( kind ) : null;
 			glyphUVAttr.array[ i * 2 + 0 ] = uv !== null ? uv.uvX : - 1;
 			glyphUVAttr.array[ i * 2 + 1 ] = uv !== null ? uv.uvY : - 1;
 
