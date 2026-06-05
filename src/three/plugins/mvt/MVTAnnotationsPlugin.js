@@ -201,7 +201,7 @@ export class MVTAnnotationsPlugin {
 
 				// TODO: we need to avoid double locking here and below with no synchronized release
 				// const { contentCache } = this;
-				// this._forEach2x2TileInBounds( range, ( x, y, l ) => {
+				// this._forEachTileInBounds( range, ( x, y, l ) => {
 
 				// 	// lock MVT content in a 2x2 pattern
 				// 	contentCache.lock( x, y, l );
@@ -223,7 +223,7 @@ export class MVTAnnotationsPlugin {
 			const { loaded, range } = info;
 			if ( loaded ) {
 
-				this._forEach2x2TileInBounds( range, ( x, y, l ) => {
+				this._forEachTileInBounds( range, ( x, y, l ) => {
 
 					// mark all tiles as "active" if visible in a 2x2 pattern
 					if ( visible ) {
@@ -504,7 +504,7 @@ export class MVTAnnotationsPlugin {
 		// lock all related MVT sub tiles in a 2x2 pattern
 		const { contentCache	} = this;
 		const promises = [];
-		this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
+		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
 			promises.push( contentCache.lock( x, y, l ) );
 
@@ -524,7 +524,7 @@ export class MVTAnnotationsPlugin {
 
 			// disposeTile already ran and skipped release because info.loaded was false —
 			// we own the locks now, so release them here
-			this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
+			this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
 				contentCache.release( x, y, l );
 
@@ -538,7 +538,7 @@ export class MVTAnnotationsPlugin {
 		if ( tiles.visibleTiles.has( tile ) ) {
 
 			// mark all tiles as "active" if visible in a 2x2 pattern
-			this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
+			this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
 				locks.markActive( x, y, l );
 
@@ -774,7 +774,7 @@ export class MVTAnnotationsPlugin {
 
 		if ( info.loaded ) {
 
-			this._forEach2x2TileInBounds( info.range, ( x, y, l ) => {
+			this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
 				// unlock all MVT sub tiles in a 2x2 pattern
 				contentCache.release( x, y, l );
@@ -790,9 +790,8 @@ export class MVTAnnotationsPlugin {
 
 	//
 
-	_forEach2x2TileInBounds( range, callback ) {
+	_forEachTileInBounds( range, callback ) {
 
-		// fire these in 2x2 chunks so that sibling tiles are guaranteed to be present
 		const { overlay } = this;
 		const { tiling } = overlay;
 		const level = overlay.calculateLevel( range );
@@ -803,17 +802,7 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		forEachTileInBounds( range, level, tiling, ( x, y, l ) => {
-
-			const bx = Math.floor( x * 0.5 ) * 2;
-			const by = Math.floor( y * 0.5 ) * 2;
-
-			callback( bx + 0, by + 0, l );
-			callback( bx + 1, by + 0, l );
-			callback( bx + 0, by + 1, l );
-			callback( bx + 1, by + 1, l );
-
-		} );
+		forEachTileInBounds( range, level, tiling, callback );
 
 	}
 

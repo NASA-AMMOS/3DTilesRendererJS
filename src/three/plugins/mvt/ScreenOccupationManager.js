@@ -124,13 +124,13 @@ export class PointAnnotationItem extends AnnotationItem {
 
 }
 
-
 export class ScreenOccupationManager extends EventDispatcher {
 
 	constructor() {
 
 		super();
 
+		// TODO: pass camera, context matrix here
 		// projection matrix: projectionMatrix * matrixWorldInverse * tilesGroup.matrixWorld
 		this.matrix = null;
 
