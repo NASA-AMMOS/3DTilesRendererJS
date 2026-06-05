@@ -26,6 +26,9 @@ export * from './gltf/GLTFMeshFeaturesExtension.js';
 export * from './gltf/metadata/classes/MeshFeatures.js';
 export * from './gltf/metadata/classes/StructuralMetadata.js';
 
+// mvt utilities
+export * from './mvt/GlyphAtlasTexture.js';
+
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';
 export * from './loaders/WMSCapabilitiesLoader.js';

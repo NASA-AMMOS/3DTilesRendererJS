@@ -1,4 +1,4 @@
-import { GlyphAtlasTexture } from './GlyphAtlasTexture.js';
+import { GlyphAtlasTexture } from '3d-tiles-renderer/plugins';
 
 const MAKI_BASE = 'https://cdn.jsdelivr.net/npm/@mapbox/maki@8/icons/';
 

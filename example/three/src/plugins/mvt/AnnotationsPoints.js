@@ -25,11 +25,15 @@ export class AnnotationsPoints extends Points {
 		// Viewport size in pixels — must be kept current by the owner (plugin updates each frame).
 		this.resolution = new Vector2();
 
+		// Glyph atlas used for icon rendering — set externally before first update.
+		this.glyphAtlas = null;
+
 		// Map<itemId, entry> — keyed by stable id, not object reference.
 		// entry: { item, fade: 0..1, state: 'in' | 'visible' | 'out' }
 		this._entryMap = new Map();
 		this._orderedEntries = [];
 		this._structureDirty = false;
+		this._lastUpdateTime = - 1;
 
 	}
 
@@ -41,9 +45,13 @@ export class AnnotationsPoints extends Points {
 
 	}
 
-	// Call every frame. visibleItems is DelayedScreenOccupationManager.visible (a Set<item>).
+	// Call every frame. visibleItems is the Set<item> from the occupation manager.
 	// Returns true while any point is still animating.
-	update( dt, visibleItems, glyphAtlas ) {
+	update( visibleItems ) {
+
+		const now = performance.now() / 1000;
+		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
+		this._lastUpdateTime = now;
 
 		// Build id→item map for the current visible set so we can look up by id.
 		const visibleById = new Map();
@@ -113,7 +121,7 @@ export class AnnotationsPoints extends Points {
 		const origin = this.position;
 		if ( this._structureDirty ) {
 
-			this._rebuildGeometry( origin, glyphAtlas );
+			this._rebuildGeometry( origin );
 			this._structureDirty = false;
 
 		} else {
@@ -198,7 +206,7 @@ export class AnnotationsPoints extends Points {
 
 	}
 
-	_rebuildGeometry( origin, glyphAtlas ) {
+	_rebuildGeometry( origin ) {
 
 		const entries = this._orderedEntries;
 		const count = entries.length;
@@ -230,7 +238,7 @@ export class AnnotationsPoints extends Points {
 			colorAttr.array[ i * 3 + 2 ] = _color.b;
 
 			const kind = getAnnotationKind( item.layer, item.properties );
-			const uv = kind !== null ? glyphAtlas.getKindUV( kind ) : null;
+			const uv = kind !== null && this.glyphAtlas ? this.glyphAtlas.getKindUV( kind ) : null;
 			glyphUVAttr.array[ i * 2 + 0 ] = uv !== null ? uv.uvX : - 1;
 			glyphUVAttr.array[ i * 2 + 1 ] = uv !== null ? uv.uvY : - 1;
 

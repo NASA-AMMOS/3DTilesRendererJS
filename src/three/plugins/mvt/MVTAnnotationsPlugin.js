@@ -1,12 +1,8 @@
-import { Frustum, Group, MathUtils, Matrix4, Raycaster, Vector3 } from 'three';
-import { CirclePointsMaterial } from './CirclePointsMaterial.js';
-import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
-import { AnnotationsPoints } from './AnnotationsPoints.js';
+import { Frustum, MathUtils, Matrix4, Raycaster, Vector3 } from 'three';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
-import { defaultGetAnnotation } from './annotationColors.js';
 
 // TODO:
 // - "fetch data" override needs to be handled differently? Switch to default download
@@ -118,7 +114,6 @@ export class MVTAnnotationsPlugin {
 
 		this.locks = new HierarchicalLock();
 		this.occupancy = new DelayedScreenOccupationManager();
-		this.group = new Group();
 
 		this.scene = scene;
 		this.camera = camera;
@@ -128,7 +123,10 @@ export class MVTAnnotationsPlugin {
 
 		// callback to filter which features become annotations:
 		// getAnnotation( layerName, properties ) → boolean
-		this.getAnnotation = defaultGetAnnotation;
+		this.getAnnotation = null;
+		// callback fired each frame after occupation resolves:
+		// onAnnotationsUpdate( visibleItems: Set<PointAnnotationItem> )
+		this.onAnnotationsUpdate = null;
 		this.displayOccupancyGrid = displayOccupancyGrid;
 
 		this._raycastQueue = [];
@@ -150,32 +148,10 @@ export class MVTAnnotationsPlugin {
 
 	init( tiles ) {
 
-		const { locks, group, overlay, occupancy, tileInfo } = this;
-
-		this._glyphAtlas = new AnnotationGlyphAtlasTexture();
-
-		const pointsMaterial = new CirclePointsMaterial( {
-			size: 25,
-			sizeAttenuation: false,
-		} );
-		pointsMaterial.glyphTexture = this._glyphAtlas;
-		const { u, v } = this._glyphAtlas.glyphCellUVSize;
-		pointsMaterial.glyphCellSize.set( u, v );
-
-		this._annotationsPoints = new AnnotationsPoints( pointsMaterial );
-		group.add( this._annotationsPoints );
-		this._lastUpdateTime = - 1;
-
-		// Rebuild geometry once the sprite sheet has loaded so icons appear on already-visible points
-		this._glyphAtlas._loadPromise.then( () => {
-
-			this._annotationsPoints._structureDirty = true;
-
-		} );
+		const { locks, overlay, occupancy, tileInfo } = this;
 
 		// init container
 		this.tiles = tiles;
-		tiles.group.add( group );
 
 		this._onTileDownloadStart = ( { tile } ) => {
 
@@ -302,25 +278,9 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			const now = performance.now() / 1000;
-			const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
-			this._lastUpdateTime = now;
-
-			// update visible points based on screen-space conflicts
 			this._processRaycastQueue();
-			// fires 'added'/'removed' → AnnotationsPoints.addItems/removeItems
 			occupancy.update();
-
-			// camera-relative rendering: position object at camera so buffer coords are
-			// small offsets — avoids Float32 precision jitter at globe scale
-			if ( this.camera !== null ) {
-
-				this._annotationsPoints.position.copy( _cameraLocalPos );
-				this._annotationsPoints.updateMatrixWorld( true );
-
-			}
-
-			this._annotationsPoints.update( dt, occupancy.visible, this._glyphAtlas );
+			this.onAnnotationsUpdate?.( occupancy.visible );
 			this._updateDebugGrid();
 
 		};
@@ -461,7 +421,6 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		this.group.removeFromParent();
 		this.locks.removeEventListener( 'toggle', this._onLockToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );

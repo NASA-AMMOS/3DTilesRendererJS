@@ -20,6 +20,9 @@ export * from './gltf/GLTFCesiumRTCExtension.js';
 export * from './gltf/GLTFStructuralMetadataExtension.js';
 export * from './gltf/GLTFMeshFeaturesExtension.js';
 
+// mvt utilities
+export * from './mvt/GlyphAtlasTexture.js';
+
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';
 export * from './loaders/WMSCapabilitiesLoader.js';
