@@ -45,30 +45,21 @@ export class AnnotationsPoints extends Points {
 
 	}
 
-	// Call every frame. visibleItems is the Set<item> from the occupation manager.
-	// Returns true while any point is still animating.
-	update( visibleItems ) {
+	// Call when the occupation manager fires a change. Returns true while any point is still animating.
+	update( added, removed ) {
 
 		const now = performance.now() / 1000;
 		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
 		this._lastUpdateTime = now;
 
-		// Build id→item map for the current visible set so we can look up by id.
-		const visibleById = new Map();
-		for ( const item of visibleItems ) {
-
-			visibleById.set( item.id, item );
-
-		}
-
 		// Add new items, update LoD-swapped references, reverse in-progress fade-outs.
-		for ( const [ id, item ] of visibleById ) {
+		for ( const item of added ) {
 
-			const existing = this._entryMap.get( id );
+			const existing = this._entryMap.get( item.id );
 			if ( ! existing ) {
 
 				const entry = { item, fade: 0, state: 'in' };
-				this._entryMap.set( id, entry );
+				this._entryMap.set( item.id, entry );
 				this._orderedEntries.push( entry );
 				this._structureDirty = true;
 
@@ -81,10 +72,11 @@ export class AnnotationsPoints extends Points {
 
 		}
 
-		// Start fade-out for items that left the visible set.
-		for ( const [ id, entry ] of this._entryMap ) {
+		// Start fade-out for removed items.
+		for ( const item of removed ) {
 
-			if ( ! visibleById.has( id ) && entry.state !== 'out' ) {
+			const entry = this._entryMap.get( item.id );
+			if ( entry && entry.state !== 'out' ) {
 
 				entry.state = 'out';
 

@@ -131,6 +131,8 @@ export class MVTAnnotationsPlugin {
 
 		const {
 			overlay,
+			getAnnotation = () => {},
+			onAnnotationsUpdate = () => {},
 			camera = null,
 			scene = null,
 			displayOccupancyGrid = false,
@@ -148,11 +150,8 @@ export class MVTAnnotationsPlugin {
 		this.tileItems = new Map();
 
 		// callback to filter which features become annotations:
-		// getAnnotation( layerName, properties ) → boolean
-		this.getAnnotation = null;
-		// callback fired each frame after occupation resolves:
-		// onAnnotationsUpdate( visibleItems: Set<PointAnnotationItem> )
-		this.onAnnotationsUpdate = null;
+		this.getAnnotation = getAnnotation;
+		this.onAnnotationsUpdate = onAnnotationsUpdate;
 		this.displayOccupancyGrid = displayOccupancyGrid;
 
 		this._raycastQueue = [];
@@ -306,7 +305,7 @@ export class MVTAnnotationsPlugin {
 
 			this._processRaycastQueue();
 			occupancy.update();
-			this.onAnnotationsUpdate?.( occupancy.visible );
+			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 			this._updateDebugGrid();
 
 		};

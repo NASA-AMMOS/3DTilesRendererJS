@@ -201,15 +201,9 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		if ( added.size > 0 ) {
+		if ( added.size > 0 || removed.size > 0 ) {
 
-			this.dispatchEvent( { type: 'added', items: added } );
-
-		}
-
-		if ( removed.size > 0 ) {
-
-			this.dispatchEvent( { type: 'removed', items: removed } );
+			this.dispatchEvent( { type: 'change', added, removed } );
 
 		}
 
