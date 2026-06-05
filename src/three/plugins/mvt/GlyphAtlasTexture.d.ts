@@ -13,6 +13,13 @@ export interface DrawPathOptions {
 	lineWidth?: number;
 }
 
+export interface DrawSVGOptions {
+	fillStyle?: string | null;
+	strokeStyle?: string | null;
+	strokeWidth?: number;
+	iconScale?: number;
+}
+
 export class GlyphAtlasTexture extends CanvasTexture {
 
 	readonly slotSize: number;
@@ -23,9 +30,10 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	has( key: string ): boolean;
 	get( key: string ): GlyphSlot | null;
 
-	drawGlyph( key: string, char: string, font: string, color?: string ): GlyphSlot;
-	drawImage( key: string, image: CanvasImageSource ): GlyphSlot;
+	drawChar( key: string, char: string, options?: { font?: string; color?: string } ): GlyphSlot;
+	drawImage( key: string, image: HTMLImageElement | HTMLCanvasElement | ImageBitmap ): GlyphSlot;
 	drawPath( key: string, path2D: Path2D, options?: DrawPathOptions ): GlyphSlot;
+	drawSVG( key: string, svgText: string, options?: DrawSVGOptions ): GlyphSlot;
 
 	release( key: string ): void;
 	resize( slotCount: number, slotSize?: number ): void;

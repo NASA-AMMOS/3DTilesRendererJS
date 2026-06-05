@@ -43,7 +43,7 @@ export class FontAtlasTexture extends GlyphAtlasTexture {
 
 			}
 
-			this.drawGlyph( char, char, font, color );
+			this.drawChar( char, char, { font, color } );
 
 		}
 

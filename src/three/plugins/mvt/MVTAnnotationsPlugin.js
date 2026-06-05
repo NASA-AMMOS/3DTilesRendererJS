@@ -156,7 +156,7 @@ export class MVTAnnotationsPlugin {
 
 		this._raycastQueue = [];
 		this._raycastQueueSet = new Set();
-		this.maxRaycastTimeMs = 5;
+		this.maxRaycastTimeMs = 15;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations

@@ -139,60 +139,26 @@ export class AnnotationGlyphAtlasTexture extends GlyphAtlasTexture {
 			makiNames.map( name =>
 				fetch( MAKI_BASE + name + '.svg' )
 					.then( r => r.text() )
-					.then( svg => [ name, this._parseSVG( svg ) ] )
+					.then( svg => [ name, svg ] )
 					.catch( () => [ name, null ] )
 			)
 		);
 
-		const parsedByMaki = new Map( fetched );
+		const svgByMaki = new Map( fetched );
 
 		for ( const [ kind, makiName ] of Object.entries( KIND_TO_MAKI ) ) {
 
-			const parsed = parsedByMaki.get( makiName );
-			if ( ! parsed ) continue;
+			const svgText = svgByMaki.get( makiName );
+			if ( ! svgText ) continue;
 
-			const { vbW, vbH, paths } = parsed;
-
-			this._draw( kind, ( ctx, x, y, w, h ) => {
-
-				const iw = w * ICON_SCALE;
-				const ih = h * ICON_SCALE;
-				const scale = Math.min( iw / vbW, ih / vbH );
-				const ox = x + ( w - vbW * scale ) / 2;
-				const oy = y + ( h - vbH * scale ) / 2;
-
-				ctx.save();
-				ctx.translate( ox, oy );
-				ctx.scale( scale, scale );
-
-				ctx.lineWidth = 10 / scale;
-				ctx.lineJoin = 'round';
-				ctx.lineCap = 'round';
-				ctx.strokeStyle = '#3f3e4c';
-				for ( const path of paths ) ctx.stroke( path );
-
-				ctx.fillStyle = 'white';
-				for ( const path of paths ) ctx.fill( path );
-
-				ctx.restore();
-
+			this.drawSVG( kind, svgText, {
+				fillStyle: 'white',
+				strokeStyle: '#3f3e4c',
+				strokeWidth: 10,
+				iconScale: ICON_SCALE,
 			} );
 
 		}
-
-	}
-
-	_parseSVG( svgText ) {
-
-		const doc = new DOMParser().parseFromString( svgText, 'image/svg+xml' );
-		const svg = doc.documentElement;
-		const vb = ( svg.getAttribute( 'viewBox' ) ?? '0 0 15 15' ).trim().split( /[\s,]+/ ).map( Number );
-		const paths = [ ...svg.querySelectorAll( 'path' ) ]
-			.map( el => el.getAttribute( 'd' ) )
-			.filter( Boolean )
-			.map( d => new Path2D( d ) );
-
-		return { vbW: vb[ 2 ], vbH: vb[ 3 ], paths };
 
 	}
 

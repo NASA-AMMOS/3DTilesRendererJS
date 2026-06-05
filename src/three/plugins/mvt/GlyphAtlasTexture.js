@@ -74,7 +74,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
-	drawGlyph( key, char, font, color = 'white' ) {
+	drawChar( key, char, { font = '', color = 'white' } = {} ) {
 
 		return this._draw( key, ( ctx, x, y, w, h ) => {
 
@@ -132,6 +132,61 @@ export class GlyphAtlasTexture extends CanvasTexture {
 				ctx.strokeStyle = strokeStyle;
 				ctx.lineWidth = lineWidth;
 				ctx.stroke( path2D );
+
+			}
+
+			ctx.restore();
+
+		} );
+
+	}
+
+	/**
+	 * Parses an SVG string and renders its paths into a slot, scaled to fit.
+	 * @param {string} key
+	 * @param {string} svgText
+	 * @param {{ fillStyle?: string|null, strokeStyle?: string|null, strokeWidth?: number, iconScale?: number }} [options]
+	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
+	 * @throws If the atlas is full.
+	 */
+	drawSVG( key, svgText, { fillStyle = 'white', strokeStyle = null, strokeWidth = 1, iconScale = 1 } = {} ) {
+
+		const doc = new DOMParser().parseFromString( svgText, 'image/svg+xml' );
+		const svg = doc.documentElement;
+		const vbParts = ( svg.getAttribute( 'viewBox' ) ?? '0 0 15 15' ).trim().split( /[\s,]+/ );
+		const vbW = parseFloat( vbParts[ 2 ] );
+		const vbH = parseFloat( vbParts[ 3 ] );
+		const paths = [ ...svg.querySelectorAll( 'path' ) ]
+			.map( el => el.getAttribute( 'd' ) )
+			.filter( Boolean )
+			.map( d => new Path2D( d ) );
+
+		return this._draw( key, ( ctx, x, y, w, h ) => {
+
+			const iw = w * iconScale;
+			const ih = h * iconScale;
+			const scale = Math.min( iw / vbW, ih / vbH );
+			const ox = x + ( w - vbW * scale ) / 2;
+			const oy = y + ( h - vbH * scale ) / 2;
+
+			ctx.save();
+			ctx.translate( ox, oy );
+			ctx.scale( scale, scale );
+			ctx.lineJoin = 'round';
+			ctx.lineCap = 'round';
+
+			if ( strokeStyle !== null ) {
+
+				ctx.lineWidth = strokeWidth / scale;
+				ctx.strokeStyle = strokeStyle;
+				for ( const path of paths ) ctx.stroke( path );
+
+			}
+
+			if ( fillStyle !== null ) {
+
+				ctx.fillStyle = fillStyle;
+				for ( const path of paths ) ctx.fill( path );
 
 			}
 
