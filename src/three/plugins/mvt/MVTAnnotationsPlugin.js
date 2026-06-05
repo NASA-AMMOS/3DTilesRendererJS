@@ -1,3 +1,4 @@
+/** @import { Camera, Scene } from 'three' */
 import { Frustum, MathUtils, Matrix4, Raycaster, Vector3 } from 'three';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
@@ -90,6 +91,31 @@ function rayIntersectsFrustum( raycaster, frustum ) {
 
 }
 
+/**
+ * @callback GetAnnotationCallback
+ * @param {string} layerName - The MVT layer name the feature belongs to.
+ * @param {Object} properties - The feature's property map.
+ * @returns {boolean} Return true to include this feature as an annotation.
+ */
+
+/**
+ * @callback AnnotationsUpdateCallback
+ * @param {Set} visibleItems - The current set of `PointAnnotationItem` instances that passed
+ *   screen-space occupation and should be rendered this frame.
+ */
+
+/**
+ * Plugin that extracts point features from an MVT overlay and manages their screen-space
+ * occupation, preventing label crowding via a hierarchical lock system and raycasted depth
+ * placement. Rendering is left entirely to the caller via `onAnnotationsUpdate`.
+ * @param {Object} options
+ * @param {Object} options.overlay - The `PMTilesOverlay` (or compatible overlay) whose tile
+ *   content is parsed for point features.
+ * @param {Camera} [options.camera=null] - Initial camera. Can be updated with `setCamera()`.
+ * @param {Scene} [options.scene=null] - Three.js scene reference (stored for caller use).
+ * @param {boolean} [options.displayOccupancyGrid=false] - Overlay a debug canvas showing the
+ *   screen-space occupation grid.
+ */
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {

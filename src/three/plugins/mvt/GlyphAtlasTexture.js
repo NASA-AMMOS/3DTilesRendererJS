@@ -1,7 +1,16 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 
+/**
+ * A GPU texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
+ * Slots are addressed by string key and can be drawn with text, images, or paths.
+ * Extends Three.js `CanvasTexture` so it can be passed directly to a material uniform.
+ */
 export class GlyphAtlasTexture extends CanvasTexture {
 
+	/**
+	 * @param {number} slotCount - Maximum number of slots in the atlas.
+	 * @param {number} slotSize - Width and height of each slot in pixels.
+	 */
 	constructor( slotCount, slotSize ) {
 
 		super( null );
@@ -20,14 +29,29 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Returns true if key has an allocated slot.
+	/** @returns {boolean} True when all slots are allocated. */
+	get isFull() {
+
+		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
+
+	}
+
+	/**
+	 * Returns true if key has an allocated slot.
+	 * @param {string} key
+	 * @returns {boolean}
+	 */
 	has( key ) {
 
 		return this._slots.has( key );
 
 	}
 
-	// Returns the slot { x, y, w, h } for key, or null if not allocated.
+	/**
+	 * Returns the slot bounds `{ x, y, w, h }` for key, or null if not allocated.
+	 * @param {string} key
+	 * @returns {{ x: number, y: number, w: number, h: number } | null}
+	 */
 	get( key ) {
 
 		const { _slots } = this;
@@ -41,8 +65,15 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Renders a single character centered in the slot using the given CSS font string and color.
-	// Returns the slot on success. Throws if the atlas is full.
+	/**
+	 * Renders a single character centered in the slot.
+	 * @param {string} key
+	 * @param {string} char - The character to draw.
+	 * @param {string} font - CSS font string (e.g. `'bold 48px sans-serif'`).
+	 * @param {string} [color='white'] - CSS fill color.
+	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
+	 * @throws If the atlas is full.
+	 */
 	drawGlyph( key, char, font, color = 'white' ) {
 
 		return this._draw( key, ( ctx, x, y, w, h ) => {
@@ -57,9 +88,13 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Draws any CanvasImageSource (ImageBitmap, HTMLImageElement, HTMLCanvasElement, etc.)
-	// into the slot, scaled to fit. Caller is responsible for loading the image.
-	// Returns the slot on success. Throws if the atlas is full.
+	/**
+	 * Draws a `CanvasImageSource` into the slot, scaled to fit.
+	 * @param {string} key
+	 * @param {CanvasImageSource} image
+	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
+	 * @throws If the atlas is full.
+	 */
 	drawImage( key, image ) {
 
 		return this._draw( key, ( ctx, x, y, w, h ) => {
@@ -70,8 +105,14 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Renders a Path2D into the slot. Path coordinates are slot-local (origin at top-left of slot).
-	// Returns the slot on success. Throws if the atlas is full.
+	/**
+	 * Renders a `Path2D` into the slot. Path coordinates are slot-local (origin at top-left).
+	 * @param {string} key
+	 * @param {Path2D} path2D
+	 * @param {{ fillStyle?: string|null, strokeStyle?: string|null, lineWidth?: number }} [options]
+	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
+	 * @throws If the atlas is full.
+	 */
 	drawPath( key, path2D, { fillStyle = null, strokeStyle = null, lineWidth = 1 } = {} ) {
 
 		return this._draw( key, ( ctx, x, y ) => {
@@ -100,7 +141,10 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Clears the slot for key and returns it to the free pool.
+	/**
+	 * Frees the slot for key, returning it to the pool for reuse.
+	 * @param {string} key
+	 */
 	release( key ) {
 
 		const { _slots, _freeList } = this;
@@ -116,8 +160,11 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Resizes the atlas to a new slot count and optional slot size, copying all
-	// existing slot content into their new positions on the resized canvas.
+	/**
+	 * Resizes the atlas, copying existing slot content to their new positions.
+	 * @param {number} slotCount - New maximum slot count.
+	 * @param {number} [slotSize] - New slot size in pixels. Defaults to current size.
+	 */
 	resize( slotCount, slotSize = this.slotSize ) {
 
 		const oldCanvas = this.image;
@@ -151,7 +198,9 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// Resets the atlas to empty.
+	/**
+	 * Clears all slots and resets the atlas to empty.
+	 */
 	clear() {
 
 		this._slots.clear();
@@ -159,12 +208,6 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		this._nextIndex = 0;
 		this.ctx.clearRect( 0, 0, this.image.width, this.image.height );
 		this.needsUpdate = true;
-
-	}
-
-	get isFull() {
-
-		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
 
 	}
 

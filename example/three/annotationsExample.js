@@ -48,6 +48,7 @@ const params = {
 
 	orthographic: false,
 	errorTarget: 20,
+	occupancyGrid: false,
 
 };
 
@@ -188,6 +189,12 @@ function init() {
 	gui.add( params, 'errorTarget', 5, 100, 1 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+
+	gui.add( params, 'occupancyGrid' ).onChange( v => {
+
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).displayOccupancyGrid = v;
 
 	} );
 
