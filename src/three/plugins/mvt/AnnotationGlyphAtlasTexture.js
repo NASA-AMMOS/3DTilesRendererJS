@@ -168,7 +168,7 @@ export class AnnotationGlyphAtlasTexture extends GlyphAtlasTexture {
 				ctx.lineWidth = 10 / scale;
 				ctx.lineJoin = 'round';
 				ctx.lineCap = 'round';
-				ctx.strokeStyle = 'black';
+				ctx.strokeStyle = '#3f3e4c';
 				for ( const path of paths ) ctx.stroke( path );
 
 				ctx.fillStyle = 'white';

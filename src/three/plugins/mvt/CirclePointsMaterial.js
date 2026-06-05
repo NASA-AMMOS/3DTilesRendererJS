@@ -9,6 +9,8 @@ export class CirclePointsMaterial extends PointsMaterial {
 		this.alphaToCoverage = true;
 		this.vertexColors = true;
 		this.transparent = true;
+		this.depthTest = false;
+		this.depthWrite = false;
 
 		// glyph atlas state — set before first render; setters sync to uniforms after compile
 		this._glyphTexture = null;
@@ -63,13 +65,16 @@ export class CirclePointsMaterial extends PointsMaterial {
 				float _dist = length( gl_PointCoord - 0.5 );
 				float _fw = fwidth( _dist );
 				float _circleAlpha = 1.0 - smoothstep( 0.5 - _fw * 2.0, 0.5, _dist );
-				if ( _circleAlpha < 0.001 ) discard;
-				diffuseColor.a *= _circleAlpha * vAlpha;
+				// if ( _circleAlpha < 0.001 ) discard;
+				// diffuseColor.a *= _circleAlpha * vAlpha;
 				if ( vGlyphUV.x >= 0.0 ) {
 					vec4 _glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize );
 					outgoingLight = mix( outgoingLight, _glyph.rgb, _glyph.a );
-					// diffuseColor.a = _glyph.a;
+					diffuseColor.a = _glyph.a;
 				}
+
+				diffuseColor.a *= vAlpha;
+
 				#include <opaque_fragment>
 				`
 			);

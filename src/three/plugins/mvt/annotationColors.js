@@ -143,3 +143,14 @@ export function getAnnotationColor( layer, properties, target ) {
 	return target.setHex( category !== null ? CATEGORY_COLORS[ category ] : DEFAULT_COLOR );
 
 }
+
+// Default filter: only show POIs whose kind maps to a known category (has color + icon).
+// Anything not in KIND_CATEGORY is considered unclassified data not worth displaying.
+export function defaultGetAnnotation( layer, properties ) {
+
+	const kind = properties.kind ?? properties[ 'pmap:kind' ] ?? layer;
+	if ( typeof kind !== 'string' ) return false;
+	const base = kind.split( '/' )[ 0 ];
+	return base in KIND_CATEGORY;
+
+}

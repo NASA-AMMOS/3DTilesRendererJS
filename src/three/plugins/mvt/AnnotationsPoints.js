@@ -155,6 +155,26 @@ export class AnnotationsPoints extends Points {
 
 	}
 
+	raycast( raycaster, intersects ) {
+
+		const before = intersects.length;
+		super.raycast( raycaster, intersects );
+
+		for ( let i = before; i < intersects.length; i ++ ) {
+
+			const hit = intersects[ i ];
+			const entry = this._orderedEntries[ hit.index ];
+			if ( entry ) {
+
+				hit.layer = entry.item.layer;
+				hit.properties = entry.item.properties;
+
+			}
+
+		}
+
+	}
+
 	_updateDynamic( origin ) {
 
 		const entries = this._orderedEntries;

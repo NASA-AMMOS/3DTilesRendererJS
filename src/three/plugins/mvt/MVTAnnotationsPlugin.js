@@ -6,6 +6,7 @@ import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
+import { defaultGetAnnotation } from './annotationColors.js';
 
 // TODO:
 // - "fetch data" override needs to be handled differently? Switch to default download
@@ -127,7 +128,7 @@ export class MVTAnnotationsPlugin {
 
 		// callback to filter which features become annotations:
 		// getAnnotation( layerName, properties ) → boolean
-		this.getAnnotation = null;
+		this.getAnnotation = defaultGetAnnotation;
 		this.displayOccupancyGrid = displayOccupancyGrid;
 
 		this._raycastQueue = [];
@@ -156,8 +157,6 @@ export class MVTAnnotationsPlugin {
 		const pointsMaterial = new CirclePointsMaterial( {
 			size: 25,
 			sizeAttenuation: false,
-			depthWrite: false,
-			depthTest: false,
 		} );
 		pointsMaterial.glyphTexture = this._glyphAtlas;
 		const { u, v } = this._glyphAtlas.glyphCellUVSize;
@@ -358,7 +357,7 @@ export class MVTAnnotationsPlugin {
 
 						}
 
-						if ( getAnnotation !== null && ! getAnnotation( layerName, layer.properties ) ) {
+						if ( getAnnotation !== null && ! getAnnotation( layerName, feature.properties ) ) {
 
 							continue;
 

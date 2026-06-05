@@ -1,4 +1,4 @@
-import { CanvasTexture } from 'three';
+import { CanvasTexture, SRGBColorSpace } from 'three';
 
 export class GlyphAtlasTexture extends CanvasTexture {
 
@@ -16,6 +16,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		this._columns = 0;
 
 		this.resize( slotCount, slotSize );
+		this.colorSpace = SRGBColorSpace;
 
 	}
 
