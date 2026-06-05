@@ -176,8 +176,12 @@ export class MVTAnnotationsPlugin {
 		};
 
 
-		// sort: by pmap:rank ascending (lower = more important), then closest to camera, then bottom-to-top on screen
+		// sort: already-visible items first, then by pmap:rank ascending, then closest to camera, then bottom-to-top on screen
 		occupancy.sortCallback = ( a, b ) => {
+
+			const aVis = occupancy.visible.has( a ) ? 0 : 1;
+			const bVis = occupancy.visible.has( b ) ? 0 : 1;
+			if ( aVis !== bVis ) return aVis - bVis;
 
 			const rankA = a.properties[ 'rank' ] ?? a.properties[ 'pmap:rank' ] ?? Infinity;
 			const rankB = b.properties[ 'rank' ] ?? b.properties[ 'pmap:rank' ] ?? Infinity;
@@ -323,6 +327,7 @@ export class MVTAnnotationsPlugin {
 
 							const canonical = occupancy.register( item );
 							items.push( canonical );
+							this._enqueueRaycast( canonical );
 
 						}
 
@@ -506,18 +511,25 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-
+		// TODO: see if we can simplify this
 		const { occupancy, _debugCanvas } = this;
-		const { cells, size, resolution } = occupancy;
+		const { cells, size, resolution, buffer } = occupancy;
 		const dpr = window.devicePixelRatio;
-		const cols = Math.ceil( resolution.width / size );
-		const rows = Math.ceil( resolution.height / size );
+		const bufferX = resolution.width * buffer;
+		const bufferY = resolution.height * buffer;
+		const cols = Math.ceil( ( resolution.width + 2 * bufferX ) / size );
+		const rows = Math.ceil( ( resolution.height + 2 * bufferY ) / size );
 
-		_debugCanvas.width = dpr * resolution.width;
-		_debugCanvas.height = dpr * resolution.height;
+		_debugCanvas.width = Math.round( dpr * ( resolution.width + 2 * bufferX ) );
+		_debugCanvas.height = Math.round( dpr * ( resolution.height + 2 * bufferY ) );
+		_debugCanvas.style.width = `${ resolution.width + 2 * bufferX }px`;
+		_debugCanvas.style.height = `${ resolution.height + 2 * bufferY }px`;
+		_debugCanvas.style.left = `${ - bufferX }px`;
+		_debugCanvas.style.top = `${ - bufferY }px`;
 
 		const drawSize = size * dpr;
 		const ctx = _debugCanvas.getContext( '2d' );
+		ctx.clearRect( 0, 0, _debugCanvas.width, _debugCanvas.height );
 		for ( let cy = 0; cy < rows; cy ++ ) {
 
 			for ( let cx = 0; cx < cols; cx ++ ) {

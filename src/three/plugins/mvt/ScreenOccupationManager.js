@@ -59,11 +59,7 @@ export class PointAnnotationItem extends AnnotationItem {
 		const z = screenPos.z;
 		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
-		screenPos.z = (
-			z < - 1 || z > 1 ||
-			screenPos.x + this.radius < 0 || screenPos.x - this.radius > resolution.width ||
-			screenPos.y + this.radius < 0 || screenPos.y - this.radius > resolution.height
-		) ? 1 : 0;
+		screenPos.z = ( z < - 1 || z > 1 ) ? 1 : 0;
 		this._depth = z;
 
 		// facing ratio: dot( surface normal, direction to camera )
@@ -146,6 +142,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.size = 25 / window.devicePixelRatio;
 		this.cells = new Uint8Array( 1 );
 
+		// fraction of the shorter viewport dimension to extend evaluation beyond screen edges
+		this.buffer = 0.15;
+
 		// items
 		this.items = [];
 		this.visible = new Set();
@@ -159,11 +158,14 @@ export class ScreenOccupationManager extends EventDispatcher {
 			test: ( x, y, r ) => {
 
 				const { cells } = this;
-				return this._cellRange( x, y, r, ( x, y, i ) => {
+				let hasCells = false;
+				const blocked = this._cellRange( x, y, r, ( x, y, i ) => {
 
+					hasCells = true;
 					return cells[ i ] !== 0;
 
 				} );
+				return blocked || ! hasCells;
 
 			},
 			mark: ( x, y, r ) => {
@@ -184,13 +186,17 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	_cellRange( x, y, r, callback ) {
 
-		const { size, resolution } = this;
-		const width = Math.ceil( resolution.width / size );
-		const height = Math.ceil( resolution.height / size );
-		const x0 = Math.max( 0, Math.floor( ( x - r ) / size ) );
-		const y0 = Math.max( 0, Math.floor( ( y - r ) / size ) );
-		const x1 = Math.min( width - 1, Math.floor( ( x + r ) / size ) );
-		const y1 = Math.min( height - 1, Math.floor( ( y + r ) / size ) );
+		const { size, resolution, buffer } = this;
+		const bufferX = resolution.width * buffer;
+		const bufferY = resolution.height * buffer;
+		const width = Math.ceil( ( resolution.width + 2 * bufferX ) / size );
+		const height = Math.ceil( ( resolution.height + 2 * bufferY ) / size );
+		const ox = x + bufferX;
+		const oy = y + bufferY;
+		const x0 = Math.max( 0, Math.floor( ( ox - r ) / size ) );
+		const y0 = Math.max( 0, Math.floor( ( oy - r ) / size ) );
+		const x1 = Math.min( width - 1, Math.floor( ( ox + r ) / size ) );
+		const y1 = Math.min( height - 1, Math.floor( ( oy + r ) / size ) );
 
 		for ( let cy = y0; cy <= y1; cy ++ ) {
 
@@ -221,9 +227,11 @@ export class ScreenOccupationManager extends EventDispatcher {
 		visible.clear();
 		added.clear();
 
-		// resize the occupation cells
-		const width = Math.ceil( resolution.width / size );
-		const height = Math.ceil( resolution.height / size );
+		// resize the occupation cells to cover the extended viewport
+		const bufferX = resolution.width * this.buffer;
+		const bufferY = resolution.height * this.buffer;
+		const width = Math.ceil( ( resolution.width + 2 * bufferX ) / size );
+		const height = Math.ceil( ( resolution.height + 2 * bufferY ) / size );
 		if ( this.cells.length !== width * height ) {
 
 			this.cells = new Uint8Array( width * height );

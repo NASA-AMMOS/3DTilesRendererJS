@@ -69,6 +69,18 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get buffer() {
+
+		return this._inner.buffer;
+
+	}
+
+	set buffer( v ) {
+
+		this._inner.buffer = v;
+
+	}
+
 	constructor() {
 
 		super();
