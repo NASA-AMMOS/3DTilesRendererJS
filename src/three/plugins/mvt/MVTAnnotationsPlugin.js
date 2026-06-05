@@ -225,7 +225,6 @@ export class MVTAnnotationsPlugin {
 
 				this._forEachTileInBounds( range, ( x, y, l ) => {
 
-					// mark all tiles as "active" if visible in a 2x2 pattern
 					if ( visible ) {
 
 						locks.markActive( x, y, l );
@@ -459,7 +458,13 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	async processTileModel( scene, tile ) {
+	processTileModel( scene, tile ) {
+
+		this._loadMVTForTile( scene, tile );
+
+	}
+
+	async _loadMVTForTile( scene, tile ) {
 
 		const { overlay, tiles, tileInfo, locks } = this;
 		if ( ! overlay.isReady ) {
@@ -501,11 +506,11 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		// lock all related MVT sub tiles in a 2x2 pattern
-		const { contentCache	} = this;
+		const { contentCache } = this;
 		const promises = [];
 		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
+			locks.markLoading( x, y, l );
 			promises.push( contentCache.lock( x, y, l ) );
 
 		} );
@@ -516,6 +521,11 @@ export class MVTAnnotationsPlugin {
 
 		} catch {
 
+			this._forEachTileInBounds( info.range, ( x, y, l ) => {
+
+				locks.unmarkLoading( x, y, l );
+
+			} );
 			return;
 
 		}
@@ -526,6 +536,7 @@ export class MVTAnnotationsPlugin {
 			// we own the locks now, so release them here
 			this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
+				locks.unmarkLoading( x, y, l );
 				contentCache.release( x, y, l );
 
 			} );
@@ -535,9 +546,14 @@ export class MVTAnnotationsPlugin {
 
 		info.loaded = true;
 
+		this._forEachTileInBounds( info.range, ( x, y, l ) => {
+
+			locks.unmarkLoading( x, y, l );
+
+		} );
+
 		if ( tiles.visibleTiles.has( tile ) ) {
 
-			// mark all tiles as "active" if visible in a 2x2 pattern
 			this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
 				locks.markActive( x, y, l );

@@ -6,11 +6,9 @@ const getKey = ( x, y, l ) => {
 
 };
 
-// "available" indicates that a tile should be loaded and available
-// "active" indicates the given tile is visible and should be displayed, overriding all parents
-// If a single child is marked as active then all siblings are, as well, to prevent gaps
-// TODO: This may need to handle async operations or perhaps a separate data structure should be used for
-// "available" vs "active"?
+// Ref-counts active requests per (x, y, level) tile and fires a 'toggle' event when a tile
+// transitions between inactive (ref === 0) and active (ref > 0). Multiple LoD levels covering
+// the same area can be active simultaneously — deduplication is handled upstream.
 export class HierarchicalLock extends EventDispatcher {
 
 	constructor() {
@@ -23,104 +21,133 @@ export class HierarchicalLock extends EventDispatcher {
 
 	markActive( x, y, level ) {
 
-		this._accrueActive( x, y, level, true );
+		this._accrue( x, y, level, true );
 
 	}
 
 	markInactive( x, y, level ) {
 
-		this._accrueActive( x, y, level, false );
+		this._accrue( x, y, level, false );
+
+	}
+
+	// Keep the nearest already-active ancestor alive while a finer tile is loading.
+	// Call unmarkLoading on every exit path (success, cancel, or dispose).
+	markLoading( x, y, level ) {
+
+		const { locks } = this;
+		const childKey = getKey( x, y, level );
+		let ax = x;
+		let ay = y;
+		let al = level;
+
+		if ( ! ( childKey in locks ) ) {
+
+			locks[ childKey ] = this._createLock( x, y, level );
+
+		}
+
+		// traverse the ancestors to find the nearest active one and keep it alive
+		while ( al > 0 ) {
+
+			al --;
+			ax >>= 1;
+			ay >>= 1;
+
+			const ancestorKey = getKey( ax, ay, al );
+			if ( ancestorKey in locks ) {
+
+				this._accrue( ax, ay, al, true );
+				locks[ childKey ].lockedAncestor = {
+					x: ax,
+					y: ay,
+					level: al,
+				};
+				break;
+
+			}
+
+		}
+
+	}
+
+	unmarkLoading( x, y, level ) {
+
+		const { locks } = this;
+		const childKey = getKey( x, y, level );
+		const childLock = locks[ childKey ];
+		if ( ! childLock ) {
+
+			return;
+
+		}
+
+		if ( childLock.lockedAncestor ) {
+
+			const { x: ax, y: ay, level: al } = childLock.lockedAncestor;
+			this._accrue( ax, ay, al, false );
+			childLock.lockedAncestor = null;
+
+		}
+
+		this._tryDeleteLock( childKey );
 
 	}
 
 	//
 
-	_initLock( x, y, l ) {
+	_tryDeleteLock( key ) {
+
+		const lock = this.locks[ key ];
+		if ( lock && lock.ref === 0 && lock.lockedAncestor === null ) {
+
+			delete this.locks[ key ];
+
+		}
+
+	}
+
+	_createLock( x, y, level ) {
+
+		return {
+			x,
+			y,
+			level,
+			ref: 0,
+			dispatched: false,
+			lockedAncestor: null,
+		};
+
+	}
+
+	_accrue( x, y, level, incr ) {
 
 		const { locks } = this;
-		const key = getKey( x, y, l );
+		const key = getKey( x, y, level );
+
 		if ( ! ( key in locks ) ) {
 
-			locks[ key ] = {
-				x,
-				y,
-				level: l,
-				ref: 0,
-				override: 0,
-				dispatched: false,
-			};
+			locks[ key ] = this._createLock( x, y, level );
 
 		}
 
-	}
-
-	_accrueRef( key, incr ) {
-
-		const { locks } = this;
-		locks[ key ].ref += incr ? 1 : - 1;
-		if ( locks[ key ].ref < 0 ) {
-
-			throw new Error();
-
-		}
-
-	}
-
-	_accrueOverride( key, incr ) {
-
-		const { locks } = this;
-		locks[ key ].override += incr ? 1 : - 1;
-		if ( locks[ key ].override < 0 ) {
-
-			throw new Error();
-
-		}
-
-	}
-
-	_resolveEvents( key ) {
-
-		const { locks } = this;
 		const lock = locks[ key ];
-		const active = lock.ref > 0 && lock.override === 0;
+		lock.ref += incr ? 1 : - 1;
+		if ( lock.ref < 0 ) {
+
+			throw new Error();
+
+		}
+
+		const active = lock.ref > 0;
 		if ( active !== lock.dispatched ) {
 
-			const { x, y, level } = lock;
 			lock.dispatched = active;
-			this.dispatchEvent( {
-				type: 'toggle',
-				active, x, y, level,
-			} );
+			this.dispatchEvent( { type: 'toggle', active, x, y, level } );
 
 		}
 
-		if ( lock.ref === 0 && lock.override === 0 ) {
-
-			delete locks[ key ];
-
-		}
-
-	}
-
-	_accrueActive( x, y, level, incr ) {
-
-		let key = getKey( x, y, level );
-		this._initLock( x, y, level );
-		this._accrueRef( key, incr );
-		this._resolveEvents( key );
-
-		while ( level > 0 ) {
-
-			level --;
-			x >>= 1;
-			y >>= 1;
-
-			let key = getKey( x, y, level );
-			this._initLock( x, y, level );
-			this._accrueOverride( key, incr );
-			this._resolveEvents( key );
-
-		}
+		this._tryDeleteLock( key );
 
 	}
 
