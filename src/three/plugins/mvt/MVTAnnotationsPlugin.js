@@ -241,7 +241,11 @@ export class MVTAnnotationsPlugin {
 
 			const aVis = occupancy.visible.has( a ) ? 0 : 1;
 			const bVis = occupancy.visible.has( b ) ? 0 : 1;
-			if ( aVis !== bVis ) return aVis - bVis;
+			if ( aVis !== bVis ) {
+
+				return aVis - bVis;
+
+			}
 
 			const rankA = a.properties[ 'rank' ] ?? a.properties[ 'pmap:rank' ] ?? Infinity;
 			const rankB = b.properties[ 'rank' ] ?? b.properties[ 'pmap:rank' ] ?? Infinity;
