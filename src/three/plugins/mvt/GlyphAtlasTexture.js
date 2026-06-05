@@ -91,7 +91,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	/**
 	 * Draws a `CanvasImageSource` into the slot, scaled to fit.
 	 * @param {string} key
-	 * @param {CanvasImageSource} image
+	 * @param {HTMLImageElement|HTMLCanvasElement|ImageBitmap} image
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */

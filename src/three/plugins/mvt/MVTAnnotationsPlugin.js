@@ -383,6 +383,7 @@ export class MVTAnnotationsPlugin {
 							const item = new PointAnnotationItem();
 							// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
 							// across all zoom levels — stable and unique for cross-LoD annotation replacement.
+							// TODO: is this id always guaranteed to be unique and consistent across LoDs?
 							item.id = `${ layerName }:${ feature.id }`;
 							item.layer = layerName;
 							item.properties = feature.properties;
