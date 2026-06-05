@@ -1,4 +1,4 @@
-import { Group, MathUtils, Matrix4, Raycaster, Vector3 } from 'three';
+import { Frustum, Group, MathUtils, Matrix4, Raycaster, Vector3 } from 'three';
 import { CirclePointsMaterial } from './CirclePointsMaterial.js';
 import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
 import { AnnotationsPoints } from './AnnotationsPoints.js';
@@ -29,10 +29,70 @@ function collectMeshes( object ) {
 
 }
 
+const PARALLEL_EPSILON = 1e-10;
+
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
+const _frustum = /* @__PURE__ */ new Frustum();
+
+function rayIntersectsFrustum( raycaster, frustum ) {
+
+	const { origin, direction } = raycaster.ray;
+	const planes = frustum.planes;
+	let tEnter = 0;
+	let tExit = raycaster.far;
+
+	for ( let i = 0; i < 6; i ++ ) {
+
+		const plane = planes[ i ];
+		const denom = plane.normal.dot( direction );
+		const dist = plane.distanceToPoint( origin );
+
+		if ( Math.abs( denom ) < PARALLEL_EPSILON ) {
+
+			if ( dist < 0 ) {
+
+				return false;
+
+			}
+
+		} else {
+
+			const t = - dist / denom;
+			if ( denom > 0 ) {
+
+				if ( t > tEnter ) {
+
+					tEnter = t;
+
+				}
+
+			} else {
+
+				if ( t < tExit ) {
+
+					tExit = t;
+
+				}
+
+			}
+
+			if ( tEnter > tExit ) {
+
+				return false;
+
+			}
+
+		}
+
+	}
+
+	return true;
+
+}
+
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {
@@ -50,7 +110,7 @@ export class MVTAnnotationsPlugin {
 			overlay,
 			camera = null,
 			scene = null,
-			displayOccupancyGrid = true,
+			displayOccupancyGrid = false,
 		} = options;
 
 		this.overlay = overlay;
@@ -72,7 +132,7 @@ export class MVTAnnotationsPlugin {
 
 		this._raycastQueue = [];
 		this._raycastQueueSet = new Set();
-		this.maxRaycastTimeMs = 2;
+		this.maxRaycastTimeMs = 5;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -577,17 +637,63 @@ export class MVTAnnotationsPlugin {
 
 	_processRaycastQueue() {
 
-		const { _raycastQueue, _raycastQueueSet, occupancy, maxRaycastTimeMs } = this;
+		const { _raycastQueue, _raycastQueueSet, occupancy, maxRaycastTimeMs, tiles, camera } = this;
 		const { visible, sortCallback } = occupancy;
 
-		// sort ascending: visible first, then by occupancy priority — highest priority ends up at tail for pop()
+		// precompute which non-visible items have rays intersecting the camera frustum
+		const inFrustum = new Set();
+		if ( this.camera !== null ) {
+
+			_ndcMatrix
+				.copy( tiles.group.matrixWorld )
+				.premultiply( camera.matrixWorldInverse )
+				.premultiply( camera.projectionMatrix );
+
+			_frustum.setFromProjectionMatrix( _ndcMatrix );
+			for ( const item of _raycastQueue ) {
+
+				if ( visible.has( item ) ) {
+
+					continue;
+
+				}
+
+				this._setupRaycastRay( item );
+				if ( rayIntersectsFrustum( _raycaster, _frustum ) ) {
+
+					inFrustum.add( item );
+
+				}
+
+			}
+
+		}
+
+		// sort ascending — highest-priority items at tail for pop()
+		// tiers: unsettled+inFrustum=3, visible=2, settled+inFrustum=1, outside frustum=0
 		_raycastQueue.sort( ( a, b ) => {
 
-			const aVis = visible.has( a ) ? 1 : 0;
-			const bVis = visible.has( b ) ? 1 : 0;
-			if ( aVis !== bVis ) {
+			const aUnsettledInFrustum = ! a.ready && inFrustum.has( a );
+			const bUnsettledInFrustum = ! b.ready && inFrustum.has( b );
+			if ( aUnsettledInFrustum !== bUnsettledInFrustum ) {
 
-				return aVis - bVis;
+				return aUnsettledInFrustum ? 1 : - 1;
+
+			}
+
+			const aVisible = visible.has( a );
+			const bVisible = visible.has( b );
+			if ( aVisible !== bVisible ) {
+
+				return aVisible ? 1 : - 1;
+
+			}
+
+			const aInFrustum = inFrustum.has( a );
+			const bInFrustum = inFrustum.has( b );
+			if ( aInFrustum !== bInFrustum ) {
+
+				return aInFrustum ? 1 : - 1;
 
 			}
 
@@ -616,23 +722,29 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	_setupRaycastRay( item ) {
+
+		const { tiles } = this;
+		const { origin, direction } = _raycaster.ray;
+
+		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e6, origin );
+		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, direction );
+		direction.sub( origin ).normalize();
+		_raycaster.far = 2 * 1e6;
+		_raycaster.firstHitOnly = true;
+
+	}
+
 	_raycastItem( item ) {
 
 		const { tiles } = this;
 		const { origin, direction } = _raycaster.ray;
 
-		// origin: 10,000km above the surface at this feature's geodetic position
-		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e6, origin );
-
-		// direction: from high altitude toward the ellipsoid surface (geodetically correct)
-		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, direction );
-		direction.sub( origin ).normalize();
+		this._setupRaycastRay( item );
 
 		origin.applyMatrix4( tiles.group.matrixWorld );
 		direction.transformDirection( tiles.group.matrixWorld );
 
-		_raycaster.firstHitOnly = true;
-		_raycaster.far = 2 * 1e6;
 		const hits = _raycaster.intersectObject( tiles.group, true );
 		if ( hits.length > 0 ) {
 
