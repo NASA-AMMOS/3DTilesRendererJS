@@ -556,7 +556,8 @@ export class MVTAnnotationsPlugin {
 
 			if ( this._debugCanvas ) {
 
-				_debugCanvas.remove();
+				this._debugCanvas.remove();
+				this._debugCanvas = null;
 
 			}
 

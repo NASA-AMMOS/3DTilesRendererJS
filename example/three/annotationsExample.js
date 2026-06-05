@@ -1,5 +1,6 @@
 import {
 	WGS84_ELLIPSOID,
+	CAMERA_FRAME,
 	GeoUtils,
 	GlobeControls,
 	CameraTransitionManager,
@@ -137,8 +138,6 @@ function init() {
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
 		new OrthographicCamera( - 1, 1, 1, - 1, 1, 160000000 ),
 	);
-	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
-	transition.perspectiveCamera.lookAt( 0, 0, 0 );
 	transition.autoSync = false;
 
 	transition.addEventListener( 'camera-change', ( { camera, prevCamera } ) => {
@@ -160,6 +159,20 @@ function init() {
 	controls.maxAltitude = Math.PI / 2;
 
 	reinstantiateTiles();
+
+	// Zaragoza, Spain
+	tiles.group.updateMatrixWorld();
+	WGS84_ELLIPSOID.getObjectFrame(
+		41.6275 * Math.PI / 180, - 0.8858 * Math.PI / 180, 2000,
+		0, - Math.PI / 4, 0,
+		transition.perspectiveCamera.matrixWorld, CAMERA_FRAME,
+	);
+	transition.perspectiveCamera.matrixWorld.premultiply( tiles.group.matrixWorld );
+	transition.perspectiveCamera.matrixWorld.decompose(
+		transition.perspectiveCamera.position,
+		transition.perspectiveCamera.quaternion,
+		transition.perspectiveCamera.scale,
+	);
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize );
