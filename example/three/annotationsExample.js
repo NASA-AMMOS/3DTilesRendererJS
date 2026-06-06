@@ -27,49 +27,74 @@ import { AnnotationPoints } from './src/plugins/mvt/AnnotationPoints.js';
 
 // CDN source for the icons
 const MAKI_BASE = 'https://cdn.jsdelivr.net/npm/@mapbox/maki@8/icons/';
-const MAKI_ICONS = [ 'restaurant', 'park', 'town-hall', 'shop', 'airport', 'museum', 'hospital', 'lodging' ];
+const MAKI_ICONS = [
+	// Food & Drink
+	'restaurant', 'cafe', 'fast-food', 'bar', 'beer', 'bakery', 'ice-cream',
+
+	// Nature & Recreation
+	'park', 'garden', 'beach', 'mountain', 'harbor', 'zoo', 'viewpoint',
+
+	// Education & Civic
+	'school', 'college', 'library', 'stadium', 'post', 'town-hall', 'place-of-worship', 'drinking-water', 'toilet', 'prison',
+
+	// Shopping & Retail
+	'shop', 'grocery', 'convenience', 'clothing-store', 'pharmacy', 'bank',
+
+	// Transport
+	'airport', 'airfield', 'heliport', 'taxi', 'rail', 'rail-metro', 'bus', 'ferry',
+
+	// Culture & Attractions
+	'museum', 'theatre', 'cinema', 'art-gallery', 'attraction', 'amusement-park', 'monument', 'castle',
+
+	// Healthcare & Emergency
+	'hospital', 'doctor', 'dentist', 'veterinary', 'fire-station', 'police',
+
+	// Accommodation & Leisure
+	'lodging', 'campsite', 'aquarium', 'swimming', 'golf', 'fitness-centre', 'playground',
+];
 
 // Map from point kind to icon
 const KIND_TO_ICON = {
 
 	// Food & Drink
-	cafe: 'restaurant', coffee_shop: 'restaurant', restaurant: 'restaurant', fast_food: 'restaurant',
-	bar: 'restaurant', pub: 'restaurant', biergarten: 'restaurant', nightclub: 'restaurant',
-	bakery: 'restaurant', food_court: 'restaurant', ice_cream: 'restaurant',
+	restaurant: 'restaurant', food_court: 'restaurant', cafe: 'cafe', coffee_shop: 'cafe',
+	fast_food: 'fast-food', bar: 'bar', pub: 'bar', nightclub: 'bar', biergarten: 'beer',
+	bakery: 'bakery', ice_cream: 'ice-cream',
 
 	// Nature & Recreation
-	park: 'park', garden: 'park', forest: 'park', nature_reserve: 'park', beach: 'park',
-	peak: 'park', volcano: 'park', marina: 'park', zoo: 'park', bench: 'park',
-	picnic_site: 'park', wetland: 'park',
+	park: 'park', forest: 'park', nature_reserve: 'park', bench: 'park', picnic_site: 'park',
+	wetland: 'park', garden: 'garden', beach: 'beach', peak: 'mountain', volcano: 'mountain',
+	marina: 'harbor', zoo: 'zoo', viewpoint: 'viewpoint',
 
 	// Education & Civic
-	school: 'town-hall', university: 'town-hall', college: 'town-hall', kindergarten: 'town-hall',
-	library: 'town-hall', stadium: 'town-hall', post_office: 'town-hall', townhall: 'town-hall',
+	school: 'school', kindergarten: 'school', university: 'college', college: 'college',
+	library: 'library', stadium: 'stadium', post_office: 'post', townhall: 'town-hall',
 	courthouse: 'town-hall', community_centre: 'town-hall', social_facility: 'town-hall',
-	place_of_worship: 'town-hall', prison: 'town-hall', drinking_water: 'town-hall', toilets: 'town-hall',
+	place_of_worship: 'place-of-worship', drinking_water: 'drinking-water', toilets: 'toilet',
+	prison: 'prison',
 
 	// Shopping & Retail
-	supermarket: 'shop', grocery: 'shop', convenience: 'shop', mall: 'shop',
-	department_store: 'shop', clothes: 'shop', electronics: 'shop', books: 'shop',
-	beauty: 'shop', hairdresser: 'shop', pharmacy: 'shop', bank: 'shop', atm: 'shop',
+	mall: 'shop', department_store: 'shop', electronics: 'shop', books: 'shop', beauty: 'shop',
+	hairdresser: 'shop', supermarket: 'grocery', grocery: 'grocery', convenience: 'convenience',
+	clothes: 'clothing-store', pharmacy: 'pharmacy', bank: 'bank', atm: 'bank',
 
 	// Transport
-	airport: 'airport', airfield: 'airport', aerodrome: 'airport', train_station: 'airport',
-	station: 'airport', subway_entrance: 'airport', bus_stop: 'airport', ferry_terminal: 'airport',
-	helipad: 'airport', taxi: 'airport',
+	airport: 'airport', aerodrome: 'airport', airfield: 'airfield', helipad: 'heliport',
+	taxi: 'taxi', train_station: 'rail', station: 'rail', subway_entrance: 'rail-metro',
+	bus_stop: 'bus', ferry_terminal: 'ferry',
 
 	// Culture & Attractions
-	museum: 'museum', theatre: 'museum', cinema: 'museum', gallery: 'museum', arts_centre: 'museum',
-	attraction: 'museum', artwork: 'museum', theme_park: 'museum', viewpoint: 'museum',
+	museum: 'museum', theatre: 'theatre', cinema: 'cinema', gallery: 'art-gallery', arts_centre: 'art-gallery',
+	artwork: 'art-gallery', attraction: 'attraction', theme_park: 'amusement-park', monument: 'monument', castle: 'castle',
 
 	// Healthcare & Emergency
-	hospital: 'hospital', doctors: 'hospital', clinic: 'hospital', dentist: 'hospital',
-	veterinary: 'hospital', fire_station: 'hospital', police: 'hospital',
+	hospital: 'hospital', doctors: 'doctor', clinic: 'doctor', dentist: 'dentist', veterinary: 'veterinary',
+	fire_station: 'fire-station', police: 'police',
 
 	// Accommodation & Leisure
-	hotel: 'lodging', motel: 'lodging', hostel: 'lodging', guest_house: 'lodging',
-	camp_site: 'lodging', caravan_site: 'lodging', aquarium: 'lodging', sports_centre: 'lodging',
-	swimming_pool: 'lodging', golf_course: 'lodging', fitness_centre: 'lodging', playground: 'lodging',
+	hotel: 'lodging', motel: 'lodging', hostel: 'lodging', guest_house: 'lodging', camp_site: 'campsite', caravan_site: 'campsite',
+	aquarium: 'aquarium', sports_centre: 'stadium', swimming_pool: 'swimming', golf_course: 'golf', fitness_centre: 'fitness-centre',
+	playground: 'playground',
 
 };
 

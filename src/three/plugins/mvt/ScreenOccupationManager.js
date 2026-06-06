@@ -48,7 +48,7 @@ export class PointAnnotationItem extends AnnotationItem {
 		this.position = new Vector3();
 		this.lat = 0;
 		this.lon = 0;
-		this.radius = 16;
+		this.radius = 32;
 
 		this._screenPos = new Vector3();
 		this._facingAngle = 0;

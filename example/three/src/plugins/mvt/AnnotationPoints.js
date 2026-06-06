@@ -67,6 +67,7 @@ export class AnnotationPoints extends Points {
 			getKind = null,
 			size = 20,
 			glyphSize = 20,
+			slotCount = 64,
 		} = options;
 
 		super( new BufferGeometry(), new GlyphMaterial() );
@@ -91,7 +92,7 @@ export class AnnotationPoints extends Points {
 		this._lastUpdateTime = - 1;
 		this._glyphAtlas = null;
 
-		this.glyphAtlas = new GlyphAtlasTexture( 32, glyphSize );
+		this.glyphAtlas = new GlyphAtlasTexture( slotCount, glyphSize );
 
 	}
 
