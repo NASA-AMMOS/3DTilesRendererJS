@@ -302,9 +302,23 @@ export class MVTAnnotationsPlugin {
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 			this._updateDebugGrid();
 
+			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
+
+				tiles.dispatchEvent( { type: 'needs-render' } );
+
+			}
+
+			if ( occupancy.hasPendingWork || this._raycastQueue.length > 0 ) {
+
+				tiles.dispatchEvent( { type: 'needs-update' } );
+
+			}
+
 		};
 
 		this._onLockToggle = ( { x, y, level, active } ) => {
+
+			tiles.dispatchEvent( { type: 'needs-update' } );
 
 			const key = `${ x }_${ y }_${ level }`;
 

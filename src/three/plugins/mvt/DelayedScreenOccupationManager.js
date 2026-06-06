@@ -48,6 +48,12 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get hasPendingWork() {
+
+		return this._showTimers.size > 0 || this._hideTimers.size > 0;
+
+	}
+
 	get sortCallback() {
 
 		return this.manager.sortCallback;
