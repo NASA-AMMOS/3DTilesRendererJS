@@ -147,7 +147,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
 		this._lastUpdateTime = now;
 
-		// fires 'added'/'removed' synchronously, populating the timers
+		// fires 'changed' synchronously, populating the timers
 		this.manager.update();
 
 		const {
@@ -163,6 +163,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		added.clear();
 		removed.clear();
 
+		// increment the timers for added items
 		for ( const [ item, elapsed ] of _showTimers ) {
 
 			const next = elapsed + dt;
@@ -180,6 +181,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 		}
 
+		// increment the timers for removed items
 		for ( const [ item, elapsed ] of _hideTimers ) {
 
 			const next = elapsed + dt;

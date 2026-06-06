@@ -7,8 +7,9 @@ const getKey = ( x, y, l ) => {
 };
 
 // Ref-counts active requests per (x, y, level) tile and fires a 'toggle' event when a tile
-// transitions between inactive (ref === 0) and active (ref > 0). Multiple LoD levels covering
-// the same area can be active simultaneously — deduplication is handled upstream.
+// transitions between inactive (ref === 0) and active (ref > 0). Tiles can also be marked as
+// "loading", which will lock an existing parent tile as active to ensure coverage until the
+// child has loaded
 export class HierarchicalLock extends EventDispatcher {
 
 	constructor() {
@@ -19,20 +20,21 @@ export class HierarchicalLock extends EventDispatcher {
 
 	}
 
+	// mark the tile as "active", meaning it should be visible
 	markActive( x, y, level ) {
 
-		this._accrue( x, y, level, true );
+		this._incrLock( x, y, level, true );
 
 	}
 
 	markInactive( x, y, level ) {
 
-		this._accrue( x, y, level, false );
+		this._incrLock( x, y, level, false );
 
 	}
 
-	// Keep the nearest already-active ancestor alive while a finer tile is loading.
-	// Call unmarkLoading on every exit path (success, cancel, or dispose).
+	// Mark the tile as "loading", which means one of the present parent tiles should
+	// be kept around.
 	markLoading( x, y, level ) {
 
 		const { locks } = this;
@@ -41,13 +43,16 @@ export class HierarchicalLock extends EventDispatcher {
 		let ay = y;
 		let al = level;
 
+		// Create the lock for the child and mark it as loading
 		if ( ! ( childKey in locks ) ) {
 
 			locks[ childKey ] = this._createLock( x, y, level );
 
 		}
 
-		// traverse the ancestors to find the nearest active one and keep it alive
+		locks[ childKey ].loading = true;
+
+		// Traverse the ancestors to find the nearest active one and keep it alive
 		while ( al > 0 ) {
 
 			al --;
@@ -57,7 +62,8 @@ export class HierarchicalLock extends EventDispatcher {
 			const ancestorKey = getKey( ax, ay, al );
 			if ( ancestorKey in locks ) {
 
-				this._accrue( ax, ay, al, true );
+				// save the reference so we can unlock it later when load is finished
+				this._incrLock( ax, ay, al, true );
 				locks[ childKey ].lockedAncestor = {
 					x: ax,
 					y: ay,
@@ -76,16 +82,19 @@ export class HierarchicalLock extends EventDispatcher {
 		const { locks } = this;
 		const childKey = getKey( x, y, level );
 		const childLock = locks[ childKey ];
+
 		if ( ! childLock ) {
 
 			return;
 
 		}
 
+		childLock.loading = false;
+
 		if ( childLock.lockedAncestor ) {
 
 			const { x: ax, y: ay, level: al } = childLock.lockedAncestor;
-			this._accrue( ax, ay, al, false );
+			this._incrLock( ax, ay, al, false );
 			childLock.lockedAncestor = null;
 
 		}
@@ -99,7 +108,7 @@ export class HierarchicalLock extends EventDispatcher {
 	_tryDeleteLock( key ) {
 
 		const lock = this.locks[ key ];
-		if ( lock && lock.ref === 0 && lock.lockedAncestor === null ) {
+		if ( lock && lock.ref === 0 && lock.lockedAncestor === null && ! lock.loading ) {
 
 			delete this.locks[ key ];
 
@@ -116,11 +125,12 @@ export class HierarchicalLock extends EventDispatcher {
 			ref: 0,
 			dispatched: false,
 			lockedAncestor: null,
+			loading: false,
 		};
 
 	}
 
-	_accrue( x, y, level, incr ) {
+	_incrLock( x, y, level, value ) {
 
 		const { locks } = this;
 		const key = getKey( x, y, level );
@@ -132,7 +142,7 @@ export class HierarchicalLock extends EventDispatcher {
 		}
 
 		const lock = locks[ key ];
-		lock.ref += incr ? 1 : - 1;
+		lock.ref += value ? 1 : - 1;
 		if ( lock.ref < 0 ) {
 
 			throw new Error();

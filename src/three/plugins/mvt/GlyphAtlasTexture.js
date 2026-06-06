@@ -1,9 +1,9 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 
 /**
- * A GPU texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
+ * A canvas texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
  * Slots are addressed by string key and can be drawn with text, images, or paths.
- * Extends Three.js `CanvasTexture` so it can be passed directly to a material uniform.
+ * @extends CanvasTexture
  */
 export class GlyphAtlasTexture extends CanvasTexture {
 
@@ -17,7 +17,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 		this.slotSize = 0;
 
-		// key → slot index
+		// key -> slot index
 		this._slots = new Map();
 		this._freeList = [];
 		this._nextIndex = 0;
@@ -29,7 +29,9 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	/** @returns {boolean} True when all slots are allocated. */
+	/**
+	 * Returns true when all slots are allocated.
+	 * @returns {boolean}  */
 	get isFull() {
 
 		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
@@ -69,12 +71,17 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * Renders a single character centered in the slot.
 	 * @param {string} key
 	 * @param {string} char - The character to draw.
-	 * @param {string} font - CSS font string (e.g. `'bold 48px sans-serif'`).
-	 * @param {string} [color='white'] - CSS fill color.
+	 * @param {string} [styles.font=''] - CSS font string (e.g. `'bold 48px sans-serif'`).
+	 * @param {string} [styles.color='white'] - CSS fill color.
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
-	drawChar( key, char, { font = '', color = 'white' } = {} ) {
+	drawChar( key, char, styles = {} ) {
+
+		const {
+			font = '',
+			color = 'white',
+		} = styles;
 
 		return this._draw( key, ( ctx, x, y, w, h ) => {
 
@@ -105,6 +112,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
+	// TODO: fix the docs here
 	/**
 	 * Renders a `Path2D` into the slot. Path coordinates are slot-local (origin at top-left).
 	 * @param {string} key
@@ -113,7 +121,13 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
-	drawPath( key, path2D, { fillStyle = null, strokeStyle = null, lineWidth = 1 } = {} ) {
+	drawPath( key, path2D, styles = {} ) {
+
+		const {
+			fillStyle = null,
+			strokeStyle = null,
+			lineWidth = 1,
+		} = styles;
 
 		return this._draw( key, ( ctx, x, y ) => {
 
@@ -141,6 +155,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
+	// TODO fix the docs here
 	/**
 	 * Parses an SVG string and renders its paths into a slot, scaled to fit.
 	 * @param {string} key
@@ -149,13 +164,25 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
-	drawSVG( key, svgText, { fillStyle = 'white', strokeStyle = null, strokeWidth = 1, iconScale = 1 } = {} ) {
+	drawSVG( key, svgText, styles = {} ) {
 
+		const {
+			fillStyle = 'white',
+			strokeStyle = null,
+			strokeWidth = 1,
+			iconScale = 1,
+		} = styles;
+
+		// parse the svg doc so we can extract the content
 		const doc = new DOMParser().parseFromString( svgText, 'image/svg+xml' );
 		const svg = doc.documentElement;
+
+		// TODO: why is this default here?
 		const vbParts = ( svg.getAttribute( 'viewBox' ) ?? '0 0 15 15' ).trim().split( /[\s,]+/ );
 		const vbW = parseFloat( vbParts[ 2 ] );
 		const vbH = parseFloat( vbParts[ 3 ] );
+
+		// parse all paths
 		const paths = [ ...svg.querySelectorAll( 'path' ) ]
 			.map( el => el.getAttribute( 'd' ) )
 			.filter( Boolean )
@@ -166,11 +193,11 @@ export class GlyphAtlasTexture extends CanvasTexture {
 			const iw = w * iconScale;
 			const ih = h * iconScale;
 			const scale = Math.min( iw / vbW, ih / vbH );
-			const ox = x + ( w - vbW * scale ) / 2;
-			const oy = y + ( h - vbH * scale ) / 2;
+			const originX = x + ( w - vbW * scale ) / 2;
+			const originY = y + ( h - vbH * scale ) / 2;
 
 			ctx.save();
-			ctx.translate( ox, oy );
+			ctx.translate( originX, originY );
 			ctx.scale( scale, scale );
 			ctx.lineJoin = 'round';
 			ctx.lineCap = 'round';
@@ -179,14 +206,22 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 				ctx.lineWidth = strokeWidth / scale;
 				ctx.strokeStyle = strokeStyle;
-				for ( const path of paths ) ctx.stroke( path );
+				for ( const path of paths ) {
+
+					ctx.stroke( path );
+
+				}
 
 			}
 
 			if ( fillStyle !== null ) {
 
 				ctx.fillStyle = fillStyle;
-				for ( const path of paths ) ctx.fill( path );
+				for ( const path of paths ) {
+
+					ctx.fill( path );
+
+				}
 
 			}
 
@@ -234,13 +269,17 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		const ctx = canvas.getContext( '2d' );
 
 		// copy each allocated slot from its old grid position to its new one
-		for ( const index of this._slots.values() ) {
+		for ( const i of this._slots.values() ) {
 
-			const srcX = ( index % oldColumns ) * oldSlotSize;
-			const srcY = Math.floor( index / oldColumns ) * oldSlotSize;
-			const dstX = ( index % columns ) * slotSize;
-			const dstY = Math.floor( index / columns ) * slotSize;
-			ctx.drawImage( oldCanvas, srcX, srcY, oldSlotSize, oldSlotSize, dstX, dstY, slotSize, slotSize );
+			const srcX = ( i % oldColumns ) * oldSlotSize;
+			const srcY = Math.floor( i / oldColumns ) * oldSlotSize;
+			const dstX = ( i % columns ) * slotSize;
+			const dstY = Math.floor( i / columns ) * slotSize;
+			ctx.drawImage(
+				oldCanvas,
+				srcX, srcY, oldSlotSize, oldSlotSize,
+				dstX, dstY, slotSize, slotSize,
+			);
 
 		}
 
@@ -266,9 +305,15 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
+	// calls the callback to draw into the calculated slot for the given key
 	_draw( key, callback ) {
 
-		const { _freeList, _capacity, _slots, ctx } = this;
+		const {
+			ctx,
+			_freeList,
+			_capacity,
+			_slots,
+		} = this;
 
 		let index;
 		if ( _slots.has( key ) ) {
@@ -295,6 +340,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 		}
 
+		// prepare the drawing clip
 		const slot = this._indexToSlot( index );
 		ctx.save();
 		ctx.beginPath();
@@ -308,6 +354,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
+	// calculates the section of the canvas for the given index
 	_indexToSlot( index ) {
 
 		const { _columns, slotSize } = this;
