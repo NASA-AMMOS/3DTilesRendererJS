@@ -3,29 +3,24 @@ import {
 	CAMERA_FRAME,
 	GeoUtils,
 	GlobeControls,
-	CameraTransitionManager,
 	TilesRenderer,
 } from '3d-tiles-renderer';
 import {
 	TilesFadePlugin,
-	UpdateOnChangePlugin,
-	TileCompressionPlugin,
-	UnloadTilesPlugin,
 	GLTFExtensionsPlugin,
 	CesiumIonAuthPlugin,
 	ImageOverlayPlugin,
 	PMTilesOverlay,
 } from '3d-tiles-renderer/plugins';
 import { MVTAnnotationsPlugin } from '../../src/three/plugins/mvt/MVTAnnotationsPlugin.js';
-import { AnnotationsPoints } from './src/plugins/mvt/AnnotationsPoints.js';
-import { CirclePointsMaterial } from './src/plugins/mvt/CirclePointsMaterial.js';
+import { AnnotationPoints } from './src/plugins/mvt/AnnotationPoints.js';
+
 import { AnnotationGlyphAtlasTexture } from './src/plugins/mvt/AnnotationGlyphAtlasTexture.js';
 import { defaultGetAnnotation } from './src/plugins/mvt/annotationColors.js';
 import {
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
-	OrthographicCamera,
 	Raycaster,
 	Vector2,
 	Matrix4,
@@ -34,9 +29,17 @@ import {
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-let controls, scene, renderer, tiles, transition;
+const params = {
+
+	errorTarget: 20,
+	occupancyGrid: false,
+
+};
+
+let controls, scene, renderer, camera, tiles;
 let annotationsPoints = null;
 
+// raycasting
 const pointer = new Vector2();
 const raycaster = new Raycaster();
 const tooltip = document.getElementById( 'tooltip' );
@@ -44,14 +47,6 @@ let lastClientX = 0, lastClientY = 0;
 
 const _annotationsMatrix = new Matrix4();
 const _annotationsCameraPos = new Vector3();
-
-const params = {
-
-	orthographic: false,
-	errorTarget: 20,
-	occupancyGrid: false,
-
-};
 
 init();
 animate();
@@ -66,58 +61,42 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new TilesRenderer();
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
-	tiles.registerPlugin( new TileCompressionPlugin() );
-	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new UnloadTilesPlugin() );
-	tiles.registerPlugin( new GLTFExtensionsPlugin( {
-		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
-	} ) );
-	tiles.registerPlugin( new TilesFadePlugin() );
-
-	const overlay = new PMTilesOverlay( {
-		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
-	} );
-
-	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], renderer } ) );
-	const annotPlugin = new MVTAnnotationsPlugin( {
-		overlay,
-		camera: transition.camera,
-		scene,
-	} );
-	annotPlugin.getAnnotation = defaultGetAnnotation;
-	tiles.registerPlugin( annotPlugin );
-
-	const glyphAtlas = new AnnotationGlyphAtlasTexture();
-	const material = new CirclePointsMaterial( { size: 25, sizeAttenuation: false } );
-	material.glyphTexture = glyphAtlas;
-	const { u, v } = glyphAtlas.glyphCellUVSize;
-	material.glyphCellSize.set( u, v );
-	annotationsPoints = new AnnotationsPoints( material );
-	annotationsPoints.glyphAtlas = glyphAtlas;
-	tiles.group.add( annotationsPoints );
-	glyphAtlas._loadPromise.then( () => {
-
-		annotationsPoints._structureDirty = true;
-
-	} );
-
-	annotPlugin.onAnnotationsUpdate = ( added, removed ) => {
+	const onAnnotationsUpdate = ( added, removed ) => {
 
 		_annotationsMatrix.copy( tiles.group.matrixWorld ).invert();
-		_annotationsCameraPos.setFromMatrixPosition( transition.camera.matrixWorld ).applyMatrix4( _annotationsMatrix );
+		_annotationsCameraPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _annotationsMatrix );
 		annotationsPoints.position.copy( _annotationsCameraPos );
 		annotationsPoints.updateMatrixWorld( true );
 		annotationsPoints.update( added, removed );
 
 	};
 
+	const overlay = new PMTilesOverlay( {
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+	} );
+
+	tiles = new TilesRenderer();
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
+	tiles.registerPlugin( new GLTFExtensionsPlugin( {
+		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
+	} ) );
+	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], renderer } ) );
+	tiles.registerPlugin( new MVTAnnotationsPlugin( {
+		overlay,
+		camera,
+		getAnnotation: defaultGetAnnotation,
+		onAnnotationsUpdate: onAnnotationsUpdate,
+	} ) );
+
+	annotationsPoints = new AnnotationPoints();
+	tiles.group.add( annotationsPoints );
+
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
 
-	tiles.setResolutionFromRenderer( transition.camera, renderer );
-	tiles.setCamera( transition.camera );
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.setCamera( camera );
 
 	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 
@@ -133,26 +112,11 @@ function init() {
 	// scene
 	scene = new Scene();
 
-	// camera and transition
-	transition = new CameraTransitionManager(
-		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
-		new OrthographicCamera( - 1, 1, 1, - 1, 1, 160000000 ),
-	);
-	transition.autoSync = false;
-
-	transition.addEventListener( 'camera-change', ( { camera, prevCamera } ) => {
-
-		tiles.deleteCamera( prevCamera );
-		tiles.setCamera( camera );
-		controls.setCamera( camera );
-		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' )?.setCamera( camera );
-
-	} );
-
-	transition.orthographicPositionalZoom = false;
+	// camera
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
 
 	// controls
-	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
+	controls = new GlobeControls( scene, camera, renderer.domElement, null );
 	controls.enableDamping = true;
 	controls.enableFlight = true;
 	controls.flightSpeed = 0.5;
@@ -165,14 +129,10 @@ function init() {
 	WGS84_ELLIPSOID.getObjectFrame(
 		41.6275 * Math.PI / 180, - 0.8858 * Math.PI / 180, 2000,
 		0, - Math.PI / 4, 0,
-		transition.perspectiveCamera.matrixWorld, CAMERA_FRAME,
+		camera.matrixWorld, CAMERA_FRAME,
 	);
-	transition.perspectiveCamera.matrixWorld.premultiply( tiles.group.matrixWorld );
-	transition.perspectiveCamera.matrixWorld.decompose(
-		transition.perspectiveCamera.position,
-		transition.perspectiveCamera.quaternion,
-		transition.perspectiveCamera.scale,
-	);
+	camera.matrixWorld.premultiply( tiles.group.matrixWorld );
+	camera.matrixWorld.decompose( camera.position, camera.quaternion, camera.scale );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize );
@@ -181,30 +141,6 @@ function init() {
 
 	// GUI
 	const gui = new GUI();
-	gui.width = 260;
-
-	gui.add( params, 'orthographic' ).onChange( v => {
-
-		controls.getPivotPoint( transition.fixedPoint );
-
-		if ( ! transition.animating ) {
-
-			transition.syncCameras();
-			controls.adjustCamera( transition.perspectiveCamera );
-			controls.adjustCamera( transition.orthographicCamera );
-
-		}
-
-		transition.toggle();
-
-	} );
-
-	gui.add( params, 'errorTarget', 5, 100, 1 ).onChange( () => {
-
-		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
-
-	} );
-
 	gui.add( params, 'occupancyGrid' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).displayOccupancyGrid = v;
@@ -227,9 +163,7 @@ function onPointerMove( e ) {
 
 function updateTooltip() {
 
-	if ( ! annotationsPoints ) return;
-
-	raycaster.setFromCamera( pointer, transition.camera );
+	raycaster.setFromCamera( pointer, camera );
 	const hits = raycaster.intersectObject( annotationsPoints );
 
 	if ( hits.length > 0 ) {
@@ -256,15 +190,8 @@ function updateTooltip() {
 
 function onWindowResize() {
 
-	const { perspectiveCamera, orthographicCamera } = transition;
-	const aspect = window.innerWidth / window.innerHeight;
-
-	perspectiveCamera.aspect = aspect;
-	perspectiveCamera.updateProjectionMatrix();
-
-	orthographicCamera.left = - orthographicCamera.top * aspect;
-	orthographicCamera.right = - orthographicCamera.left;
-	orthographicCamera.updateProjectionMatrix();
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setPixelRatio( window.devicePixelRatio );
@@ -275,27 +202,28 @@ function animate() {
 
 	requestAnimationFrame( animate );
 
-	if ( ! tiles ) return;
+	if ( ! tiles ) {
 
-	scene.updateMatrixWorld();
+		return;
 
-	controls.enabled = ! transition.animating;
+	}
+
+	// controls update
 	controls.update();
-	transition.update();
 
-	const camera = transition.camera;
+	// tiles update
+	tiles.errorTarget = params.errorTarget;
+
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
-
 	camera.updateMatrixWorld();
-	tiles.errorTarget = params.errorTarget;
 	tiles.update();
 
 	renderer.render( scene, camera );
 
 	// credits
-	const mat = tiles.group.matrixWorld.clone().invert();
-	const vec = transition.camera.position.clone().applyMatrix4( mat );
+	const mat = tiles.group.matrixWorldInverse;
+	const vec = camera.position.clone().applyMatrix4( mat );
 	const res = {};
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
 

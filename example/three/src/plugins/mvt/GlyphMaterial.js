@@ -1,32 +1,34 @@
 import { PointsMaterial, Vector2 } from 'three';
 
-export class CirclePointsMaterial extends PointsMaterial {
+export class GlyphMaterial extends PointsMaterial {
 
-	constructor( parameters ) {
+	constructor( { glyphAtlas = null, ...parameters } = {} ) {
 
 		super( parameters );
 
-		this.alphaToCoverage = true;
 		this.vertexColors = true;
 		this.transparent = true;
 		this.depthTest = false;
 		this.depthWrite = false;
 
 		// glyph atlas state — set before first render; setters sync to uniforms after compile
-		this._glyphTexture = null;
+		this._glyphTexture = glyphAtlas;
 		this._glyphCellSize = new Vector2();
 		this._uniforms = null;
-		this.iconScale = 0.6;
+
+		if ( glyphAtlas ) {
+
+			const { u, v } = glyphAtlas.glyphCellUVSize;
+			this._glyphCellSize.set( u, v );
+
+		}
 
 		this.onBeforeCompile = ( shader ) => {
 
 			shader.uniforms.glyphAtlas = { value: this._glyphTexture };
-			// Pass the same Vector2 reference so in-place updates are reflected automatically
 			shader.uniforms.glyphCellSize = { value: this._glyphCellSize };
-			shader.uniforms.iconScale = { value: this.iconScale };
 			this._uniforms = shader.uniforms;
 
-			// Vertex: declare attribute + varying, assign in main
 			shader.vertexShader = shader.vertexShader.replace(
 				'#include <color_pars_vertex>',
 				/* glsl */`
@@ -47,7 +49,6 @@ export class CirclePointsMaterial extends PointsMaterial {
 				`
 			);
 
-			// Fragment: declare varying + uniforms, circle mask + glyph composite
 			shader.fragmentShader = shader.fragmentShader.replace(
 				'#include <color_pars_fragment>',
 				/* glsl */`
@@ -62,15 +63,12 @@ export class CirclePointsMaterial extends PointsMaterial {
 			shader.fragmentShader = shader.fragmentShader.replace(
 				'#include <opaque_fragment>',
 				/* glsl */`
-				float _dist = length( gl_PointCoord - 0.5 );
-				float _fw = fwidth( _dist );
-				float _circleAlpha = 1.0 - smoothstep( 0.5 - _fw * 2.0, 0.5, _dist );
-				// if ( _circleAlpha < 0.001 ) discard;
-				// diffuseColor.a *= _circleAlpha * vAlpha;
 				if ( vGlyphUV.x >= 0.0 ) {
-					vec4 _glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize );
-					outgoingLight = mix( outgoingLight, _glyph.rgb, _glyph.a );
-					diffuseColor.a = _glyph.a;
+
+					vec4 glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize );
+					outgoingLight = mix( outgoingLight, glyph.rgb, glyph.a );
+					diffuseColor.a = glyph.a;
+
 				}
 
 				diffuseColor.a *= vAlpha;
@@ -81,7 +79,7 @@ export class CirclePointsMaterial extends PointsMaterial {
 
 		};
 
-		this.customProgramCacheKey = () => 'CirclePointsMaterial';
+		this.customProgramCacheKey = () => 'GlyphMaterial';
 
 	}
 
@@ -94,7 +92,11 @@ export class CirclePointsMaterial extends PointsMaterial {
 	set glyphTexture( v ) {
 
 		this._glyphTexture = v;
-		if ( this._uniforms ) this._uniforms.glyphAtlas.value = v;
+		if ( this._uniforms ) {
+
+			this._uniforms.glyphAtlas.value = v;
+
+		}
 
 	}
 

@@ -1,5 +1,7 @@
 import { BufferAttribute, BufferGeometry, Color, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
 import { getAnnotationColor, getAnnotationKind } from './annotationColors.js';
+import { GlyphMaterial } from './GlyphMaterial.js';
+import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
 
 const _color = /* @__PURE__ */ new Color();
 const _viewport = /* @__PURE__ */ new Vector4();
@@ -10,11 +12,49 @@ const _ssRay = /* @__PURE__ */ new Vector2();
 const _ssPoint = /* @__PURE__ */ new Vector2();
 const _worldPoint = /* @__PURE__ */ new Vector3();
 
-export class AnnotationsPoints extends Points {
+export class AnnotationPoints extends Points {
 
-	constructor( material ) {
+	get glyphAtlas() {
 
-		super( new BufferGeometry(), material );
+		return this._glyphAtlas;
+
+	}
+
+	set glyphAtlas( v ) {
+
+		if ( this._glyphAtlas ) {
+
+			this._glyphAtlas.removeEventListener( 'change', this._onAtlasChange );
+
+		}
+
+		this._glyphAtlas = v;
+
+		if ( v ) {
+
+			this._onAtlasChange = () => {
+
+				this.needsUpdate = true;
+
+			};
+
+			v.addEventListener( 'change', this._onAtlasChange );
+
+			if ( this.material ) {
+
+				const { u, v: vSize } = v.glyphCellUVSize;
+				this.material.glyphTexture = v;
+				this.material.glyphCellSize.set( u, vSize );
+
+			}
+
+		}
+
+	}
+
+	constructor() {
+
+		super( new BufferGeometry(), new GlyphMaterial() );
 
 		this.renderOrder = 1000;
 		this.frustumCulled = false;
@@ -25,15 +65,15 @@ export class AnnotationsPoints extends Points {
 		// Viewport size in pixels — must be kept current by the owner (plugin updates each frame).
 		this.resolution = new Vector2();
 
-		// Glyph atlas used for icon rendering — set externally before first update.
-		this.glyphAtlas = null;
-
 		// Map<itemId, entry> — keyed by stable id, not object reference.
 		// entry: { item, fade: 0..1, state: 'in' | 'visible' | 'out' }
 		this._entryMap = new Map();
 		this._orderedEntries = [];
-		this._structureDirty = false;
+		this.needsUpdate = false;
 		this._lastUpdateTime = - 1;
+		this._glyphAtlas = null;
+
+		this.glyphAtlas = new AnnotationGlyphAtlasTexture();
 
 	}
 
@@ -61,7 +101,7 @@ export class AnnotationsPoints extends Points {
 				const entry = { item, fade: 0, state: 'in' };
 				this._entryMap.set( item.id, entry );
 				this._orderedEntries.push( entry );
-				this._structureDirty = true;
+				this.needsUpdate = true;
 
 			} else {
 
@@ -106,15 +146,15 @@ export class AnnotationsPoints extends Points {
 
 			for ( const id of toRemove ) this._entryMap.delete( id );
 			this._orderedEntries = this._orderedEntries.filter( e => this._entryMap.has( e.item.id ) );
-			this._structureDirty = true;
+			this.needsUpdate = true;
 
 		}
 
 		const origin = this.position;
-		if ( this._structureDirty ) {
+		if ( this.needsUpdate ) {
 
 			this._rebuildGeometry( origin );
-			this._structureDirty = false;
+			this.needsUpdate = false;
 
 		} else {
 

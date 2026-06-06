@@ -160,6 +160,8 @@ export class AnnotationGlyphAtlasTexture extends GlyphAtlasTexture {
 
 		}
 
+		this.dispatchEvent( { type: 'change' } );
+
 	}
 
 	// Returns { uvX, uvY } — top-left corner of the slot in GPU texture space (flipY applied).
