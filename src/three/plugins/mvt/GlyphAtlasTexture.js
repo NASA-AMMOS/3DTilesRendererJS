@@ -92,8 +92,9 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * Renders a single character centered in the slot.
 	 * @param {string} key
 	 * @param {string} char - The character to draw.
-	 * @param {string} [styles.font=''] - CSS font string (e.g. `'bold 48px sans-serif'`).
-	 * @param {string} [styles.color='white'] - CSS fill color.
+	 * @param {Object} [styles={}]
+	 * @param {string} [styles.font=''] CSS font string (e.g. `'bold 48px sans-serif'`).
+	 * @param {string} [styles.color='white'] CSS fill color.
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
@@ -133,12 +134,14 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// TODO: fix the docs here
 	/**
 	 * Renders a `Path2D` into the slot. Path coordinates are slot-local (origin at top-left).
 	 * @param {string} key
 	 * @param {Path2D} path2D
-	 * @param {{ fillStyle?: string|null, strokeStyle?: string|null, lineWidth?: number }} [options]
+	 * @param {Object} [styles={}]
+	 * @param {string|null} [styles.fillStyle=null] CSS fill color, or null to skip fill.
+	 * @param {string|null} [styles.strokeStyle=null] CSS stroke color, or null to skip stroke.
+	 * @param {number} [styles.lineWidth=1] Stroke width in pixels.
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
@@ -176,12 +179,15 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	}
 
-	// TODO fix the docs here
 	/**
 	 * Parses an SVG string and renders its paths into a slot, scaled to fit.
 	 * @param {string} key
 	 * @param {string} svgText
-	 * @param {{ fillStyle?: string|null, strokeStyle?: string|null, strokeWidth?: number, iconScale?: number }} [options]
+	 * @param {Object} [styles={}]
+	 * @param {string|null} [styles.fillStyle='white'] CSS fill color, or null to skip fill.
+	 * @param {string|null} [styles.strokeStyle=null] CSS stroke color, or null to skip stroke.
+	 * @param {number} [styles.strokeWidth=1] Stroke width in SVG user units before scaling.
+	 * @param {number} [styles.iconScale=1] Fraction of the slot size the icon occupies (0–1).
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
