@@ -875,7 +875,7 @@ export class MVTAnnotationsPlugin {
 
 		if ( ! overlay.isReady ) {
 
-			throw new Error();
+			throw new Error( 'MVTAnnotationsPlugin: overlay is not ready.' );
 
 		}
 

@@ -148,7 +148,7 @@ export class HierarchicalLock extends EventDispatcher {
 		lock.ref += incr ? 1 : - 1;
 		if ( lock.ref < 0 ) {
 
-			throw new Error();
+			throw new Error( 'HierarchicalLock: ref count went negative — mismatched markActive/markInactive calls.' );
 
 		}
 

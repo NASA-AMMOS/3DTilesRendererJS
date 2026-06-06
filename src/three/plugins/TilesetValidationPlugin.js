@@ -1,5 +1,7 @@
 import { Matrix4, Vector3 } from 'three';
 
+const CONTAINMENT_EPSILON = 1e-7;
+
 const _vertex = /* @__PURE__ */ new Vector3();
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -73,8 +75,6 @@ export class TilesetValidationPlugin {
 			node = node.parent;
 			depth ++;
 
-			break;
-
 		}
 
 	}
@@ -108,7 +108,7 @@ export class TilesetValidationPlugin {
 				vertexCount ++;
 
 				const dist = boundingVolume.distanceToPoint( _vertex );
-				if ( dist > 1e-7 ) {
+				if ( dist > CONTAINMENT_EPSILON ) {
 
 					violations ++;
 					maxDist = Math.max( dist, maxDist );

@@ -15,13 +15,6 @@ export class GlyphMaterial extends PointsMaterial {
 		this._glyphCellSize = new Vector2();
 		this._uniforms = null;
 
-		if ( glyphAtlas ) {
-
-			const { u, v } = glyphAtlas.glyphCellUVSize;
-			this._glyphCellSize.set( u, v );
-
-		}
-
 		this.onBeforeCompile = ( shader ) => {
 
 			shader.uniforms.glyphAtlas = { value: this._glyphTexture };
