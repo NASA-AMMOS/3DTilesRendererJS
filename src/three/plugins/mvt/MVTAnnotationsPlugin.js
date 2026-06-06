@@ -191,6 +191,9 @@ export class MVTAnnotationsPlugin {
 		// init container
 		this.tiles = tiles;
 
+		// ensure the overlay is initialized
+		overlay.init();
+
 		this._onTileDownloadStart = ( { tile } ) => {
 
 			const info = {
