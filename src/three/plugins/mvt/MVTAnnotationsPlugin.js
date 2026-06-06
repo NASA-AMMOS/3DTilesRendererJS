@@ -175,7 +175,8 @@ export class MVTAnnotationsPlugin {
 		// raycast parameters
 		this._settlingQueue = [];
 		this._settlingQueueSet = new Set();
-		this.maxSettleTimeMs = 15;
+		this._settlingNeedsRebuild = false;
+		this.maxSettleTimeMs = 5;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -232,6 +233,10 @@ export class MVTAnnotationsPlugin {
 		this._onVisibilityChange = ( { tile, visible } ) => {
 
 			const info = tileLoadState.get( tile );
+
+			// tile geometry changed — existing items may have been settled on this geometry
+			// and need to be re-raycasted against the updated scene
+			this._settlingNeedsRebuild = true;
 
 			// TODO: the ImageOverlay Tile Splits is causing an issue here.
 			if ( ! info ) {
@@ -309,6 +314,13 @@ export class MVTAnnotationsPlugin {
 			} else {
 
 				occupancy.camera = null;
+
+			}
+
+			if ( this._settlingNeedsRebuild ) {
+
+				this._settlingNeedsRebuild = false;
+				this._enqueueSettlingAll();
 
 			}
 
@@ -403,8 +415,6 @@ export class MVTAnnotationsPlugin {
 							item.lodLevel = level;
 							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
 
-							// TODO: This "register" step can be slow if there are a lot of icons.
-							// See if we can improve it or time slice this.
 							const canonical = occupancy.register( item );
 							items.push( canonical );
 							this._enqueueSettling( canonical );
@@ -416,7 +426,6 @@ export class MVTAnnotationsPlugin {
 				}
 
 				mvtTileItems.set( key, items );
-				this._enqueueSettlingAll();
 
 			} else {
 
@@ -433,8 +442,6 @@ export class MVTAnnotationsPlugin {
 					mvtTileItems.delete( key );
 
 				}
-
-				this._enqueueSettlingAll();
 
 			}
 

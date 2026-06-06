@@ -152,6 +152,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		// prevents duplicate items during simultaneous LoD tile swaps
 		this._itemsById = new Map();
+		this._itemsNeedsUpdate = false;
 
 		this.handle = {
 			test: ( x, y, r ) => {
@@ -240,12 +241,29 @@ export class ScreenOccupationManager extends EventDispatcher {
 			matrix,
 			resolution,
 			size,
-			items,
 			added,
 			handle,
 			sortCallback,
 			buffer,
+			items,
+			_itemsById,
 		} = this;
+
+		// reconstruct the items list
+		if ( this._itemsNeedsUpdate ) {
+
+			this._itemsNeedsUpdate = false;
+			items.length = _itemsById.size;
+
+			let i = 0;
+			for ( const item of _itemsById.values() ) {
+
+				items[ i ] = item;
+				i ++;
+
+			}
+
+		}
 
 		// compute NDC matrix and camera local position
 		let ndcMatrix = null;
@@ -344,7 +362,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 	register( item ) {
 
 		// register an item to be included in the occupation grid calculations
-		const { _itemsById, items } = this;
+		const { _itemsById } = this;
 		const existing = _itemsById.get( item.id );
 		if ( existing ) {
 
@@ -366,7 +384,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 			// otherwise add the new item
 			item._refCount = 1;
 			_itemsById.set( item.id, item );
-			items.push( item );
+			this._itemsNeedsUpdate = true;
 			return item;
 
 		}
@@ -383,17 +401,10 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		const { items, _itemsById } = this;
-		const index = items.indexOf( item );
-		if ( index !== - 1 ) {
+		if ( this._itemsById.get( item.id ) === item ) {
 
-			items.splice( index, 1 );
-
-		}
-
-		if ( _itemsById.get( item.id ) === item ) {
-
-			_itemsById.delete( item.id );
+			this._itemsById.delete( item.id );
+			this._itemsNeedsUpdate = true;
 
 		}
 
