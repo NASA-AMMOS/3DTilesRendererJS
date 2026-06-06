@@ -403,6 +403,8 @@ export class MVTAnnotationsPlugin {
 							item.lodLevel = level;
 							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
 
+							// TODO: This "register" step can be slow if there are a lot of icons.
+							// See if we can improve it or time slice this.
 							const canonical = occupancy.register( item );
 							items.push( canonical );
 							this._enqueueSettling( canonical );

@@ -135,9 +135,10 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.camera = null;
 		this.matrix = new Matrix4();
 
+		// TODO: do we use DPR here? Or
 		// occupancy cells
 		this.resolution = new Vector2( 1, 1 );
-		this.size = 25 / window.devicePixelRatio;
+		this.size = 12;
 		this.cells = new Uint8Array( 1 );
 
 		// buffer outside the screen
@@ -204,12 +205,21 @@ export class ScreenOccupationManager extends EventDispatcher {
 		const y0 = Math.max( 0, Math.floor( ( centerY - r ) / size ) );
 		const x1 = Math.min( width - 1, Math.floor( ( centerX + r ) / size ) );
 		const y1 = Math.min( height - 1, Math.floor( ( centerY + r ) / size ) );
+		const r2 = r * r;
 
 		for ( let cy = y0; cy <= y1; cy ++ ) {
 
 			for ( let cx = x0; cx <= x1; cx ++ ) {
 
-				if ( callback( cx, cy, cy * width + cx ) === true ) {
+				// skip cells with no overlap with the circle
+				const nearX = Math.max( cx * size, Math.min( centerX, ( cx + 1 ) * size ) );
+				const nearY = Math.max( cy * size, Math.min( centerY, ( cy + 1 ) * size ) );
+				const dx = centerX - nearX;
+				const dy = centerY - nearY;
+				if (
+					dx * dx + dy * dy <= r2 &&
+					callback( cx, cy, cy * width + cx ) === true
+				) {
 
 					return true;
 
