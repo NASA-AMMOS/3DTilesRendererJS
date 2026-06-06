@@ -5,11 +5,15 @@ import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
-// TODO:
-// - "fetch data" override needs to be handled differently? Switch to default download
-// queue / process queue, instead (generated surface has issue, too)
-// - consider continue to lock child tiles when zooming out, avoiding parent tile gaps
+const PARALLEL_EPSILON = 1e-10;
 
+const _matrix = /* @__PURE__ */ new Matrix4();
+const _ndcMatrix = /* @__PURE__ */ new Matrix4();
+const _raycaster = /* @__PURE__ */ new Raycaster();
+const _frustum = /* @__PURE__ */ new Frustum();
+const _intersectingFrustum = new Set();
+
+// provide all meshes in the scene
 function collectMeshes( object ) {
 
 	const meshes = [];
@@ -27,29 +31,26 @@ function collectMeshes( object ) {
 
 }
 
-const PARALLEL_EPSILON = 1e-10;
-
-const _matrix = /* @__PURE__ */ new Matrix4();
-const _ndcMatrix = /* @__PURE__ */ new Matrix4();
-const _raycaster = /* @__PURE__ */ new Raycaster();
-const _frustum = /* @__PURE__ */ new Frustum();
-
+// check if the given raycaster intersects the provided frustum shape
 function rayIntersectsFrustum( raycaster, frustum ) {
 
-	const { origin, direction } = raycaster.ray;
-	const planes = frustum.planes;
-	let tEnter = 0;
-	let tExit = raycaster.far;
+	// TODO: this function has some false positives and could be improved
+	const { ray } = raycaster;
+	const { planes } = frustum;
+	let t0 = 0;
+	let t1 = raycaster.far;
 
 	for ( let i = 0; i < 6; i ++ ) {
 
 		const plane = planes[ i ];
-		const denom = plane.normal.dot( direction );
-		const dist = plane.distanceToPoint( origin );
+
+		// positive plane normal points _inside_ the frustum
+		const denom = plane.normal.dot( ray.direction );
 
 		if ( Math.abs( denom ) < PARALLEL_EPSILON ) {
 
-			if ( dist < 0 ) {
+			// parallel to the plane — if origin is outside, the ray never enters
+			if ( plane.distanceToPoint( ray.origin ) < 0 ) {
 
 				return false;
 
@@ -57,26 +58,34 @@ function rayIntersectsFrustum( raycaster, frustum ) {
 
 		} else {
 
-			const t = - dist / denom;
+			const t = ray.distanceToPlane( plane );
 			if ( denom > 0 ) {
 
-				if ( t > tEnter ) {
+				// entering plane: null means entry is behind the ray origin, no constraint
+				if ( t !== null && t > t0 ) {
 
-					tEnter = t;
+					t0 = t;
 
 				}
 
 			} else {
 
-				if ( t < tExit ) {
+				// exiting plane: null means we already exited before the ray origin
+				if ( t === null ) {
 
-					tExit = t;
+					return false;
+
+				}
+
+				if ( t < t1 ) {
+
+					t1 = t;
 
 				}
 
 			}
 
-			if ( tEnter > tExit ) {
+			if ( t0 > t1 ) {
 
 				return false;
 
@@ -125,37 +134,48 @@ export class MVTAnnotationsPlugin {
 
 	constructor( options = {} ) {
 
+		// plugin fields
 		this.priority = Infinity;
 		this.name = 'MVT_ANNOTATIONS_PLUGIN';
 
 		const {
 			overlay,
+			sortCallback = ( a, b ) => {
+
+				const rankA = a.properties[ 'rank' ] ?? a.properties[ 'pmap:rank' ] ?? Infinity;
+				const rankB = b.properties[ 'rank' ] ?? b.properties[ 'pmap:rank' ] ?? Infinity;
+				return rankA - rankB;
+
+			},
 			getAnnotation = () => {},
 			onAnnotationsUpdate = () => {},
 			camera = null,
-			scene = null,
 			displayOccupancyGrid = false,
 		} = options;
 
 		this.overlay = overlay;
 
+		// locks for tiles and screen occupancy
 		this.locks = new HierarchicalLock();
 		this.occupancy = new DelayedScreenOccupationManager();
 
-		this.scene = scene;
+		// save the camera used for positioning icons
 		this.camera = camera;
 
-		this.tileInfo = new Map();
-		this.tileItems = new Map();
+		// set of tile info (eg range, etc) and annotations associated with each tile
+		this.tileLoadState = new Map();
+		this.mvtTileItems = new Map();
 
 		// callback to filter which features become annotations:
+		this.sortCallback = sortCallback;
 		this.getAnnotation = getAnnotation;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
 		this.displayOccupancyGrid = displayOccupancyGrid;
 
-		this._raycastQueue = [];
-		this._raycastQueueSet = new Set();
-		this.maxRaycastTimeMs = 15;
+		// raycast parameters
+		this._settlingQueue = [];
+		this._settlingQueueSet = new Set();
+		this.maxSettleTimeMs = 15;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -164,15 +184,9 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	setCamera( camera ) {
-
-		this.camera = camera;
-
-	}
-
 	init( tiles ) {
 
-		const { locks, overlay, occupancy, tileInfo } = this;
+		const { locks, overlay, occupancy, tileLoadState } = this;
 
 		// init container
 		this.tiles = tiles;
@@ -185,7 +199,7 @@ export class MVTAnnotationsPlugin {
 				disposed: false,
 			};
 
-			tileInfo.set( tile, info );
+			tileLoadState.set( tile, info );
 
 			if ( overlay.isReady && tile.boundingVolume.region ) {
 
@@ -214,10 +228,14 @@ export class MVTAnnotationsPlugin {
 		// event callbacks
 		this._onVisibilityChange = ( { tile, visible } ) => {
 
-			const info = tileInfo.get( tile );
+			const info = tileLoadState.get( tile );
 
 			// TODO: the ImageOverlay Tile Splits is causing an issue here.
-			if ( ! info ) return;
+			if ( ! info ) {
+
+				return;
+
+			}
 
 			const { loaded, range } = info;
 			if ( loaded ) {
@@ -240,10 +258,9 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-
-		// sort: already-visible items first, then by pmap:rank ascending, then higher LoD first, then closest to camera, then bottom-to-top on screen
 		occupancy.sortCallback = ( a, b ) => {
 
+			// visibility is prioritized first
 			const aVis = occupancy.visible.has( a );
 			const bVis = occupancy.visible.has( b );
 			if ( aVis !== bVis ) {
@@ -252,33 +269,28 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			const rankA = a.properties[ 'rank' ] ?? a.properties[ 'pmap:rank' ] ?? Infinity;
-			const rankB = b.properties[ 'rank' ] ?? b.properties[ 'pmap:rank' ] ?? Infinity;
-			if ( rankA !== rankB ) {
+			const sort = this.sortCallback( a, b );
+			if ( sort !== 0 ) {
 
-				return rankA - rankB;
+				// user sort
+				return sort;
 
-			}
+			} else if ( a.lodLevel !== b.lodLevel ) {
 
-			if ( a.lodLevel !== b.lodLevel ) {
-
+				// lod sort
 				return b.lodLevel - a.lodLevel;
 
-			}
+			} else if ( aVis && a.firstShownTime !== b.firstShownTime ) {
 
-			if ( a.depth !== b.depth ) {
-
-				return a.depth - b.depth;
-
-			}
-
-			if ( aVis && a.firstShownTime !== b.firstShownTime ) {
-
+				// persistence sort for visual stability
 				return a.firstShownTime - b.firstShownTime;
 
-			}
+			} else {
 
-			return b._screenPos.y - a._screenPos.y;
+				// distance up the screen
+				return b._screenPos.y - a._screenPos.y;
+
+			}
 
 		};
 
@@ -297,7 +309,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			this._processRaycastQueue();
+			this._processSettling();
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 			this._updateDebugGrid();
@@ -308,7 +320,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			if ( occupancy.hasPendingWork || this._raycastQueue.length > 0 ) {
+			if ( occupancy.hasPendingWork || this._settlingQueue.length > 0 ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
 
@@ -324,7 +336,7 @@ export class MVTAnnotationsPlugin {
 
 			if ( active ) {
 
-				const { contentCache, occupancy, getAnnotation, tileItems } = this;
+				const { contentCache, occupancy, getAnnotation, mvtTileItems } = this;
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
 				if ( ! vectorTile ) {
@@ -397,7 +409,7 @@ export class MVTAnnotationsPlugin {
 
 							const canonical = occupancy.register( item );
 							items.push( canonical );
-							this._enqueueRaycast( canonical );
+							this._enqueueSettling( canonical );
 
 						}
 
@@ -405,13 +417,13 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				tileItems.set( key, items );
-				this._enqueueRaycastAll();
+				mvtTileItems.set( key, items );
+				this._enqueueSettlingAll();
 
 			} else {
 
-				const { occupancy, tileItems } = this;
-				const items = tileItems.get( key );
+				const { occupancy, mvtTileItems } = this;
+				const items = mvtTileItems.get( key );
 				if ( items ) {
 
 					for ( const item of items ) {
@@ -420,11 +432,11 @@ export class MVTAnnotationsPlugin {
 
 					}
 
-					tileItems.delete( key );
+					mvtTileItems.delete( key );
 
 				}
 
-				this._enqueueRaycastAll();
+				this._enqueueSettlingAll();
 
 			}
 
@@ -474,9 +486,38 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+
+	disposeTile( tile ) {
+
+		const { tileLoadState, contentCache } = this;
+		const info = tileLoadState.get( tile );
+		if ( ! info ) {
+
+			return;
+
+		}
+
+		if ( info.loaded ) {
+
+			this._forEachTileInBounds( info.range, ( x, y, l ) => {
+
+				// unlock all MVT sub tiles in a 2x2 pattern
+				contentCache.release( x, y, l );
+
+			} );
+
+		}
+
+		tileLoadState.delete( tile );
+		info.disposed = true;
+
+	}
+
+	//
+
 	async _loadMVTForTile( scene, tile ) {
 
-		const { overlay, tiles, tileInfo, locks } = this;
+		const { overlay, tiles, tileLoadState, locks } = this;
 		if ( ! overlay.isReady ) {
 
 			await overlay.whenReady();
@@ -484,11 +525,15 @@ export class MVTAnnotationsPlugin {
 		}
 
 		// we may have added the plugin after some tiles started loading
-		let info = tileInfo.get( tile );
+		let info = tileLoadState.get( tile );
 		if ( ! info ) {
 
-			info = { range: null, loaded: false, disposed: false };
-			tileInfo.set( tile, info );
+			info = {
+				range: null,
+				loaded: false,
+				disposed: false,
+			};
+			tileLoadState.set( tile, info );
 
 		}
 
@@ -634,27 +679,29 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	_enqueueRaycast( item ) {
+	_enqueueSettling( item ) {
 
-		if ( this._raycastQueueSet.has( item ) ) {
+		// push an item onto the queue
+		const { _settlingQueueSet, _settlingQueue } = this;
+		if ( _settlingQueueSet.has( item ) ) {
 
 			return;
 
 		}
 
-		// item.ready = false;
-		this._raycastQueueSet.add( item );
-		this._raycastQueue.push( item );
+		_settlingQueueSet.add( item );
+		_settlingQueue.push( item );
 
 	}
 
-	_enqueueRaycastAll() {
+	_enqueueSettlingAll() {
 
-		for ( const items of this.tileItems.values() ) {
+		// enqueue all items for resettling
+		for ( const items of this.mvtTileItems.values() ) {
 
 			for ( const item of items ) {
 
-				this._enqueueRaycast( item );
+				this._enqueueSettling( item );
 
 			}
 
@@ -662,33 +709,64 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	_processRaycastQueue() {
+	_getLocalSettlingRay( item ) {
 
-		const { _raycastQueue, _raycastQueueSet, occupancy, maxRaycastTimeMs, tiles, camera } = this;
-		const { visible, sortCallback } = occupancy;
+		// construct a ray for settling the items in the local tiles coordinate frame
+		const { tiles } = this;
+		const { origin, direction } = _raycaster.ray;
+
+		// construct the ray
+		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e6, origin );
+		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, direction );
+		direction.sub( origin ).normalize();
+
+		_raycaster.far = 2 * 1e6;
+		_raycaster.firstHitOnly = true;
+
+	}
+
+	_processSettling() {
+
+		// process items on the raycast queue for settling
+		const {
+			_settlingQueue,
+			_settlingQueueSet,
+			occupancy,
+			maxSettleTimeMs,
+			tiles,
+			camera,
+		} = this;
+
+		const {
+			visible,
+			sortCallback,
+		} = occupancy;
 
 		// precompute which non-visible items have rays intersecting the camera frustum
-		const inFrustum = new Set();
-		if ( this.camera !== null ) {
+		if ( camera !== null ) {
 
+			// if we have a camera then run a check against the camera frustum first
+			// so we can prioritize those that are potentially in view
 			_ndcMatrix
 				.copy( tiles.group.matrixWorld )
 				.premultiply( camera.matrixWorldInverse )
 				.premultiply( camera.projectionMatrix );
 
 			_frustum.setFromProjectionMatrix( _ndcMatrix );
-			for ( const item of _raycastQueue ) {
+			for ( const item of _settlingQueue ) {
 
+				// if it's already visible then we will prioritize it regardless
 				if ( visible.has( item ) ) {
 
 					continue;
 
 				}
 
-				this._setupRaycastRay( item );
+				// check if the projection ray intersects the frustum
+				this._getLocalSettlingRay( item );
 				if ( rayIntersectsFrustum( _raycaster, _frustum ) ) {
 
-					inFrustum.add( item );
+					_intersectingFrustum.add( item );
 
 				}
 
@@ -697,81 +775,77 @@ export class MVTAnnotationsPlugin {
 		}
 
 		// sort ascending — highest-priority items at tail for pop()
-		// tiers: unsettled+inFrustum=3, visible=2, settled+inFrustum=1, outside frustum=0
-		_raycastQueue.sort( ( a, b ) => {
+		_settlingQueue.sort( ( a, b ) => {
 
-			const aUnsettledInFrustum = ! a.ready && inFrustum.has( a );
-			const bUnsettledInFrustum = ! b.ready && inFrustum.has( b );
-			if ( aUnsettledInFrustum !== bUnsettledInFrustum ) {
+			// prioritize items that are not ready and intersecting the frustum
+			const aUnready = ! a.ready && _intersectingFrustum.has( a );
+			const bUnready = ! b.ready && _intersectingFrustum.has( b );
+			if ( aUnready !== bUnready ) {
 
-				return aUnsettledInFrustum ? 1 : - 1;
+				return aUnready ? 1 : - 1;
+
+			} else if ( visible.has( a ) !== visible.has( b ) ) {
+
+				// prioritize visible items
+				return visible.has( a ) ? 1 : - 1;
+
+			} else if ( _intersectingFrustum.has( a ) !== _intersectingFrustum.has( b ) ) {
+
+				// prioritize items intersecting the frustum
+				return _intersectingFrustum.has( a ) ? 1 : - 1;
+
+			} else {
+
+				// fall back to the occupancy grid defined priorities
+				return - sortCallback( a, b );
 
 			}
-
-			const aVisible = visible.has( a );
-			const bVisible = visible.has( b );
-			if ( aVisible !== bVisible ) {
-
-				return aVisible ? 1 : - 1;
-
-			}
-
-			const aInFrustum = inFrustum.has( a );
-			const bInFrustum = inFrustum.has( b );
-			if ( aInFrustum !== bInFrustum ) {
-
-				return aInFrustum ? 1 : - 1;
-
-			}
-
-			return - sortCallback( a, b );
 
 		} );
 
-		const deadline = performance.now() + maxRaycastTimeMs;
-		while ( _raycastQueue.length > 0 ) {
+		// run for a predetermined period to settle items
+		const deadline = performance.now() + maxSettleTimeMs;
+		while ( _settlingQueue.length > 0 ) {
 
-			if ( performance.now() >= deadline ) break;
+			if ( performance.now() >= deadline ) {
 
-			const item = _raycastQueue.pop();
-			_raycastQueueSet.delete( item );
+				break;
 
-			// skip items replaced by a LoD swap
+			}
+
+			const item = _settlingQueue.pop();
+			_settlingQueueSet.delete( item );
+
+			// skip items that were unregistered while in the queue
 			if ( occupancy.getById( item.id ) !== item ) {
 
 				continue;
 
 			}
 
-			this._raycastItem( item );
+			this._settleItem( item );
 
 		}
 
-	}
-
-	_setupRaycastRay( item ) {
-
-		const { tiles } = this;
-		const { origin, direction } = _raycaster.ray;
-
-		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e6, origin );
-		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, direction );
-		direction.sub( origin ).normalize();
-		_raycaster.far = 2 * 1e6;
-		_raycaster.firstHitOnly = true;
+		// clear the set for next usage
+		_intersectingFrustum.clear();
 
 	}
 
-	_raycastItem( item ) {
+	_settleItem( item ) {
 
+		// casts a ray for the given item to settle it on the surface
 		const { tiles } = this;
 		const { origin, direction } = _raycaster.ray;
 
-		this._setupRaycastRay( item );
+		// get the local ray
+		this._getLocalSettlingRay( item );
 
+		// transform to world space for raycasting
 		origin.applyMatrix4( tiles.group.matrixWorld );
 		direction.transformDirection( tiles.group.matrixWorld );
 
+		// snap the item to the surface
 		const hits = _raycaster.intersectObject( tiles.group, true );
 		if ( hits.length > 0 ) {
 
@@ -780,6 +854,7 @@ export class MVTAnnotationsPlugin {
 
 		} else {
 
+			// TODO: we are still seeing some points slip through tile gaps
 			tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, item.position );
 
 		}
@@ -788,36 +863,9 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	disposeTile( tile ) {
-
-		const { tileInfo, contentCache } = this;
-		const info = tileInfo.get( tile );
-		if ( ! info ) {
-
-			return;
-
-		}
-
-		if ( info.loaded ) {
-
-			this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-				// unlock all MVT sub tiles in a 2x2 pattern
-				contentCache.release( x, y, l );
-
-			} );
-
-		}
-
-		tileInfo.delete( tile );
-		info.disposed = true;
-
-	}
-
-	//
-
 	_forEachTileInBounds( range, callback ) {
 
+		// iterate over every mvt tile in the overlay
 		const { overlay } = this;
 		const { tiling } = overlay;
 		const level = overlay.calculateLevel( range );

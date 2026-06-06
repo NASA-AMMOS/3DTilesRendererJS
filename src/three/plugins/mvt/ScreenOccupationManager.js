@@ -50,8 +50,6 @@ export class PointAnnotationItem extends AnnotationItem {
 		this.lon = 0;
 		this.radius = 16;
 
-		// depth to camera, used as a sort tiebreaker
-		this.depth = 0;
 		this._screenPos = new Vector3();
 		this._facingAngle = 0;
 
@@ -62,9 +60,8 @@ export class PointAnnotationItem extends AnnotationItem {
 		const { position } = this;
 		const screenPos = this._screenPos;
 
-		// project to world clip space & save the depth value for sort
+		// project to screen space
 		screenPos.copy( position ).applyMatrix4( matrix );
-		this.depth = screenPos.z;
 
 		// transform to resolution coordinates
 		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
