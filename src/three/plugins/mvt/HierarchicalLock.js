@@ -133,7 +133,7 @@ export class HierarchicalLock extends EventDispatcher {
 
 	}
 
-	_incrLock( x, y, level, value ) {
+	_incrLock( x, y, level, incr ) {
 
 		const { locks } = this;
 		const key = getKey( x, y, level );
@@ -145,7 +145,7 @@ export class HierarchicalLock extends EventDispatcher {
 		}
 
 		const lock = locks[ key ];
-		lock.ref += value ? 1 : - 1;
+		lock.ref += incr ? 1 : - 1;
 		if ( lock.ref < 0 ) {
 
 			throw new Error();
