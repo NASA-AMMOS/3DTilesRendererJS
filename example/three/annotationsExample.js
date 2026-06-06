@@ -252,9 +252,9 @@ function updateTooltip() {
 	if ( hits.length > 0 ) {
 
 		const { properties } = hits[ 0 ];
-		if ( properties && properties.name ) {
+		if ( properties ) {
 
-			tooltip.textContent = properties.name;
+			tooltip.textContent = properties.name || `${ properties.kind.replace( '_', ' ' ) } (unnamed)`;
 			tooltip.style.display = 'block';
 			const x = Math.min( Math.max( lastClientX - tooltip.offsetWidth / 2, 4 ), window.innerWidth - tooltip.offsetWidth - 4 );
 			const y = Math.max( lastClientY - tooltip.offsetHeight - 10, 4 );

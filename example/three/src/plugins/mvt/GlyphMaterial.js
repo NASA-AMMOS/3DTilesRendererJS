@@ -101,8 +101,6 @@ export class GlyphMaterial extends PointsMaterial {
 
 		};
 
-		this.customProgramCacheKey = () => 'GlyphMaterial';
-
 	}
 
 }
