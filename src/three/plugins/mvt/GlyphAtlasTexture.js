@@ -198,7 +198,6 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		const doc = new DOMParser().parseFromString( svgText, 'image/svg+xml' );
 		const svg = doc.documentElement;
 
-		// TODO: why is this default here?
 		const vbParts = ( svg.getAttribute( 'viewBox' ) ?? '0 0 15 15' ).trim().split( /[\s,]+/ );
 		const vbW = parseFloat( vbParts[ 2 ] );
 		const vbH = parseFloat( vbParts[ 3 ] );

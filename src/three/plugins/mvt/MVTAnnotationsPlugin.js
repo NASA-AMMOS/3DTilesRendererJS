@@ -147,7 +147,7 @@ export class MVTAnnotationsPlugin {
 				return rankA - rankB;
 
 			},
-			filterAnnotation = () => {},
+			filterAnnotation = () => false,
 			onAnnotationsUpdate = () => {},
 			camera = null,
 			displayOccupancyGrid = false,

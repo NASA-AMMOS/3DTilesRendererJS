@@ -95,7 +95,7 @@ function reinstantiateTiles() {
 		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
 	} );
 
-	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], renderer } ) );
+	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ] } ) );
 
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
