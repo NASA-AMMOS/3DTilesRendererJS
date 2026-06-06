@@ -1,5 +1,5 @@
 /** @import { Camera, Scene } from 'three' */
-import { Frustum, MathUtils, Matrix4, Raycaster, Vector3 } from 'three';
+import { Frustum, MathUtils, Matrix4, Raycaster } from 'three';
 import { HierarchicalLock } from './HierarchicalLock.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -32,7 +32,6 @@ const PARALLEL_EPSILON = 1e-10;
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
-const _cameraLocalPos = /* @__PURE__ */ new Vector3();
 const _frustum = /* @__PURE__ */ new Frustum();
 
 function rayIntersectsFrustum( raycaster, frustum ) {
@@ -285,26 +284,16 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
-			// sync camera resolution, NDC matrix, and local camera position into occupancy grid
+			// sync camera and localToWorld matrix into occupancy grid
 			if ( this.camera !== null ) {
 
 				tiles.getResolution( this.camera, occupancy.resolution );
-
-				_ndcMatrix
-					.copy( tiles.group.matrixWorld )
-					.premultiply( this.camera.matrixWorldInverse )
-					.premultiply( this.camera.projectionMatrix );
-				occupancy.matrix = _ndcMatrix;
-
-				// camera position in tiles.group local space — used for perspective culling and RTE
-				_matrix.copy( tiles.group.matrixWorld ).invert();
-				_cameraLocalPos.setFromMatrixPosition( this.camera.matrixWorld ).applyMatrix4( _matrix );
-				occupancy.cameraPosition = _cameraLocalPos;
+				occupancy.camera = this.camera;
+				occupancy.matrix.copy( tiles.group.matrixWorld );
 
 			} else {
 
-				occupancy.matrix = null;
-				occupancy.cameraPosition = null;
+				occupancy.camera = null;
 
 			}
 

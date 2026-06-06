@@ -1,4 +1,8 @@
-import { EventDispatcher, Vector2, Vector3 } from 'three';
+import { EventDispatcher, Matrix4, Vector2, Vector3 } from 'three';
+
+const _ndcMatrix = /* @__PURE__ */ new Matrix4();
+const _invMatrix = /* @__PURE__ */ new Matrix4();
+const _cameraLocalPos = /* @__PURE__ */ new Vector3();
 
 // suppress annotations within ~6 degrees of the globe horizon
 const PERSPECTIVE_CULL_THRESHOLD = 0.1;
@@ -44,9 +48,13 @@ export class PointAnnotationItem extends AnnotationItem {
 		this.lon = 0;
 		this.radius = 16;
 
-		// x/y = screen pixels, z = NDC depth (z > 1 means behind camera)
-		this._screenPos = new Vector3();
+		// raw NDC z; used as a sort tiebreaker
 		this.depth = 0;
+
+		// x/y in screen pixels; z is 0 (in-frustum) or 1 (clipped)
+		this._screenPos = new Vector3();
+
+		// dot( surfaceNormal, toCam ); 0 at horizon, 1 facing camera
 		this._facingRatio = 1;
 
 	}
@@ -131,12 +139,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		super();
 
-		// TODO: pass camera, context matrix here
-		// projection matrix: projectionMatrix * matrixWorldInverse * tilesGroup.matrixWorld
-		this.matrix = null;
-
-		// camera position in tiles.group local space, for perspective culling
-		this.cameraPosition = null;
+		// camera and local-to-world matrix (tilesGroup.matrixWorld); NDC matrix is computed internally
+		this.camera = null;
+		this.matrix = new Matrix4();
 
 		// occupancy cells
 		this.resolution = new Vector2( 1, 1 );
@@ -219,7 +224,24 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	update() {
 
-		const { matrix, cameraPosition, resolution, size, items, added, handle, sortCallback } = this;
+		const { camera, matrix, resolution, size, items, added, handle, sortCallback } = this;
+
+		// compute NDC matrix and camera local position from camera + localToWorld matrix
+		let ndcMatrix = null;
+		let cameraLocalPos = null;
+		if ( camera !== null ) {
+
+			_ndcMatrix
+				.copy( matrix )
+				.premultiply( camera.matrixWorldInverse )
+				.premultiply( camera.projectionMatrix );
+			ndcMatrix = _ndcMatrix;
+
+			_invMatrix.copy( matrix ).invert();
+			_cameraLocalPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrix );
+			cameraLocalPos = _cameraLocalPos;
+
+		}
 
 		// swap visible and prevVisible — prevVisible now holds last frame's result
 		[ this.visible, this.prevVisible ] = [ this.prevVisible, this.visible ];
@@ -244,11 +266,11 @@ export class ScreenOccupationManager extends EventDispatcher {
 		}
 
 		// transform items to screen space
-		if ( matrix !== null ) {
+		if ( ndcMatrix !== null ) {
 
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
 
-				items[ i ].updateTransform( matrix, resolution, cameraPosition );
+				items[ i ].updateTransform( ndcMatrix, resolution, cameraLocalPos );
 
 			}
 
@@ -262,7 +284,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
-			if ( matrix !== null && item.evaluate( handle ) ) {
+			if ( ndcMatrix !== null && item.evaluate( handle ) ) {
 
 				visible.add( item );
 				if ( ! prevVisible.has( item ) ) {

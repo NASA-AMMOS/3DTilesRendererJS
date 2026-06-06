@@ -3,27 +3,21 @@ import { ScreenOccupationManager } from './ScreenOccupationManager.js';
 
 export class DelayedScreenOccupationManager extends EventDispatcher {
 
+	get camera() {
+
+		return this._inner.camera;
+
+	}
+
+	set camera( v ) {
+
+		this._inner.camera = v;
+
+	}
+
 	get matrix() {
 
 		return this._inner.matrix;
-
-	}
-
-	set matrix( v ) {
-
-		this._inner.matrix = v;
-
-	}
-
-	get cameraPosition() {
-
-		return this._inner.cameraPosition;
-
-	}
-
-	set cameraPosition( v ) {
-
-		this._inner.cameraPosition = v;
 
 	}
 
