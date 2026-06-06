@@ -1,4 +1,4 @@
-import { Camera, Scene, Vector3 } from 'three';
+import { Camera, Vector3 } from 'three';
 
 export type GetAnnotationCallback = ( layerName: string, properties: Record<string, unknown> ) => boolean;
 
@@ -21,7 +21,6 @@ export class PointAnnotationItem extends AnnotationItem {
 	lat: number;
 	lon: number;
 	radius: number;
-	depth: number;
 
 }
 
@@ -29,7 +28,6 @@ export interface MVTAnnotationsPluginOptions {
 
 	overlay: object;
 	camera?: Camera | null;
-	scene?: Scene | null;
 	filterAnnotation?: GetAnnotationCallback | null;
 	onAnnotationsUpdate?: AnnotationsUpdateCallback;
 	displayOccupancyGrid?: boolean;
@@ -43,16 +41,13 @@ export class MVTAnnotationsPlugin {
 
 	overlay: object;
 	camera: Camera | null;
-	scene: Scene | null;
 
 	filterAnnotation: GetAnnotationCallback | null;
 	onAnnotationsUpdate: AnnotationsUpdateCallback;
 
 	displayOccupancyGrid: boolean;
-	maxRaycastTimeMs: number;
+	maxSettleTimeMs: number;
 
 	constructor( options: MVTAnnotationsPluginOptions );
-
-	setCamera( camera: Camera ): void;
 
 }

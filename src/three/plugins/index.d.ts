@@ -22,7 +22,6 @@ export * from './gltf/GLTFMeshFeaturesExtension.js';
 
 // mvt utilities
 export * from './mvt/GlyphAtlasTexture.js';
-export * from './mvt/MVTAnnotationsPlugin.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';
