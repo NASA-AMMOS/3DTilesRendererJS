@@ -57,7 +57,7 @@ export class GlyphMaterial extends PointsMaterial {
 				/* glsl */`
 				if ( vGlyphUV.x >= 0.0 ) {
 
-					vec4 glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize );
+					vec4 glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize * vec2( 1.0, - 1.0 ) );
 					outgoingLight = mix( outgoingLight, glyph.rgb, glyph.a );
 					diffuseColor.a = glyph.a;
 

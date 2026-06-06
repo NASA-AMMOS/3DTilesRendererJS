@@ -12,43 +12,6 @@ const _worldPoint = /* @__PURE__ */ new Vector3();
 
 export class AnnotationPoints extends Points {
 
-	get glyphAtlas() {
-
-		return this._glyphAtlas;
-
-	}
-
-	set glyphAtlas( v ) {
-
-		if ( this._glyphAtlas ) {
-
-			this._glyphAtlas.removeEventListener( 'change', this._onAtlasChange );
-
-		}
-
-		this._glyphAtlas = v;
-
-		if ( v ) {
-
-			this._onAtlasChange = () => {
-
-				this.needsUpdate = true;
-
-			};
-
-			v.addEventListener( 'change', this._onAtlasChange );
-
-			if ( this.material ) {
-
-				this.material.glyphTexture = v;
-				this.material.glyphCellSize.set( v.slotSize / v.image.width, - v.slotSize / v.image.height );
-
-			}
-
-		}
-
-	}
-
 	get size() {
 
 		return this.material.size;
@@ -64,7 +27,7 @@ export class AnnotationPoints extends Points {
 	constructor( options = {} ) {
 
 		const {
-			getKind = null,
+			getKind = () => null,
 			size = 20,
 			glyphSize = 20,
 			slotCount = 64,
@@ -90,9 +53,15 @@ export class AnnotationPoints extends Points {
 		this._orderedEntries = [];
 		this.needsUpdate = false;
 		this._lastUpdateTime = - 1;
-		this._glyphAtlas = null;
 
 		this.glyphAtlas = new GlyphAtlasTexture( slotCount, glyphSize );
+		this.glyphAtlas.addEventListener( 'change', () => {
+
+			this.needsUpdate = true;
+
+		} );
+		this.material.glyphTexture = this.glyphAtlas;
+		this.glyphAtlas.getSlotSize( this.material.glyphCellSize );
 
 	}
 
@@ -104,7 +73,7 @@ export class AnnotationPoints extends Points {
 
 		if ( this.needsUpdate ) {
 
-			this._rebuildGeometry( this.position );
+			this._updateGeometry( this.position );
 			this.needsUpdate = false;
 
 		}
@@ -127,7 +96,6 @@ export class AnnotationPoints extends Points {
 				const entry = { item, fade: 0, state: 'in' };
 				this._entryMap.set( item.id, entry );
 				this._orderedEntries.push( entry );
-				this.needsUpdate = true;
 
 			} else {
 
@@ -172,21 +140,10 @@ export class AnnotationPoints extends Points {
 
 			for ( const id of toRemove ) this._entryMap.delete( id );
 			this._orderedEntries = this._orderedEntries.filter( e => this._entryMap.has( e.item.id ) );
-			this.needsUpdate = true;
 
 		}
 
-		const origin = this.position;
-		if ( this.needsUpdate ) {
-
-			this._rebuildGeometry( origin );
-			this.needsUpdate = false;
-
-		} else {
-
-			this._updateDynamic( origin );
-
-		}
+		this._updateGeometry( this.position );
 
 		for ( const entry of this._entryMap.values() ) {
 
@@ -222,7 +179,7 @@ export class AnnotationPoints extends Points {
 
 		_mvMatrix.multiplyMatrices( camera.matrixWorldInverse, matrixWorld );
 
-		for ( let i = 0, l = posAttr.count; i < l; i ++ ) {
+		for ( let i = 0, l = this.geometry.drawRange.count; i < l; i ++ ) {
 
 			_point4.fromBufferAttribute( posAttr, i );
 			_point4.w = 1;
@@ -264,63 +221,51 @@ export class AnnotationPoints extends Points {
 
 	}
 
-	_rebuildGeometry( origin ) {
+	_updateGeometry( origin ) {
 
 		const entries = this._orderedEntries;
 		const count = entries.length;
 
-		this.geometry.dispose();
-		this.geometry.boundingSphere = null;
+		const { geometry, getKind, glyphAtlas } = this;
+		let posAttr = geometry.getAttribute( 'position' );
+		if ( ! posAttr || posAttr.count < count ) {
 
-		const posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
-		const glyphUVAttr = new BufferAttribute( new Float32Array( count * 2 ), 2 );
-		const alphaAttr = new BufferAttribute( new Float32Array( count ), 1 );
-
-		this.geometry.setAttribute( 'position', posAttr );
-		this.geometry.setAttribute( 'glyphUV', glyphUVAttr );
-		this.geometry.setAttribute( 'alpha', alphaAttr );
-
-		for ( let i = 0; i < count; i ++ ) {
-
-			const { item, fade } = entries[ i ];
-			const p = item.position;
-			posAttr.array[ i * 3 + 0 ] = p.x - origin.x;
-			posAttr.array[ i * 3 + 1 ] = p.y - origin.y;
-			posAttr.array[ i * 3 + 2 ] = p.z - origin.z;
-
-			const kind = this.getKind ? this.getKind( item.layer, item.properties ) : null;
-			const uv = kind !== null && this.glyphAtlas ? this.glyphAtlas.getUV( kind ) : null;
-			glyphUVAttr.array[ i * 2 + 0 ] = uv !== null ? uv.x : - 1;
-			glyphUVAttr.array[ i * 2 + 1 ] = uv !== null ? uv.y : - 1;
-
-			alphaAttr.array[ i ] = fade;
+			geometry.dispose();
+			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
+			geometry.setAttribute( 'position', posAttr );
+			geometry.setAttribute( 'glyphUV', new BufferAttribute( new Float32Array( count * 2 ), 2 ) );
+			geometry.setAttribute( 'alpha', new BufferAttribute( new Float32Array( count ), 1 ) );
 
 		}
 
-	}
+		geometry.setDrawRange( 0, count );
 
-	_updateDynamic( origin ) {
-
-		const entries = this._orderedEntries;
-		const count = entries.length;
-		if ( count === 0 ) return;
-
-		const posAttr = this.geometry.getAttribute( 'position' );
-		const alphaAttr = this.geometry.getAttribute( 'alpha' );
-		if ( ! posAttr || ! alphaAttr ) return;
-
+		const glyphUVAttr = geometry.getAttribute( 'glyphUV' );
+		const alphaAttr = geometry.getAttribute( 'alpha' );
 		for ( let i = 0; i < count; i ++ ) {
 
 			const { item, fade } = entries[ i ];
-			const p = item.position;
-			posAttr.array[ i * 3 + 0 ] = p.x - origin.x;
-			posAttr.array[ i * 3 + 1 ] = p.y - origin.y;
-			posAttr.array[ i * 3 + 2 ] = p.z - origin.z;
-			alphaAttr.array[ i ] = fade;
+			const pos = item.position;
+			posAttr.setXYZ( i, pos.x - origin.x, pos.y - origin.y, pos.z - origin.z );
+
+			const kind = getKind( item.layer, item.properties );
+			if ( kind !== null && glyphAtlas.has( kind ) ) {
+
+				const uv = glyphAtlas.getUV( kind );
+				glyphUVAttr.setXY( i, uv.x, uv.y );
+
+			} else {
+
+				glyphUVAttr.setXY( i, - 1, - 1 );
+
+			}
+
+			alphaAttr.setX( i, fade );
 
 		}
 
 		posAttr.needsUpdate = true;
+		glyphUVAttr.needsUpdate = true;
 		alphaAttr.needsUpdate = true;
 
 	}

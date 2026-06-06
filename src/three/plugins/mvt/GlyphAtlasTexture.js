@@ -1,4 +1,4 @@
-import { CanvasTexture, SRGBColorSpace } from 'three';
+import { CanvasTexture, SRGBColorSpace, Vector2 } from 'three';
 
 /**
  * A canvas texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
@@ -64,6 +64,19 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		}
 
 		return this._indexToSlot( _slots.get( key ) );
+
+	}
+
+	/**
+	 * Returns the UV bounds of a slot for key in GPU texture space (flipY applied),
+	 * or null if not allocated.
+	 * @param {Vector2} target
+	 * @returns {Vector2}
+	 */
+	getSlotSize( target ) {
+
+		const { slotSize, image } = this;
+		return target.set( slotSize / image.width, slotSize / image.height );
 
 	}
 

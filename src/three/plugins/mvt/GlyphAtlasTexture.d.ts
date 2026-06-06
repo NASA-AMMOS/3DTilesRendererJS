@@ -29,6 +29,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	has( key: string ): boolean;
 	get( key: string ): GlyphSlot | null;
+	getSlotSize( target: { set( x: number, y: number ): unknown } ): typeof target;
 	getUV( key: string ): { x: number; y: number; w: number; h: number } | null;
 
 	drawChar( key: string, char: string, options?: { font?: string; color?: string } ): GlyphSlot;
