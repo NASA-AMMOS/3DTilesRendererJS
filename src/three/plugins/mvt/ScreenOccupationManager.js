@@ -234,22 +234,10 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
-	update() {
-
-		const {
-			camera,
-			matrix,
-			resolution,
-			size,
-			added,
-			handle,
-			sortCallback,
-			buffer,
-			items,
-			_itemsById,
-		} = this;
+	syncItems() {
 
 		// reconstruct the items list
+		const { items, _itemsById } = this;
 		if ( this._itemsNeedsUpdate ) {
 
 			this._itemsNeedsUpdate = false;
@@ -264,6 +252,22 @@ export class ScreenOccupationManager extends EventDispatcher {
 			}
 
 		}
+
+	}
+
+	update() {
+
+		const {
+			camera,
+			matrix,
+			resolution,
+			size,
+			added,
+			handle,
+			sortCallback,
+			buffer,
+			items,
+		} = this;
 
 		// compute NDC matrix and camera local position
 		let ndcMatrix = null;
@@ -283,6 +287,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 			cameraLocalPos = _cameraLocalPos;
 
 		}
+
+		this.syncItems();
 
 		// swap visible and prevVisible — prevVisible now holds last frame's result
 		[ this.visible, this.prevVisible ] = [ this.prevVisible, this.visible ];

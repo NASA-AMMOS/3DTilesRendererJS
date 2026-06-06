@@ -147,6 +147,12 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	syncItems() {
+
+		this.manager.syncItems();
+
+	}
+
 	update() {
 
 		const now = performance.now() / 1000;

@@ -142,8 +142,8 @@ export class MVTAnnotationsPlugin {
 			overlay,
 			sortCallback = ( a, b ) => {
 
-				const rankA = a.properties[ 'rank' ] ?? a.properties[ 'pmap:rank' ] ?? Infinity;
-				const rankB = b.properties[ 'rank' ] ?? b.properties[ 'pmap:rank' ] ?? Infinity;
+				const rankA = a.properties[ 'rank' ] ?? 1e10;
+				const rankB = b.properties[ 'rank' ] ?? 1e10;
 				return rankA - rankB;
 
 			},
@@ -300,6 +300,8 @@ export class MVTAnnotationsPlugin {
 
 			}
 
+			return a.id > b.id ? 1 : - 1;
+
 		};
 
 		this._onUpdateAfter = () => {
@@ -324,6 +326,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
+			occupancy.syncItems();
 			this._processSettling();
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
