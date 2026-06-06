@@ -41,9 +41,8 @@ export class AnnotationPoints extends Points {
 
 			if ( this.material ) {
 
-				const { u, v: vSize } = v.glyphCellUVSize;
 				this.material.glyphTexture = v;
-				this.material.glyphCellSize.set( u, vSize );
+				this.material.glyphCellSize.set( v.slotSize / v.image.width, - v.slotSize / v.image.height );
 
 			}
 
@@ -268,9 +267,9 @@ export class AnnotationPoints extends Points {
 			posAttr.array[ i * 3 + 2 ] = p.z - origin.z;
 
 			const kind = getAnnotationKind( item.layer, item.properties );
-			const uv = kind !== null && this.glyphAtlas ? this.glyphAtlas.getKindUV( kind ) : null;
-			glyphUVAttr.array[ i * 2 + 0 ] = uv !== null ? uv.uvX : - 1;
-			glyphUVAttr.array[ i * 2 + 1 ] = uv !== null ? uv.uvY : - 1;
+			const uv = kind !== null && this.glyphAtlas ? this.glyphAtlas.getUV( kind ) : null;
+			glyphUVAttr.array[ i * 2 + 0 ] = uv !== null ? uv.x : - 1;
+			glyphUVAttr.array[ i * 2 + 1 ] = uv !== null ? uv.y : - 1;
 
 			alphaAttr.array[ i ] = fade;
 

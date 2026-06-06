@@ -68,6 +68,27 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	}
 
 	/**
+	 * Returns the UV bounds of the slot for key in GPU texture space (flipY applied),
+	 * or null if not allocated. x/y is the top-left corner; w/h is the slot size in UV units.
+	 * @param {string} key
+	 * @returns {{ x: number, y: number, w: number, h: number } | null}
+	 */
+	getUV( key ) {
+
+		const slot = this.get( key );
+		if ( slot === null ) return null;
+
+		const { width, height } = this.image;
+		return {
+			x: slot.x / width,
+			y: ( height - slot.y ) / height,
+			w: this.slotSize / width,
+			h: this.slotSize / height,
+		};
+
+	}
+
+	/**
 	 * Renders a single character centered in the slot.
 	 * @param {string} key
 	 * @param {string} char - The character to draw.
