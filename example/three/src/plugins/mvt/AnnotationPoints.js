@@ -54,7 +54,6 @@ export class AnnotationPoints extends Points {
 	constructor() {
 
 		super( new BufferGeometry(), new GlyphMaterial() );
-
 		this.renderOrder = 1000;
 		this.frustumCulled = false;
 
@@ -81,6 +80,13 @@ export class AnnotationPoints extends Points {
 		// use the active viewport (not getDrawingBufferSize) so raycasting matches the GPU's NDC→pixel mapping in sub-viewport scenarios
 		renderer.getViewport( _viewport );
 		this.resolution.set( _viewport.z, _viewport.w );
+
+		if ( this.needsUpdate ) {
+
+			this._rebuildGeometry( this.position );
+			this.needsUpdate = false;
+
+		}
 
 	}
 

@@ -2,9 +2,9 @@ import { PointsMaterial, Vector2 } from 'three';
 
 export class GlyphMaterial extends PointsMaterial {
 
-	constructor( { glyphAtlas = null, ...parameters } = {} ) {
+	constructor( { glyphAtlas = null, size = 25, sizeAttenuation = false, ...parameters } = {} ) {
 
-		super( parameters );
+		super( { size, sizeAttenuation, ...parameters } );
 
 		this.transparent = true;
 		this.depthTest = false;
