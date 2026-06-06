@@ -19,8 +19,6 @@ import {
 	PerspectiveCamera,
 	Raycaster,
 	Vector2,
-	Matrix4,
-	Vector3,
 } from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
@@ -115,9 +113,6 @@ const raycaster = new Raycaster();
 const tooltip = document.getElementById( 'tooltip' );
 let lastClientX = 0, lastClientY = 0;
 
-const _annotationsMatrix = new Matrix4();
-const _annotationsCameraPos = new Vector3();
-
 init();
 animate();
 
@@ -130,16 +125,6 @@ function reinstantiateTiles() {
 		tiles = null;
 
 	}
-
-	const onAnnotationsUpdate = ( added, removed ) => {
-
-		_annotationsMatrix.copy( tiles.group.matrixWorld ).invert();
-		_annotationsCameraPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _annotationsMatrix );
-		annotationsPoints.position.copy( _annotationsCameraPos );
-		annotationsPoints.updateMatrixWorld( true );
-		annotationsPoints.update( added, removed );
-
-	};
 
 	const overlay = new PMTilesOverlay( {
 		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
@@ -156,7 +141,7 @@ function reinstantiateTiles() {
 		overlay,
 		camera,
 		filterAnnotation: ( layer, properties ) => properties.kind in KIND_TO_ICON,
-		onAnnotationsUpdate: onAnnotationsUpdate,
+		onAnnotationsUpdate: ( added, removed ) => annotationsPoints.update( added, removed ),
 	} ) );
 
 	annotationsPoints = new AnnotationPoints( {
@@ -217,7 +202,7 @@ function init() {
 	controls = new GlobeControls( scene, camera, renderer.domElement, null );
 	controls.enableDamping = true;
 	controls.enableFlight = true;
-	controls.flightSpeed = 0.5;
+	controls.flightSpeed = 0.25;
 	controls.maxAltitude = Math.PI / 2;
 
 	reinstantiateTiles();
@@ -262,8 +247,8 @@ function onPointerMove( e ) {
 function updateTooltip() {
 
 	raycaster.setFromCamera( pointer, camera );
-	const hits = raycaster.intersectObject( annotationsPoints );
 
+	const hits = raycaster.intersectObject( annotationsPoints );
 	if ( hits.length > 0 ) {
 
 		const { properties } = hits[ 0 ];

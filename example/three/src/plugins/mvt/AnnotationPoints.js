@@ -65,15 +65,32 @@ export class AnnotationPoints extends Points {
 
 	}
 
-	onBeforeRender( renderer ) {
+	onBeforeRender( renderer, scene, camera ) {
+
+		const { parent, resolution } = this;
 
 		// use the active viewport (not getDrawingBufferSize) so raycasting matches the GPU's NDC→pixel mapping in sub-viewport scenarios
 		renderer.getViewport( _viewport );
-		this.resolution.set( _viewport.z, _viewport.w );
+		resolution.set( _viewport.z, _viewport.w );
 
 		if ( this.needsUpdate ) {
 
-			this._updateGeometry( this.position );
+			// transform the root of this object to be near the camera to avoid gpu jitter
+			if ( parent ) {
+
+				_mvMatrix.copy( parent.matrixWorld ).invert();
+
+			} else {
+
+				_mvMatrix.identity();
+
+			}
+
+			this.position.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _mvMatrix );
+			this.updateMatrixWorld( true );
+
+			// update the geometry
+			this._updateGeometry();
 			this.needsUpdate = false;
 
 		}
@@ -88,14 +105,15 @@ export class AnnotationPoints extends Points {
 		this._lastUpdateTime = now;
 
 		// Add new items, update LoD-swapped references, reverse in-progress fade-outs.
+		const { _entryMap, _orderedEntries } = this;
 		for ( const item of added ) {
 
-			const existing = this._entryMap.get( item.id );
+			const existing = _entryMap.get( item.id );
 			if ( ! existing ) {
 
 				const entry = { item, fade: 0, state: 'in' };
-				this._entryMap.set( item.id, entry );
-				this._orderedEntries.push( entry );
+				_entryMap.set( item.id, entry );
+				_orderedEntries.push( entry );
 
 			} else {
 
@@ -109,7 +127,7 @@ export class AnnotationPoints extends Points {
 		// Start fade-out for removed items.
 		for ( const item of removed ) {
 
-			const entry = this._entryMap.get( item.id );
+			const entry = _entryMap.get( item.id );
 			if ( entry && entry.state !== 'out' ) {
 
 				entry.state = 'out';
@@ -120,17 +138,25 @@ export class AnnotationPoints extends Points {
 
 		// Tick fades; collect fully-faded-out items for removal.
 		const toRemove = [];
-		for ( const [ id, entry ] of this._entryMap ) {
+		for ( const [ id, entry ] of _entryMap ) {
 
 			if ( entry.state === 'in' ) {
 
 				entry.fade = Math.min( 1, entry.fade + dt / this.fadeInDuration );
-				if ( entry.fade >= 1 ) entry.state = 'visible';
+				if ( entry.fade >= 1 ) {
+
+					entry.state = 'visible';
+
+				}
 
 			} else if ( entry.state === 'out' ) {
 
 				entry.fade = Math.max( 0, entry.fade - dt / this.fadeOutDuration );
-				if ( entry.fade <= 0 ) toRemove.push( id );
+				if ( entry.fade <= 0 ) {
+
+					toRemove.push( id );
+
+				}
 
 			}
 
@@ -138,12 +164,17 @@ export class AnnotationPoints extends Points {
 
 		if ( toRemove.length > 0 ) {
 
-			for ( const id of toRemove ) this._entryMap.delete( id );
-			this._orderedEntries = this._orderedEntries.filter( e => this._entryMap.has( e.item.id ) );
+			for ( const id of toRemove ) {
+
+				_entryMap.delete( id );
+
+			}
+
+			this._orderedEntries = _orderedEntries.filter( e => _entryMap.has( e.item.id ) );
 
 		}
 
-		this._updateGeometry( this.position );
+		this._updateGeometry();
 
 		for ( const entry of this._entryMap.values() ) {
 
@@ -221,8 +252,9 @@ export class AnnotationPoints extends Points {
 
 	}
 
-	_updateGeometry( origin ) {
+	_updateGeometry() {
 
+		const origin = this.position;
 		const entries = this._orderedEntries;
 		const count = entries.length;
 
