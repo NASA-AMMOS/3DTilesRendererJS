@@ -302,15 +302,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		if ( added.size > 0 ) {
+		if ( added.size > 0 || prevVisible.size > 0 ) {
 
-			this.dispatchEvent( { type: 'added', items: added } );
-
-		}
-
-		if ( prevVisible.size > 0 ) {
-
-			this.dispatchEvent( { type: 'removed', items: prevVisible } );
+			this.dispatchEvent( { type: 'change', added, removed: prevVisible } );
 
 		}
 
@@ -324,14 +318,16 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	register( item ) {
 
+		// register an item to be included in the occupation grid calculations
 		const { _itemsById, items } = this;
-
 		const existing = _itemsById.get( item.id );
 		if ( existing ) {
 
+			// use ref counting to avoid double-displaying redundant items
 			existing._refCount ++;
 			if ( item.lodLevel > existing.lodLevel ) {
 
+				// use the highest LoD levels lat / lon assuming it's the most accurate
 				existing.lodLevel = item.lodLevel;
 				existing.lat = item.lat;
 				existing.lon = item.lon;
@@ -340,21 +336,29 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			return existing;
 
-		}
+		} else {
 
-		item._refCount = 1;
-		_itemsById.set( item.id, item );
-		items.push( item );
-		return item;
+			// otherwise add the new item
+			item._refCount = 1;
+			_itemsById.set( item.id, item );
+			items.push( item );
+			return item;
+
+		}
 
 	}
 
 	unregister( item ) {
 
+		// remove the item if our ref count has reached 0
 		item._refCount --;
-		if ( item._refCount > 0 ) return;
+		if ( item._refCount > 0 ) {
 
-		const { items, prevVisible, _itemsById } = this;
+			return;
+
+		}
+
+		const { items, _itemsById } = this;
 		const index = items.indexOf( item );
 		if ( index !== - 1 ) {
 
@@ -367,8 +371,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 			_itemsById.delete( item.id );
 
 		}
-
-		prevVisible.delete( item );
 
 	}
 

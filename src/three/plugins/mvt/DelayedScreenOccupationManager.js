@@ -1,77 +1,74 @@
 import { EventDispatcher } from 'three';
 import { ScreenOccupationManager } from './ScreenOccupationManager.js';
 
+// Version of the screen occupation manager that delays event firing to
+// prevent flickering
 export class DelayedScreenOccupationManager extends EventDispatcher {
 
+	// pass through fields
 	get camera() {
 
-		return this._inner.camera;
+		return this.manager.camera;
 
 	}
 
 	set camera( v ) {
 
-		this._inner.camera = v;
+		this.manager.camera = v;
 
 	}
 
 	get matrix() {
 
-		return this._inner.matrix;
+		return this.manager.matrix;
 
 	}
 
 	get resolution() {
 
-		return this._inner.resolution;
+		return this.manager.resolution;
 
 	}
 
 	get size() {
 
-		return this._inner.size;
+		return this.manager.size;
 
 	}
 
 	set size( v ) {
 
-		this._inner.size = v;
+		this.manager.size = v;
 
 	}
 
 	get cells() {
 
-		return this._inner.cells;
-
-	}
-
-	getById( id ) {
-
-		return this._inner.getById( id );
+		return this.manager.cells;
 
 	}
 
 	get sortCallback() {
 
-		return this._inner.sortCallback;
+		return this.manager.sortCallback;
 
 	}
 
 	set sortCallback( v ) {
 
-		this._inner.sortCallback = v;
+		this.manager.sortCallback = v;
 
 	}
 
 	get buffer() {
 
-		return this._inner.buffer;
+		return this.manager.buffer;
 
 	}
 
 	set buffer( v ) {
 
-		this._inner.buffer = v;
+		this.manager.buffer = v;
 
 	}
 
@@ -79,7 +76,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 		super();
 
-		this._inner = new ScreenOccupationManager();
+		this.manager = new ScreenOccupationManager();
 
 		this.visible = new Set();
 		this.showDelay = 0.5;
@@ -93,10 +90,12 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		this.added = new Set();
 		this.removed = new Set();
 
-		this._inner.addEventListener( 'added', ( { items } ) => {
+		this.manager.addEventListener( 'change', ( { added, removed } ) => {
 
 			const { _showTimers, _hideTimers, visible } = this;
-			for ( const item of items ) {
+
+			// mark timers to visibility
+			for ( const item of added ) {
 
 				_hideTimers.delete( item );
 				if ( ! visible.has( item ) ) {
@@ -107,12 +106,8 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 			}
 
-		} );
-
-		this._inner.addEventListener( 'removed', ( { items } ) => {
-
-			const { _showTimers, _hideTimers, visible } = this;
-			for ( const item of items ) {
+			// mark timers to hidden
+			for ( const item of removed ) {
 
 				_showTimers.delete( item );
 				if ( visible.has( item ) ) {
@@ -127,15 +122,22 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	// pass through to the underlying occupation manager
+	getById( id ) {
+
+		return this.manager.getById( id );
+
+	}
+
 	register( item ) {
 
-		return this._inner.register( item );
+		return this.manager.register( item );
 
 	}
 
 	unregister( item ) {
 
-		this._inner.unregister( item );
+		this.manager.unregister( item );
 
 	}
 
@@ -146,7 +148,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		this._lastUpdateTime = now;
 
 		// fires 'added'/'removed' synchronously, populating the timers
-		this._inner.update();
+		this.manager.update();
 
 		const {
 			_showTimers,
