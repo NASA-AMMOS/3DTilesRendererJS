@@ -381,13 +381,6 @@ export class MVTAnnotationsPlugin {
 						const geometry = feature.loadGeometry();
 						for ( const [ point ] of geometry ) {
 
-							// TODO: is this necessary?
-							if ( point.x < 0 || point.x > extent || point.y < 0 || point.y > extent ) {
-
-								continue;
-
-							}
-
 							const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
 							// tile Y=0 is geographic north; with flipY the V axis increases northward
 							// so we invert vf when flipY is set
