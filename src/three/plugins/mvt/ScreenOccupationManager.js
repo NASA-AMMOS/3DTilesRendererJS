@@ -191,16 +191,25 @@ export class ScreenOccupationManager extends EventDispatcher {
 	_cellRange( x, y, r, callback ) {
 
 		const { size, resolution, buffer } = this;
-		const bufferX = resolution.width * buffer;
-		const bufferY = resolution.height * buffer;
-		const width = Math.ceil( ( resolution.width + 2 * bufferX ) / size );
-		const height = Math.ceil( ( resolution.height + 2 * bufferY ) / size );
-		const ox = x + bufferX;
-		const oy = y + bufferY;
-		const x0 = Math.max( 0, Math.floor( ( ox - r ) / size ) );
-		const y0 = Math.max( 0, Math.floor( ( oy - r ) / size ) );
-		const x1 = Math.min( width - 1, Math.floor( ( ox + r ) / size ) );
-		const y1 = Math.min( height - 1, Math.floor( ( oy + r ) / size ) );
+
+		// calculate expanded dimensions
+		const resWidth = resolution.width;
+		const resHeight = resolution.height;
+		const bufferX = resWidth * buffer;
+		const bufferY = resHeight * buffer;
+		_totalResolution.copy( resolution )
+			.multiplyScalar( 1 + 2 * buffer )
+			.multiplyScalar( 1 / size )
+			.ceil();
+
+		// calculate ranges for iteration
+		const { width, height } = _totalResolution;
+		const centerX = x + bufferX;
+		const centerY = y + bufferY;
+		const x0 = Math.max( 0, Math.floor( ( centerX - r ) / size ) );
+		const y0 = Math.max( 0, Math.floor( ( centerY - r ) / size ) );
+		const x1 = Math.min( width - 1, Math.floor( ( centerX + r ) / size ) );
+		const y1 = Math.min( height - 1, Math.floor( ( centerY + r ) / size ) );
 
 		for ( let cy = y0; cy <= y1; cy ++ ) {
 
@@ -263,7 +272,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// resize the occupation cells to cover the extended viewport
 		_totalResolution.copy( resolution )
 			.multiplyScalar( 1 + 2 * buffer )
-			.multiplyScalar( 1 / size );
+			.multiplyScalar( 1 / size )
+			.ceil();
 
 		const { width, height } = _totalResolution;
 		if ( this.cells.length !== width * height ) {
