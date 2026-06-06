@@ -8,6 +8,15 @@ import { CanvasTexture, SRGBColorSpace } from 'three';
 export class GlyphAtlasTexture extends CanvasTexture {
 
 	/**
+	 * Returns true when all slots are allocated.
+	 * @returns {boolean}  */
+	get isFull() {
+
+		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
+
+	}
+
+	/**
 	 * @param {number} slotCount - Maximum number of slots in the atlas.
 	 * @param {number} slotSize - Width and height of each slot in pixels.
 	 */
@@ -26,15 +35,6 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 		this.resize( slotCount, slotSize );
 		this.colorSpace = SRGBColorSpace;
-
-	}
-
-	/**
-	 * Returns true when all slots are allocated.
-	 * @returns {boolean}  */
-	get isFull() {
-
-		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
 
 	}
 

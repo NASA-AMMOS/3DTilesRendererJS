@@ -17,14 +17,18 @@ export class FontAtlasTexture extends GlyphAtlasTexture {
 	// Returns the slot { x, y, w, h }.
 	add( char ) {
 
-		const { _refCounts, _evictionQueue, font, color } = this;
-		const count = ( _refCounts.get( char ) ?? 0 ) + 1;
-		_refCounts.set( char, count );
+		const {
+			_refCounts,
+			_evictionQueue,
+			font,
+			color,
+		} = this;
 
 		if ( this.has( char ) ) {
 
 			// already in atlas — pull it out of the eviction queue
 			_evictionQueue.delete( char );
+			_refCounts.set( char, _refCounts.get( char ) + 1 );
 
 		} else {
 
@@ -44,6 +48,7 @@ export class FontAtlasTexture extends GlyphAtlasTexture {
 			}
 
 			this.drawChar( char, char, { font, color } );
+			_refCounts.set( char, 1 );
 
 		}
 
