@@ -11,6 +11,7 @@ import {
 	CesiumIonAuthPlugin,
 	PMTilesOverlay,
 	MVTAnnotationsPlugin,
+	UpdateOnChangePlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -145,6 +146,7 @@ function reinstantiateTiles() {
 	} );
 
 	tiles = new TilesRenderer();
+	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
