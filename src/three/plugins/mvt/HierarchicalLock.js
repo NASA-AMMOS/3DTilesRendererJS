@@ -50,26 +50,28 @@ export class HierarchicalLock extends EventDispatcher {
 
 		}
 
-		locks[ childKey ].loading = true;
+		const childLock = locks[ childKey ];
+		childLock.loadingCount ++;
 
-		// Traverse the ancestors to find the nearest active one and keep it alive
-		while ( al > 0 ) {
+		// Only lock the ancestor on the first markLoading call — subsequent concurrent
+		// loads for the same tile share the same ancestor hold
+		if ( childLock.loadingCount === 1 ) {
 
-			al --;
-			ax >>= 1;
-			ay >>= 1;
+			while ( al > 0 ) {
 
-			const ancestorKey = getKey( ax, ay, al );
-			if ( ancestorKey in locks ) {
+				al --;
+				ax >>= 1;
+				ay >>= 1;
 
-				// save the reference so we can unlock it later when load is finished
-				this._incrLock( ax, ay, al, true );
-				locks[ childKey ].lockedAncestor = {
-					x: ax,
-					y: ay,
-					level: al,
-				};
-				break;
+				const ancestorKey = getKey( ax, ay, al );
+				if ( ancestorKey in locks ) {
+
+					// save the reference so we can unlock it later when load is finished
+					this._incrLock( ax, ay, al, true );
+					childLock.lockedAncestor = { x: ax, y: ay, level: al };
+					break;
+
+				}
 
 			}
 
@@ -85,13 +87,14 @@ export class HierarchicalLock extends EventDispatcher {
 
 		if ( ! childLock ) {
 
-			return;
+			throw new Error( 'HierarchicalLock: unmarkLoading called without a matching markLoading.' );
 
 		}
 
-		childLock.loading = false;
+		childLock.loadingCount --;
 
-		if ( childLock.lockedAncestor ) {
+		// Release the ancestor only when the last concurrent load finishes
+		if ( childLock.loadingCount === 0 && childLock.lockedAncestor ) {
 
 			const { x: ax, y: ay, level: al } = childLock.lockedAncestor;
 			this._incrLock( ax, ay, al, false );
@@ -108,7 +111,7 @@ export class HierarchicalLock extends EventDispatcher {
 	_tryDeleteLock( key ) {
 
 		const lock = this.locks[ key ];
-		if ( lock && lock.ref === 0 && lock.lockedAncestor === null && ! lock.loading ) {
+		if ( lock && lock.ref === 0 && lock.lockedAncestor === null && lock.loadingCount === 0 ) {
 
 			delete this.locks[ key ];
 
@@ -125,7 +128,7 @@ export class HierarchicalLock extends EventDispatcher {
 			ref: 0,
 			dispatched: false,
 			lockedAncestor: null,
-			loading: false,
+			loadingCount: 0,
 		};
 
 	}
