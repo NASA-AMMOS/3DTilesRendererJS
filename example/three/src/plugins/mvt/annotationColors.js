@@ -1,16 +1,4 @@
-// Protomaps basemaps LIGHT theme palette (protomaps/basemaps)
-export const CATEGORY_COLORS = {
-	tangerine: 0xCB6704,
-	green: 0x20834D,
-	lapis: 0x315BCF,
-	slategray: 0x6A5B8F,
-	blue: 0x1A8CBD,
-	pink: 0xEF56BA,
-	red: 0xF2567A,
-	turquoise: 0x00C3D4,
-};
-
-export const KIND_CATEGORY = {
+const KIND_CATEGORY = {
 
 	// Food & Drink
 	cafe: 'tangerine',
@@ -119,28 +107,11 @@ export const KIND_CATEGORY = {
 
 };
 
-export const DEFAULT_COLOR = 0xA0A0A0;
-
-export function getAnnotationCategory( layer, properties ) {
-
-	const kind = properties.kind ?? properties[ 'pmap:kind' ] ?? layer;
-	const base = typeof kind === 'string' ? kind.split( '/' )[ 0 ] : kind;
-	return KIND_CATEGORY[ base ] ?? null;
-
-}
-
 export function getAnnotationKind( layer, properties ) {
 
 	const kind = properties.kind ?? properties[ 'pmap:kind' ] ?? layer;
 	if ( typeof kind !== 'string' ) return null;
 	return kind.split( '/' )[ 0 ];
-
-}
-
-export function getAnnotationColor( layer, properties, target ) {
-
-	const category = getAnnotationCategory( layer, properties );
-	return target.setHex( category !== null ? CATEGORY_COLORS[ category ] : DEFAULT_COLOR );
 
 }
 

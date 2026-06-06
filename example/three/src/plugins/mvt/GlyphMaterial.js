@@ -6,7 +6,6 @@ export class GlyphMaterial extends PointsMaterial {
 
 		super( parameters );
 
-		this.vertexColors = true;
 		this.transparent = true;
 		this.depthTest = false;
 		this.depthWrite = false;

@@ -15,7 +15,7 @@ import {
 import { MVTAnnotationsPlugin } from '../../src/three/plugins/mvt/MVTAnnotationsPlugin.js';
 import { AnnotationPoints } from './src/plugins/mvt/AnnotationPoints.js';
 
-import { AnnotationGlyphAtlasTexture } from './src/plugins/mvt/AnnotationGlyphAtlasTexture.js';
+
 import { defaultGetAnnotation } from './src/plugins/mvt/annotationColors.js';
 import {
 	Scene,

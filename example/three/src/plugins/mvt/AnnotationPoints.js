@@ -1,9 +1,8 @@
-import { BufferAttribute, BufferGeometry, Color, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
-import { getAnnotationColor, getAnnotationKind } from './annotationColors.js';
+import { BufferAttribute, BufferGeometry, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
+import { getAnnotationKind } from './annotationColors.js';
 import { GlyphMaterial } from './GlyphMaterial.js';
 import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
 
-const _color = /* @__PURE__ */ new Color();
 const _viewport = /* @__PURE__ */ new Vector4();
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
 const _point4 = /* @__PURE__ */ new Vector4();
@@ -247,12 +246,10 @@ export class AnnotationPoints extends Points {
 		this.geometry.boundingSphere = null;
 
 		const posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
-		const colorAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
 		const glyphUVAttr = new BufferAttribute( new Float32Array( count * 2 ), 2 );
 		const alphaAttr = new BufferAttribute( new Float32Array( count ), 1 );
 
 		this.geometry.setAttribute( 'position', posAttr );
-		this.geometry.setAttribute( 'color', colorAttr );
 		this.geometry.setAttribute( 'glyphUV', glyphUVAttr );
 		this.geometry.setAttribute( 'alpha', alphaAttr );
 
@@ -263,11 +260,6 @@ export class AnnotationPoints extends Points {
 			posAttr.array[ i * 3 + 0 ] = p.x - origin.x;
 			posAttr.array[ i * 3 + 1 ] = p.y - origin.y;
 			posAttr.array[ i * 3 + 2 ] = p.z - origin.z;
-
-			getAnnotationColor( item.layer, item.properties, _color );
-			colorAttr.array[ i * 3 + 0 ] = _color.r;
-			colorAttr.array[ i * 3 + 1 ] = _color.g;
-			colorAttr.array[ i * 3 + 2 ] = _color.b;
 
 			const kind = getAnnotationKind( item.layer, item.properties );
 			const uv = kind !== null && this.glyphAtlas ? this.glyphAtlas.getKindUV( kind ) : null;
