@@ -3,6 +3,8 @@ import { EventDispatcher, Matrix4, Vector2, Vector3 } from 'three';
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
+const _delta = /* @__PURE__ */ new Vector3();
+const _totalResolution = /* @__PURE__ */ new Vector2();
 
 // suppress annotations within ~6 degrees of the globe horizon
 const PERSPECTIVE_CULL_THRESHOLD = 0.1;
@@ -48,13 +50,9 @@ export class PointAnnotationItem extends AnnotationItem {
 		this.lon = 0;
 		this.radius = 16;
 
-		// raw NDC z; used as a sort tiebreaker
+		// depth to camera, used as a sort tiebreaker
 		this.depth = 0;
-
-		// x/y in screen pixels; z is 0 (in-frustum) or 1 (clipped)
 		this._screenPos = new Vector3();
-
-		// dot( surfaceNormal, toCam ); 0 at horizon, 1 facing camera
 		this._facingRatio = 1;
 
 	}
@@ -139,7 +137,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		super();
 
-		// camera and local-to-world matrix (tilesGroup.matrixWorld); NDC matrix is computed internally
+		// camera and local-to-world matrix
 		this.camera = null;
 		this.matrix = new Matrix4();
 
@@ -148,7 +146,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.size = 25 / window.devicePixelRatio;
 		this.cells = new Uint8Array( 1 );
 
-		// fraction of the shorter viewport dimension to extend evaluation beyond screen edges
+		// buffer outside the screen
 		this.buffer = 0.15;
 
 		// items
@@ -224,11 +222,23 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	update() {
 
-		const { camera, matrix, resolution, size, items, added, handle, sortCallback } = this;
+		const {
+			camera,
+			matrix,
+			resolution,
+			size,
+			items,
+			added,
+			handle,
+			sortCallback,
+			buffer,
+		} = this;
 
-		// compute NDC matrix and camera local position from camera + localToWorld matrix
+		// compute NDC matrix and camera local position
 		let ndcMatrix = null;
 		let cameraLocalPos = null;
+
+		// if there is no camera then items are considered non visible
 		if ( camera !== null ) {
 
 			_ndcMatrix
@@ -251,10 +261,11 @@ export class ScreenOccupationManager extends EventDispatcher {
 		added.clear();
 
 		// resize the occupation cells to cover the extended viewport
-		const bufferX = resolution.width * this.buffer;
-		const bufferY = resolution.height * this.buffer;
-		const width = Math.ceil( ( resolution.width + 2 * bufferX ) / size );
-		const height = Math.ceil( ( resolution.height + 2 * bufferY ) / size );
+		_totalResolution.copy( resolution )
+			.multiplyScalar( 1 + 2 * buffer )
+			.multiplyScalar( 1 / size );
+
+		const { width, height } = _totalResolution;
 		if ( this.cells.length !== width * height ) {
 
 			this.cells = new Uint8Array( width * height );
