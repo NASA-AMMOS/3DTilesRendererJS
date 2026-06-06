@@ -26,6 +26,11 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { AnnotationPoints } from './src/plugins/mvt/AnnotationPoints.js';
 
+// CDN source for the icons
+const MAKI_BASE = 'https://cdn.jsdelivr.net/npm/@mapbox/maki@8/icons/';
+const MAKI_ICONS = [ 'restaurant', 'park', 'town-hall', 'shop', 'airport', 'museum', 'hospital', 'lodging' ];
+
+// Map from point kind to icon
 const KIND_TO_ICON = {
 
 	// Food & Drink
@@ -121,7 +126,7 @@ function reinstantiateTiles() {
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
 	tiles.registerPlugin( new TilesFadePlugin() );
-	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], renderer } ) );
+	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ] } ) );
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
@@ -130,8 +135,34 @@ function reinstantiateTiles() {
 	} ) );
 
 	annotationsPoints = new AnnotationPoints( {
-		getKind: ( layer, properties ) => KIND_TO_ICON[ properties.kind ] || null,
+		size: 20,
+		glyphSize: 2 * 20 * renderer.getPixelRatio(),
+		getKind: ( layer, properties ) => {
+
+			return KIND_TO_ICON[ properties.kind ] || null;
+
+		}
 	} );
+
+	// load and draw all the icons
+	MAKI_ICONS.forEach( icon =>
+		fetch( MAKI_BASE + icon + '.svg' )
+			.then( r => r.text() )
+			.then( svgText => {
+
+				annotationsPoints.glyphAtlas.drawSVG( icon, svgText, {
+					fillStyle: 'white',
+					strokeStyle: '#3f3e4c',
+					strokeWidth: 3 * renderer.getPixelRatio(),
+					iconScale: 0.9,
+				} );
+				annotationsPoints.glyphAtlas.dispatchEvent( { type: 'change' } );
+
+			} )
+			.catch( () => null )
+
+	);
+
 	tiles.group.add( annotationsPoints );
 
 	tiles.group.rotation.x = - Math.PI / 2;

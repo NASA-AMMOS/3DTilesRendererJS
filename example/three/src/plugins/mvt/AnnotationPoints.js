@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
+import { GlyphAtlasTexture } from '3d-tiles-renderer/plugins';
 import { GlyphMaterial } from './GlyphMaterial.js';
-import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
 
 const _viewport = /* @__PURE__ */ new Vector4();
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
@@ -49,11 +49,28 @@ export class AnnotationPoints extends Points {
 
 	}
 
+	get size() {
+
+		return this.material.size;
+
+	}
+
+	set size( v ) {
+
+		this.material.size = v;
+
+	}
+
 	constructor( options = {} ) {
+
+		const {
+			getKind = null,
+			size = 20,
+			glyphSize = 20,
+		} = options;
 
 		super( new BufferGeometry(), new GlyphMaterial() );
 
-		const { getKind = null } = options;
 		this.getKind = getKind;
 
 		this.renderOrder = 1000;
@@ -61,6 +78,7 @@ export class AnnotationPoints extends Points {
 
 		this.fadeInDuration = 0.3;
 		this.fadeOutDuration = 0.3;
+		this.size = size;
 
 		// Viewport size in pixels — must be kept current by the owner (plugin updates each frame).
 		this.resolution = new Vector2();
@@ -73,7 +91,7 @@ export class AnnotationPoints extends Points {
 		this._lastUpdateTime = - 1;
 		this._glyphAtlas = null;
 
-		this.glyphAtlas = new AnnotationGlyphAtlasTexture();
+		this.glyphAtlas = new GlyphAtlasTexture( 32, glyphSize );
 
 	}
 

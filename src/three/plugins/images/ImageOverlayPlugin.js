@@ -59,7 +59,6 @@ PROCESS_QUEUE.priorityCallback = ( a, b ) => {
  * generating per-tile textures from image sources (XYZ, TMS, WMTS, WMS, GeoJSON, etc.).
  * Image sources are added via `addOverlay()` and removed via `deleteOverlay()`.
  * @param {Object} [options]
- * @param {WebGLRenderer} options.renderer The renderer used for constructing and rendering to render targets.
  * @param {Array} [options.overlays=[]] Initial image overlay sources to add.
  * @param {number} [options.resolution=256] Resolution of each generated tile texture in pixels.
  * @param {boolean} [options.enableTileSplitting=true] Allow tiles to be split to match image tile boundaries.

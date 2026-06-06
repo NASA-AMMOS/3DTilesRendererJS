@@ -138,7 +138,6 @@ function init() {
 	} ) );
 	tiles.registerPlugin( new ImageOverlayPlugin( {
 		overlays: [ overlay ],
-		renderer,
 	} ) );
 	const annotationsPlugin = new MVTAnnotationsPlugin( {
 		overlay,
