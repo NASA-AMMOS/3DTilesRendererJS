@@ -7,7 +7,7 @@ const _delta = /* @__PURE__ */ new Vector3();
 const _totalResolution = /* @__PURE__ */ new Vector2();
 
 // suppress annotations within ~6 degrees of the globe horizon
-const PERSPECTIVE_CULL_THRESHOLD = 0.1;
+const PERSPECTIVE_CULL_ANGLE = Math.acos( 0.1 );
 
 export class AnnotationItem {
 
@@ -53,38 +53,35 @@ export class PointAnnotationItem extends AnnotationItem {
 		// depth to camera, used as a sort tiebreaker
 		this.depth = 0;
 		this._screenPos = new Vector3();
-		this._facingRatio = 1;
+		this._facingAngle = 0;
 
 	}
 
 	updateTransform( matrix, resolution, cameraPosition ) {
 
+		const { position } = this;
 		const screenPos = this._screenPos;
 
-		screenPos.copy( this.position ).applyMatrix4( matrix );
+		// project to world clip space & save the depth value for sort
+		screenPos.copy( position ).applyMatrix4( matrix );
+		this.depth = screenPos.z;
 
-		const z = screenPos.z;
+		// transform to resolution coordinates
 		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
-		screenPos.z = ( z < - 1 || z > 1 ) ? 1 : 0;
-		this.depth = z;
+		screenPos.z = ( screenPos.z < - 1 || screenPos.z > 1 ) ? 1 : 0;
 
 		// facing ratio: dot( surface normal, direction to camera )
 		// TODO: store geodetic normal on the item at creation time and use it here instead of
-		// normalize( position ), which is only a spherical approximation (<0.2° error on WGS84)
+		// normalize( position )
 		if ( cameraPosition !== null ) {
 
-			const px = this.position.x, py = this.position.y, pz = this.position.z;
-			const pLen = Math.sqrt( px * px + py * py + pz * pz );
-			const dx = cameraPosition.x - px, dy = cameraPosition.y - py, dz = cameraPosition.z - pz;
-			const dLen = Math.sqrt( dx * dx + dy * dy + dz * dz );
-			this._facingRatio = ( pLen > 0 && dLen > 0 )
-				? ( px * dx + py * dy + pz * dz ) / ( pLen * dLen )
-				: 1;
+			_delta.subVectors( cameraPosition, position );
+			this._facingAngle = position.lengthSq() > 0 ? position.angleTo( _delta ) : 0;
 
 		} else {
 
-			this._facingRatio = 1;
+			this._facingAngle = 0;
 
 		}
 
@@ -99,7 +96,7 @@ export class PointAnnotationItem extends AnnotationItem {
 
 	evaluate( handle ) {
 
-		const { _screenPos, radius, _facingRatio } = this;
+		const { _screenPos, radius, _facingAngle } = this;
 		if ( ! this.ready ) {
 
 			return false;
@@ -112,7 +109,7 @@ export class PointAnnotationItem extends AnnotationItem {
 
 		}
 
-		if ( _facingRatio < PERSPECTIVE_CULL_THRESHOLD ) {
+		if ( _facingAngle > PERSPECTIVE_CULL_ANGLE ) {
 
 			return false;
 
