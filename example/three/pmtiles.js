@@ -144,7 +144,6 @@ function init() {
 		overlay,
 		camera,
 	} );
-	// annotationsPlugin.getAnnotation = ( layerName ) => layerName === 'places';
 	tiles.registerPlugin( annotationsPlugin );
 
 	tiles.setCamera( camera );

@@ -1,5 +1,4 @@
 import { BufferAttribute, BufferGeometry, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
-import { getAnnotationKind } from './annotationColors.js';
 import { GlyphMaterial } from './GlyphMaterial.js';
 import { AnnotationGlyphAtlasTexture } from './AnnotationGlyphAtlasTexture.js';
 
@@ -50,9 +49,13 @@ export class AnnotationPoints extends Points {
 
 	}
 
-	constructor() {
+	constructor( options = {} ) {
 
 		super( new BufferGeometry(), new GlyphMaterial() );
+
+		const { getKind = null } = options;
+		this.getKind = getKind;
+
 		this.renderOrder = 1000;
 		this.frustumCulled = false;
 
@@ -266,7 +269,7 @@ export class AnnotationPoints extends Points {
 			posAttr.array[ i * 3 + 1 ] = p.y - origin.y;
 			posAttr.array[ i * 3 + 2 ] = p.z - origin.z;
 
-			const kind = getAnnotationKind( item.layer, item.properties );
+			const kind = this.getKind ? this.getKind( item.layer, item.properties ) : null;
 			const uv = kind !== null && this.glyphAtlas ? this.glyphAtlas.getUV( kind ) : null;
 			glyphUVAttr.array[ i * 2 + 0 ] = uv !== null ? uv.x : - 1;
 			glyphUVAttr.array[ i * 2 + 1 ] = uv !== null ? uv.y : - 1;

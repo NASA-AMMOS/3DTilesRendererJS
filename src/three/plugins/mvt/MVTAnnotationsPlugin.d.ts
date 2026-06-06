@@ -30,7 +30,7 @@ export interface MVTAnnotationsPluginOptions {
 	overlay: object;
 	camera?: Camera | null;
 	scene?: Scene | null;
-	getAnnotation?: GetAnnotationCallback | null;
+	filterAnnotation?: GetAnnotationCallback | null;
 	onAnnotationsUpdate?: AnnotationsUpdateCallback;
 	displayOccupancyGrid?: boolean;
 
@@ -45,7 +45,7 @@ export class MVTAnnotationsPlugin {
 	camera: Camera | null;
 	scene: Scene | null;
 
-	getAnnotation: GetAnnotationCallback | null;
+	filterAnnotation: GetAnnotationCallback | null;
 	onAnnotationsUpdate: AnnotationsUpdateCallback;
 
 	displayOccupancyGrid: boolean;

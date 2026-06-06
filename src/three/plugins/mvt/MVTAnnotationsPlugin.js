@@ -147,7 +147,7 @@ export class MVTAnnotationsPlugin {
 				return rankA - rankB;
 
 			},
-			getAnnotation = () => {},
+			filterAnnotation = () => {},
 			onAnnotationsUpdate = () => {},
 			camera = null,
 			displayOccupancyGrid = false,
@@ -168,7 +168,7 @@ export class MVTAnnotationsPlugin {
 
 		// callback to filter which features become annotations:
 		this.sortCallback = sortCallback;
-		this.getAnnotation = getAnnotation;
+		this.filterAnnotation = filterAnnotation;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
 		this.displayOccupancyGrid = displayOccupancyGrid;
 
@@ -336,7 +336,7 @@ export class MVTAnnotationsPlugin {
 
 			if ( active ) {
 
-				const { contentCache, occupancy, getAnnotation, mvtTileItems } = this;
+				const { contentCache, occupancy, filterAnnotation, mvtTileItems } = this;
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
 				if ( ! vectorTile ) {
@@ -368,7 +368,7 @@ export class MVTAnnotationsPlugin {
 
 						}
 
-						if ( getAnnotation !== null && ! getAnnotation( layerName, feature.properties ) ) {
+						if ( filterAnnotation !== null && ! filterAnnotation( layerName, feature.properties ) ) {
 
 							continue;
 
