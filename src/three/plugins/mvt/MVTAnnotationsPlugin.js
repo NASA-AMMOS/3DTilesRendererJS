@@ -744,11 +744,11 @@ export class MVTAnnotationsPlugin {
 			maxSettleTimeMs,
 			tiles,
 			camera,
+			sortCallback,
 		} = this;
 
 		const {
 			visible,
-			sortCallback,
 		} = occupancy;
 
 		// precompute which non-visible items have rays intersecting the camera frustum
@@ -804,10 +804,23 @@ export class MVTAnnotationsPlugin {
 				// prioritize items intersecting the frustum
 				return _intersectingFrustum.has( a ) ? 1 : - 1;
 
+			}
+
+			const sort = - this.sortCallback( a, b );
+			if ( sort !== 0 ) {
+
+				return sort;
+
+			} else if ( a.lodLevel !== b.lodLevel ) {
+
+				// lod sort
+				return a.lodLevel - b.lodLevel;
+
 			} else {
 
-				// fall back to the occupancy grid defined priorities
-				return - sortCallback( a, b );
+				// use the id as the final sort without screen Y to avoid a slow "crawl"
+				// of loaded items toward the top of the screen.
+				return a.id < b.id ? 1 : - 1;
 
 			}
 
