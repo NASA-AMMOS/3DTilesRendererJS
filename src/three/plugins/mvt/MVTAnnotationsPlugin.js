@@ -806,7 +806,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			const sort = - this.sortCallback( a, b );
+			const sort = - sortCallback( a, b );
 			if ( sort !== 0 ) {
 
 				return sort;
