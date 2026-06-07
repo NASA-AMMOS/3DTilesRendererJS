@@ -14,7 +14,6 @@ import {
 	GLTFExtensionsPlugin,
 	BatchedTilesPlugin,
 	CesiumIonAuthPlugin,
-	ImageOverlayPlugin,
 	PMTilesOverlay,
 } from '3d-tiles-renderer/plugins';
 import {
@@ -90,12 +89,6 @@ function reinstantiateTiles() {
 		} ) );
 
 	}
-
-	const overlay = new PMTilesOverlay( {
-		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
-	} );
-
-	tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ] } ) );
 
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
