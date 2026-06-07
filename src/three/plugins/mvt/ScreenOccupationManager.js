@@ -18,7 +18,8 @@ export class AnnotationItem {
 		this.properties = null;
 		this.ready = false;
 		this.lodLevel = 0;
-		this.firstShownTime = Infinity;
+		this.visibleTime = Infinity;
+		this.visible = false;
 		this._refCount = 0;
 
 	}
@@ -329,7 +330,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 		items.sort( sortCallback );
 
 		// evaluate occupancy into the fresh visible set
-		const currTime = performance.now();
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
@@ -338,11 +338,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 				visible.add( item );
 				if ( ! prevVisible.has( item ) ) {
 
-					item.firstShownTime = currTime;
+					item.visible = true;
 					added.add( item );
 
 				} else {
 
+					item.visible = false;
 					prevVisible.delete( item );
 
 				}

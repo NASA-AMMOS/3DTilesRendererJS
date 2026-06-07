@@ -6,12 +6,8 @@ export type AnnotationsUpdateCallback = ( added: Set<PointAnnotationItem>, remov
 
 export class AnnotationItem {
 
-	id: string;
 	layer: string;
 	properties: Record<string, unknown> | null;
-	ready: boolean;
-	lodLevel: number;
-	firstShownTime: number;
 
 }
 

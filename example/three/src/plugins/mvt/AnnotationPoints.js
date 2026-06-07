@@ -33,7 +33,9 @@ export class AnnotationPoints extends Points {
 			slotCount = 64,
 		} = options;
 
+
 		super( new BufferGeometry(), new GlyphMaterial() );
+		window.POINT = this;
 
 		this.getKind = getKind;
 
@@ -55,11 +57,6 @@ export class AnnotationPoints extends Points {
 		this._lastUpdateTime = - 1;
 
 		this.glyphAtlas = new GlyphAtlasTexture( slotCount, glyphSize );
-		this.glyphAtlas.addEventListener( 'change', () => {
-
-			this.needsUpdate = true;
-
-		} );
 		this.material.glyphTexture = this.glyphAtlas;
 		this.glyphAtlas.getSlotSize( this.material.glyphCellSize );
 
@@ -67,33 +64,31 @@ export class AnnotationPoints extends Points {
 
 	onBeforeRender( renderer, scene, camera ) {
 
-		const { parent, resolution } = this;
+		const { resolution } = this;
 
 		// use the active viewport (not getDrawingBufferSize) so raycasting matches the GPU's NDC→pixel mapping in sub-viewport scenarios
 		renderer.getViewport( _viewport );
 		resolution.set( _viewport.z, _viewport.w );
 
-		if ( this.needsUpdate ) {
+	}
 
-			// transform the root of this object to be near the camera to avoid gpu jitter
-			if ( parent ) {
+	onAfterRender( renderer, scene, camera ) {
 
-				_mvMatrix.copy( parent.matrixWorld ).invert();
+		const { parent } = this;
 
-			} else {
+		// transform the root of this object to be near the camera to avoid gpu jitter
+		if ( parent ) {
 
-				_mvMatrix.identity();
+			_mvMatrix.copy( parent.matrixWorld ).invert();
 
-			}
+		} else {
 
-			this.position.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _mvMatrix );
-			this.updateMatrixWorld( true );
-
-			// update the geometry
-			this._updateGeometry();
-			this.needsUpdate = false;
+			_mvMatrix.identity();
 
 		}
+
+		this.position.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _mvMatrix );
+		this.updateMatrixWorld( true );
 
 	}
 
@@ -175,14 +170,6 @@ export class AnnotationPoints extends Points {
 		}
 
 		this._updateGeometry();
-
-		for ( const entry of this._entryMap.values() ) {
-
-			if ( entry.state !== 'visible' ) return true;
-
-		}
-
-		return false;
 
 	}
 

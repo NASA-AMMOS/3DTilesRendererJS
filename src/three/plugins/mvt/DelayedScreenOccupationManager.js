@@ -176,6 +176,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		removed.clear();
 
 		// increment the timers for added items
+		const currTime = performance.now();
 		for ( const [ item, elapsed ] of _showTimers ) {
 
 			const next = elapsed + dt;
@@ -184,6 +185,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				_showTimers.delete( item );
 				visible.add( item );
 				added.add( item );
+				item.visibleTime = currTime;
 
 			} else {
 

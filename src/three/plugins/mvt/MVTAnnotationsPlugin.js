@@ -288,21 +288,24 @@ export class MVTAnnotationsPlugin {
 				// lod sort
 				return b.lodLevel - a.lodLevel;
 
-			} else if ( aVis && a.firstShownTime !== b.firstShownTime ) {
+			} else if ( aVis && a.visibleTime !== b.visibleTime ) {
 
 				// persistence sort for visual stability
-				return a.firstShownTime - b.firstShownTime;
+				return a.visibleTime < b.visibleTime ? 1 : - 1;
 
-			} else {
+			} else if ( b._screenPos.y !== a._screenPos.y ) {
 
 				// distance up the screen
 				return b._screenPos.y - a._screenPos.y;
 
+			} else {
+
+				return a.id > b.id ? 1 : - 1;
+
 			}
 
-			return a.id > b.id ? 1 : - 1;
-
 		};
+
 
 		this._onUpdateAfter = () => {
 
@@ -326,7 +329,6 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			occupancy.syncItems();
 			this._processSettling();
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
@@ -689,7 +691,6 @@ export class MVTAnnotationsPlugin {
 
 	_enqueueSettling( item ) {
 
-		// push an item onto the queue
 		const { _settlingQueueSet, _settlingQueue } = this;
 		if ( _settlingQueueSet.has( item ) ) {
 
@@ -783,6 +784,7 @@ export class MVTAnnotationsPlugin {
 		}
 
 		// sort ascending — highest-priority items at tail for pop()
+		occupancy.syncItems();
 		_settlingQueue.sort( ( a, b ) => {
 
 			// prioritize items that are not ready and intersecting the frustum
