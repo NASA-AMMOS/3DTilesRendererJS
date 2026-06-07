@@ -26,7 +26,7 @@ import { PriorityQueue } from '3d-tiles-renderer/core';
  * @param {number} [options.levels=20] Number of zoom levels.
  * @param {string} [options.projection='EPSG:3857'] Projection scheme identifier.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
- * @param {MVTGetStyleCallback} [options.getStyle] Per-feature style callback.
+ * @param {MVTGetStyleCallback} [options.getStyle] Per-feature style callback. If not provided then no content will draw.
  */
 export class MVTOverlay extends ImageOverlay {
 

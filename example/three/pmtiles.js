@@ -137,7 +137,6 @@ function init() {
 	} ) );
 	tiles.registerPlugin( new ImageOverlayPlugin( {
 		overlays: [ overlay ],
-		renderer,
 	} ) );
 
 	tiles.setCamera( camera );

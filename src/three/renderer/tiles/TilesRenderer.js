@@ -347,6 +347,21 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/**
+	 * Returns the render resolution previously set for a registered camera.
+	 * @param {Camera} camera - A previously registered camera.
+	 * @param {Vector2} target - Vector2 to write the result into.
+	 * @returns {Vector2|null} The target with width/height filled in, or null if the camera is not registered.
+	 */
+	getResolution( camera, target ) {
+
+		const vec = this.cameraMap.get( camera );
+		if ( ! vec ) return null;
+
+		return target.copy( vec );
+
+	}
+
+	/**
 	 * Sets the render resolution for a camera by reading the current size from a WebGLRenderer.
 	 * @param {Camera} camera - A previously registered camera.
 	 * @param {WebGLRenderer} renderer

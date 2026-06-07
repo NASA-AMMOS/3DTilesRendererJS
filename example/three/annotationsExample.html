@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+		<meta charset="utf-8"/>
+
+		<title>MVT Annotations on Google 3D Tiles</title>
+		<link rel="stylesheet" href="../styles.css">
+		<style>
+			#tooltip {
+				position: fixed;
+				pointer-events: none;
+				background: rgba( 0, 0, 0, 0.65 );
+				color: #fff;
+				padding: 6px;
+				border-radius: 4px;
+				font-size: 13px;
+				white-space: nowrap;
+				display: none;
+				text-transform: capitalize;
+			}
+		</style>
+    </head>
+    <body>
+		<div id="info">
+			<div>
+				MVT Annotations with <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">Google Photorealistic 3D Tiles</a>, <a href="https://ion.cesium.com/">Cesium Ion</a>, & <a href="https://source.coop/protomaps/openstreetmap">Source Coop</a>.
+			</div>
+		</div>
+
+		<div id="tooltip"></div>
+
+		<div id="footer">
+			<div id="credits"></div>
+			<div id="logos">
+				<img src="../logos/google.png" />
+				<img src="../logos/cesiumion.png" />
+			</div>
+		</div>
+        <script type="module" src="./annotationsExample.js"></script>
+    </body>
+</html>

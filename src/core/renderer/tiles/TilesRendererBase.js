@@ -1064,20 +1064,30 @@ export class TilesRendererBase {
 
 	disposeTile( tile ) {
 
-		// TODO: are these necessary? Are we disposing tiles when they are currently visible?
+		// Need to mirror the "traverseFunctions" behavior for empty tiles (eg internal tile sets)
 		if ( tile.traversal.visible ) {
 
-			this.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
+			if ( tile.internal.hasRenderableContent ) {
+
+				this.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
+
+			} else {
+
+				this.invokeOnePlugin( plugin => plugin.setEmptyTileVisible && plugin.setEmptyTileVisible( tile, false ) );
+
+			}
+
 			tile.traversal.visible = false;
 
 		}
 
-		if ( tile.traversal.active ) {
+		if ( tile.traversal.active && tile.internal.hasRenderableContent ) {
 
 			this.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, false ) );
-			tile.traversal.active = false;
 
 		}
+
+		tile.traversal.active = false;
 
 		const { scene } = tile.engineData;
 		if ( scene ) {
