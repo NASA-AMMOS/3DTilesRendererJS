@@ -1,4 +1,5 @@
 import { Color, Matrix4, WebGLRenderer } from 'three';
+import { PriorityQueue } from '3d-tiles-renderer/core';
 import { WMTSTileMatrix } from '../loaders/WMTSCapabilitiesLoader.js';
 
 export class ImageOverlayPlugin {
@@ -27,6 +28,7 @@ export class ImageOverlay {
 	preprocessURL: ( url: string ) => string | null;
 	alphaMask: boolean;
 	alphaInvert: boolean;
+	downloadQueue: PriorityQueue;
 	isReady: boolean;
 	readonly isPlanarProjection: boolean;
 
