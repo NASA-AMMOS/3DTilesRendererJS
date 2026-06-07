@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.5.0] - Unreleased
+### Added
+- Add "getResolution" to TilesRenderer
+- Add "ValidateTilesetPlugin"
+
 ### Changed
 - Deprecated APIs and fields have been removed.
 - CesiumIonPlugin: Removed warning logs.
@@ -14,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - GeneratedSurfacePlugin: Fix the plugin not applying uv ranges correctly.
 - ImageOverlayPlugin: Fix plugins not tracking tile visibility correctly.
+- Fix "disposeTile" events firing for internal tileset json tiles
+- Export INDEXED_COLOR for DebugTilesPlugin
 
 ## [0.4.27] - 2026.05.25
 ### Fixed
