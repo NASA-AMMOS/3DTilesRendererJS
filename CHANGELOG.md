@@ -6,8 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.5.0] - Unreleased
 ### Added
-- Add "getResolution" to TilesRenderer
-- Add "ValidateTilesetPlugin"
+- TilesRenderer: Add "getResolution".
+- Add "ValidateTilesetPlugin".
+- TilesRenderer: Add "accelerateRaycast" toggle for malformed data sets.
 
 ### Changed
 - Deprecated APIs and fields have been removed.
