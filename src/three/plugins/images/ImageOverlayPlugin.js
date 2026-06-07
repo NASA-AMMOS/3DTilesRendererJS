@@ -2,7 +2,7 @@
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 /** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
-import { PriorityQueue, PriorityQueueItemRemovedError, unifiedPriorityCallback } from '3d-tiles-renderer/core';
+import { PriorityQueue, PriorityQueueItemRemovedError, unifiedPriorityCallback, DEFAULT_DOWNLOAD_QUEUE } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { QuadKeyImageSource } from './sources/QuadKeyImageSource.js';
@@ -928,23 +928,12 @@ export class ImageOverlayPlugin {
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
-		const { tiles, processedTiles } = this;
+		const { processedTiles } = this;
 
 		overlay.init().then( () => {
 
 			// Set resolution on the overlay
 			overlay.setResolution( this.resolution );
-
-			// TODO: we should move away from reaching into specific "tiles renderer" download queue.
-			// We should prefer an overarching, common download system.
-			const overlayFetch = overlay.fetch.bind( overlay );
-			overlay.fetch = ( ...args ) => tiles
-				.downloadQueue
-				.add( { priority: - performance.now() }, () => {
-
-					return overlayFetch( ...args );
-
-				} );
 
 		} );
 
@@ -1396,6 +1385,7 @@ export class ImageOverlay {
 		this.frame = frame !== null ? frame.clone() : null;
 		this.alphaMask = alphaMask;
 		this.alphaInvert = alphaInvert;
+		this.downloadQueue = DEFAULT_DOWNLOAD_QUEUE;
 
 		this._whenReady = null;
 		this.isReady = false;
@@ -1438,7 +1428,7 @@ export class ImageOverlay {
 
 		}
 
-		return fetch( url, options );
+		return this.downloadQueue.add( { priority: - performance.now() }, () => fetch( url, options ) );
 
 	}
 
@@ -2097,10 +2087,22 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 	}
 
-	fetch( ...args ) {
+	fetch( url, options = {} ) {
 
 		// bypass auth fetch if asset is external type to prevent CORS error due to wrong bearer token
-		return this.externalType ? super.fetch( ...args ) : this.auth.fetch( ...args );
+		if ( this.externalType ) {
+
+			return super.fetch( url, options );
+
+		}
+
+		if ( this.preprocessURL ) {
+
+			url = this.preprocessURL( url );
+
+		}
+
+		return this.downloadQueue.add( { priority: - performance.now() }, () => this.auth.fetch( url, options ) );
 
 	}
 
@@ -2166,9 +2168,15 @@ export class GoogleMapsOverlay extends TiledImageOverlay {
 
 	}
 
-	fetch( ...args ) {
+	fetch( url, options = {} ) {
 
-		return this.auth.fetch( ...args );
+		if ( this.preprocessURL ) {
+
+			url = this.preprocessURL( url );
+
+		}
+
+		return this.downloadQueue.add( { priority: - performance.now() }, () => this.auth.fetch( url, options ) );
 
 	}
 
