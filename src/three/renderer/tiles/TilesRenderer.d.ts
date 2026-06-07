@@ -14,6 +14,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	ellipsoid: Ellipsoid;
 	cameras: Camera[];
 	autoDisableRendererCulling : boolean;
+	accelerateRaycast: boolean;
 
 	manager : LoadingManager;
 

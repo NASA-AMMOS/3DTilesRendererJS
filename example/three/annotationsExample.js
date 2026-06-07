@@ -131,6 +131,7 @@ function reinstantiateTiles() {
 	} );
 
 	tiles = new TilesRenderer();
+	tiles.accelerateRaycast = false;
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {

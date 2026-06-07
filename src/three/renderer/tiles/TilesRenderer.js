@@ -14,7 +14,7 @@ import {
 	EventDispatcher,
 	Group,
 } from 'three';
-import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
+import { raycastTraverse } from './raycastTraverse.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
 import { estimateBytesUsed } from '../utils/MemoryUtils.js';
@@ -80,6 +80,16 @@ export class TilesRenderer extends TilesRendererBase {
 	constructor( ...args ) {
 
 		super( ...args );
+
+		/**
+		 * Whether to use the bounding-volume hierarchy to accelerate raycasting. When disabled,
+		 * all active tile geometry is tested directly. Useful for tilesets with inaccurate
+		 * bounding volumes (e.g. Google Photorealistic Tiles) where traversal may miss
+		 * geometry between bounding volumes.
+		 * @type {boolean}
+		 * @default true
+		 */
+		this.accelerateRaycast = true;
 
 		/**
 		 * The container `Group` for the 3D tiles. Add this to the three.js scene. The group
@@ -263,18 +273,34 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		if ( raycaster.firstHitOnly ) {
+		if ( this.accelerateRaycast ) {
 
-			const hit = raycastTraverseFirstHit( this, this.root, raycaster );
-			if ( hit ) {
-
-				intersects.push( hit );
-
-			}
+			raycastTraverse( this, this.root, raycaster, intersects );
 
 		} else {
 
-			raycastTraverse( this, this.root, raycaster, intersects );
+			const hits = raycaster.firstHitOnly ? [] : intersects;
+			for ( const tile of this.activeTiles ) {
+
+				const { scene } = tile.engineData;
+				if ( ! this.invokeOnePlugin( plugin => {
+
+					return plugin.raycastTile && plugin.raycastTile( tile, scene, raycaster, hits );
+
+				} ) ) {
+
+					raycaster.intersectObject( scene, true, hits );
+
+				}
+
+			}
+
+			if ( raycaster.firstHitOnly && hits.length > 0 ) {
+
+				hits.sort( ( a, b ) => a.distance - b.distance );
+				intersects.push( hits[ 0 ] );
+
+			}
 
 		}
 
