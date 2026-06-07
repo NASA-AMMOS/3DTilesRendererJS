@@ -166,7 +166,6 @@ function reinstantiateTiles() {
 					strokeWidth: 3 * renderer.getPixelRatio(),
 					iconScale: 0.9,
 				} );
-				annotationsPoints.glyphAtlas.dispatchEvent( { type: 'change' } );
 
 			} )
 			.catch( () => null )
