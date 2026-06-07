@@ -2,6 +2,8 @@ import { Camera, Vector3 } from 'three';
 
 export type GetAnnotationCallback = ( layerName: string, properties: Record<string, unknown> ) => boolean;
 
+export type SortAnnotationCallback = ( a: PointAnnotationItem, b: PointAnnotationItem ) => number;
+
 export type AnnotationsUpdateCallback = ( added: Set<PointAnnotationItem>, removed: Set<PointAnnotationItem> ) => void;
 
 export class AnnotationItem {
@@ -24,6 +26,7 @@ export interface MVTAnnotationsPluginOptions {
 
 	overlay: object;
 	camera?: Camera | null;
+	sortCallback?: SortAnnotationCallback;
 	filterAnnotation?: GetAnnotationCallback | null;
 	onAnnotationsUpdate?: AnnotationsUpdateCallback;
 	displayOccupancyGrid?: boolean;
