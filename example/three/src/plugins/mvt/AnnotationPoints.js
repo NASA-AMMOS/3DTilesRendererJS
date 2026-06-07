@@ -35,7 +35,6 @@ export class AnnotationPoints extends Points {
 
 
 		super( new BufferGeometry(), new GlyphMaterial() );
-		window.POINT = this;
 
 		this.getKind = getKind;
 

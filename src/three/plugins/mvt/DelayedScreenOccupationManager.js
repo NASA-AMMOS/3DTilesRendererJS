@@ -213,6 +213,12 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 		}
 
+		for ( const item of visible.values() ) {
+
+			item.visibleDuration = currTime - item.visibleTime;
+
+		}
+
 		if ( added.size > 0 || removed.size > 0 ) {
 
 			this.dispatchEvent( { type: 'change', added, removed } );

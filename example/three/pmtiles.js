@@ -9,8 +9,8 @@ import {
 	ImageOverlayPlugin,
 	PMTilesOverlay,
 	GeneratedSurfacePlugin,
+	MVTAnnotationsPlugin,
 } from '3d-tiles-renderer/plugins';
-import { MVTAnnotationsPlugin } from '../../src/three/plugins/mvt/MVTAnnotationsPlugin.js';
 import GUI from 'three/addons/libs/lil-gui.module.min.js';
 
 // Protomaps "Light" theme — from protomaps/basemaps flavors.ts

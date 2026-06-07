@@ -18,6 +18,7 @@ export class AnnotationItem {
 		this.properties = null;
 		this.ready = false;
 		this.lodLevel = 0;
+		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
 		this.visible = false;
 		this._refCount = 0;

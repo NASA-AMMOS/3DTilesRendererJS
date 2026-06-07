@@ -288,10 +288,15 @@ export class MVTAnnotationsPlugin {
 				// lod sort
 				return b.lodLevel - a.lodLevel;
 
-			} else if ( aVis && a.visibleTime !== b.visibleTime ) {
+			}
+
+			// if both items have been around for awhile (5 seconds) then just
+			// just fall through to other sort mechanisms.
+			const shortDuration = a.visibleDuration < 5000 || b.visibleDuration < 5000;
+			if ( aVis && shortDuration && a.visibleTime !== b.visibleTime ) {
 
 				// persistence sort for visual stability
-				return a.visibleTime < b.visibleTime ? 1 : - 1;
+				return a.visibleTime < b.visibleTime ? - 1 : 1;
 
 			} else if ( b._screenPos.y !== a._screenPos.y ) {
 
@@ -372,8 +377,6 @@ export class MVTAnnotationsPlugin {
 
 				// iterate over all the layers
 				for ( const layerName in vectorTile.layers ) {
-
-					if ( layerName === 'places' ) continue;
 
 					const layer = vectorTile.layers[ layerName ];
 					const extent = layer.extent;
