@@ -9,7 +9,6 @@ import {
 	ImageOverlayPlugin,
 	PMTilesOverlay,
 	GeneratedSurfacePlugin,
-	MVTAnnotationsPlugin,
 } from '3d-tiles-renderer/plugins';
 import GUI from 'three/addons/libs/lil-gui.module.min.js';
 
@@ -139,11 +138,6 @@ function init() {
 	tiles.registerPlugin( new ImageOverlayPlugin( {
 		overlays: [ overlay ],
 	} ) );
-	const annotationsPlugin = new MVTAnnotationsPlugin( {
-		overlay,
-		camera,
-	} );
-	tiles.registerPlugin( annotationsPlugin );
 
 	tiles.setCamera( camera );
 	tiles.group.rotation.x = - Math.PI / 2;
