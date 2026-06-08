@@ -2110,6 +2110,7 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 		}
 
+		// TODO: we should provide a better way to sort these
 		const item = { priority: - performance.now() };
 		const promise = this.downloadQueue.add( item, () => this.auth.fetch( url, options ) );
 		if ( options.signal ) {
