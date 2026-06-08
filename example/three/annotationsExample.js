@@ -108,7 +108,6 @@ const params = {
 
 let controls, scene, renderer, camera, tiles;
 let annotationsPoints = null;
-let cameraRegion;
 
 // raycasting
 const pointer = new Vector2();
