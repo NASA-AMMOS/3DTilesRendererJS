@@ -7,9 +7,10 @@ const getKey = ( x, y, l ) => {
 };
 
 // Ref-counts active requests per (x, y, level) tile and fires a 'toggle' event when a tile
-// transitions between inactive (ref === 0) and active (ref > 0). Tiles can also be marked as
-// "loading", which will lock an existing parent tile as active to ensure coverage until the
-// child has loaded
+// transitions between inactive and active. A tile is considered active when its own 'active'
+// ref is non-zero AND it has no in-flight loads of its own ('loading' === 0). Tiles can also
+// be marked as "loading", which will lock an existing parent tile as active to ensure coverage
+// until the child has loaded.
 export class HierarchicalLock extends EventDispatcher {
 
 	constructor() {
@@ -51,11 +52,12 @@ export class HierarchicalLock extends EventDispatcher {
 		}
 
 		const childLock = locks[ childKey ];
-		childLock.loadingCount ++;
+		childLock.loading ++;
+		this._checkToggle( childKey );
 
 		// Only lock the ancestor on the first markLoading call — subsequent concurrent
 		// loads for the same tile share the same ancestor hold
-		if ( childLock.loadingCount === 1 ) {
+		if ( childLock.loading === 1 ) {
 
 			while ( al > 0 ) {
 
@@ -64,7 +66,7 @@ export class HierarchicalLock extends EventDispatcher {
 				ay >>= 1;
 
 				const ancestorKey = getKey( ax, ay, al );
-				if ( ancestorKey in locks ) {
+				if ( ancestorKey in locks && locks[ ancestorKey ].dispatched ) {
 
 					// save the reference so we can unlock it later when load is finished
 					this._incrLock( ax, ay, al, true );
@@ -91,10 +93,11 @@ export class HierarchicalLock extends EventDispatcher {
 
 		}
 
-		childLock.loadingCount --;
+		childLock.loading --;
+		this._checkToggle( childKey );
 
 		// Release the ancestor only when the last concurrent load finishes
-		if ( childLock.loadingCount === 0 && childLock.lockedAncestor ) {
+		if ( childLock.loading === 0 && childLock.lockedAncestor ) {
 
 			const { x: ax, y: ay, level: al } = childLock.lockedAncestor;
 			this._incrLock( ax, ay, al, false );
@@ -111,7 +114,7 @@ export class HierarchicalLock extends EventDispatcher {
 	_tryDeleteLock( key ) {
 
 		const lock = this.locks[ key ];
-		if ( lock && lock.ref === 0 && lock.lockedAncestor === null && lock.loadingCount === 0 ) {
+		if ( lock && lock.active === 0 && lock.lockedAncestor === null && lock.loading === 0 ) {
 
 			delete this.locks[ key ];
 
@@ -125,11 +128,31 @@ export class HierarchicalLock extends EventDispatcher {
 			x,
 			y,
 			level,
-			ref: 0,
+			active: 0,
+			loading: 0,
 			dispatched: false,
 			lockedAncestor: null,
-			loadingCount: 0,
 		};
+
+	}
+
+	_checkToggle( key ) {
+
+		const { locks } = this;
+		const lock = locks[ key ];
+		if ( ! lock ) {
+
+			return;
+
+		}
+
+		const shouldShow = lock.loading === 0 && lock.active > 0;
+		if ( shouldShow !== lock.dispatched ) {
+
+			lock.dispatched = shouldShow;
+			this.dispatchEvent( { type: 'toggle', active: shouldShow, x: lock.x, y: lock.y, level: lock.level } );
+
+		}
 
 	}
 
@@ -145,21 +168,14 @@ export class HierarchicalLock extends EventDispatcher {
 		}
 
 		const lock = locks[ key ];
-		lock.ref += incr ? 1 : - 1;
-		if ( lock.ref < 0 ) {
+		lock.active += incr ? 1 : - 1;
+		if ( lock.active < 0 ) {
 
 			throw new Error( 'HierarchicalLock: ref count went negative — mismatched markActive/markInactive calls.' );
 
 		}
 
-		const active = lock.ref > 0;
-		if ( active !== lock.dispatched ) {
-
-			lock.dispatched = active;
-			this.dispatchEvent( { type: 'toggle', active, x, y, level } );
-
-		}
-
+		this._checkToggle( key );
 		this._tryDeleteLock( key );
 
 	}
