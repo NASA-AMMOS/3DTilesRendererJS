@@ -12,7 +12,7 @@ function tileWasInFrustumLastFrame( tile ) {
 	let current = tile;
 	while ( current ) {
 
-		if ( current.traversal.wasSetActive && ! current.internal.hasUnrenderableContent ) {
+		if ( current.traversal.wasSetActive ) {
 
 			return current.traversal.wasInFrustum;
 
