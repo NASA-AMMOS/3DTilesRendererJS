@@ -13,6 +13,8 @@ import {
 	MVTAnnotationsPlugin,
 	UpdateOnChangePlugin,
 } from '3d-tiles-renderer/plugins';
+import { LoadRegionPlugin } from '3d-tiles-renderer/three/plugins';
+import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -143,6 +145,18 @@ function reinstantiateTiles() {
 		camera,
 		filterAnnotation: ( layer, properties ) => properties.kind in KIND_TO_ICON,
 		onAnnotationsUpdate: ( added, removed ) => annotationsPoints.update( added, removed ),
+	} ) );
+
+	// use the camera cartographic region plugin to prevent particularly low-lod
+	// tiles from loading beneath the camera, causing navigation issues.
+	const cameraRegion = new CameraCartographicRegion( {
+		camera,
+		radius: 1500,
+		errorTarget: 5000,
+	} );
+
+	tiles.registerPlugin( new LoadRegionPlugin( {
+		regions: [ cameraRegion ],
 	} ) );
 
 	annotationsPoints = new AnnotationPoints( {

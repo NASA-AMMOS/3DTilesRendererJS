@@ -6,14 +6,23 @@ import { OBB } from '3d-tiles-renderer/three';
  * (`SphereRegion`, `RayRegion`, `OBBRegion`). Only tiles that intersect an active
  * region are loaded and refined. Regions marked as masks additionally prevent tiles
  * outside them from loading.
+ *
+ * @param {Object} [options]
+ * @param {Array<BaseRegion>} [options.regions=[]] Initial set of regions to register. Equivalent to calling `addRegion` for each entry.
  */
 export class LoadRegionPlugin {
 
-	constructor() {
+	constructor( options = {} ) {
+
+		const {
+			regions = [],
+		} = options;
 
 		this.name = 'LOAD_REGION_PLUGIN';
 		this.regions = [];
 		this.tiles = null;
+
+		regions.forEach( region => this.addRegion( region ) );
 
 	}
 
@@ -129,13 +138,6 @@ export class BaseRegion {
 
 	constructor( options = {} ) {
 
-		if ( typeof options === 'number' ) {
-
-			console.warn( 'LoadRegionPlugin: Region constructor has been changed to take options as an object.' );
-			options = { errorTarget: options };
-
-		}
-
 		const {
 			errorTarget = 10,
 			mask = false,
@@ -178,16 +180,6 @@ export class SphereRegion extends BaseRegion {
 
 	constructor( options = {} ) {
 
-		if ( typeof options === 'number' ) {
-
-			console.warn( 'SphereRegion: Region constructor has been changed to take options as an object.' );
-			options = {
-				errorTarget: arguments[ 0 ],
-				sphere: arguments[ 1 ],
-			};
-
-		}
-
 		const { sphere = new Sphere() } = options;
 
 		super( options );
@@ -215,16 +207,6 @@ export class RayRegion extends BaseRegion {
 
 	constructor( options = {} ) {
 
-		if ( typeof options === 'number' ) {
-
-			console.warn( 'RayRegion: Region constructor has been changed to take options as an object.' );
-			options = {
-				errorTarget: arguments[ 0 ],
-				ray: arguments[ 1 ],
-			};
-
-		}
-
 		const { ray = new Ray() } = options;
 
 		super( options );
@@ -251,16 +233,6 @@ export class RayRegion extends BaseRegion {
 export class OBBRegion extends BaseRegion {
 
 	constructor( options = {} ) {
-
-		if ( typeof options === 'number' ) {
-
-			console.warn( 'RayRegion: Region constructor has been changed to take options as an object.' );
-			options = {
-				errorTarget: arguments[ 0 ],
-				obb: arguments[ 1 ],
-			};
-
-		}
 
 		const { obb = new OBB() } = options;
 
