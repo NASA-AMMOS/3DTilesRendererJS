@@ -73,7 +73,11 @@ export class TiledRegionImageSource extends RegionImageSource {
 		// lock tiles for the requested level
 		await this._markImages( range, level, false );
 
-		//
+		if ( signal && signal.aborted ) {
+
+			return null;
+
+		}
 
 		// Fast path: if the range maps to exactly one tile with matching bounds, use its
 		// texture directly without compositing into an intermediate canvas to save memory.

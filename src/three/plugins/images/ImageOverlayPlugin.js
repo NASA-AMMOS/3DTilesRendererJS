@@ -1428,7 +1428,15 @@ export class ImageOverlay {
 
 		}
 
-		return this.downloadQueue.add( { priority: - performance.now() }, () => fetch( url, options ) );
+		const item = { priority: - performance.now() };
+		const promise = this.downloadQueue.add( item, () => fetch( url, options ) );
+		if ( options.signal ) {
+
+			options.signal.addEventListener( 'abort', () => this.downloadQueue.remove( item ), { once: true } );
+
+		}
+
+		return promise;
 
 	}
 
@@ -2102,7 +2110,16 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 		}
 
-		return this.downloadQueue.add( { priority: - performance.now() }, () => this.auth.fetch( url, options ) );
+		// TODO: we should provide a better way to sort these
+		const item = { priority: - performance.now() };
+		const promise = this.downloadQueue.add( item, () => this.auth.fetch( url, options ) );
+		if ( options.signal ) {
+
+			options.signal.addEventListener( 'abort', () => this.downloadQueue.remove( item ), { once: true } );
+
+		}
+
+		return promise;
 
 	}
 
@@ -2176,7 +2193,15 @@ export class GoogleMapsOverlay extends TiledImageOverlay {
 
 		}
 
-		return this.downloadQueue.add( { priority: - performance.now() }, () => this.auth.fetch( url, options ) );
+		const item = { priority: - performance.now() };
+		const promise = this.downloadQueue.add( item, () => this.auth.fetch( url, options ) );
+		if ( options.signal ) {
+
+			options.signal.addEventListener( 'abort', () => this.downloadQueue.remove( item ), { once: true } );
+
+		}
+
+		return promise;
 
 	}
 
