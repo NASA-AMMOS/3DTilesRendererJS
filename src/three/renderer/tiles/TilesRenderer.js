@@ -935,6 +935,36 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	setTileActive( tile, active ) {
+
+		const scene = tile.engineData.scene;
+		const group = this.group;
+
+		if ( scene ) {
+
+			// update matrices for the tile scene
+			scene.traverse( c => {
+
+				c.updateMatrix();
+				c.matrixWorld.copy( c.matrix );
+				if ( c.parent ) {
+
+					c.matrixWorld.premultiply( c.parent.matrixWorld );
+
+				} else {
+
+					c.matrixWorld.premultiply( group.matrixWorld );
+
+				}
+
+			} );
+
+		}
+
+		super.setTileActive( tile, active );
+
+	}
+
 	setTileVisible( tile, visible ) {
 
 		const scene = tile.engineData.scene;
@@ -945,7 +975,6 @@ export class TilesRenderer extends TilesRendererBase {
 			if ( scene ) {
 
 				group.add( scene );
-				scene.updateMatrixWorld( true );
 
 			}
 
