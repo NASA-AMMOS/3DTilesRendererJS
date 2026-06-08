@@ -52,6 +52,10 @@ function resetFrameState( tile, renderer ) {
 
 	if ( tile.traversal.lastFrameVisited !== renderer.frameCount ) {
 
+		tile.traversal.wasInFrustum = tile.traversal.inFrustum;
+		tile.traversal.wasSetActive = tile.traversal.active;
+		tile.traversal.wasSetVisible = tile.traversal.visible;
+		tile.traversal.usedLastFrame = tile.traversal.used;
 		tile.traversal.lastFrameVisited = renderer.frameCount;
 		tile.traversal.used = false;
 		tile.traversal.inFrustum = false;
@@ -438,20 +442,27 @@ function toggleTiles( tile, renderer ) {
 	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed ) {
 
-		// any internal tileset and additive tile must be marked as active and loaded
-		if ( tile.internal.hasUnrenderableContent || ( tile.internal.hasRenderableContent && tile.refine === 'ADD' ) ) {
+		// any internal tileset loaded and marked as being used so we don't unload them
+		if ( tile.internal.hasUnrenderableContent ) {
+
+			renderer.markTileUsed( tile );
+			renderer.queueTileForDownload( tile );
+
+		}
+
+		// ADD tiles are part of the display frontier alongside their children
+		if ( tile.internal.hasRenderableContent && tile.refine === 'ADD' ) {
 
 			tile.traversal.active = true;
 
 		}
 
 		// queue any tiles to load that we need to, and unmark any unloaded or non visible tiles as "active"
-		// TODO: it may be more simple to track a separate variable than "active" here
 		if ( ( tile.traversal.active || tile.traversal.kicked ) && tile.internal.hasContent ) {
 
 			renderer.markTileUsed( tile );
 
-			if ( tile.internal.hasUnrenderableContent || tile.traversal.allUsedChildrenProcessed ) {
+			if ( tile.traversal.allUsedChildrenProcessed ) {
 
 				renderer.queueTileForDownload( tile );
 
@@ -560,11 +571,6 @@ function toggleTiles( tile, renderer ) {
 			}
 
 		}
-
-		// save the current status for the next frame
-		tile.traversal.wasSetActive = setActive;
-		tile.traversal.wasSetVisible = setVisible;
-		tile.traversal.usedLastFrame = isUsed;
 
 		// TODO: clean this up since "traversal.active" and "traversal.visible" fields are
 		// overloaded and overused above.
