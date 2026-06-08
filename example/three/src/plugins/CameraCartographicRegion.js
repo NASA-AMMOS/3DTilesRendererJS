@@ -1,4 +1,5 @@
-import { Vector3 } from 'three';
+/** @import { Camera } from 'three' */
+import { Vector3, Matrix4, MathUtils } from 'three';
 import { OBB } from '3d-tiles-renderer/three';
 import { BaseRegion } from '3d-tiles-renderer/three/plugins';
 
@@ -9,13 +10,15 @@ const _east = /* @__PURE__ */ new Vector3();
 const _north = /* @__PURE__ */ new Vector3();
 const _up = /* @__PURE__ */ new Vector3();
 const _center = /* @__PURE__ */ new Vector3();
-const _obb = /* @__PURE__ */ new OBB();
+
+const PILLAR_HEIGHT = 3000;
 
 /**
- * A load region shaped as a vertical pillar below the camera, aligned to the geodetic nadir
+ * A load region shaped as a vertical pillar below the camera, aligned to the globe gravity
  * direction derived from the tile renderer's ellipsoid. Intended for use with LoadRegionPlugin
- * to force high-quality tile loading directly below the camera, preventing coarse LoD tiles
- * from producing large height discontinuities under the camera.
+ * to force higher-quality tile loading directly below the camera, preventing coarse LoD tiles
+ * from producing large height discontinuities under the camera (e.g. with Google Photorealistic
+ * Tiles)
  *
  * @param {Object} [options]
  * @param {Camera} options.camera The camera whose position drives the pillar placement.
@@ -37,48 +40,80 @@ export class CameraCartographicRegion extends BaseRegion {
 		this.camera = camera;
 		this.radius = radius;
 
+		this.obb = new OBB();
+		this._cameraMatrix = new Matrix4();
+		this._localCameraPos = new Vector3();
+		this._localUp = new Vector3();
+
 	}
 
-	// calculateDistance( boundingVolume, tile ) {
+	calculateDistance( boundingVolume ) {
 
-	// 	const { group } = tile.internal.renderer;
-	// 	this.camera.getWorldPosition( _cameraWorld );
-	// 	_cameraLocal.copy( _cameraWorld ).applyMatrix4( group.matrixWorldInverse );
-	// 	return boundingVolume.distanceToPoint( _cameraLocal );
+		return boundingVolume.distanceToPoint( this._localCameraPos );
 
-	// }
+	}
 
-	intersectsTile( boundingVolume, tile ) {
+	calculateError( tile, tilesRenderer ) {
 
-		const { camera, radius } = this;
-		const depth = 1e7;
-		const { ellipsoid, group } = tile.internal.renderer;
+		// calculate the error so it drops off with distance to enable progressive loading
+		this._updateOBB( tilesRenderer );
 
-		// Transform camera world position into the tile renderer's local (ellipsoid) space
-		camera.getWorldPosition( _cameraWorld );
-		_cameraLocal.copy( _cameraWorld ).applyMatrix4( group.matrixWorldInverse );
+		const boundingVolume = tile.engineData.boundingVolume;
+		const dist = boundingVolume.distanceToPoint( this._localCameraPos );
+		const t = Math.min( dist / this.radius, 1 );
 
-		// Get the geodetic ENU axes at the camera's position on the ellipsoid
-		ellipsoid.getPositionToCartographic( _cameraLocal, _cartographic );
-		ellipsoid.getEastNorthUpAxes( _cartographic.lat, _cartographic.lon, _east, _north, _up );
+		const minTarget = tile.geometricError - this.errorTarget + tilesRenderer.errorTarget;
+		const maxTarget = tile.geometricError - this.errorTarget * 5 + tilesRenderer.errorTarget;
+		return MathUtils.lerp( minTarget, maxTarget, t );
 
-		// Pillar center: camera local position shifted half-depth downward (nadir = -up)
-		_center.copy( _cameraLocal ).addScaledVector( _up, - depth / 2 );
+	}
 
-		// OBB transform: east/north/nadir as X/Y/Z column axes
-		_obb.transform.set(
-			_east.x, _north.x, - _up.x, _center.x,
-			_east.y, _north.y, - _up.y, _center.y,
-			_east.z, _north.z, - _up.z, _center.z,
-			0, 0, 0, 1,
-		);
+	intersectsTile( boundingVolume, tile, tilesRenderer ) {
 
-		_obb.box.min.set( - radius, - radius, - depth / 2 );
-		_obb.box.max.set( radius, radius, depth / 2 );
+		// update the obb and check the intersection with the tile bounding volume
+		this._updateOBB( tilesRenderer );
 
-		_obb.update();
+		const { obb } = this;
+		return boundingVolume.intersectsOBB( obb );
 
-		return boundingVolume.intersectsOBB( _obb );
+	}
+
+	_updateOBB( tilesRenderer ) {
+
+		// update the OBB to live below the camera position toward the globe surface
+		const { camera, radius, obb } = this;
+		if ( ! camera.matrixWorld.equals( this._cameraMatrix ) ) {
+
+			const { ellipsoid, group } = tilesRenderer;
+
+			// Transform camera world position into the tile renderer's local (ellipsoid) space
+			camera.getWorldPosition( _cameraWorld );
+			_cameraLocal.copy( _cameraWorld ).applyMatrix4( group.matrixWorldInverse );
+			this._localCameraPos.copy( _cameraLocal );
+
+			// Get the geodetic ENU axes at the camera's position on the ellipsoid
+			ellipsoid.getPositionToCartographic( _cameraLocal, _cartographic );
+			ellipsoid.getEastNorthUpAxes( _cartographic.lat, _cartographic.lon, _east, _north, _up );
+			this._localUp.copy( _up );
+
+			// Pillar center: camera local position shifted half-depth downward (nadir = -up)
+			_center.copy( _cameraLocal ).addScaledVector( _up, - PILLAR_HEIGHT / 2 );
+
+			// OBB transform: east/north/nadir as X/Y/Z column axes
+			obb.transform.set(
+				_east.x, _north.x, - _up.x, _center.x,
+				_east.y, _north.y, - _up.y, _center.y,
+				_east.z, _north.z, - _up.z, _center.z,
+				0, 0, 0, 1,
+			);
+
+			obb.box.min.set( - radius, - radius, - PILLAR_HEIGHT / 2 );
+			obb.box.max.set( radius, radius, PILLAR_HEIGHT / 2 );
+
+			obb.update();
+			this._cameraMatrix.copy( camera.matrixWorld );
+
+		}
 
 	}
 

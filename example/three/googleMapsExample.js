@@ -15,6 +15,8 @@ import {
 	BatchedTilesPlugin,
 	CesiumIonAuthPlugin,
 } from '3d-tiles-renderer/plugins';
+import { LoadRegionPlugin } from '3d-tiles-renderer/three/plugins';
+import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -29,6 +31,7 @@ import { TopoLinesPlugin } from './src/plugins/topolines/TopoLinesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
+let cameraRegion;
 
 const params = {
 
@@ -43,7 +46,6 @@ const params = {
 	useFadePlugin: true,
 	displayTopoLines: false,
 	errorTarget: 20,
-
 	reload: reinstantiateTiles,
 
 };
@@ -61,7 +63,7 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new TilesRenderer();
+	window.TILES = tiles = new TilesRenderer();
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
@@ -89,7 +91,17 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles.group.rotation.x = - Math.PI / 2;
+	cameraRegion = new CameraCartographicRegion( {
+		camera: transition.perspectiveCamera,
+		radius: 1500,
+		errorTarget: 5000,
+	} );
+
+	const loadRegionPlugin = new LoadRegionPlugin();
+	tiles.registerPlugin( loadRegionPlugin );
+	loadRegionPlugin.addRegion( cameraRegion );
+
+	// tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
 
 	tiles.setResolutionFromRenderer( transition.camera, renderer );
@@ -348,6 +360,9 @@ function animate() {
 	const plugin = tiles.getPluginByName( 'TOPO_LINES_PLUGIN' );
 	plugin.topoOpacity = params.displayTopoLines ? 0.5 : 0;
 	plugin.cartoOpacity = params.displayTopoLines ? 0.5 : 0;
+
+	// update camera region
+	cameraRegion.camera = camera;
 
 	// update tiles
 	camera.updateMatrixWorld();
