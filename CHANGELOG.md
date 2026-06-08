@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Add "getResolution".
 - Add "ValidateTilesetPlugin".
 - TilesRenderer: Add "accelerateRaycast" toggle for malformed data sets.
+- LoadRegionPlugin: Add a "regions" constructor option.
 
 ### Changed
 - Deprecated APIs and fields have been removed.
