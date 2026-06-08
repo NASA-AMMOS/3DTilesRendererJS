@@ -52,6 +52,10 @@ function resetFrameState( tile, renderer ) {
 
 	if ( tile.traversal.lastFrameVisited !== renderer.frameCount ) {
 
+		tile.traversal.wasInFrustum = tile.traversal.inFrustum;
+		tile.traversal.wasSetActive = tile.traversal.active;
+		tile.traversal.wasSetVisible = tile.traversal.visible;
+		tile.traversal.usedLastFrame = tile.traversal.used;
 		tile.traversal.lastFrameVisited = renderer.frameCount;
 		tile.traversal.used = false;
 		tile.traversal.inFrustum = false;
@@ -560,11 +564,6 @@ function toggleTiles( tile, renderer ) {
 			}
 
 		}
-
-		// save the current status for the next frame
-		tile.traversal.wasSetActive = setActive;
-		tile.traversal.wasSetVisible = setVisible;
-		tile.traversal.usedLastFrame = isUsed;
 
 		// TODO: clean this up since "traversal.active" and "traversal.visible" fields are
 		// overloaded and overused above.

@@ -1189,6 +1189,7 @@ export class TilesRendererBase {
 			distanceFromCamera: Infinity,
 			error: Infinity,
 			inFrustum: false,
+			wasInFrustum: false,
 			isLeaf: false,
 			used: false,
 			usedLastFrame: false,
