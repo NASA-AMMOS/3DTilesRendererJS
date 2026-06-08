@@ -32,15 +32,6 @@ const _fromQuat = /* @__PURE__ */ new Quaternion();
 const _toQuat = /* @__PURE__ */ new Quaternion();
 const _scale = /* @__PURE__ */ new Vector3();
 
-function onUpdateBefore() {
-
-	const fadeManager = this._fadeManager;
-
-	// store the fade count before the update so we can check whether fading started or stopped
-	this._fadingBefore = fadeManager.fadeCount;
-
-}
-
 function onUpdateAfter() {
 
 	const fadeManager = this._fadeManager;
@@ -236,11 +227,9 @@ export class TilesFadePlugin {
 
 		};
 
-		this._onTileVisibilityChange = ( { tile, visible } ) => {
+		this._onTileVisibilityChange = ( { tile } ) => {
 
-			// this function gets fired _after_ all set visible callbacks including the batched meshes
-
-			// revert the scene and fade to the initial state when toggling
+			// reset batched mesh fade state when tile visibility changes
 			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
 				batchedMesh.setFadeAt( id, 0, 0 );
@@ -253,7 +242,8 @@ export class TilesFadePlugin {
 
 		this._onUpdateBefore = () => {
 
-			onUpdateBefore.call( this );
+			// store the fade count before the update so we can check whether fading started or stopped
+			this._fadingBefore = this._fadeManager.fadeCount;
 
 		};
 
