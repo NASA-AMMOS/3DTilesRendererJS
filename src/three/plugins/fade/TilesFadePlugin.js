@@ -110,16 +110,10 @@ function onUpdateAfter() {
 
 		// prevent faded tiles from being unloaded
 		const scene = tile.engineData.scene;
-		const isFadingOut = fadeManager.isFadingOut( tile );
 		tiles.markTileUsed( tile );
 		if ( scene ) {
 
 			fadeMaterialManager.setFade( scene, fadeIn, fadeOut );
-			if ( isFadingOut ) {
-
-				scene.visible = true;
-
-			}
 
 		}
 
@@ -247,13 +241,6 @@ export class TilesFadePlugin {
 			// this function gets fired _after_ all set visible callbacks including the batched meshes
 
 			// revert the scene and fade to the initial state when toggling
-			const scene = tile.engineData.scene;
-			if ( scene ) {
-
-				scene.visible = true;
-
-			}
-
 			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
 				batchedMesh.setFadeAt( id, 0, 0 );
@@ -486,11 +473,6 @@ export class TilesFadePlugin {
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			this._fadeManager.deleteObject( tile );
-			if ( scene ) {
-
-				scene.visible = true; // TODO
-
-			}
 
 		} );
 
