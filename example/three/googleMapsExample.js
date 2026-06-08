@@ -46,6 +46,7 @@ const params = {
 	useFadePlugin: true,
 	displayTopoLines: false,
 	errorTarget: 20,
+
 	reload: reinstantiateTiles,
 
 };
@@ -63,7 +64,7 @@ function reinstantiateTiles() {
 
 	}
 
-	window.TILES = tiles = new TilesRenderer();
+	tiles = new TilesRenderer();
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
