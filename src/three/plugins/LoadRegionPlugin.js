@@ -6,14 +6,23 @@ import { OBB } from '3d-tiles-renderer/three';
  * (`SphereRegion`, `RayRegion`, `OBBRegion`). Only tiles that intersect an active
  * region are loaded and refined. Regions marked as masks additionally prevent tiles
  * outside them from loading.
+ *
+ * @param {Object} [options]
+ * @param {Array<BaseRegion>} [options.regions=[]] Initial set of regions to register. Equivalent to calling `addRegion` for each entry.
  */
 export class LoadRegionPlugin {
 
-	constructor() {
+	constructor( options = {} ) {
+
+		const {
+			regions = [],
+		} = options;
 
 		this.name = 'LOAD_REGION_PLUGIN';
 		this.regions = [];
 		this.tiles = null;
+
+		regions.forEach( region => this.addRegion( region ) );
 
 	}
 

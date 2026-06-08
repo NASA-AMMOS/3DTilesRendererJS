@@ -75,6 +75,18 @@ function reinstantiateTiles() {
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
 
+	// use the camera cartographic region plugin to prevent particularly low-lod
+	// tiles from loading beneath the camera, causing navigation issues.
+	cameraRegion = new CameraCartographicRegion( {
+		camera: transition.perspectiveCamera,
+		radius: 1500,
+		errorTarget: 5000,
+	} );
+
+	tiles.registerPlugin( new LoadRegionPlugin( {
+		regions: [ cameraRegion ],
+	} ) );
+
 	if ( params.useFadePlugin ) {
 
 		tiles.registerPlugin( new TilesFadePlugin() );
@@ -91,17 +103,7 @@ function reinstantiateTiles() {
 
 	}
 
-	cameraRegion = new CameraCartographicRegion( {
-		camera: transition.perspectiveCamera,
-		radius: 1500,
-		errorTarget: 5000,
-	} );
-
-	const loadRegionPlugin = new LoadRegionPlugin();
-	tiles.registerPlugin( loadRegionPlugin );
-	loadRegionPlugin.addRegion( cameraRegion );
-
-	// tiles.group.rotation.x = - Math.PI / 2;
+	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
 
 	tiles.setResolutionFromRenderer( transition.camera, renderer );
