@@ -229,6 +229,10 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 		return this._draw( key, ( ctx, x, y, w, h ) => {
 
+			// TODO: this draw is resulting in alpha blending white outline
+			// We might be able to use "source-over" and "destination-in" with "globalCompositeOperation"
+			// to fix this.
+
 			const iw = w * iconScale;
 			const ih = h * iconScale;
 			const scale = Math.min( iw / vbW, ih / vbH );
