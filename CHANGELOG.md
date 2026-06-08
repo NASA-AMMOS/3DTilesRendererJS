@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImageOverlayPlugin: Fix plugins not tracking tile visibility correctly.
 - Fix "disposeTile" events firing for internal tileset json tiles
 - Export INDEXED_COLOR for DebugTilesPlugin
+- TilesFadePlugin: Remove "displayActiveTiles" hack so tiles renderer settings are respected.
 
 ## [0.4.27] - 2026.05.25
 ### Fixed
