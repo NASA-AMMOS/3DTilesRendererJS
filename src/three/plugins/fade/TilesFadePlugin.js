@@ -51,31 +51,30 @@ function onUpdateAfter() {
 
 	}
 
-	// update the visibility of tiles based on visibility since we must use
-	// the active tiles for rendering fade
-	if ( ! displayActiveTiles ) {
+	// update the visibility of tiles based on whether they are in the frustum. When
+	// displayActiveTiles is enabled all active tiles are shown regardless of frustum state,
+	// otherwise only in-frustum tiles are shown. This must run every frame to correct stale
+	// scene.visible values left by the previous frame's correction.
+	tiles.visibleTiles.forEach( t => {
 
-		tiles.visibleTiles.forEach( t => {
+		// if a tile is fading out then it may not be traversed and thus will not have
+		// the frustum flag set correctly.
+		const targetVisible = displayActiveTiles || t.traversal.inFrustum;
+		const scene = t.engineData.scene;
+		if ( scene ) {
 
-			// if a tile is fading out then it may not be traversed and thus will not have
-			// the frustum flag set correctly.
-			const scene = t.engineData.scene;
-			if ( scene ) {
+			scene.visible = targetVisible;
 
-				scene.visible = t.traversal.inFrustum;
+		}
 
-			}
+		this.forEachBatchIds( t, ( id, batchedMesh, plugin ) => {
 
-			this.forEachBatchIds( t, ( id, batchedMesh, plugin ) => {
-
-				batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
-				plugin.batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
-
-			} );
+			batchedMesh.setVisibleAt( id, targetVisible );
+			plugin.batchedMesh.setVisibleAt( id, targetVisible );
 
 		} );
 
-	}
+	} );
 
 	if ( maximumFadeOutTiles < this._fadingOutCount ) {
 
