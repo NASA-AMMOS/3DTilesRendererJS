@@ -178,7 +178,7 @@ export class TilesFadePlugin {
 
 		options = {
 
-			maximumFadeOutTiles: Infinity,
+			maximumFadeOutTiles: 50,
 			fadeRootTiles: false,
 			fadeDuration: 250,
 			...options,
