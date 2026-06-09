@@ -101,7 +101,6 @@ const KIND_TO_ICON = {
 
 const params = {
 
-	errorTarget: 20,
 	occupancyGrid: false,
 
 };
@@ -309,8 +308,6 @@ function animate() {
 	controls.update();
 
 	// tiles update
-	tiles.errorTarget = params.errorTarget;
-
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 	camera.updateMatrixWorld();
