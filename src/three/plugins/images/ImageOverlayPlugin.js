@@ -1025,15 +1025,20 @@ export class ImageOverlayPlugin {
 				range = overlay.projection.toNormalizedRange( range );
 
 				info.range = range;
-				overlay.lockTexture( range ).catch( err => {
+				const lockResult = overlay.lockTexture( range );
+				if ( lockResult instanceof Promise ) {
 
-					if ( err.name !== 'AbortError' ) {
+					lockResult.catch( err => {
 
-						throw err;
+						if ( err.name !== 'AbortError' ) {
 
-					}
+							throw err;
 
-				} );
+						}
+
+					} );
+
+				}
 
 			}
 
@@ -1125,15 +1130,20 @@ export class ImageOverlayPlugin {
 		if ( info.range === null ) {
 
 			info.range = range;
-			overlay.lockTexture( range ).catch( err => {
+			const lockResult = overlay.lockTexture( range );
+			if ( lockResult instanceof Promise ) {
 
-				if ( err.name !== 'AbortError' ) {
+				lockResult.catch( err => {
 
-					throw err;
+					if ( err.name !== 'AbortError' ) {
 
-				}
+						throw err;
 
-			} );
+					}
+
+				} );
+
+			}
 
 		}
 
@@ -1247,15 +1257,21 @@ export class ImageOverlayPlugin {
 
 			failed.forEach( ( { tile, overlay, info } ) => {
 
-				overlay.lockTexture( info.range ).catch( err => {
+				const lockResult = overlay.lockTexture( info.range );
+				if ( lockResult instanceof Promise ) {
 
-					if ( err.name !== 'AbortError' ) {
+					lockResult.catch( err => {
 
-						throw err;
+						if ( err.name !== 'AbortError' ) {
 
-					}
+							throw err;
 
-				} );
+						}
+
+					} );
+
+				}
+
 				this._fetchTileOverlayTexture( tile, overlay, info )
 					.then( () => {
 
