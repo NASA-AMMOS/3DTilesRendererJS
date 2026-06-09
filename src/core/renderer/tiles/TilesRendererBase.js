@@ -1064,6 +1064,10 @@ export class TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		// TODO:
+		// The way this is structured means that plugin dispose tile functions will be fired first, then
+		// visibility changes. This ordering is not intuitive.
+
 		// Need to mirror the "traverseFunctions" behavior for empty tiles (eg internal tile sets)
 		if ( tile.traversal.visible ) {
 
