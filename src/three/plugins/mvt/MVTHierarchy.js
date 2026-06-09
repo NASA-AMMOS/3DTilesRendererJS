@@ -4,7 +4,7 @@ const UNLOADED = 0;
 const LOADING = 1;
 const LOADED = 2;
 const FAILED = 3;
-const TIMER_DURATION = 250;
+const TIMER_DURATION = 150;
 
 function getChildKey( x, y ) {
 
@@ -150,13 +150,25 @@ export class MVTHierarchy extends EventDispatcher {
 
 				}
 
-			} else {
+			} else if ( tile.visible ) {
 
 				tile.hideTimer += dt;
 				tile.hideTimer = Math.min( tile.hideTimer, TIMER_DURATION );
 				if ( tile.hideTimer === TIMER_DURATION ) {
 
 					tile.showTimer = 0;
+					tile.hideTimer = 0;
+
+					// Release the content lock for any state that called lock(), and reset synchronously
+					// before any async abort callbacks can fire
+					if ( tile.loadingState !== UNLOADED ) {
+
+						// TODO: this is being done here because it's currently difficult to determine
+						// whether an item was cancelled via the abort signal, download queue, or failed.
+						scope.contentCache.release( tile.x, tile.y, tile.level );
+						tile.loadingState = UNLOADED;
+
+					}
 
 				}
 
@@ -175,16 +187,23 @@ export class MVTHierarchy extends EventDispatcher {
 				if ( result instanceof Promise ) {
 
 					result
-						.then( () => {
+						.then( res => {
 
-							// TODO
-							if ( tile.loadingState === LOADING ) tile.loadingState = LOADED;
+							if ( res === null ) {
+
+								// TODO: we need to adjust data cache to be more clear
+								tile.loadingState = UNLOADED;
+
+							} else {
+
+								tile.loadingState = LOADED;
+
+							}
 
 						} )
 						.catch( () => {
 
-							// TODO
-							if ( tile.loadingState === LOADING ) tile.loadingState = FAILED;
+							tile.loadingState = FAILED;
 
 						} );
 
@@ -212,6 +231,29 @@ export class MVTHierarchy extends EventDispatcher {
 
 			}
 
+			// showTimer > 0 keeps tiles with in-flight loads from being pruned mid-hysteresis
+			const { children } = tile;
+			let tileRequired = tile.visible || tile.target > 0 || tile.showTimer > 0;
+			let childrenNeedCoverage = false;
+
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+				const child = children[ i ];
+				if ( child !== null ) {
+
+					tileRequired = traverse( child, force ) || tileRequired;
+					childrenNeedCoverage = childrenNeedCoverage || ( child.target > 0 && ! child.visible );
+
+				}
+
+			}
+
+			if ( childrenNeedCoverage && tile.loadingState === LOADED ) {
+
+				setVisible = true;
+
+			}
+
 			if ( setVisible !== tile.visible ) {
 
 				tile.visible = setVisible;
@@ -223,21 +265,6 @@ export class MVTHierarchy extends EventDispatcher {
 					y: tile.y,
 					level: tile.level,
 				} );
-
-			}
-
-			// showTimer > 0 keeps tiles with in-flight loads from being pruned mid-hysteresis
-			const { children } = tile;
-			let tileRequired = tile.visible || tile.target > 0 || tile.showTimer > 0;
-
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-				const child = children[ i ];
-				if ( child !== null ) {
-
-					tileRequired = traverse( child, force ) || tileRequired;
-
-				}
 
 			}
 
@@ -289,17 +316,6 @@ export class MVTHierarchy extends EventDispatcher {
 		if ( ! ( key in cache ) ) {
 
 			throw new Error();
-
-		}
-
-		// Release the content lock for any state that called lock(), and reset synchronously
-		// before any async abort callbacks can fire
-		if ( tile.loadingState !== UNLOADED ) {
-
-			// TODO: this is being done here because it's currently difficult to determine
-			// whether an item was cancelled via the abort signal, download queue, or failed.
-			this.contentCache.release( x, y, level );
-			tile.loadingState = UNLOADED;
 
 		}
 

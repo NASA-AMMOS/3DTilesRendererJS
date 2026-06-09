@@ -513,8 +513,6 @@ export class MVTAnnotationsPlugin {
 
 		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
-			console.log( tile.internal.depth, x, y, l )
-
 			this.hierarchy.setTargetState( x, y, l, true );
 
 		} );
