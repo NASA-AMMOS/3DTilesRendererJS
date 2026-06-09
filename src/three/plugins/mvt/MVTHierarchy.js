@@ -33,7 +33,7 @@ class MVTTile {
 
 		this.loadingState = UNLOADED;
 		this.visible = false;
-		this.target = false;
+		this.target = 0;
 		this.showTimer = 0;
 		this.hideTimer = 0;
 
@@ -110,8 +110,6 @@ export class MVTHierarchy extends EventDispatcher {
 		super();
 
 		this.root = new MVTTile();
-		this.toPrune = new Set();
-		this.toResolve = new Set();
 		this.cache = {
 			[ this.root.getKey() ]: this.root,
 		};
@@ -136,7 +134,8 @@ export class MVTHierarchy extends EventDispatcher {
 
 		function traverse( tile, force = false ) {
 
-			if ( tile.target ) {
+			// increment / decrement timers for determining whether to hide / show content
+			if ( tile.target > 0 ) {
 
 				tile.showTimer += dt;
 				tile.showTimer = Math.min( tile.showTimer, TIMER );
@@ -175,9 +174,6 @@ export class MVTHierarchy extends EventDispatcher {
 
 					force = true;
 
-
-					// TODO: trigger a download after a delay?
-
 				}
 
 			}
@@ -185,8 +181,6 @@ export class MVTHierarchy extends EventDispatcher {
 			if ( setVisible !== tile.visible ) {
 
 				tile.visible = setVisible;
-
-				// TODO: dispose here? Dispose after a delay?
 
 				scope.dispatchEvent( {
 					type: 'toggle',
@@ -198,9 +192,9 @@ export class MVTHierarchy extends EventDispatcher {
 
 			}
 
-			// iterate over all children
+			// showTimer > 0 keeps tiles with in-flight loads from being pruned mid-hysteresis
 			const { children } = tile;
-			let tileRequired = tile.visible || tile.target;
+			let tileRequired = tile.visible || tile.target > 0 || tile.showTimer > 0;
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 				const child = children[ i ];
@@ -212,29 +206,37 @@ export class MVTHierarchy extends EventDispatcher {
 
 			}
 
-			// mark this tile to prune if it's not necessary
-			if ( ! tileRequired ) {
+			if ( tile !== scope.root && ! tileRequired ) {
 
 				_toPrune.add( tile );
 
 			}
 
-			// if this tile is required because a child is required or the tile is visible
 			return tileRequired;
 
 		}
 
 	}
 
-	setLoadingState( x, y, l, state ) {
-
-		// initialize the loading state
-
-	}
-
 	setTargetState( x, y, l, target ) {
 
-		// set target reference count
+		if ( target ) {
+
+			const tile = this._ensureTile( x, y, l );
+			tile.target ++;
+
+		} else {
+
+			const tile = this.cache[ getKey( x, y, l ) ];
+			if ( ! tile || tile.target <= 0 ) {
+
+				throw new Error( 'MVTHierarchy: target ref count went negative — mismatched calls.' );
+
+			}
+
+			tile.target --;
+
+		}
 
 	}
 
