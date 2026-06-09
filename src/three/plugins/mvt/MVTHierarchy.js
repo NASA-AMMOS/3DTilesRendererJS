@@ -153,14 +153,48 @@ export class MVTHierarchy extends EventDispatcher {
 
 					tile.showTimer = 0;
 
+					if ( tile.loadingState !== UNLOADED ) {
+
+						scope.contentCache.release( tile.x, tile.y, tile.level );
+						tile.loadingState = UNLOADED;
+
+					}
+
 				}
 
 			}
 
-			// TODO: only consider a tile a target after a
-			// certain amount of time? Same for after hiding?
-			// Use a timer on the tile to count up and down.
-			const isTargetTile = tile.showTimer === TIMER;
+			// Active after show delay; stays active through the hide delay so visible tiles don't flash
+			const isTargetTile = tile.target > 0 ? tile.showTimer >= TIMER : tile.showTimer > 0;
+
+			// Kick off load once the show timer commits to this tile
+			if ( isTargetTile && tile.loadingState === UNLOADED ) {
+
+				tile.loadingState = LOADING;
+
+				const { x, y, level } = tile;
+				const result = scope.contentCache.lock( x, y, level );
+				if ( result instanceof Promise ) {
+
+					result
+						.then( () => {
+
+							tile.loadingState = LOADED;
+
+						} )
+						.catch( () => {
+
+							tile.loadingState = FAILED;
+
+						} );
+
+				} else {
+
+					tile.loadingState = result !== null ? LOADED : FAILED;
+
+				}
+
+			}
 
 			let setVisible = false;
 			if ( isTargetTile || force ) {
@@ -254,6 +288,17 @@ export class MVTHierarchy extends EventDispatcher {
 		if ( ! ( key in cache ) ) {
 
 			throw new Error();
+
+		}
+
+		// Release the content lock for any state that called lock(), and reset synchronously
+		// before any async abort callbacks can fire
+		if ( tile.loadingState !== UNLOADED ) {
+
+			// TODO: this is being done here because it's currently difficult to determine
+			// whether an item was cancelled via the abort signal, download queue, or failed.
+			this.contentCache.release( x, y, level );
+			tile.loadingState = UNLOADED;
 
 		}
 
