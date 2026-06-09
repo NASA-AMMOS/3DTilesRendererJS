@@ -6,12 +6,11 @@ import { Scheduler } from './Scheduler.js';
  *
  * @extends Error
  */
-export class PriorityQueueItemRemovedError extends Error {
+export class PriorityQueueItemRemovedError extends DOMException {
 
 	constructor() {
 
-		super( 'PriorityQueue: Item removed' );
-		this.name = 'PriorityQueueItemRemovedError';
+		super( 'PriorityQueue: Item removed', 'AbortError' );
 
 	}
 
