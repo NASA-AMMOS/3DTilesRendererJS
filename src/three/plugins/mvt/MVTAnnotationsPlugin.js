@@ -255,11 +255,6 @@ export class MVTAnnotationsPlugin {
 
 			// TODO: the ImageOverlay Tile Splits is causing an issue here.
 			const info = tileLoadState.get( tile );
-			if ( ! info ) {
-
-				return;
-
-			}
 
 			if ( visible ) {
 
@@ -423,10 +418,26 @@ export class MVTAnnotationsPlugin {
 
 		};
 
+		this.__onDisposeTile = ( { tile } ) => {
+
+			const { tileLoadState } = this;
+			const info = tileLoadState.get( tile );
+			if ( ! info ) {
+
+				return;
+
+			}
+
+			info.disposed = true;
+			tileLoadState.delete( tile );
+
+		};
+
 		// register events
 		locks.addEventListener( 'toggle', this._onLockToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		tiles.addEventListener( 'dispose-tile', this.__onDisposeTile );
 
 		//
 
@@ -470,21 +481,6 @@ export class MVTAnnotationsPlugin {
 			range: null,
 			disposed: false,
 		} );
-
-	}
-
-	disposeTile( tile ) {
-
-		const { tileLoadState } = this;
-		const info = tileLoadState.get( tile );
-		if ( ! info ) {
-
-			return;
-
-		}
-
-		info.disposed = true;
-		tileLoadState.delete( tile );
 
 	}
 
