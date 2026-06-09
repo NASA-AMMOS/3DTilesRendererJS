@@ -116,8 +116,6 @@ export class MVTHierarchy extends EventDispatcher {
 		this.contentCache = content;
 		this._lastTime = - 1;
 
-		window.HIER = this;
-
 	}
 
 	update() {
@@ -126,8 +124,6 @@ export class MVTHierarchy extends EventDispatcher {
 		const lastTime = this._lastTime === - 1 ? now : this._lastTime;
 		const dt = now - lastTime;
 		this._lastTime = now;
-
-		// console.log('--------------')
 
 		const { root } = this;
 		const scope = this;
