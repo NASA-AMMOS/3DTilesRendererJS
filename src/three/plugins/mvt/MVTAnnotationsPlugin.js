@@ -195,42 +195,8 @@ export class MVTAnnotationsPlugin {
 		// ensure the overlay is initialized
 		overlay.init();
 
-		this._onTileDownloadStart = ( { tile } ) => {
-
-			const info = {
-				range: null,
-				loaded: false,
-				disposed: false,
-			};
-
-			tileLoadState.set( tile, info );
-
-			if ( overlay.isReady && tile.boundingVolume.region ) {
-
-				// If the tile has a region bounding volume then mark the tiles to preload, clamped to the extents of
-				// the overlay image
-				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				let range = [ minLon, minLat, maxLon, maxLat ];
-				range = overlay.projection.clampToBounds( range );
-				range = overlay.projection.toNormalizedRange( range );
-
-				info.range = range;
-
-				// TODO: we need to avoid double locking here and below with no synchronized release
-				// const { contentCache } = this;
-				// this._forEachTileInBounds( range, ( x, y, l ) => {
-
-				// 	// lock MVT content in a 2x2 pattern
-				// 	contentCache.lock( x, y, l );
-
-				// } );
-
-			}
-
-		};
-
 		// event callbacks
-		this._onVisibilityChange = ( { tile, visible } ) => {
+		this._onVisibilityChange = ( { scene, tile, visible } ) => {
 
 			const info = tileLoadState.get( tile );
 
@@ -245,20 +211,17 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			const { loaded, range } = info;
-			if ( loaded ) {
+			if ( visible ) {
 
-				this._forEachTileInBounds( range, ( x, y, l ) => {
+				this._loadMVTForTile( scene, tile );
 
-					if ( visible ) {
+			} else if ( info.range !== null ) {
 
-						locks.markActive( x, y, l );
+				const { contentCache } = this;
+				this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
-					} else {
-
-						locks.markInactive( x, y, l );
-
-					}
+					locks.markInactive( x, y, l );
+					contentCache.release( x, y, l );
 
 				} );
 
@@ -444,6 +407,7 @@ export class MVTAnnotationsPlugin {
 					for ( const item of items ) {
 
 						occupancy.unregister( item );
+						this._dequeueSettling( item );
 
 					}
 
@@ -459,7 +423,6 @@ export class MVTAnnotationsPlugin {
 		locks.addEventListener( 'toggle', this._onLockToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		//
 
@@ -467,6 +430,11 @@ export class MVTAnnotationsPlugin {
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			this.processTileModel( scene, tile );
+			if ( tiles.visibleTiles.has( tile ) ) {
+
+				this._loadMVTForTile( scene, tile );
+
+			}
 
 		} );
 
@@ -483,7 +451,6 @@ export class MVTAnnotationsPlugin {
 		this.locks.removeEventListener( 'toggle', this._onLockToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		this.tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
@@ -495,14 +462,18 @@ export class MVTAnnotationsPlugin {
 
 	processTileModel( scene, tile ) {
 
-		this._loadMVTForTile( scene, tile );
+		const { tileLoadState } = this;
+		tileLoadState.set( tile, {
+			range: null,
+			disposed: false,
+		} );
 
 	}
 
 
 	disposeTile( tile ) {
 
-		const { tileLoadState, contentCache } = this;
+		const { tileLoadState } = this;
 		const info = tileLoadState.get( tile );
 		if ( ! info ) {
 
@@ -510,19 +481,8 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		if ( info.loaded ) {
-
-			this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-				// unlock all MVT sub tiles in a 2x2 pattern
-				contentCache.release( x, y, l );
-
-			} );
-
-		}
-
-		tileLoadState.delete( tile );
 		info.disposed = true;
+		tileLoadState.delete( tile );
 
 	}
 
@@ -531,22 +491,12 @@ export class MVTAnnotationsPlugin {
 	async _loadMVTForTile( scene, tile ) {
 
 		const { overlay, tiles, tileLoadState, locks } = this;
+
+		const info = tileLoadState.get( tile );
+
 		if ( ! overlay.isReady ) {
 
 			await overlay.whenReady();
-
-		}
-
-		// we may have added the plugin after some tiles started loading
-		let info = tileLoadState.get( tile );
-		if ( ! info ) {
-
-			info = {
-				range: null,
-				loaded: false,
-				disposed: false,
-			};
-			tileLoadState.set( tile, info );
 
 		}
 
@@ -556,6 +506,7 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		// initialize the bounds
 		if ( info.range === null ) {
 
 			// TODO: this currently only work with ellipsoidal projection
@@ -574,61 +525,35 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		// mark the loading and active flags
 		const { contentCache } = this;
 		const promises = [];
 		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
 			locks.markLoading( x, y, l );
-			promises.push( contentCache.lock( x, y, l ) );
+			locks.markActive( x, y, l );
+
+			let res = contentCache.lock( x, y, l );
+			if ( res instanceof Promise ) {
+
+				promises.push( res
+					.catch( () => {} )
+					.finally( () => {
+
+						locks.unmarkLoading( x, y, l );
+
+					} ) );
+
+			} else {
+
+				locks.unmarkLoading( x, y, l );
+
+			}
 
 		} );
 
-		try {
-
-			await Promise.all( promises );
-
-		} catch {
-
-			this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-				locks.unmarkLoading( x, y, l );
-
-			} );
-			return;
-
-		}
-
-		if ( info.disposed ) {
-
-			// disposeTile already ran and skipped release because info.loaded was false —
-			// we own the locks now, so release them here
-			this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-				locks.unmarkLoading( x, y, l );
-				contentCache.release( x, y, l );
-
-			} );
-			return;
-
-		}
-
-		info.loaded = true;
-
-		this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-			locks.unmarkLoading( x, y, l );
-
-		} );
-
-		if ( tiles.visibleTiles.has( tile ) ) {
-
-			this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-				locks.markActive( x, y, l );
-
-			} );
-
-		}
+		// await all the promises
+		await Promise.all( promises );
 
 	}
 
@@ -694,15 +619,13 @@ export class MVTAnnotationsPlugin {
 
 	_enqueueSettling( item ) {
 
-		const { _settlingQueueSet, _settlingQueue } = this;
-		if ( _settlingQueueSet.has( item ) ) {
+		this._settlingQueueSet.add( item );
 
-			return;
+	}
 
-		}
+	_dequeueSettling( item ) {
 
-		_settlingQueueSet.add( item );
-		_settlingQueue.push( item );
+		this._settlingQueueSet.delete( item );
 
 	}
 
@@ -753,6 +676,16 @@ export class MVTAnnotationsPlugin {
 		const {
 			visible,
 		} = occupancy;
+
+		// reconstruct the array list before hand
+		let i = 0;
+		_settlingQueue.length = _settlingQueueSet.size;
+		for ( const item of _settlingQueueSet ) {
+
+			_settlingQueue[ i ] = item;
+			i ++;
+
+		}
 
 		// precompute which non-visible items have rays intersecting the camera frustum
 		if ( camera !== null ) {
