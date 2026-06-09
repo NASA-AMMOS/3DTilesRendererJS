@@ -12,11 +12,10 @@ export * from './QuantizedMeshPlugin.js';
 export * from './images/ImageOverlayPlugin.js';
 export * from './LoadRegionPlugin.js';
 export * from './DebugTilesPlugin.js';
+export * from './mvt/MVTAnnotationsPlugin.js';
 
 // other formats
 export * from './images/GeneratedSurfacePlugin.js';
-export * from './images/DeepZoomImagePlugin.js';
-export * from './images/EPSGTilesPlugin.js';
 export * from './images/MVTOverlay.js';
 
 // gltf extensions
@@ -27,6 +26,9 @@ export * from './gltf/GLTFMeshFeaturesExtension.js';
 // gltf metadata classes
 export * from './gltf/metadata/classes/MeshFeatures.js';
 export * from './gltf/metadata/classes/StructuralMetadata.js';
+
+// mvt utilities
+export * from './mvt/GlyphAtlasTexture.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';

@@ -95,7 +95,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	constructor( scene = null, camera = null, domElement = null, tilesRenderer = null ) {
+	constructor( scene = null, camera = null, domElement = null ) {
 
 		super();
 
@@ -284,7 +284,6 @@ export class EnvironmentControls extends EventDispatcher {
 		if ( domElement ) this.attach( domElement );
 		if ( camera ) this.setCamera( camera );
 		if ( scene ) this.setScene( scene );
-		if ( tilesRenderer ) this.setTilesRenderer( tilesRenderer );
 
 	}
 
@@ -322,19 +321,6 @@ export class EnvironmentControls extends EventDispatcher {
 		this.needsUpdate = true;
 		this.raycaster.camera = camera;
 		this.resetState();
-
-	}
-
-	setTilesRenderer( tilesRenderer ) {
-
-		console.warn( 'EnvironmentControls: "setTilesRenderer" has been deprecated. Use "setScene" and "setEllipsoid", instead.' );
-
-		this.tilesRenderer = tilesRenderer;
-		if ( this.tilesRenderer !== null ) {
-
-			this.setScene( this.tilesRenderer.group );
-
-		}
 
 	}
 

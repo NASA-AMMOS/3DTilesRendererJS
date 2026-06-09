@@ -13,7 +13,6 @@ export class GlobeControls extends EnvironmentControls {
 	get ellipsoidGroup(): Group;
 	get ellipsoidFrame(): Matrix4;
 	get ellipsoidFrameInverse(): Matrix4;
-	get tilesGroup(): Group;
 
 	setEllipsoid( ellipsoid: Ellipsoid | null, ellipsoidGroup: Object3D | null ): void;
 	getVectorToCenter( target: Vector3 ): Vector3;

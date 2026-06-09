@@ -6,15 +6,11 @@ import { Tileset } from './Tileset.js';
 // Events dispatched by TilesRendererBase, available across all renderer implementations.
 export interface TilesRendererBaseEventMap<TScene = unknown> {
 	'needs-update': {};
-	/** @deprecated */
-	'load-content': {};
-	'load-tileset': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
-	/* @deprecated Use 'load-tileset' instead */
-	'load-tile-set': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
+	'load-tileset': { tileset : Tileset, url : string };
 	'load-root-tileset': { tileset : Tileset, url : string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
-	'tile-download-start': { tile : Tile, url : string, /** @deprecated Use url instead. */ uri : string };
+	'tile-download-start': { tile : Tile, url : string };
 	'load-model': { scene : TScene, tile : Tile, url : string };
 	'dispose-model': { scene : TScene, tile : Tile };
 	'tile-visibility-change': { scene : TScene, tile : Tile, visible : boolean };
@@ -26,19 +22,15 @@ export interface TilesRendererBaseEventMap<TScene = unknown> {
 export class TilesRendererBase<TEventMap extends TilesRendererBaseEventMap = TilesRendererBaseEventMap> {
 
 	readonly rootTileset : Tileset | null;
-	/** @deprecated Use rootTileset instead */
-	readonly rootTileSet : Tileset | null;
 	readonly root : Tile | null;
 	readonly visibleTiles : Set<Tile>;
 	readonly activeTiles : Set<Tile>;
 
 	errorTarget : number;
-	errorThreshold : number;
 	displayActiveTiles : boolean;
 	maxDepth : number;
 	loadSiblings : boolean;
 	loadAncestors : boolean;
-	optimizedLoadStrategy : boolean;
 	maxTilesProcessed : number;
 
 	readonly loadProgress : number;

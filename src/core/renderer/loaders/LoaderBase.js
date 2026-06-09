@@ -24,18 +24,6 @@ export class LoaderBase {
 	}
 
 	/**
-	 * @deprecated Use `loadAsync` instead.
-	 * @param {string} url
-	 * @returns {Promise<any>}
-	 */
-	load( ...args ) {
-
-		console.warn( 'Loader: "load" function has been deprecated in favor of "loadAsync".' );
-		return this.loadAsync( ...args );
-
-	}
-
-	/**
 	 * Fetches and parses content from the given URL.
 	 * @param {string} url
 	 * @returns {Promise<any>}

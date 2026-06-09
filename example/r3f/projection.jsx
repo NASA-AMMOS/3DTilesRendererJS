@@ -109,7 +109,7 @@ function Scene() {
 			const amplitudeScale = Math.sin( time * 5 );
 
 			generateShape( rotation, amplitudeScale, geojson.geometry.coordinates[ 0 ] );
-			overlay.imageSource.redraw();
+			overlay.redraw();
 
 		}
 

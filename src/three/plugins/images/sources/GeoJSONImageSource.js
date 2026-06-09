@@ -101,7 +101,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 	}
 
 	// main fetch per region -> returns CanvasTexture
-	async fetchItem( tokens, signal ) {
+	fetchItem( tokens, signal ) {
 
 		// create canvas
 		const canvas = document.createElement( 'canvas' );

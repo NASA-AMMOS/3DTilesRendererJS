@@ -1,5 +1,4 @@
 import { Camera, EventDispatcher, Object3D, Plane, Vector3 } from 'three';
-import { TilesRenderer } from '../tiles/TilesRenderer.js';
 
 export interface EnvironmentControlsEventMap {
 	'change': {};
@@ -14,7 +13,6 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 	readonly domElement: HTMLElement;
 	readonly camera: Camera;
 	readonly scene: Object3D;
-	readonly tilesRenderer: TilesRenderer;
 
 	// settings
 	enabled: boolean;
@@ -44,12 +42,10 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 		scene?: Object3D,
 		camera?: Camera,
 		domElement?: HTMLElement,
-		tilesRenderer?: TilesRenderer,
 	);
 
 	setScene ( scene: Object3D | null ): void;
 	setCamera ( camera: Camera | null ): void;
-	setTilesRenderer( tilesRenderer: TilesRenderer | null ): void;
 
 	attach( domElement: HTMLElement ): void;
 	detach(): void;

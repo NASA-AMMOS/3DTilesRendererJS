@@ -182,7 +182,7 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
-	async fetchItem( [ minX, minY, maxX, maxY, level ], _signal ) {
+	async fetchItem( [ minX, minY, maxX, maxY, level ], signal ) {
 
 		const { resolution, _contentCache } = this;
 		const canvas = document.createElement( 'canvas' );
@@ -199,6 +199,12 @@ export class MVTImageSource extends RegionImageSource {
 		} );
 
 		await Promise.all( promises );
+
+		if ( signal && signal.aborted ) {
+
+			return null;
+
+		}
 
 		this._drawToCanvas( canvas, regionBounds, level );
 

@@ -2,7 +2,7 @@
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 /** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
-import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
+import { PriorityQueue, PriorityQueueItemRemovedError, unifiedPriorityCallback, DEFAULT_DOWNLOAD_QUEUE } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { QuadKeyImageSource } from './sources/QuadKeyImageSource.js';
@@ -28,12 +28,37 @@ const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
 
+const PROCESS_QUEUE = /* @__PURE__ */ new PriorityQueue();
+PROCESS_QUEUE.maxJobs = 10;
+PROCESS_QUEUE.priorityCallback = ( a, b ) => {
+
+	const tileA = a.tile;
+	const tileB = b.tile;
+
+	const rendererA = tileA.internal.renderer;
+	const rendererB = tileB.internal.renderer;
+
+	const visibleA = rendererA.visibleTiles.has( tileA );
+	const visibleB = rendererB.visibleTiles.has( tileB );
+	if ( visibleA !== visibleB ) {
+
+		// load visible tiles first
+		return visibleA ? 1 : - 1;
+
+	} else {
+
+		// the fallback to the download queue tile priority
+		return unifiedPriorityCallback( tileA, tileB );
+
+	}
+
+};
+
 /**
  * Plugin that composites one or more tiled image overlays onto 3D tile geometry by
  * generating per-tile textures from image sources (XYZ, TMS, WMTS, WMS, GeoJSON, etc.).
  * Image sources are added via `addOverlay()` and removed via `deleteOverlay()`.
  * @param {Object} [options]
- * @param {WebGLRenderer} options.renderer The renderer used for constructing and rendering to render targets.
  * @param {Array} [options.overlays=[]] Initial image overlay sources to add.
  * @param {number} [options.resolution=256] Resolution of each generated tile texture in pixels.
  * @param {boolean} [options.enableTileSplitting=true] Allow tiles to be split to match image tile boundaries.
@@ -103,33 +128,11 @@ export class ImageOverlayPlugin {
 	init( tiles ) {
 
 		const tileComposer = new TiledTextureComposer();
-		const processQueue = new PriorityQueue();
-		processQueue.maxJobs = 10;
-		processQueue.priorityCallback = ( a, b ) => {
-
-			const tileA = a.tile;
-			const tileB = b.tile;
-
-			const visibleA = tiles.visibleTiles.has( tileA );
-			const visibleB = tiles.visibleTiles.has( tileB );
-			if ( visibleA !== visibleB ) {
-
-				// load visible tiles first
-				return visibleA ? 1 : - 1;
-
-			} else {
-
-				// the fallback to the download queue tile priority
-				return tiles.downloadQueue.priorityCallback( tileA, tileB );
-
-			}
-
-		};
 
 		// save variables
 		this.tiles = tiles;
 		this.tileComposer = tileComposer;
-		this.processQueue = processQueue;
+		this.processQueue = PROCESS_QUEUE;
 
 		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -163,6 +166,7 @@ export class ImageOverlayPlugin {
 			// trigger redraws for visible tiles if overlays updated
 			if ( overlayChanged ) {
 
+				const { processQueue } = this;
 				const maxJobs = processQueue.maxJobs;
 				let count = 0;
 				processQueue.items.forEach( info => {
@@ -227,8 +231,12 @@ export class ImageOverlayPlugin {
 
 			this.overlayInfo.forEach( ( { tileInfo }, overlay ) => {
 
-				const info = tileInfo.get( tile );
-				overlay.setRegionVisible( info.range, visible );
+				if ( tileInfo.has( tile ) ) {
+
+					const { range } = tileInfo.get( tile );
+					overlay.setRegionVisible( range, visible, tile );
+
+				}
 
 			} );
 
@@ -850,7 +858,7 @@ export class ImageOverlayPlugin {
 	 */
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo, processQueue, processedTiles } = this;
+		const { overlays, overlayInfo, processQueue, processedTiles, tiles } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
@@ -874,6 +882,12 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
+					if ( tiles.visibleTiles.has( tile ) ) {
+
+						overlay.setRegionVisible( range, false );
+
+					}
+
 					overlay.releaseTexture( range );
 
 				}
@@ -887,10 +901,11 @@ export class ImageOverlayPlugin {
 			overlayInfo.delete( overlay );
 			controller.abort();
 
-			// Remove any items that reference the overlay being disposed
+			// Remove any items that reference the overlay being disposed - we check if the tiles
+			// is in this "processedTiles" map since the queue can be shared among plugin instances.
 			processQueue.removeByFilter( item => {
 
-				return item.overlay === overlay;
+				return item.overlay === overlay && processedTiles.has( item.tile );
 
 			} );
 
@@ -913,27 +928,19 @@ export class ImageOverlayPlugin {
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
-		const { tiles } = this;
+		const { processedTiles } = this;
 
 		overlay.init().then( () => {
 
 			// Set resolution on the overlay
 			overlay.setResolution( this.resolution );
 
-			const overlayFetch = overlay.fetch.bind( overlay );
-			overlay.fetch = ( ...args ) => tiles
-				.downloadQueue
-				.add( { priority: - performance.now() }, () => {
-
-					return overlayFetch( ...args );
-
-				} );
-
 		} );
 
 		const promises = [];
-		const initTile = async ( scene, tile ) => {
+		processedTiles.forEach( async tile => {
 
+			const scene = tile.engineData.scene;
 			this._initTileOverlayInfo( tile, overlay );
 
 			const promise = this._initTileSceneOverlayInfo( scene, tile, overlay );
@@ -942,18 +949,6 @@ export class ImageOverlayPlugin {
 			// mark tiles as needing an update after initialized so we get a trickle in of tiles
 			await promise;
 			this._updateLayers( tile );
-
-		};
-
-		tiles.forEachLoadedModel( ( scene, tile ) => {
-
-			initTile( scene, tile );
-
-		} );
-
-		this.pendingTiles.forEach( ( scene, tile ) => {
-
-			initTile( scene, tile );
 
 		} );
 
@@ -1126,7 +1121,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		if ( tile.traversal.visible ) {
+		if ( tiles.visibleTiles.has( tile ) ) {
 
 			overlay.setRegionVisible( info.range, true );
 
@@ -1390,6 +1385,7 @@ export class ImageOverlay {
 		this.frame = frame !== null ? frame.clone() : null;
 		this.alphaMask = alphaMask;
 		this.alphaInvert = alphaInvert;
+		this.downloadQueue = DEFAULT_DOWNLOAD_QUEUE;
 
 		this._whenReady = null;
 		this.isReady = false;
@@ -1432,7 +1428,15 @@ export class ImageOverlay {
 
 		}
 
-		return fetch( url, options );
+		const item = { priority: - performance.now() };
+		const promise = this.downloadQueue.add( item, () => fetch( url, options ) );
+		if ( options.signal ) {
+
+			options.signal.addEventListener( 'abort', () => this.downloadQueue.remove( item ), { once: true } );
+
+		}
+
+		return promise;
 
 	}
 
@@ -2091,10 +2095,31 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 	}
 
-	fetch( ...args ) {
+	fetch( url, options = {} ) {
 
 		// bypass auth fetch if asset is external type to prevent CORS error due to wrong bearer token
-		return this.externalType ? super.fetch( ...args ) : this.auth.fetch( ...args );
+		if ( this.externalType ) {
+
+			return super.fetch( url, options );
+
+		}
+
+		if ( this.preprocessURL ) {
+
+			url = this.preprocessURL( url );
+
+		}
+
+		// TODO: we should provide a better way to sort these
+		const item = { priority: - performance.now() };
+		const promise = this.downloadQueue.add( item, () => this.auth.fetch( url, options ) );
+		if ( options.signal ) {
+
+			options.signal.addEventListener( 'abort', () => this.downloadQueue.remove( item ), { once: true } );
+
+		}
+
+		return promise;
 
 	}
 
@@ -2160,9 +2185,23 @@ export class GoogleMapsOverlay extends TiledImageOverlay {
 
 	}
 
-	fetch( ...args ) {
+	fetch( url, options = {} ) {
 
-		return this.auth.fetch( ...args );
+		if ( this.preprocessURL ) {
+
+			url = this.preprocessURL( url );
+
+		}
+
+		const item = { priority: - performance.now() };
+		const promise = this.downloadQueue.add( item, () => this.auth.fetch( url, options ) );
+		if ( options.signal ) {
+
+			options.signal.addEventListener( 'abort', () => this.downloadQueue.remove( item ), { once: true } );
+
+		}
+
+		return promise;
 
 	}
 

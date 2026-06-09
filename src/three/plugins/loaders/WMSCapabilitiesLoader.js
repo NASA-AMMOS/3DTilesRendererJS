@@ -354,7 +354,7 @@ function collectLayers( layers, target = [] ) {
 
 /**
  * Loader that fetches and parses a WMS `GetCapabilities` XML document into a structured
- * JavaScript object. The result can be passed to `WMSTilesPlugin`.
+ * JavaScript object. The result can be used to configure `WMSImageSource`.
  *
  * The parsed result has the shape:
  * ```

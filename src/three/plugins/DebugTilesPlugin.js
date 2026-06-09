@@ -1,3 +1,4 @@
+/** @import { Object3D } from 'three' */
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, SphereGeometry, DoubleSide } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper, EllipsoidRegionHelper } from './objects/EllipsoidRegionHelper.js';
@@ -57,12 +58,19 @@ const ColorModes = Object.freeze( {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
+	INDEXED_COLOR,
 } );
 
 /**
  * @callback GetDebugColorCallback
  * @param {number} val Normalized [0, 1] value.
  * @param {Color} target Color to write the result into.
+ */
+
+/**
+ * @callback CustomColorCallback
+ * @param {Object} tile The tile whose scene is being colored.
+ * @param {Object3D} child The object within the tile scene being colored. Has a `material` property.
  */
 
 /**
@@ -80,7 +88,7 @@ const ColorModes = Object.freeze( {
  * @param {number} [options.maxDebugDepth=-1] Maximum tree depth for depth-based coloring (`-1` = auto).
  * @param {number} [options.maxDebugDistance=-1] Maximum distance for distance-based coloring (`-1` = auto).
  * @param {number} [options.maxDebugError=-1] Maximum error for error-based coloring (`-1` = auto).
- * @param {Function|null} [options.customColorCallback=null] Callback `( tile, mesh )` used when `colorMode` is `CUSTOM_COLOR`.
+ * @param {CustomColorCallback|null} [options.customColorCallback=null] Callback invoked per-object when `colorMode` is `CUSTOM_COLOR`.
  * @param {boolean} [options.unlit=false] Replace tile materials with unlit `MeshBasicMaterial`.
  * @param {boolean} [options.enabled=true] Whether the plugin is active on init.
  */
@@ -89,6 +97,23 @@ export class DebugTilesPlugin {
 	static get ColorModes() {
 
 		return ColorModes;
+
+	}
+
+	get wireframe() {
+
+		return this._wireframe;
+
+	}
+
+	set wireframe( v ) {
+
+		if ( v !== this._wireframe ) {
+
+			this._wireframe = v;
+			this.materialsNeedUpdate = true;
+
+		}
 
 	}
 
@@ -235,6 +260,7 @@ export class DebugTilesPlugin {
 		this._colorMode = null;
 		this._boundsColorMode = null;
 		this._unlit = null;
+		this._wireframe = null;
 		this.materialsNeedUpdate = false;
 
 		this.extremeDebugDepth = - 1;
@@ -256,6 +282,7 @@ export class DebugTilesPlugin {
 		this.maxDebugError = options.maxDebugError;
 		this.customColorCallback = options.customColorCallback;
 		this.unlit = options.unlit;
+		this.wireframe = options.wireframe;
 
 		/**
 		 * Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
@@ -987,7 +1014,7 @@ export class DebugTilesPlugin {
 	_updateMaterial( scene ) {
 
 		// update the materials for debug rendering
-		const { colorMode, unlit } = this;
+		const { colorMode, unlit, wireframe } = this;
 		scene.traverse( c => {
 
 			if ( ! c.material ) {
@@ -1018,11 +1045,11 @@ export class DebugTilesPlugin {
 
 				} else if ( unlit ) {
 
-					c.material = new MeshBasicMaterial();
+					c.material = new MeshBasicMaterial( { wireframe: wireframe } );
 
 				} else {
 
-					c.material = new MeshStandardMaterial();
+					c.material = new MeshStandardMaterial( { wireframe: wireframe } );
 					c.material.flatShading = true;
 
 				}

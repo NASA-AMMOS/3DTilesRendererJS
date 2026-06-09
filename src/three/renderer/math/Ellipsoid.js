@@ -8,7 +8,6 @@ const _vec = /* @__PURE__ */ new Vector3();
 const _vec2 = /* @__PURE__ */ new Vector3();
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _matrix2 = /* @__PURE__ */ new Matrix4();
-const _matrix3 = /* @__PURE__ */ new Matrix4();
 const _sphere = /* @__PURE__ */ new Sphere();
 const _euler = /* @__PURE__ */ new Euler();
 
@@ -245,71 +244,6 @@ export class Ellipsoid {
 		this.getCartographicToNormal( lat, lon, vecUp );		// up
 		vecEast.set( - point.y, point.x, 0 ).normalize();		// east
 		vecNorth.crossVectors( vecUp, vecEast ).normalize();	// north
-
-	}
-
-	/**
-	 * @deprecated Use `getCartographicFromObjectFrame` instead.
-	 * @param {number} lat
-	 * @param {number} lon
-	 * @param {Matrix4} rotationMatrix
-	 * @param {Object} target
-	 * @param {Frames} frame
-	 * @returns {{ azimuth: number, elevation: number, roll: number }}
-	 */
-	getAzElRollFromRotationMatrix( lat, lon, rotationMatrix, target, frame = ENU_FRAME ) {
-
-		console.warn( 'Ellipsoid: "getAzElRollFromRotationMatrix" is deprecated. Use "getCartographicFromObjectFrame", instead.' );
-		this.getCartographicToPosition( lat, lon, 0, _pos );
-		_matrix3.copy( rotationMatrix ).setPosition( _pos );
-
-		this.getCartographicFromObjectFrame( _matrix3, target, frame );
-		delete target.height;
-		delete target.lat;
-		delete target.lon;
-
-		return target;
-
-
-	}
-
-	/**
-	 * @deprecated Use `getObjectFrame` instead.
-	 * @param {number} lat
-	 * @param {number} lon
-	 * @param {number} az
-	 * @param {number} el
-	 * @param {number} roll
-	 * @param {Matrix4} target
-	 * @param {Frames} frame
-	 * @returns {Matrix4}
-	 */
-	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame = ENU_FRAME ) {
-
-		console.warn( 'Ellipsoid: "getRotationMatrixFromAzElRoll" function has been deprecated. Use "getObjectFrame", instead.' );
-
-		this.getObjectFrame( lat, lon, 0, az, el, roll, target, frame );
-		target.setPosition( 0, 0, 0 );
-		return target;
-
-	}
-
-	/**
-	 * @deprecated Use `getObjectFrame` instead.
-	 * @param {number} lat
-	 * @param {number} lon
-	 * @param {number} az
-	 * @param {number} el
-	 * @param {number} roll
-	 * @param {number} height
-	 * @param {Matrix4} target
-	 * @param {Frames} frame
-	 * @returns {Matrix4}
-	 */
-	getFrame( lat, lon, az, el, roll, height, target, frame = ENU_FRAME ) {
-
-		console.warn( 'Ellipsoid: "getFrame" function has been deprecated. Use "getObjectFrame", instead.' );
-		return this.getObjectFrame( lat, lon, height, az, el, roll, target, frame );
 
 	}
 

@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+### Added
+- TilesRenderer: Add "getResolution".
+- Add "ValidateTilesetPlugin".
+- TilesRenderer: Add "accelerateRaycast" toggle for malformed data sets.
+- LoadRegionPlugin: Add a "regions" constructor option.
+
+### Changed
+- Deprecated APIs and fields have been removed.
+- CesiumIonPlugin: Removed warning logs.
+- TilesRenderer: All instances will now share "processNodeQueue", "lruCache", "downloadQueue" and "priorityQueue" instances by default until optionally reassigned.
+- ImageOverlayPlugin: All image overlay instances share tile download & processing queues.
+
+### Fixed
+- GeneratedSurfacePlugin: Fix the plugin not applying uv ranges correctly.
+- ImageOverlayPlugin: Fix plugins not tracking tile visibility correctly.
+- Fix "disposeTile" events firing for internal tileset json tiles
+- Export INDEXED_COLOR for DebugTilesPlugin
+- TilesFadePlugin: Remove "displayActiveTiles" hack so tiles renderer settings are respected.
+
+## [0.4.27] - 2026.05.25
+### Fixed
+- Bug introduced in adding "empty" tile events during traversal.
+
 ## [0.4.26] - 2026.05.25
 ### Added
 - DebugTilesPlugin: Added support for displaying empty tiles that stop traversal so tile set structure is more clear.

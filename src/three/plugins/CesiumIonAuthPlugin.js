@@ -1,5 +1,6 @@
 import { CesiumIonAuthPlugin as CesiumIonAuthPluginImpl } from '3d-tiles-renderer/core/plugins';
-import { TMSTilesPlugin } from './images/EPSGTilesPlugin.js';
+import { GeneratedSurfacePlugin } from './images/GeneratedSurfacePlugin.js';
+import { TMSTilesOverlay } from './images/ImageOverlayPlugin.js';
 import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
 
 /**
@@ -24,24 +25,14 @@ export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 
 				if ( type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
 
-					console.warn(
-						'CesiumIonAuthPlugin: CesiumIonAuthPlugin plugin auto-registration has been deprecated. ' +
-						'Please implement a custom "assetTypeHandler" for "TERRAIN" using "QuantizedMeshPlugin", instead.'
-					);
 					tiles.registerPlugin( new QuantizedMeshPlugin( {
 						useRecommendedSettings: this.useRecommendedSettings,
 					} ) );
 
-				} else if ( type === 'IMAGERY' && tiles.getPluginByName( 'TMS_TILES_PLUGIN' ) === null ) {
+				} else if ( type === 'IMAGERY' && tiles.getPluginByName( 'GENERATED_SURFACE_PLUGIN' ) === null ) {
 
-					console.warn(
-						'CesiumIonAuthPlugin: CesiumIonAuthPlugin plugin auto-registration has been deprecated. ' +
-						'Please implement a custom "assetTypeHandler" for "IMAGERY" using "TMSTilesPlugin", instead.'
-					);
-					tiles.registerPlugin( new TMSTilesPlugin( {
-						useRecommendedSettings: this.useRecommendedSettings,
-						shape: 'ellipsoid',
-					} ) );
+					const overlay = new TMSTilesOverlay( { url: tiles.rootURL } );
+					tiles.registerPlugin( new GeneratedSurfacePlugin( { shape: 'ellipsoid', overlay } ) );
 
 				} else {
 
@@ -52,14 +43,6 @@ export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 			},
 			...options,
 		} );
-
-		if ( options.__suppress_warning__ ) {
-
-			console.warn(
-				'CesiumIonAuthPlugin: Plugin has been moved to "3d-tiles-renderer/core/plugins".'
-			);
-
-		}
 
 	}
 
