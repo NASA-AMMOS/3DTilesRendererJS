@@ -2,7 +2,7 @@
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 /** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
-import { PriorityQueue, PriorityQueueItemRemovedError, unifiedPriorityCallback, DEFAULT_DOWNLOAD_QUEUE } from '3d-tiles-renderer/core';
+import { PriorityQueue, unifiedPriorityCallback, DEFAULT_DOWNLOAD_QUEUE } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { QuadKeyImageSource } from './sources/QuadKeyImageSource.js';
@@ -1025,7 +1025,15 @@ export class ImageOverlayPlugin {
 				range = overlay.projection.toNormalizedRange( range );
 
 				info.range = range;
-				overlay.lockTexture( range );
+				overlay.lockTexture( range ).catch( err => {
+
+					if ( err.name !== 'AbortError' ) {
+
+						throw err;
+
+					}
+
+				} );
 
 			}
 
@@ -1117,7 +1125,15 @@ export class ImageOverlayPlugin {
 		if ( info.range === null ) {
 
 			info.range = range;
-			overlay.lockTexture( range );
+			overlay.lockTexture( range ).catch( err => {
+
+				if ( err.name !== 'AbortError' ) {
+
+					throw err;
+
+				}
+
+			} );
 
 		}
 
@@ -1179,7 +1195,7 @@ export class ImageOverlayPlugin {
 			} )
 			.catch( err => {
 
-				if ( err instanceof PriorityQueueItemRemovedError ) {
+				if ( err.name === 'AbortError' ) {
 
 					return null;
 
@@ -1231,11 +1247,28 @@ export class ImageOverlayPlugin {
 
 			failed.forEach( ( { tile, overlay, info } ) => {
 
-				overlay.lockTexture( info.range );
+				overlay.lockTexture( info.range ).catch( err => {
+
+					if ( err.name !== 'AbortError' ) {
+
+						throw err;
+
+					}
+
+				} );
 				this._fetchTileOverlayTexture( tile, overlay, info )
 					.then( () => {
 
 						this._updateLayers( tile );
+
+					} )
+					.catch( err => {
+
+						if ( err.name !== 'AbortError' ) {
+
+							throw err;
+
+						}
 
 					} );
 
