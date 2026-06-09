@@ -1,4 +1,6 @@
-export class DataCacheItemRemovedError extends DOMException {
+// Error thrown when a cache item's promise is rejected because the item was released
+// before its callback could run.
+class DataCacheItemRemovedError extends DOMException {
 
 	constructor() {
 
