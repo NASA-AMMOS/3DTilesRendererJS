@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Export INDEXED_COLOR for DebugTilesPlugin
 - TilesFadePlugin: Remove "displayActiveTiles" hack so tiles renderer settings are respected.
 
+## [0.4.28] - 2026.06.09
+### Fixed
+- Add in "pbf", "@mapbox/vector-tiles" and "pmtiles" as required dependencies in package.json to prevent failure in bundlers when they are not installed.
+
 ## [0.4.27] - 2026.05.25
 ### Fixed
 - Bug introduced in adding "empty" tile events during traversal.
