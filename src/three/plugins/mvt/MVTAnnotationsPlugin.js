@@ -1,6 +1,6 @@
 /** @import { Camera, Scene } from 'three' */
 import { Frustum, MathUtils, Matrix4, Raycaster } from 'three';
-import { HierarchicalLock } from './HierarchicalLock.js';
+import { MVTHierarchy } from './MVTHierarchy.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
@@ -155,8 +155,8 @@ export class MVTAnnotationsPlugin {
 
 		this.overlay = overlay;
 
-		// locks for tiles and screen occupancy
-		this.locks = new HierarchicalLock();
+		// hierarchy for managing tile loading and visibility
+		this.hierarchy = null;
 		this.occupancy = new DelayedScreenOccupationManager();
 
 		// save the camera used for positioning icons
@@ -187,7 +187,7 @@ export class MVTAnnotationsPlugin {
 
 	async init( tiles ) {
 
-		const { locks, overlay, occupancy, tileLoadState } = this;
+		const { overlay, occupancy, tileLoadState } = this;
 
 		// ensure the overlay is initialized
 		overlay.init();
@@ -200,6 +200,7 @@ export class MVTAnnotationsPlugin {
 
 		// init container
 		this.tiles = tiles;
+		this.hierarchy = new MVTHierarchy( this.contentCache );
 
 		occupancy.sortCallback = ( a, b ) => {
 
@@ -262,11 +263,9 @@ export class MVTAnnotationsPlugin {
 
 			} else {
 
-				const { contentCache } = this;
 				this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
-					locks.markInactive( x, y, l );
-					contentCache.release( x, y, l );
+					this.hierarchy.setTargetState( x, y, l, false );
 
 				} );
 
@@ -275,6 +274,8 @@ export class MVTAnnotationsPlugin {
 		};
 
 		this._onUpdateAfter = () => {
+
+			this.hierarchy.update();
 
 			// sync camera and localToWorld matrix into occupancy grid
 			if ( this.camera !== null ) {
@@ -315,13 +316,13 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		this._onLockToggle = ( { x, y, level, active } ) => {
+		this._onToggle = ( { x, y, level, visible } ) => {
 
 			tiles.dispatchEvent( { type: 'needs-update' } );
 
 			const key = `${ x }_${ y }_${ level }`;
 
-			if ( active ) {
+			if ( visible ) {
 
 				const { contentCache, occupancy, filterAnnotation, mvtTileItems } = this;
 				const { tiling } = overlay;
@@ -434,7 +435,7 @@ export class MVTAnnotationsPlugin {
 		};
 
 		// register events
-		locks.addEventListener( 'toggle', this._onLockToggle );
+		this.hierarchy.addEventListener( 'toggle', this._onToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		tiles.addEventListener( 'dispose-tile', this.__onDisposeTile );
@@ -463,7 +464,7 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		this.locks.removeEventListener( 'toggle', this._onLockToggle );
+		this.hierarchy.removeEventListener( 'toggle', this._onToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
@@ -486,16 +487,10 @@ export class MVTAnnotationsPlugin {
 
 	//
 
-	async _loadMVTForTile( scene, tile ) {
+	_loadMVTForTile( scene, tile ) {
 
-		const { overlay, tiles, tileLoadState, locks } = this;
+		const { overlay, tiles, tileLoadState } = this;
 		const info = tileLoadState.get( tile );
-
-		if ( info.disposed ) {
-
-			return;
-
-		}
 
 		// initialize the bounds
 		if ( info.range === null ) {
@@ -516,29 +511,11 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		// mark the loading and active flags
-		const { contentCache } = this;
 		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
-			locks.markLoading( x, y, l );
-			locks.markActive( x, y, l );
+			console.log( tile.internal.depth, x, y, l )
 
-			const res = contentCache.lock( x, y, l );
-			if ( res instanceof Promise ) {
-
-				res
-					.catch( () => {} )
-					.finally( () => {
-
-						locks.unmarkLoading( x, y, l );
-
-					} );
-
-			} else {
-
-				locks.unmarkLoading( x, y, l );
-
-			}
+			this.hierarchy.setTargetState( x, y, l, true );
 
 		} );
 

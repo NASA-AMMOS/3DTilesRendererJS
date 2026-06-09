@@ -4,6 +4,7 @@ const UNLOADED = 0;
 const LOADING = 1;
 const LOADED = 2;
 const FAILED = 3;
+const TIMER_DURATION = 250;
 
 function getChildKey( x, y ) {
 
@@ -17,7 +18,6 @@ function getKey( x, y, level ) {
 
 }
 
-const TIMER = 500;
 
 class MVTTile {
 
@@ -116,6 +116,8 @@ export class MVTHierarchy extends EventDispatcher {
 		this.contentCache = content;
 		this._lastTime = - 1;
 
+		window.HIER = this;
+
 	}
 
 	update() {
@@ -124,6 +126,8 @@ export class MVTHierarchy extends EventDispatcher {
 		const lastTime = this._lastTime === - 1 ? now : this._lastTime;
 		const dt = now - lastTime;
 		this._lastTime = now;
+
+		// console.log('--------------')
 
 		const { root } = this;
 		const scope = this;
@@ -135,11 +139,12 @@ export class MVTHierarchy extends EventDispatcher {
 		function traverse( tile, force = false ) {
 
 			// increment / decrement timers for determining whether to hide / show content
-			if ( tile.target > 0 ) {
+			const forcedTarget = tile.visible && force;
+			if ( tile.target > 0 || forcedTarget ) {
 
 				tile.showTimer += dt;
-				tile.showTimer = Math.min( tile.showTimer, TIMER );
-				if ( tile.showTimer === TIMER ) {
+				tile.showTimer = Math.min( tile.showTimer, TIMER_DURATION );
+				if ( tile.showTimer === TIMER_DURATION ) {
 
 					tile.hideTimer = 0;
 
@@ -148,24 +153,17 @@ export class MVTHierarchy extends EventDispatcher {
 			} else {
 
 				tile.hideTimer += dt;
-				tile.hideTimer = Math.min( tile.hideTimer, TIMER );
-				if ( tile.hideTimer === TIMER ) {
+				tile.hideTimer = Math.min( tile.hideTimer, TIMER_DURATION );
+				if ( tile.hideTimer === TIMER_DURATION ) {
 
 					tile.showTimer = 0;
-
-					if ( tile.loadingState !== UNLOADED ) {
-
-						scope.contentCache.release( tile.x, tile.y, tile.level );
-						tile.loadingState = UNLOADED;
-
-					}
 
 				}
 
 			}
 
 			// Active after show delay; stays active through the hide delay so visible tiles don't flash
-			const isTargetTile = tile.target > 0 ? tile.showTimer >= TIMER : tile.showTimer > 0;
+			const isTargetTile = ( tile.target > 0 ? tile.showTimer === TIMER_DURATION : tile.showTimer > 0 ) || forcedTarget;
 
 			// Kick off load once the show timer commits to this tile
 			if ( isTargetTile && tile.loadingState === UNLOADED ) {
@@ -179,12 +177,14 @@ export class MVTHierarchy extends EventDispatcher {
 					result
 						.then( () => {
 
-							tile.loadingState = LOADED;
+							// TODO
+							if ( tile.loadingState === LOADING ) tile.loadingState = LOADED;
 
 						} )
 						.catch( () => {
 
-							tile.loadingState = FAILED;
+							// TODO
+							if ( tile.loadingState === LOADING ) tile.loadingState = FAILED;
 
 						} );
 
@@ -197,7 +197,7 @@ export class MVTHierarchy extends EventDispatcher {
 			}
 
 			let setVisible = false;
-			if ( isTargetTile || force ) {
+			if ( tile.target > 0 || forcedTarget ) {
 
 				if ( tile.loadingState === LOADED ) {
 
@@ -229,12 +229,13 @@ export class MVTHierarchy extends EventDispatcher {
 			// showTimer > 0 keeps tiles with in-flight loads from being pruned mid-hysteresis
 			const { children } = tile;
 			let tileRequired = tile.visible || tile.target > 0 || tile.showTimer > 0;
+
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 				const child = children[ i ];
 				if ( child !== null ) {
 
-					tileRequired ||= traverse( child, force );
+					tileRequired = traverse( child, force ) || tileRequired;
 
 				}
 
