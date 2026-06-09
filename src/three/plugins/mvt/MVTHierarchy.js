@@ -185,7 +185,7 @@ export class MVTHierarchy extends EventDispatcher {
 					result
 						.then( res => {
 
-							if ( tile.loadingState !== LOADING ) {
+							if ( tile.loadingState === LOADING ) {
 
 								if ( res === null ) {
 
