@@ -13,9 +13,11 @@ function getChildKey( x, y ) {
 
 function getKey( x, y, level ) {
 
-	return `${ this.x }_${ this.y }_${ this.level }`;
+	return `${ x }_${ y }_${ level }`;
 
 }
+
+const TIMER = 500;
 
 class MVTTile {
 
@@ -29,9 +31,11 @@ class MVTTile {
 		this.children = new Array( 4 ).fill( null );
 		this.childCount = 0;
 
-		this.loadState = UNLOADED;
+		this.loadingState = UNLOADED;
 		this.visible = false;
 		this.target = false;
+		this.showTimer = 0;
+		this.hideTimer = 0;
 
 		this._key = null;
 		this._index = null;
@@ -105,18 +109,26 @@ export class MVTHierarchy extends EventDispatcher {
 
 		super();
 
-		this.root = new MVTTile( this );
+		this.root = new MVTTile();
 		this.toPrune = new Set();
+		this.toResolve = new Set();
 		this.cache = {
 			[ this.root.getKey() ]: this.root,
 		};
 		this.contentCache = content;
+		this._lastTime = - 1;
 
 	}
 
 	update() {
 
+		const now = performance.now();
+		const lastTime = this._lastTime === - 1 ? now : this._lastTime;
+		const dt = now - lastTime;
+		this._lastTime = now;
+
 		const { root } = this;
+		const scope = this;
 		traverse( root );
 
 		_toPrune.forEach( tile => this._deleteTile( tile ) );
@@ -124,10 +136,33 @@ export class MVTHierarchy extends EventDispatcher {
 
 		function traverse( tile, force = false ) {
 
+			if ( tile.target ) {
+
+				tile.showTimer += dt;
+				tile.showTimer = Math.min( tile.showTimer, TIMER );
+				if ( tile.showTimer === TIMER ) {
+
+					tile.hideTimer = 0;
+
+				}
+
+			} else {
+
+				tile.hideTimer += dt;
+				tile.hideTimer = Math.min( tile.hideTimer, TIMER );
+				if ( tile.hideTimer === TIMER ) {
+
+					tile.showTimer = 0;
+
+				}
+
+			}
+
 			// TODO: only consider a tile a target after a
 			// certain amount of time? Same for after hiding?
 			// Use a timer on the tile to count up and down.
-			const isTargetTile = tile.target > 0;
+			const isTargetTile = tile.showTimer === TIMER;
+
 			let setVisible = false;
 			if ( isTargetTile || force ) {
 
@@ -139,6 +174,7 @@ export class MVTHierarchy extends EventDispatcher {
 				} else if ( isTargetTile ) {
 
 					force = true;
+
 
 					// TODO: trigger a download after a delay?
 
@@ -152,7 +188,7 @@ export class MVTHierarchy extends EventDispatcher {
 
 				// TODO: dispose here? Dispose after a delay?
 
-				this.dispatchEvent( {
+				scope.dispatchEvent( {
 					type: 'toggle',
 					visible: setVisible,
 					x: tile.x,
@@ -164,13 +200,13 @@ export class MVTHierarchy extends EventDispatcher {
 
 			// iterate over all children
 			const { children } = tile;
-			let tileRequired = tile.visible || tile.target > 0;
+			let tileRequired = tile.visible || tile.target;
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 				const child = children[ i ];
 				if ( child !== null ) {
 
-					tileRequired ||= traverse( tile, force );
+					tileRequired ||= traverse( child, force );
 
 				}
 
@@ -179,12 +215,12 @@ export class MVTHierarchy extends EventDispatcher {
 			// mark this tile to prune if it's not necessary
 			if ( ! tileRequired ) {
 
-				_toPrune.add( this );
+				_toPrune.add( tile );
 
 			}
 
 			// if this tile is required because a child is required or the tile is visible
-			return tileRequired || this.visible;
+			return tileRequired;
 
 		}
 
@@ -204,8 +240,14 @@ export class MVTHierarchy extends EventDispatcher {
 
 	_deleteTile( tile ) {
 
+		if ( tile === this.root ) {
+
+			throw new Error();
+
+		}
+
 		const { cache } = this;
-		const { x, y, level } = this;
+		const { x, y, level } = tile;
 		const key = getKey( x, y, level );
 		if ( ! ( key in cache ) ) {
 
@@ -228,7 +270,7 @@ export class MVTHierarchy extends EventDispatcher {
 
 		}
 
-		const child = new MVTTile( this );
+		const child = new MVTTile();
 		child.x = x;
 		child.y = y;
 		child.level = level;
