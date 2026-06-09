@@ -60,15 +60,9 @@ export class HierarchicalLock extends EventDispatcher {
 		const { locks } = this;
 		const childKey = getKey( x, y, level );
 		const childLock = locks[ childKey ];
-		if ( ! childLock ) {
-
-			throw new Error( 'HierarchicalLock: unmarkLoading called without a matching markLoading.' );
-
-		}
-
 		childLock.loading --;
 
-		if ( childLock.loading === 0 ) {
+		if ( childLock.loading === 0 && childLock.active > 0 ) {
 
 			this._unlockAncestor( x, y, level );
 
@@ -124,28 +118,29 @@ export class HierarchicalLock extends EventDispatcher {
 		const childLock = locks[ childKey ];
 		if ( ! childLock ) return;
 
+		// unmark the descendants list
+		let ax = x;
+		let ay = y;
+		let al = level;
+		while ( al > 0 ) {
+
+			al --;
+			ax >>= 1;
+			ay >>= 1;
+
+			const ancestorKey = getKey( ax, ay, al );
+			locks[ ancestorKey ].loadingDescendants.delete( childKey );
+			this._tryDeleteLock( ancestorKey );
+
+		}
+
+		// remove the locked ancestor
 		if ( childLock.lockedAncestor ) {
 
 			// unlock the ancestor
 			const { x: lx, y: ly, level: ll } = childLock.lockedAncestor;
 			this._incrActiveLock( lx, ly, ll, false );
 			childLock.lockedAncestor = null;
-
-			// unmark the descendants list
-			let ax = x;
-			let ay = y;
-			let al = level;
-			while ( al > 0 ) {
-
-				al --;
-				ax >>= 1;
-				ay >>= 1;
-
-				const ancestorKey = getKey( ax, ay, al );
-				locks[ ancestorKey ].loadingDescendants.delete( childKey );
-				this._tryDeleteLock( ancestorKey );
-
-			}
 
 		}
 
@@ -171,9 +166,10 @@ export class HierarchicalLock extends EventDispatcher {
 	// ensure the lock exists
 	_ensureLock( key, x, y, level ) {
 
-		if ( ! ( key in this.locks ) ) {
+		const { locks } = this;
+		if ( ! ( key in locks ) ) {
 
-			this.locks[ key ] = {
+			locks[ key ] = {
 				x,
 				y,
 				level,
@@ -186,7 +182,7 @@ export class HierarchicalLock extends EventDispatcher {
 
 		}
 
-		return this.locks[ key ];
+		return locks[ key ];
 
 	}
 
@@ -195,17 +191,18 @@ export class HierarchicalLock extends EventDispatcher {
 
 		const { locks } = this;
 		const lock = locks[ key ];
-		if ( ! lock ) {
-
-			return;
-
-		}
 
 		const shouldShow = lock.loading === 0 && lock.active > 0;
 		if ( shouldShow !== lock.dispatched ) {
 
 			lock.dispatched = shouldShow;
-			this.dispatchEvent( { type: 'toggle', active: shouldShow, x: lock.x, y: lock.y, level: lock.level } );
+			this.dispatchEvent( {
+				type: 'toggle',
+				active: shouldShow,
+				x: lock.x,
+				y: lock.y,
+				level: lock.level,
+			} );
 
 		}
 
@@ -226,8 +223,7 @@ export class HierarchicalLock extends EventDispatcher {
 
 		}
 
-		// try to lock the ancestors if the lock became active
-		// and is loading
+		// try to lock the ancestors if the lock became active and is loading
 		if ( lock && lock.loading > 0 ) {
 
 			if ( incr && lock.active === 1 ) {
@@ -256,7 +252,14 @@ export class HierarchicalLock extends EventDispatcher {
 
 					childLock.lockedAncestor.x = x;
 					childLock.lockedAncestor.y = y;
-					childLock.lockedAncestor.level = ll;
+					childLock.lockedAncestor.level = level;
+
+				} else if ( lock.loading === 0 && childLock.active > 0 && childLock.loading > 0 ) {
+
+					// No ancestor was dispatched when this descendant started loading;
+					// this tile is now visible so use it as the placeholder.
+					lock.active ++;
+					childLock.lockedAncestor = { x, y, level };
 
 				}
 
