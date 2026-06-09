@@ -146,7 +146,7 @@ export class MVTHierarchy extends EventDispatcher {
 
 				}
 
-			} else if ( tile.visible ) {
+			} else if ( tile.visible || tile.showTimer > 0 ) {
 
 				tile.hideTimer += dt;
 				tile.hideTimer = Math.min( tile.hideTimer, TIMER_DURATION );
@@ -185,21 +185,29 @@ export class MVTHierarchy extends EventDispatcher {
 					result
 						.then( res => {
 
-							if ( res === null ) {
+							if ( tile.loadingState !== LOADING ) {
 
-								// TODO: we need to adjust data cache to be more clear
-								tile.loadingState = UNLOADED;
+								if ( res === null ) {
 
-							} else {
+									// TODO: we need to adjust data cache to be more clear about what is returned here
+									tile.loadingState = UNLOADED;
 
-								tile.loadingState = LOADED;
+								} else {
+
+									tile.loadingState = LOADED;
+
+								}
 
 							}
 
 						} )
 						.catch( () => {
 
-							tile.loadingState = FAILED;
+							if ( tile.loadingState === LOADING ) {
+
+								tile.loadingState = FAILED;
+
+							}
 
 						} );
 
