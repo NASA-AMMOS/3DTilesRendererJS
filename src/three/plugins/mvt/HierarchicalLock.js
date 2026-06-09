@@ -24,13 +24,13 @@ export class HierarchicalLock extends EventDispatcher {
 	// mark the tile as "active", meaning it should be visible
 	markActive( x, y, level ) {
 
-		this._incrLock( x, y, level, true );
+		this._incrActiveLock( x, y, level, true );
 
 	}
 
 	markInactive( x, y, level ) {
 
-		this._incrLock( x, y, level, false );
+		this._incrActiveLock( x, y, level, false );
 
 	}
 
@@ -40,44 +40,18 @@ export class HierarchicalLock extends EventDispatcher {
 
 		const { locks } = this;
 		const childKey = getKey( x, y, level );
-		let ax = x;
-		let ay = y;
-		let al = level;
-
-		// Create the lock for the child and mark it as loading
-		if ( ! ( childKey in locks ) ) {
-
-			locks[ childKey ] = this._createLock( x, y, level );
-
-		}
+		this._ensureLock( childKey, x, y, level );
 
 		const childLock = locks[ childKey ];
 		childLock.loading ++;
-		this._checkToggle( childKey );
 
-		// Only lock the ancestor on the first markLoading call — subsequent concurrent
-		// loads for the same tile share the same ancestor hold
-		if ( childLock.loading === 1 ) {
+		if ( childLock.loading === 1 && childLock.active > 0 ) {
 
-			while ( al > 0 ) {
-
-				al --;
-				ax >>= 1;
-				ay >>= 1;
-
-				const ancestorKey = getKey( ax, ay, al );
-				if ( ancestorKey in locks && locks[ ancestorKey ].dispatched ) {
-
-					// save the reference so we can unlock it later when load is finished
-					this._incrLock( ax, ay, al, true );
-					childLock.lockedAncestor = { x: ax, y: ay, level: al };
-					break;
-
-				}
-
-			}
+			this._lockAncestor( x, y, level );
 
 		}
+
+		this._tryFireEvent( childKey );
 
 	}
 
@@ -86,7 +60,6 @@ export class HierarchicalLock extends EventDispatcher {
 		const { locks } = this;
 		const childKey = getKey( x, y, level );
 		const childLock = locks[ childKey ];
-
 		if ( ! childLock ) {
 
 			throw new Error( 'HierarchicalLock: unmarkLoading called without a matching markLoading.' );
@@ -94,27 +67,100 @@ export class HierarchicalLock extends EventDispatcher {
 		}
 
 		childLock.loading --;
-		this._checkToggle( childKey );
 
-		// Release the ancestor only when the last concurrent load finishes
-		if ( childLock.loading === 0 && childLock.lockedAncestor ) {
+		if ( childLock.loading === 0 ) {
 
-			const { x: ax, y: ay, level: al } = childLock.lockedAncestor;
-			this._incrLock( ax, ay, al, false );
-			childLock.lockedAncestor = null;
+			this._unlockAncestor( x, y, level );
 
 		}
 
+		this._tryFireEvent( childKey );
 		this._tryDeleteLock( childKey );
 
 	}
 
 	//
 
+	_lockAncestor( x, y, level ) {
+
+		const { locks } = this;
+		const childKey = getKey( x, y, level );
+		const childLock = locks[ childKey ];
+		this._ensureLock( childKey, x, y, level );
+		if ( childLock.lockedAncestor ) return;
+
+		let ax = x;
+		let ay = y;
+		let al = level;
+
+		// Only lock the ancestor on the first markLoading call — subsequent concurrent
+		// loads for the same tile share the same ancestor hold
+		while ( al > 0 ) {
+
+			al --;
+			ax >>= 1;
+			ay >>= 1;
+
+			const ancestorKey = getKey( ax, ay, al );
+			this._ensureLock( ancestorKey, ax, ay, al );
+			locks[ ancestorKey ].loadingDescendants.add( childKey );
+
+			// save the reference so we can unlock it later when load is finished
+			if ( locks[ ancestorKey ].dispatched && ! childLock.lockedAncestor ) {
+
+				this._incrActiveLock( ax, ay, al, true );
+				childLock.lockedAncestor = { x: ax, y: ay, level: al };
+
+			}
+
+		}
+
+	}
+
+	_unlockAncestor( x, y, level ) {
+
+		const { locks } = this;
+		const childKey = getKey( x, y, level );
+		const childLock = locks[ childKey ];
+		if ( ! childLock ) return;
+
+		if ( childLock.lockedAncestor ) {
+
+			// unlock the ancestor
+			const { x: lx, y: ly, level: ll } = childLock.lockedAncestor;
+			this._incrActiveLock( lx, ly, ll, false );
+			childLock.lockedAncestor = null;
+
+			// unmark the descendants list
+			let ax = x;
+			let ay = y;
+			let al = level;
+			while ( al > 0 ) {
+
+				al --;
+				ax >>= 1;
+				ay >>= 1;
+
+				const ancestorKey = getKey( ax, ay, al );
+				locks[ ancestorKey ].loadingDescendants.delete( childKey );
+				this._tryDeleteLock( ancestorKey );
+
+			}
+
+		}
+
+	}
+
+	// delete the lock if all the fields have been settled
 	_tryDeleteLock( key ) {
 
 		const lock = this.locks[ key ];
-		if ( lock && lock.active === 0 && lock.lockedAncestor === null && lock.loading === 0 ) {
+		if (
+			lock && lock.active === 0 &&
+			lock.lockedAncestor === null &&
+			lock.loading === 0 &&
+			lock.loadingDescendants.size === 0
+		) {
 
 			delete this.locks[ key ];
 
@@ -122,21 +168,30 @@ export class HierarchicalLock extends EventDispatcher {
 
 	}
 
-	_createLock( x, y, level ) {
+	// ensure the lock exists
+	_ensureLock( key, x, y, level ) {
 
-		return {
-			x,
-			y,
-			level,
-			active: 0,
-			loading: 0,
-			dispatched: false,
-			lockedAncestor: null,
-		};
+		if ( ! ( key in this.locks ) ) {
+
+			this.locks[ key ] = {
+				x,
+				y,
+				level,
+				active: 0,
+				loading: 0,
+				dispatched: false,
+				lockedAncestor: null,
+				loadingDescendants: new Set(),
+			};
+
+		}
+
+		return this.locks[ key ];
 
 	}
 
-	_checkToggle( key ) {
+	// checks whether an event should be fired
+	_tryFireEvent( key ) {
 
 		const { locks } = this;
 		const lock = locks[ key ];
@@ -156,16 +211,12 @@ export class HierarchicalLock extends EventDispatcher {
 
 	}
 
-	_incrLock( x, y, level, incr ) {
+	// increments the active lock for the tile
+	_incrActiveLock( x, y, level, incr ) {
 
 		const { locks } = this;
 		const key = getKey( x, y, level );
-
-		if ( ! ( key in locks ) ) {
-
-			locks[ key ] = this._createLock( x, y, level );
-
-		}
+		this._ensureLock( key, x, y, level );
 
 		const lock = locks[ key ];
 		lock.active += incr ? 1 : - 1;
@@ -175,7 +226,45 @@ export class HierarchicalLock extends EventDispatcher {
 
 		}
 
-		this._checkToggle( key );
+		// try to lock the ancestors if the lock became active
+		// and is loading
+		if ( lock && lock.loading > 0 ) {
+
+			if ( incr && lock.active === 1 ) {
+
+				this._lockAncestor( x, y, level );
+
+			} else if ( ! incr && lock.active === 0 ) {
+
+				this._unlockAncestor( x, y, level );
+
+			}
+
+		}
+
+		// replace all the existing locks up this chain
+		if ( incr && lock.active === 1 ) {
+
+			lock.loadingDescendants.forEach( key => {
+
+				const childLock = locks[ key ];
+				if ( childLock.lockedAncestor ) {
+
+					const { x: lx, y: ly, level: ll } = childLock.lockedAncestor;
+					this.markInactive( lx, ly, ll );
+					lock.active ++;
+
+					childLock.lockedAncestor.x = x;
+					childLock.lockedAncestor.y = y;
+					childLock.lockedAncestor.level = ll;
+
+				}
+
+			} );
+
+		}
+
+		this._tryFireEvent( key );
 		this._tryDeleteLock( key );
 
 	}
