@@ -185,49 +185,21 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	init( tiles ) {
+	async init( tiles ) {
 
 		const { locks, overlay, occupancy, tileLoadState } = this;
-
-		// init container
-		this.tiles = tiles;
 
 		// ensure the overlay is initialized
 		overlay.init();
 
-		// event callbacks
-		this._onVisibilityChange = ( { scene, tile, visible } ) => {
+		if ( ! overlay.isReady ) {
 
-			const info = tileLoadState.get( tile );
+			await overlay.whenReady();
 
-			// tile geometry changed — existing items may have been settled on this geometry
-			// and need to be re-raycasted against the updated scene
-			this._settlingNeedsRebuild = true;
+		}
 
-			// TODO: the ImageOverlay Tile Splits is causing an issue here.
-			if ( ! info ) {
-
-				return;
-
-			}
-
-			if ( visible ) {
-
-				this._loadMVTForTile( scene, tile );
-
-			} else if ( info.range !== null ) {
-
-				const { contentCache } = this;
-				this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-					locks.markInactive( x, y, l );
-					contentCache.release( x, y, l );
-
-				} );
-
-			}
-
-		};
+		// init container
+		this.tiles = tiles;
 
 		occupancy.sortCallback = ( a, b ) => {
 
@@ -274,6 +246,38 @@ export class MVTAnnotationsPlugin {
 
 		};
 
+		// event callbacks
+		this._onVisibilityChange = ( { scene, tile, visible } ) => {
+
+			// tile geometry changed — existing items may have been settled on this geometry
+			// and need to be re-raycasted against the updated scene
+			this._settlingNeedsRebuild = true;
+
+			// TODO: the ImageOverlay Tile Splits is causing an issue here.
+			const info = tileLoadState.get( tile );
+			if ( ! info ) {
+
+				return;
+
+			}
+
+			if ( visible ) {
+
+				this._loadMVTForTile( scene, tile );
+
+			} else {
+
+				const { contentCache } = this;
+				this._forEachTileInBounds( info.range, ( x, y, l ) => {
+
+					locks.markInactive( x, y, l );
+					contentCache.release( x, y, l );
+
+				} );
+
+			}
+
+		};
 
 		this._onUpdateAfter = () => {
 
@@ -462,14 +466,12 @@ export class MVTAnnotationsPlugin {
 
 	processTileModel( scene, tile ) {
 
-		const { tileLoadState } = this;
-		tileLoadState.set( tile, {
+		this.tileLoadState.set( tile, {
 			range: null,
 			disposed: false,
 		} );
 
 	}
-
 
 	disposeTile( tile ) {
 
@@ -491,14 +493,7 @@ export class MVTAnnotationsPlugin {
 	async _loadMVTForTile( scene, tile ) {
 
 		const { overlay, tiles, tileLoadState, locks } = this;
-
 		const info = tileLoadState.get( tile );
-
-		if ( ! overlay.isReady ) {
-
-			await overlay.whenReady();
-
-		}
 
 		if ( info.disposed ) {
 
@@ -527,22 +522,21 @@ export class MVTAnnotationsPlugin {
 
 		// mark the loading and active flags
 		const { contentCache } = this;
-		const promises = [];
 		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
 			locks.markLoading( x, y, l );
 			locks.markActive( x, y, l );
 
-			let res = contentCache.lock( x, y, l );
+			const res = contentCache.lock( x, y, l );
 			if ( res instanceof Promise ) {
 
-				promises.push( res
+				res
 					.catch( () => {} )
 					.finally( () => {
 
 						locks.unmarkLoading( x, y, l );
 
-					} ) );
+					} );
 
 			} else {
 
@@ -551,9 +545,6 @@ export class MVTAnnotationsPlugin {
 			}
 
 		} );
-
-		// await all the promises
-		await Promise.all( promises );
 
 	}
 
