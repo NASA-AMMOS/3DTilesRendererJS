@@ -1,3 +1,13 @@
+export class DataCacheItemRemovedError extends DOMException {
+
+	constructor() {
+
+		super( 'DataCache: Item removed', 'AbortError' );
+
+	}
+
+}
+
 function hash( ...args ) {
 
 	return args.join( '_' );
@@ -78,8 +88,9 @@ export class DataCache {
 			info.result = this.fetchItem( args, abortController.signal );
 			if ( info.result instanceof Promise ) {
 
-				info.result.then( res => {
+				info.result = info.result.then( res => {
 
+					abortController.signal.throwIfAborted();
 					info.result = res;
 					info.bytes = this.getMemoryUsage( res );
 					this.cachedBytes += info.bytes;
@@ -88,10 +99,6 @@ export class DataCache {
 				} ).finally( () => {
 
 					this.active --;
-
-				} ).catch( e => {
-
-					// error logging and handling can be handled elsewhere
 
 				} );
 
@@ -168,7 +175,7 @@ export class DataCache {
 		for ( const key in cache ) {
 
 			const { abortController } = cache[ key ];
-			abortController.abort();
+			abortController.abort( new DataCacheItemRemovedError() );
 
 			this.releaseViaFullKey( key, true );
 
@@ -202,7 +209,7 @@ export class DataCache {
 
 					// abort any loads
 					const { result, abortController } = info;
-					abortController.abort();
+					abortController.abort( new DataCacheItemRemovedError() );
 
 					// dispose of the object even if it still is in progress
 					if ( result instanceof Promise ) {
