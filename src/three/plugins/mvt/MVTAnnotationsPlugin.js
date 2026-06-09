@@ -419,7 +419,7 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		this.__onDisposeTile = ( { tile } ) => {
+		this._onDisposeTile = ( { tile } ) => {
 
 			const { tileLoadState } = this;
 			const info = tileLoadState.get( tile );
@@ -438,7 +438,7 @@ export class MVTAnnotationsPlugin {
 		this.hierarchy.addEventListener( 'toggle', this._onToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		tiles.addEventListener( 'dispose-tile', this.__onDisposeTile );
+		tiles.addEventListener( 'dispose-tile', this._onDisposeTile );
 
 		//
 
@@ -467,6 +467,7 @@ export class MVTAnnotationsPlugin {
 		this.hierarchy.removeEventListener( 'toggle', this._onToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		this.tiles.removeEventListener( 'dispose-tile', this._onDisposeTile );
 
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
