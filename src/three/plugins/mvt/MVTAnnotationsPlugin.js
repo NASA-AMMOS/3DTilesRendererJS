@@ -422,14 +422,6 @@ export class MVTAnnotationsPlugin {
 		this._onDisposeTile = ( { tile } ) => {
 
 			const { tileLoadState } = this;
-			const info = tileLoadState.get( tile );
-			if ( ! info ) {
-
-				return;
-
-			}
-
-			info.disposed = true;
 			tileLoadState.delete( tile );
 
 		};
@@ -481,7 +473,6 @@ export class MVTAnnotationsPlugin {
 
 		this.tileLoadState.set( tile, {
 			range: null,
-			disposed: false,
 		} );
 
 	}
