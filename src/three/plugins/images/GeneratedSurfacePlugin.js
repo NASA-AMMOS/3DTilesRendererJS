@@ -122,7 +122,21 @@ export class GeneratedSurfacePlugin {
 
 			if ( overlay.hasContent( range, level ) ) {
 
-				await overlay.lockTexture( range, level );
+				try {
+
+					await overlay.lockTexture( range, level );
+
+				} catch ( err ) {
+
+					if ( err.name !== 'AbortError' ) {
+
+						throw err;
+
+					}
+
+					return null;
+
+				}
 
 				const texture = overlay.getTexture( range, level );
 				tile[ OVERLAY_RANGE ] = range;

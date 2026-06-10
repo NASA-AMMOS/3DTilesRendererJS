@@ -155,12 +155,10 @@ export class MVTHierarchy extends EventDispatcher {
 					tile.showTimer = 0;
 					tile.hideTimer = 0;
 
-					// Release the content lock for any state that called lock(), and reset synchronously
-					// before any async abort callbacks can fire
+					// Release the content lock; reset synchronously so the tile is in a clean
+					// state before any async callbacks can observe it
 					if ( tile.loadingState !== UNLOADED ) {
 
-						// TODO: this is being done here because it's currently difficult to determine
-						// whether an item was cancelled via the abort signal, download queue, or failed.
 						scope.contentCache.release( tile.x, tile.y, tile.level );
 						tile.loadingState = UNLOADED;
 
@@ -187,25 +185,16 @@ export class MVTHierarchy extends EventDispatcher {
 
 							if ( tile.loadingState === LOADING ) {
 
-								if ( res === null ) {
-
-									// TODO: we need to adjust data cache to be more clear about what is returned here
-									tile.loadingState = UNLOADED;
-
-								} else {
-
-									tile.loadingState = LOADED;
-
-								}
+								tile.loadingState = LOADED;
 
 							}
 
 						} )
-						.catch( () => {
+						.catch( err => {
 
 							if ( tile.loadingState === LOADING ) {
 
-								tile.loadingState = FAILED;
+								tile.loadingState = err.name === 'AbortError' ? UNLOADED : FAILED;
 
 							}
 

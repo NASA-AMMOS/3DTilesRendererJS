@@ -200,11 +200,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		await Promise.all( promises );
 
-		if ( signal && signal.aborted ) {
-
-			return null;
-
-		}
+		signal?.throwIfAborted();
 
 		this._drawToCanvas( canvas, regionBounds, level );
 

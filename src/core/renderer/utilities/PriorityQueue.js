@@ -1,17 +1,12 @@
 import { Scheduler } from './Scheduler.js';
 
-/**
- * Error thrown when a queued item's promise is rejected because the item was removed
- * before its callback could run.
- *
- * @extends Error
- */
-export class PriorityQueueItemRemovedError extends Error {
+// Error thrown when a queued item's promise is rejected because the item was removed
+// before its callback could run.
+class PriorityQueueItemRemovedError extends DOMException {
 
 	constructor() {
 
-		super( 'PriorityQueue: Item removed' );
-		this.name = 'PriorityQueueItemRemovedError';
+		super( 'PriorityQueue: Item removed', 'AbortError' );
 
 	}
 
@@ -168,7 +163,7 @@ export class PriorityQueue {
 	}
 
 	/**
-	 * Removes an item from the queue, rejecting its promise with `PriorityQueueItemRemovedError`.
+	 * Removes an item from the queue, rejecting its promise with an `AbortError` DOMException.
 	 * @param {any} item
 	 */
 	remove( item ) {
@@ -185,7 +180,7 @@ export class PriorityQueue {
 			const info = callbacks.get( item );
 			info.promise.catch( err => {
 
-				if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+				if ( err.name !== 'AbortError' ) {
 
 					throw err;
 
