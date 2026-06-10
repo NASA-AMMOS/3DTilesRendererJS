@@ -1843,6 +1843,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	lockTextureSafe( range ) {
 
+		// locks a texture without risk of throwing due to abort
 		const result = this.lockTexture( range );
 		if ( result instanceof Promise ) {
 
