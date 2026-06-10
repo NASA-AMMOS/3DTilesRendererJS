@@ -1025,20 +1025,7 @@ export class ImageOverlayPlugin {
 				range = overlay.projection.toNormalizedRange( range );
 
 				info.range = range;
-				const lockResult = overlay.lockTexture( range );
-				if ( lockResult instanceof Promise ) {
-
-					lockResult.catch( err => {
-
-						if ( err.name !== 'AbortError' ) {
-
-							throw err;
-
-						}
-
-					} );
-
-				}
+				overlay.lockTextureSafe( range );
 
 			}
 
@@ -1130,20 +1117,7 @@ export class ImageOverlayPlugin {
 		if ( info.range === null ) {
 
 			info.range = range;
-			const lockResult = overlay.lockTexture( range );
-			if ( lockResult instanceof Promise ) {
-
-				lockResult.catch( err => {
-
-					if ( err.name !== 'AbortError' ) {
-
-						throw err;
-
-					}
-
-				} );
-
-			}
+			overlay.lockTextureSafe( range );
 
 		}
 
@@ -1257,20 +1231,7 @@ export class ImageOverlayPlugin {
 
 			failed.forEach( ( { tile, overlay, info } ) => {
 
-				const lockResult = overlay.lockTexture( info.range );
-				if ( lockResult instanceof Promise ) {
-
-					lockResult.catch( err => {
-
-						if ( err.name !== 'AbortError' ) {
-
-							throw err;
-
-						}
-
-					} );
-
-				}
+				overlay.lockTextureSafe( info.range );
 
 				this._fetchTileOverlayTexture( tile, overlay, info )
 					.then( () => {
@@ -1877,6 +1838,23 @@ export class GeoJSONOverlay extends ImageOverlay {
 	lockTexture( range ) {
 
 		return this.imageSource.lock( ...range );
+
+	}
+
+	lockTextureSafe( range ) {
+
+		const result = this.lockTexture( range );
+		if ( result instanceof Promise ) {
+
+			result.catch( err => {
+
+				if ( err.name !== 'AbortError' ) throw err;
+
+			} );
+
+		}
+
+		return result;
 
 	}
 
