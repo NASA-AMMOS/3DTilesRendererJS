@@ -139,6 +139,7 @@ function reinstantiateTiles() {
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
 	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new MeshBVHPlugin() );
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
