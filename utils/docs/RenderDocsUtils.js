@@ -113,14 +113,15 @@ export function formatType( typeObj, callbackMap = {} ) {
 export function formatParam( param, callbackMap = {} ) {
 
 	const type = formatType( param.type, callbackMap );
+	const name = param.variable ? `...${ param.name }` : param.name;
 
 	if ( param.defaultvalue !== undefined ) {
 
-		return `${ param.name } = ${ param.defaultvalue }: ${ type }`;
+		return `${ name } = ${ param.defaultvalue }: ${ type }`;
 
 	}
 
-	return `${ param.name }: ${ type }`;
+	return `${ name }: ${ type }`;
 
 }
 
@@ -263,10 +264,21 @@ export function renderMember( doc, callbackMap = {} ) {
 	lines.push( '' );
 	lines.push( '```js' );
 
-	const type = formatType( doc.type, callbackMap );
 	const readonly = doc.readonly ? 'readonly ' : '';
 	const defaultStr = doc.defaultvalue !== undefined ? ` = ${ doc.defaultvalue }` : '';
-	lines.push( `${ readonly }${ doc.name }: ${ type }${ defaultStr }` );
+
+	const props = doc.properties;
+	if ( props && props.length > 0 ) {
+
+		const typeStr = formatPropertiesInline( props, callbackMap );
+		lines.push( `${ readonly }${ doc.name }: ${ typeStr }${ defaultStr }` );
+
+	} else {
+
+		const type = formatType( doc.type, callbackMap );
+		lines.push( `${ readonly }${ doc.name }: ${ type }${ defaultStr }` );
+
+	}
 
 	lines.push( '```' );
 	lines.push( '' );
@@ -281,6 +293,57 @@ export function renderMember( doc, callbackMap = {} ) {
 	lines.push( renderAlertTags( doc ) );
 
 	return lines.join( '\n' );
+
+}
+
+// Formats a flat list of @property entries (possibly with dotted names for nested objects)
+// into a multi-line struct type string.
+function formatPropertiesInline( props, callbackMap ) {
+
+	// Build a tree from dotted names; leaf nodes are tagged with _leaf: true.
+	const tree = {};
+	for ( const p of props ) {
+
+		const parts = p.name.split( '.' );
+		let node = tree;
+		for ( let i = 0; i < parts.length - 1; i ++ ) {
+
+			if ( ! node[ parts[ i ] ] || node[ parts[ i ] ]._leaf ) node[ parts[ i ] ] = {};
+			node = node[ parts[ i ] ];
+
+		}
+
+		node[ parts[ parts.length - 1 ] ] = {
+			_leaf: true,
+			type: formatType( p.type, callbackMap ),
+			defaultValue: p.defaultvalue,
+		};
+
+	}
+
+	return renderTreeInline( tree, 1 );
+
+}
+
+function renderTreeInline( tree, depth ) {
+
+	const indent = '\t'.repeat( depth );
+	const closing = '\t'.repeat( depth - 1 );
+
+	const entries = Object.entries( tree ).map( ( [ key, val ] ) => {
+
+		if ( val._leaf ) {
+
+			const defStr = val.defaultValue !== undefined ? ` = ${ val.defaultValue }` : '';
+			return `${ indent }${ key }${ defStr }: ${ val.type }`;
+
+		}
+
+		return `${ indent }${ key }: ${ renderTreeInline( val, depth + 1 ) }`;
+
+	} );
+
+	return `{\n${ entries.join( ',\n' ) }\n${ closing }}`;
 
 }
 
@@ -399,11 +462,11 @@ export function renderConstants( constants, title = 'Constants', callbackMap = {
 
 	for ( const c of constants ) {
 
-		const type = formatType( c.type, callbackMap ) || 'number';
+		const type = formatType( c.type, callbackMap );
 		lines.push( `### ${ c.name }` );
 		lines.push( '' );
 		lines.push( '```js' );
-		lines.push( `${ c.name }: ${ type }` );
+		lines.push( type ? `${ c.name }: ${ type }` : c.name );
 		lines.push( '```' );
 		lines.push( '' );
 

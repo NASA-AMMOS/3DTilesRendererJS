@@ -610,7 +610,7 @@ callback completes, or rejects if the item is removed before running.
 remove( item: any ): void
 ```
 
-Removes an item from the queue, rejecting its promise with `PriorityQueueItemRemovedError`.
+Removes an item from the queue, rejecting its promise with an `AbortError` DOMException.
 
 
 ### .removeByFilter
@@ -648,14 +648,6 @@ scheduleJobRun(): void
 ```
 
 Schedules a deferred call to `tryRunJobs` via `schedulingCallback`.
-
-
-## PriorityQueueItemRemovedError
-
-_extends `Error`_
-
-Error thrown when a queued item's promise is rejected because the item was removed
-before its callback could run.
 
 
 ## Scheduler

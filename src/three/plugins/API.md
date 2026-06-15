@@ -321,7 +321,8 @@ constructor(
 		// Canvas resolution for generated tile textures.
 		resolution = 512: number,
 
-		// Per-feature style callback.
+		// Per-feature style callback. If not provided then no content
+		// will draw.
 		getStyle?: (
 			layerName: string,
 			properties: Object | null
@@ -749,9 +750,12 @@ constructor(
 		// Maximum error for error-based coloring (`-1` = auto).
 		maxDebugError = -1: number,
 
-		// Callback `( tile, mesh )` used when `colorMode` is
+		// Callback invoked per-object when `colorMode` is
 		// `CUSTOM_COLOR`.
-		customColorCallback = null: function | null,
+		customColorCallback = null: (
+			tile: Object,
+			child: Object3D
+		) => void,
 
 		// Replace tile materials with unlit `MeshBasicMaterial`.
 		unlit = false: boolean,
@@ -914,6 +918,172 @@ extension and attaches a `StructuralMetadata` instance to `scene.userData.struct
 constructor( parser: Object )
 ```
 
+## GlyphAtlasTexture
+
+_extends `CanvasTexture`_
+
+A canvas texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
+Slots are addressed by string key and can be drawn with text, images, or paths.
+
+
+### .isFull
+
+```js
+isFull: 
+```
+
+Returns true when all slots are allocated.
+
+
+### .constructor
+
+```js
+constructor( slotCount: number, slotSize: number )
+```
+
+### .has
+
+```js
+has( key: string ): boolean
+```
+
+Returns true if key has an allocated slot.
+
+
+### .get
+
+```js
+get( key: string ): Object | null
+```
+
+Returns the slot bounds `{ x, y, w, h }` for key, or null if not allocated.
+
+
+### .getSlotSize
+
+```js
+getSlotSize( target: Vector2 ): Vector2
+```
+
+Returns the UV bounds of a slot for key in GPU texture space (flipY applied),
+or null if not allocated.
+
+
+### .getUV
+
+```js
+getUV( key: string ): Object | null
+```
+
+Returns the UV bounds of the slot for key in GPU texture space (flipY applied),
+or null if not allocated. x/y is the top-left corner; w/h is the slot size in UV units.
+
+
+### .drawChar
+
+```js
+drawChar(
+	key: string,
+	char: string,
+	{
+		// CSS font string (e.g. `'bold 48px sans-serif'`).
+		font = '': string,
+
+		// CSS fill color.
+		color = 'white': string,
+	}
+): Object
+```
+
+Renders a single character centered in the slot.
+
+
+### .drawImage
+
+```js
+drawImage(
+	key: string,
+	image: HTMLImageElement | HTMLCanvasElement | ImageBitmap
+): Object
+```
+
+Draws a `CanvasImageSource` into the slot, scaled to fit.
+
+
+### .drawPath
+
+```js
+drawPath(
+	key: string,
+	path2D: Path2D,
+	{
+		// CSS fill color, or null to skip fill.
+		fillStyle = null: string | null,
+
+		// CSS stroke color, or null to skip stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in pixels.
+		lineWidth = 1: number,
+	}
+): Object
+```
+
+Renders a `Path2D` into the slot. Path coordinates are slot-local (origin at top-left).
+
+
+### .drawSVG
+
+```js
+drawSVG(
+	key: string,
+	svgText: string,
+	{
+		// CSS fill color, or null to skip fill.
+		fillStyle = 'white': string | null,
+
+		// CSS stroke color, or null to skip stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in SVG user units before scaling.
+		strokeWidth = 1: number,
+
+		// Fraction of the slot size the icon occupies (0–1).
+		iconScale = 1: number,
+	}
+): Object
+```
+
+Parses an SVG string and renders its paths into a slot, scaled to fit.
+
+
+### .release
+
+```js
+release( key: string ): void
+```
+
+Frees the slot for key, returning it to the pool for reuse.
+
+
+### .resize
+
+```js
+resize( slotCount: number, slotSize: number ): void
+```
+
+Resizes the atlas, copying existing slot content to their new positions.
+
+
+### .clear
+
+```js
+clear(): void
+```
+
+Clears all slots and resets the atlas to empty.
+
+
 ## ImageOverlayPlugin
 
 Plugin that composites one or more tiled image overlays onto 3D tile geometry by
@@ -926,10 +1096,6 @@ Image sources are added via `addOverlay()` and removed via `deleteOverlay()`.
 ```js
 constructor(
 	{
-		// The renderer used for constructing and rendering to render
-		// targets.
-		renderer: WebGLRenderer,
-
 		// Initial image overlay sources to add.
 		overlays = []: Array,
 
@@ -989,6 +1155,18 @@ Plugin that restricts tile loading and traversal to one or more geometric region
 region are loaded and refined. Regions marked as masks additionally prevent tiles
 outside them from loading.
 
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Initial set of regions to register. Equivalent to calling
+		// `addRegion` for each entry.
+		regions = []: Array<BaseRegion>,
+	}
+)
+```
 
 ## MeshFeatures
 
@@ -1053,6 +1231,35 @@ dispose(): void
 
 Disposes all textures used by this instance.
 
+
+## MVTAnnotationsPlugin
+
+Plugin that extracts point features from an MVT overlay and manages their screen-space
+occupation, preventing label crowding via a hierarchical lock system and raycasted depth
+placement. Rendering is left entirely to the caller via `onAnnotationsUpdate`.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// The `PMTilesOverlay` (or compatible overlay) whose tile  
+		// content is parsed for point features.
+		overlay: Object,
+
+		// Initial camera. Can be updated with `setCamera()`.
+		camera = null: Camera,
+
+		// Three.js scene reference (stored for caller use).
+		scene = null: Scene,
+
+		// Overlay a debug canvas showing the   screen-space occupation
+		// grid.
+		displayOccupancyGrid = false: boolean,
+	}
+)
+```
 
 ## QuantizedMeshPlugin
 
@@ -1359,6 +1566,24 @@ clearShapes(): void
 
 Removes all shapes and resets flattened tiles to their original positions.
 
+
+## TilesetValidationPlugin
+
+Plugin that validates tile geometry containment on load. For each loaded tile it checks that
+all mesh vertices lie within the tile's bounding volume and within the parent tile's bounding
+volume, logging a warning for any violations. Intended for debugging only.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Whether the plugin is active on init.
+		enabled = true: boolean,
+	}
+)
+```
 
 ## TilesFadePlugin
 
