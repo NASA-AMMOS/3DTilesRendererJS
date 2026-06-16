@@ -1,4 +1,4 @@
-import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh';
+import { MeshBVH, ObjectBVH, acceleratedRaycast } from 'three-mesh-bvh';
 
 /**
  * Demo plugin that synchronously builds a three-mesh-bvh BVH for every mesh
@@ -11,6 +11,7 @@ export class MeshBVHPlugin {
 
 		this.name = 'MESH_BVH_PLUGIN';
 		this.tiles = null;
+		this.objectBvh = null;
 
 	}
 
@@ -45,10 +46,25 @@ export class MeshBVHPlugin {
 
 		};
 
+		this._onVisibilityChange = () => {
+
+			this.objectBvh = new ObjectBVH( tiles.group );
+
+		};
+
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 		this.tiles = tiles;
+		this.objectBvh = new ObjectBVH( tiles.group );
+
+		tiles.group.raycast = ( ...args ) => {
+
+			this.objectBvh.raycast( ...args );
+			return false;
+
+		};
 
 		tiles.forEachLoadedModel( ( scene ) => {
 
@@ -61,8 +77,14 @@ export class MeshBVHPlugin {
 	dispose() {
 
 		const { tiles } = this;
+
+		// revert to the prototype chain raycast
+		delete tiles.group.raycast;
+
+		// remove events
 		tiles.removeEventListener( 'load-model', this._onLoadModel );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 		tiles.forEachLoadedModel( ( scene ) => {
 

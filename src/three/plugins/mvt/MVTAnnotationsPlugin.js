@@ -135,6 +135,8 @@ export class MVTAnnotationsPlugin {
 
 	constructor( options = {} ) {
 
+		window.THING = this;
+
 		// plugin fields
 		this.priority = Infinity;
 		this.name = 'MVT_ANNOTATIONS_PLUGIN';
@@ -177,6 +179,11 @@ export class MVTAnnotationsPlugin {
 		this._settlingQueueSet = new Set();
 		this._settlingNeedsRebuild = false;
 		this.maxSettleTimeMs = 5;
+
+		// forever-running settling task. each pass classifies, bins, and raycasts
+		// whatever is in the queue when the pass begins; ticking it advances the
+		// work by up to "maxSettleTimeMs" before yielding.
+		this._settleTask = null;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -614,138 +621,168 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	_processSettling() {
+	_FORCE() {
 
-		// process items on the raycast queue for settling
-		const {
-			_settlingQueueSet,
-			occupancy,
-			maxSettleTimeMs,
-			tiles,
-			camera,
-		} = this;
+		this._enqueueSettlingAll();
 
-		const {
-			visible,
-		} = occupancy;
+		this._settlingQueueSet.forEach( v => {
+			v.ready = false;
+		})
 
-		if ( window.TIMING ) console.time('FRUST')
-		// precompute which non-visible items have rays intersecting the camera frustum
-		if ( camera !== null ) {
+		console.log( 'COUNT', this._settlingQueueSet.size );
 
-			// if we have a camera then run a check against the camera frustum first
-			// so we can prioritize those that are potentially in view
-			_ndcMatrix
-				.copy( tiles.group.matrixWorld )
-				.premultiply( camera.matrixWorldInverse )
-				.premultiply( camera.projectionMatrix );
+		window.TIMING = true;
+		while ( this._settlingQueueSet.size > 0 ) {
 
-			_frustum.setFromProjectionMatrix( _ndcMatrix );
-			for ( const item of _settlingQueueSet ) {
-
-				// if it's already visible then we will prioritize it regardless
-				if ( visible.has( item ) ) {
-
-					continue;
-
-				}
-
-				// check if the projection ray intersects the frustum
-				this._getLocalSettlingRay( item );
-				if ( rayIntersectsFrustum( _raycaster, _frustum ) ) {
-
-					_intersectingFrustum.add( item );
-
-				}
-
-			}
+			this._processSettling();
 
 		}
-		if ( window.TIMING ) console.timeEnd('FRUST')
 
-		// ensure our visibility set is up to date
-		occupancy.syncItems();
+		window.TIMING = false;
 
-		// initialize a set of bins for sorting items
+	}
+
+	_processSettling() {
+
+		// tick the forever-running settling task, giving it a fresh time budget to
+		// advance the current pass before yielding.
+		if ( this._settleTask === null ) {
+
+			this._settleTask = this._settleGenerator();
+
+		}
+
+		this._settleTask.next();
+
+	}
+
+	*_settleGenerator() {
+
+		// runs forever: each pass classifies, bins, and raycasts whatever is in the
+		// queue when the pass begins, yielding whenever the per-tick budget is
+		// spent. items added after a pass starts are picked up on the next pass.
+		const { occupancy } = this;
+		const { visible } = occupancy;
+
+		// initialize a set of bins for prioritizing items
 		while ( _settlingBins.length < 4 ) {
 
 			_settlingBins.push( [] );
 
 		}
 
-		for ( const item of _settlingQueueSet ) {
+		// the deadline is owned by the generator and reset to a fresh budget each
+		// time it resumes after a yield.
+		let deadline = performance.now() + this.maxSettleTimeMs;
 
-			const inFrustum = _intersectingFrustum.has( item );
-			let tier = 0;
-			if ( ! item.ready && inFrustum ) {
+		while ( true ) {
 
-				tier = 3;
+			const { _settlingQueueSet, tiles, camera } = this;
 
-			} else if ( visible.has( item ) ) {
+			// classify non-visible items by whether their ray intersects the frustum
+			if ( camera !== null ) {
 
-				tier = 2;
+				_ndcMatrix
+					.copy( tiles.group.matrixWorld )
+					.premultiply( camera.matrixWorldInverse )
+					.premultiply( camera.projectionMatrix );
 
-			} else if ( inFrustum ) {
+				_frustum.setFromProjectionMatrix( _ndcMatrix );
 
-				tier = 1;
+				for ( const item of _settlingQueueSet ) {
+
+					// if it's already visible then we will prioritize it regardless
+					if ( visible.has( item ) ) {
+
+						continue;
+
+					}
+
+					// check if the projection ray intersects the frustum
+					this._getLocalSettlingRay( item );
+					if ( rayIntersectsFrustum( _raycaster, _frustum ) ) {
+
+						_intersectingFrustum.add( item );
+
+					}
+
+					if ( performance.now() >= deadline ) {
+
+						yield;
+						deadline = performance.now() + this.maxSettleTimeMs;
+
+					}
+
+				}
 
 			}
 
-			_settlingBins[ tier ].push( item );
+			// bin items by priority tier
+			for ( const item of _settlingQueueSet ) {
 
-		}
+				const inFrustum = _intersectingFrustum.has( item );
+				let tier = 0;
+				if ( ! item.ready && inFrustum ) {
 
-		// run for a predetermined period to settle items, draining the highest
-		// priority bin first. the deadline is started after the first bin is
-		// sorted so sort time is not charged against the raycast budget — this
-		// guarantees at least one item is settled per call so the queue always
-		// drains ( otherwise a sort longer than maxSettleTimeMs would stall ).
-		let deadline = performance.now() + maxSettleTimeMs;
-		const bef = _settlingQueueSet.size;
-		for ( let t = _settlingBins.length - 1; t >= 0; t -- ) {
+					tier = 3;
 
-			const bin = _settlingBins[ t ];
-			if ( bin.length === 0 ) {
+				} else if ( visible.has( item ) ) {
 
-				continue;
+					tier = 2;
 
-			}
+				} else if ( inFrustum ) {
 
-			while ( bin.length > 0 ) {
+					tier = 1;
+
+				}
+
+				_settlingBins[ tier ].push( item );
 
 				if ( performance.now() >= deadline ) {
 
-					break;
+					yield;
+					deadline = performance.now() + this.maxSettleTimeMs;
 
 				}
 
-				const item = bin.pop();
-				_settlingQueueSet.delete( item );
+			}
 
-				// skip items that were unregistered while in the queue
-				if ( occupancy.getById( item.id ) !== item ) {
+			// settle items, draining the highest priority bin first
+			for ( let t = _settlingBins.length - 1; t >= 0; t -- ) {
 
-					continue;
+				const bin = _settlingBins[ t ];
+				while ( bin.length > 0 ) {
+
+					const item = bin.pop();
+					_settlingQueueSet.delete( item );
+
+					// skip items that were unregistered while in the queue
+					if ( occupancy.getById( item.id ) === item ) {
+
+						this._settleItem( item );
+
+					}
+
+					if ( performance.now() >= deadline ) {
+
+						yield;
+						deadline = performance.now() + this.maxSettleTimeMs;
+
+					}
 
 				}
 
-				this._settleItem( item );
-
 			}
 
-			if ( performance.now() >= deadline ) {
+			// clear the working state for the next pass
+			_intersectingFrustum.clear();
+			_settlingBins.forEach( bins => bins.length = 0 );
 
-				break;
-
-			}
+			// always yield at the end of a pass so an empty queue can't busy-spin
+			yield;
+			deadline = performance.now() + this.maxSettleTimeMs;
 
 		}
-
-		if ( window.TIMING ) console.log( 'DIFF', _settlingQueueSet.size - bef );
-
-		// clear the set for next usage
-		_intersectingFrustum.clear();
-		_settlingBins.forEach( bins => bins.length = 0 );
 
 	}
 
