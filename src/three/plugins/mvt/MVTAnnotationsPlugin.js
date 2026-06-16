@@ -12,7 +12,6 @@ const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _frustum = /* @__PURE__ */ new Frustum();
 const _intersectingFrustum = new Set();
-const _settlingBins = [];
 
 // provide all meshes in the scene
 function collectMeshes( object ) {
@@ -178,6 +177,8 @@ export class MVTAnnotationsPlugin {
 		// raycast parameters
 		this._settlingQueueSet = new Set();
 		this._settlingNeedsRebuild = false;
+		this._settlingBins = [];
+
 		this.maxSettleTimeMs = 5;
 
 		// forever-running settling task. each pass classifies, bins, and raycasts
@@ -661,7 +662,7 @@ export class MVTAnnotationsPlugin {
 		// runs forever: each pass classifies, bins, and raycasts whatever is in the
 		// queue when the pass begins, yielding whenever the per-tick budget is
 		// spent. items added after a pass starts are picked up on the next pass.
-		const { occupancy } = this;
+		const { occupancy, _settlingBins } = this;
 		const { visible } = occupancy;
 
 		// initialize a set of bins for prioritizing items
@@ -766,6 +767,7 @@ export class MVTAnnotationsPlugin {
 					if ( performance.now() >= deadline ) {
 
 						yield;
+
 						deadline = performance.now() + this.maxSettleTimeMs;
 
 					}

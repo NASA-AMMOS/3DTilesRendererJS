@@ -303,7 +303,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 			.multiplyScalar( 1 / size )
 			.ceil();
 
-		const { width, height } = _totalResolution;
+		const { width, height } = this._totalResolution;
 		if ( this.cells.length !== width * height ) {
 
 			this.cells = new Uint8Array( width * height );
