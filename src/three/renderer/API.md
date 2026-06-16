@@ -6,7 +6,7 @@
 ### ENU_FRAME
 
 ```js
-ENU_FRAME: number
+ENU_FRAME
 ```
 
 Frame constant for the East-North-Up (ENU) coordinate frame, with X pointing east,
@@ -15,7 +15,7 @@ Y pointing north, and Z pointing up (away from the ellipsoid surface).
 ### CAMERA_FRAME
 
 ```js
-CAMERA_FRAME: number
+CAMERA_FRAME
 ```
 
 Frame constant for a camera-convention frame relative to the ENU frame, oriented with
@@ -24,7 +24,7 @@ Frame constant for a camera-convention frame relative to the ENU frame, oriented
 ### OBJECT_FRAME
 
 ```js
-OBJECT_FRAME: number
+OBJECT_FRAME
 ```
 
 Frame constant for an object-convention frame relative to the ENU frame, oriented with
@@ -934,6 +934,18 @@ tiles renderer performs its own frustum culling. If `displayActiveTiles` is `tru
 multiple cameras are being used, consider setting this to `false`.
 
 
+### .accelerateRaycast
+
+```js
+accelerateRaycast: boolean = true
+```
+
+Whether to use the bounding-volume hierarchy to accelerate raycasting. When disabled,
+all active tile geometry is tested directly. Useful for tilesets with inaccurate
+bounding volumes (e.g. Google Photorealistic Tiles) where traversal may miss
+geometry between bounding volumes.
+
+
 ### .group
 
 ```js
@@ -1045,6 +1057,15 @@ setResolution( camera: Camera, xOrVec: number | Vector2, y: number ): boolean
 ```
 
 Sets the render resolution for a registered camera, used for screen-space error calculation.
+
+
+### .getResolution
+
+```js
+getResolution( camera: Camera, target: Vector2 ): Vector2 | null
+```
+
+Returns the render resolution previously set for a registered camera.
 
 
 ### .setResolutionFromRenderer

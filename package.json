@@ -68,8 +68,7 @@
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint . && tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json --noEmit && vitest run",
-    "prepublishOnly": "npm run build-lib",
-    "docs:build": "node utils/docs/build.js"
+    "prepublishOnly": "npm run build-lib"
   },
   "repository": {
     "type": "git",
@@ -99,7 +98,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.170.0",
-    "@vitejs/plugin-react": "^4.3.2",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/eslint-plugin": "^1.5.1",
     "cesium": "^1.132.0",
     "concurrently": "^6.2.1",
@@ -117,7 +116,7 @@
     "three-mesh-bvh": "^0.9.10",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.48.1",
-    "vite": "^6.2.2",
+    "vite": "^8.0.16",
     "vitest": "^4.0.15"
   },
   "peerDependencies": {
