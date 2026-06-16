@@ -8,10 +8,7 @@ import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overl
 const PARALLEL_EPSILON = 1e-10;
 
 const _matrix = /* @__PURE__ */ new Matrix4();
-const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
-const _frustum = /* @__PURE__ */ new Frustum();
-const _intersectingFrustum = new Set();
 
 // provide all meshes in the scene
 function collectMeshes( object ) {
@@ -175,7 +172,6 @@ export class MVTAnnotationsPlugin {
 		// raycast parameters
 		this._settlingQueueSet = new Set();
 		this._settlingNeedsRebuild = false;
-		this._settlingBins = [];
 		this._settleTask = null;
 
 		this.maxSettleTimeMs = 5;
@@ -635,15 +631,16 @@ export class MVTAnnotationsPlugin {
 		// runs forever: each pass classifies, bins, and raycasts whatever is in the
 		// queue when the pass begins, yielding whenever the per-tick budget is
 		// spent. items added after a pass starts are picked up on the next pass.
-		const { occupancy, _settlingBins } = this;
+		const { occupancy } = this;
 		const { visible } = occupancy;
 
-		// initialize a set of bins for prioritizing items
-		while ( _settlingBins.length < 4 ) {
-
-			_settlingBins.push( [] );
-
-		}
+		// per-generator scratch reused across passes. kept local ( rather than as
+		// module temps ) because a pass can span multiple frames across yields, so
+		// shared temps could be clobbered by another plugin instance between ticks.
+		const ndcMatrix = new Matrix4();
+		const frustum = new Frustum();
+		const intersectingFrustum = new Set();
+		const settlingBins = [[], [], [], []];
 
 		// the deadline is owned by the generator and reset to a fresh budget each
 		// time it resumes after a yield.
@@ -656,12 +653,14 @@ export class MVTAnnotationsPlugin {
 			// classify non-visible items by whether their ray intersects the frustum
 			if ( camera !== null ) {
 
-				_ndcMatrix
+				// the frustum may change across the generator calls but it's assumed
+				// to not be significant.
+				ndcMatrix
 					.copy( tiles.group.matrixWorld )
 					.premultiply( camera.matrixWorldInverse )
 					.premultiply( camera.projectionMatrix );
 
-				_frustum.setFromProjectionMatrix( _ndcMatrix );
+				frustum.setFromProjectionMatrix( ndcMatrix );
 
 				for ( const item of _settlingQueueSet ) {
 
@@ -674,9 +673,9 @@ export class MVTAnnotationsPlugin {
 
 					// check if the projection ray intersects the frustum
 					this._getLocalSettlingRay( item );
-					if ( rayIntersectsFrustum( _raycaster, _frustum ) ) {
+					if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
 
-						_intersectingFrustum.add( item );
+						intersectingFrustum.add( item );
 
 					}
 
@@ -684,6 +683,7 @@ export class MVTAnnotationsPlugin {
 
 						yield;
 						deadline = performance.now() + this.maxSettleTimeMs;
+
 
 					}
 
@@ -694,7 +694,7 @@ export class MVTAnnotationsPlugin {
 			// bin items by priority tier
 			for ( const item of _settlingQueueSet ) {
 
-				const inFrustum = _intersectingFrustum.has( item );
+				const inFrustum = intersectingFrustum.has( item );
 				let tier = 0;
 				if ( ! item.ready && inFrustum ) {
 
@@ -710,7 +710,7 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				_settlingBins[ tier ].push( item );
+				settlingBins[ tier ].push( item );
 
 				if ( performance.now() >= deadline ) {
 
@@ -722,9 +722,9 @@ export class MVTAnnotationsPlugin {
 			}
 
 			// settle items, draining the highest priority bin first
-			for ( let t = _settlingBins.length - 1; t >= 0; t -- ) {
+			for ( let t = settlingBins.length - 1; t >= 0; t -- ) {
 
-				const bin = _settlingBins[ t ];
+				const bin = settlingBins[ t ];
 				while ( bin.length > 0 ) {
 
 					const item = bin.pop();
@@ -750,8 +750,8 @@ export class MVTAnnotationsPlugin {
 			}
 
 			// clear the working state for the next pass
-			_intersectingFrustum.clear();
-			_settlingBins.forEach( bins => bins.length = 0 );
+			intersectingFrustum.clear();
+			settlingBins.forEach( bins => bins.length = 0 );
 
 			// always yield at the end of a pass so an empty queue can't busy-spin
 			yield;
