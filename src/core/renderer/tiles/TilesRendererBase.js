@@ -557,7 +557,7 @@ export class TilesRendererBase {
 		 * strategy. Increases memory usage but provides smoother transitions on first load.
 		 * Implicitly enables sibling loading to prevent flickering during camera movement.
 		 * @type {boolean}
-		 * @default false
+		 * @default true
 		 */
 		this.loadAncestors = true;
 
