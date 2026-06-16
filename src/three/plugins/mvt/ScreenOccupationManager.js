@@ -4,7 +4,6 @@ const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
 const _delta = /* @__PURE__ */ new Vector3();
-const _totalResolution = /* @__PURE__ */ new Vector2();
 
 // suppress annotations within ~6 degrees of the globe horizon
 const PERSPECTIVE_CULL_ANGLE = Math.acos( 0.1 );
@@ -143,6 +142,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.size = 12;
 		this.cells = new Uint8Array( 1 );
 
+		// grid dimensions in cells, computed once per update and reused by _cellRange
+		this._totalResolution = new Vector2();
+
 		// buffer outside the screen
 		this.buffer = 0.15;
 
@@ -195,13 +197,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 		const resHeight = resolution.height;
 		const bufferX = resWidth * buffer;
 		const bufferY = resHeight * buffer;
-		_totalResolution.copy( resolution )
-			.multiplyScalar( 1 + 2 * buffer )
-			.multiplyScalar( 1 / size )
-			.ceil();
 
-		// calculate ranges for iteration
-		const { width, height } = _totalResolution;
+		// grid dimensions are precomputed once per update() in this._totalResolution
+		const { width, height } = this._totalResolution;
 		const centerX = x + bufferX;
 		const centerY = y + bufferY;
 		const x0 = Math.max( 0, Math.floor( ( centerX - r ) / size ) );
@@ -300,12 +298,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 		added.clear();
 
 		// resize the occupation cells to cover the extended viewport
-		_totalResolution.copy( resolution )
+		this._totalResolution.copy( resolution )
 			.multiplyScalar( 1 + 2 * buffer )
 			.multiplyScalar( 1 / size )
 			.ceil();
 
-		const { width, height } = _totalResolution;
+		const { width, height } = this._totalResolution;
 		if ( this.cells.length !== width * height ) {
 
 			this.cells = new Uint8Array( width * height );

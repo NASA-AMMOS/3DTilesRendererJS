@@ -81,9 +81,9 @@
   "author": "Garrett Johnson <garrett.kjohnson@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@mapbox/vector-tile": "^2.0.3",
     "pbf": "^4.0.1",
-    "pmtiles": "^4.3.2",
-    "@mapbox/vector-tile": "^2.0.3"
+    "pmtiles": "^4.3.2"
   },
   "devDependencies": {
     "@babel/preset-modules": "^0.1.6",
@@ -113,6 +113,7 @@
     "lil-gui": "^0.21.0",
     "postprocessing": "^6.36.4",
     "three": "^0.170.0",
+    "three-mesh-bvh": "^0.9.10",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.48.1",
     "vite": "^8.0.16",

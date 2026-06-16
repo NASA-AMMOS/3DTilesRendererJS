@@ -25,6 +25,7 @@ import {
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { AnnotationPoints } from './src/plugins/mvt/AnnotationPoints.js';
+import { MeshBVHPlugin } from './src/plugins/MeshBVHPlugin.js';
 
 // CDN source for the icons
 const MAKI_BASE = 'https://cdn.jsdelivr.net/npm/@mapbox/maki@8/icons/';
@@ -132,13 +133,13 @@ function reinstantiateTiles() {
 	} );
 
 	tiles = new TilesRenderer();
-	tiles.accelerateRaycast = false;
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
 	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new MeshBVHPlugin() );
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
