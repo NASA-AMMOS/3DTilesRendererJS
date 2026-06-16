@@ -12,6 +12,7 @@ export class MeshBVHPlugin {
 		this.name = 'MESH_BVH_PLUGIN';
 		this.tiles = null;
 		this.objectBvh = null;
+		this.needsUpdate = true;
 
 	}
 
@@ -48,7 +49,7 @@ export class MeshBVHPlugin {
 
 		this._onVisibilityChange = () => {
 
-			this.objectBvh = new ObjectBVH( tiles.group );
+			this.needsUpdate = true;
 
 		};
 
@@ -57,9 +58,14 @@ export class MeshBVHPlugin {
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 		this.tiles = tiles;
-		this.objectBvh = new ObjectBVH( tiles.group );
 
 		tiles.group.raycast = ( ...args ) => {
+
+			if ( this.needsUpdate || ! this.objectBvh ) {
+
+				this.objectBvh = new ObjectBVH( tiles.group );
+
+			}
 
 			this.objectBvh.raycast( ...args );
 			return false;
