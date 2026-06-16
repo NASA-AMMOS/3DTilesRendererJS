@@ -2,8 +2,8 @@ import { MeshBVH, ObjectBVH, acceleratedRaycast } from 'three-mesh-bvh';
 
 /**
  * Demo plugin that synchronously builds a three-mesh-bvh BVH for every mesh
- * in each loaded tile. Attach the plugin before loading tiles so BVHs are
- * available immediately in processTileModel / load-model callbacks.
+ * in each loaded tile & a full-tileset BVH. Attach the plugin before loading
+ * tiles so BVHs are available immediately in processTileModel / load-model callbacks.
  */
 export class MeshBVHPlugin {
 
@@ -68,6 +68,7 @@ export class MeshBVHPlugin {
 			if ( this.needsUpdate || ! this.objectBvh ) {
 
 				this.objectBvh = new ObjectBVH( tiles.group );
+				this.needsUpdate = false;
 
 			}
 
