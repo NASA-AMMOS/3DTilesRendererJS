@@ -134,8 +134,6 @@ export class MVTAnnotationsPlugin {
 
 	constructor( options = {} ) {
 
-		window.THING = this;
-
 		// plugin fields
 		this.priority = Infinity;
 		this.name = 'MVT_ANNOTATIONS_PLUGIN';
@@ -178,13 +176,9 @@ export class MVTAnnotationsPlugin {
 		this._settlingQueueSet = new Set();
 		this._settlingNeedsRebuild = false;
 		this._settlingBins = [];
+		this._settleTask = null;
 
 		this.maxSettleTimeMs = 5;
-
-		// forever-running settling task. each pass classifies, bins, and raycasts
-		// whatever is in the queue when the pass begins; ticking it advances the
-		// work by up to "maxSettleTimeMs" before yielding.
-		this._settleTask = null;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -619,27 +613,6 @@ export class MVTAnnotationsPlugin {
 
 		_raycaster.far = 2 * 1e6;
 		_raycaster.firstHitOnly = true;
-
-	}
-
-	_FORCE() {
-
-		this._enqueueSettlingAll();
-
-		this._settlingQueueSet.forEach( v => {
-			v.ready = false;
-		})
-
-		console.log( 'COUNT', this._settlingQueueSet.size );
-
-		window.TIMING = true;
-		while ( this._settlingQueueSet.size > 0 ) {
-
-			this._processSettling();
-
-		}
-
-		window.TIMING = false;
 
 	}
 
