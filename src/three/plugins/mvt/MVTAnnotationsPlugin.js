@@ -684,7 +684,6 @@ export class MVTAnnotationsPlugin {
 						yield;
 						deadline = performance.now() + this.maxSettleTimeMs;
 
-
 					}
 
 				}
