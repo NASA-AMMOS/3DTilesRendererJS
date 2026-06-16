@@ -18,6 +18,9 @@ export class MeshBVHPlugin {
 
 	init( tiles ) {
 
+		this.tiles = tiles;
+
+		// events
 		this._onLoadModel = ( { scene } ) => {
 
 			scene.traverse( c => {
@@ -49,16 +52,17 @@ export class MeshBVHPlugin {
 
 		this._onVisibilityChange = () => {
 
+			// TODO: a dynamic BVH would be best here to save time & memory thrash
 			this.needsUpdate = true;
 
 		};
 
+		// registration
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
-		this.tiles = tiles;
-
+		// replace the raycast function, re-computing the object bvh if needed
 		tiles.group.raycast = ( ...args ) => {
 
 			if ( this.needsUpdate || ! this.objectBvh ) {
@@ -72,6 +76,7 @@ export class MeshBVHPlugin {
 
 		};
 
+		// initialize existing scenes
 		tiles.forEachLoadedModel( ( scene ) => {
 
 			this._onLoadModel( { scene } );
