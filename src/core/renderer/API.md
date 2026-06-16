@@ -908,7 +908,7 @@ potentially causing brief gaps during rapid movement. Implicitly treated as `tru
 ### .loadAncestors
 
 ```js
-loadAncestors: boolean = false
+loadAncestors: boolean = true
 ```
 
 **Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
