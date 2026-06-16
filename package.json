@@ -68,8 +68,7 @@
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint . && tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json --noEmit && vitest run",
-    "prepublishOnly": "npm run build-lib",
-    "docs:build": "node utils/docs/build.js"
+    "prepublishOnly": "npm run build-lib"
   },
   "repository": {
     "type": "git",
