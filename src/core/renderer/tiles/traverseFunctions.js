@@ -324,7 +324,7 @@ function markUsedSetLeaves( tile, renderer ) {
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
 				const childCanDisplay = ! canUnconditionallyRefine( c );
-				const childContentReady = ! c.internal.hasContent || isDownloadFinished( c.internal.loadingState );
+				const childContentReady = c.internal.hasUnrenderableContent || isDownloadFinished( c.internal.loadingState );
 				const childIsReady = ( childCanDisplay && childContentReady ) || c.traversal.allChildrenLoaded;
 				if ( ! childIsReady ) {
 
