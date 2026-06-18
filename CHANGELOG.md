@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix "disposeTile" events firing for internal tileset json tiles
 - Export INDEXED_COLOR for DebugTilesPlugin
 - TilesFadePlugin: Remove "displayActiveTiles" hack so tiles renderer settings are respected.
+- TilesRenderer: Fixed unconditional traversal behavior.
 
 ## [0.4.28] - 2026.06.09
 ### Fixed
