@@ -670,7 +670,7 @@ function render() {
 		const geomSet = new Set();
 		tiles.traverse( tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.traverse( c => {

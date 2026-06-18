@@ -41,7 +41,7 @@ function areChildrenProcessed( tile ) {
 // Checks whether we can stop at this tile for rendering or not
 function canUnconditionallyRefine( tile ) {
 
-	return tile.internal.hasUnrenderableContent || ( tile.parent && tile.parent.geometricError < tile.geometricError );
+	return tile.traversal.unconditionallyRefine;
 
 }
 
@@ -74,6 +74,28 @@ function resetFrameState( tile, renderer ) {
 		tile.traversal.inFrustum = viewErrorTarget.inView;
 		tile.traversal.error = viewErrorTarget.error;
 		tile.traversal.distanceFromCamera = viewErrorTarget.distanceFromCamera;
+
+		// update whether this tile can be unconditionally refined
+		tile.traversal.unconditionallyRefine = tile.internal.hasUnrenderableContent;
+		if ( ! tile.traversal.unconditionallyRefine ) {
+
+			// See NASA-AMMOS/3DTilesRendererJS#1304#issuecomment-3301374873
+			// A tile can unconditionally refine if it is an internal tileset or the geometric error is
+			// higher than that of the nearest non-unconditionally refine-able ancestor.
+			let nearestConditionalParent = tile.parent;
+			while ( nearestConditionalParent && nearestConditionalParent.traversal.unconditionallyRefine ) {
+
+				nearestConditionalParent = nearestConditionalParent.parent;
+
+			}
+
+			if ( nearestConditionalParent && nearestConditionalParent.geometricError <= tile.geometricError ) {
+
+				tile.traversal.unconditionallyRefine = true;
+
+			}
+
+		}
 
 	}
 
