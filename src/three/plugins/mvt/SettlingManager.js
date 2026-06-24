@@ -119,6 +119,9 @@ export class SettlingManager {
 		this._needsRebuild = false;
 		this._task = null;
 
+		// shared per-tick budget deadline
+		this._deadline = 0;
+
 	}
 
 	register( item ) {
@@ -224,9 +227,10 @@ export class SettlingManager {
 		const intersectingFrustum = new Set();
 		const settlingBins = [[], [], [], []];
 
-		// the deadline is owned by the generator and reset to a fresh budget each
-		// time it resumes after a yield.
-		let deadline = performance.now() + this.maxSettleTimeMs;
+		// the shared budget deadline is reset to a fresh window each time the pass resumes
+		// after a yield.
+		this._resetDeadline();
+
 
 		while ( true ) {
 
@@ -261,10 +265,10 @@ export class SettlingManager {
 
 					}
 
-					if ( performance.now() >= deadline ) {
+					if ( this._deadlineExpired() ) {
 
 						yield;
-						deadline = performance.now() + this.maxSettleTimeMs;
+						this._resetDeadline();
 
 					}
 
@@ -293,10 +297,10 @@ export class SettlingManager {
 
 				settlingBins[ tier ].push( item );
 
-				if ( performance.now() >= deadline ) {
+				if ( this._deadlineExpired() ) {
 
 					yield;
-					deadline = performance.now() + this.maxSettleTimeMs;
+					this._resetDeadline();
 
 				}
 
@@ -312,17 +316,21 @@ export class SettlingManager {
 					_queue.delete( item );
 
 					// skip items that were unregistered while queued
-					if ( _refs.has( item ) ) {
+					if ( ! _refs.has( item ) ) {
 
-						this._settleItem( item );
+						continue;
 
 					}
 
-					if ( performance.now() >= deadline ) {
+					// settle the item; a long line yields mid-settle ( inline, only when the
+					// budget is spent ) so its samples spread across ticks
+					yield* this._settleItem( item );
+
+					// yield between items once the budget is spent
+					if ( this._deadlineExpired() ) {
 
 						yield;
-
-						deadline = performance.now() + this.maxSettleTimeMs;
+						this._resetDeadline();
 
 					}
 
@@ -336,7 +344,7 @@ export class SettlingManager {
 
 			// always yield at the end of a pass so an empty queue can't busy-spin
 			yield;
-			deadline = performance.now() + this.maxSettleTimeMs;
+			this._resetDeadline();
 
 		}
 
@@ -368,16 +376,29 @@ export class SettlingManager {
 
 	}
 
-	_settleItem( item ) {
+	*_settleItem( item ) {
 
-		// drape the item onto the surface: a single sample for a point, or every sample
-		// for a line annotation
+		// drape the item onto the surface. A point is a single sample; a line is many and
 		if ( item.isLineAnnotation ) {
 
 			const { lat, lon, positions } = item;
 			for ( let i = 0, l = lat.length; i < l; i ++ ) {
 
+				// bail if the item was unregistered while paused
+				if ( ! this._refs.has( item ) ) {
+
+					return;
+
+				}
+
 				this._settleSample( lat[ i ], lon[ i ], positions[ i ] );
+
+				if ( this._deadlineExpired() ) {
+
+					yield;
+					this._resetDeadline();
+
+				}
 
 			}
 
@@ -388,6 +409,18 @@ export class SettlingManager {
 		}
 
 		item.ready = true;
+
+	}
+
+	_deadlineExpired() {
+
+		return performance.now() >= this._deadline;
+
+	}
+
+	_resetDeadline() {
+
+		this._deadline = performance.now() + this.maxSettleTimeMs;
 
 	}
 
