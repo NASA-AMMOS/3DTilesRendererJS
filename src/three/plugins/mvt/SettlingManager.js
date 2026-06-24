@@ -188,11 +188,11 @@ export class SettlingManager {
 		const { tiles } = this;
 		const { origin, direction } = _raycaster.ray;
 
-		tiles.ellipsoid.getCartographicToPosition( lat, lon, 1e6, origin );
+		tiles.ellipsoid.getCartographicToPosition( lat, lon, 1e8, origin );
 		tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, direction );
 		direction.sub( origin ).normalize();
 
-		_raycaster.far = 2 * 1e6;
+		_raycaster.far = 2 * 1e8;
 		_raycaster.firstHitOnly = true;
 
 	}
@@ -230,7 +230,6 @@ export class SettlingManager {
 		// the shared budget deadline is reset to a fresh window each time the pass resumes
 		// after a yield.
 		this._resetDeadline();
-
 
 		while ( true ) {
 

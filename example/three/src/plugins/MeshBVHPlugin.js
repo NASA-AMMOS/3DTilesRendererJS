@@ -67,7 +67,11 @@ export class MeshBVHPlugin {
 
 			if ( this.needsUpdate || ! this.objectBvh ) {
 
-				this.objectBvh = new ObjectBVH( tiles.group );
+				const objects = Array.from( tiles.activeTiles )
+					.map( tile => tile.engineData.scene );
+				this.objectBvh = new ObjectBVH( objects, {
+					matrixWorld: tiles.group.matrixWorld,
+				} );
 				this.needsUpdate = false;
 
 			}

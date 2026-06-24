@@ -578,6 +578,8 @@ export class MVTAnnotationsPlugin {
 			lineSegments.material.transparent = true;
 			lineSegments.material.depthWrite = false;
 			lineSegments.frustumCulled = false;
+			lineSegments.raycast = () => {};
+
 			tiles.group.add( lineSegments );
 			this._debugLines = lineSegments;
 
