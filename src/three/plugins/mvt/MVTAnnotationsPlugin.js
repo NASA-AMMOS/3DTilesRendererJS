@@ -1,5 +1,5 @@
 /** @import { Camera, Scene } from 'three' */
-import { BufferAttribute, LineSegments, MathUtils, Matrix4, Vector3 } from 'three';
+import { BufferAttribute, LineSegments, MathUtils, Matrix4, Points, Vector3 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -417,6 +417,14 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		if ( this._debugPoints ) {
+
+			this._debugPoints.removeFromParent();
+			this._debugPoints.geometry.dispose();
+			this._debugPoints.material.dispose();
+
+		}
+
 		this.hierarchy.removeEventListener( 'toggle', this._onToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
@@ -568,6 +576,15 @@ export class MVTAnnotationsPlugin {
 
 			}
 
+			if ( this._debugPoints ) {
+
+				this._debugPoints.removeFromParent();
+				this._debugPoints.geometry.dispose();
+				this._debugPoints.material.dispose();
+				this._debugPoints = null;
+
+			}
+
 			return;
 
 		} else if ( ! this._debugLines ) {
@@ -582,6 +599,19 @@ export class MVTAnnotationsPlugin {
 
 			tiles.group.add( lineSegments );
 			this._debugLines = lineSegments;
+
+			// anchor positions drawn as points
+			const points = new Points();
+			points.material.color.set( 0xffffff );
+			points.material.size = 6;
+			points.material.sizeAttenuation = false;
+			points.material.transparent = true;
+			points.material.depthTest = false;
+			points.frustumCulled = false;
+			points.raycast = () => {};
+
+			tiles.group.add( points );
+			this._debugPoints = points;
 
 		}
 
@@ -640,6 +670,48 @@ export class MVTAnnotationsPlugin {
 		debugLines.geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
 		debugLines.position.copy( _vector );
 		debugLines.updateMatrixWorld();
+
+		// build anchor points by interpolating each settled line's positions at its anchors
+		const debugPoints = this._debugPoints;
+		let anchorCount = 0;
+		for ( const line of lines ) {
+
+			if ( line.ready ) {
+
+				anchorCount += line.anchors.length;
+
+			}
+
+		}
+
+		const anchorPositions = new Float32Array( anchorCount * 3 );
+		let p = 0;
+		for ( const line of lines ) {
+
+			if ( ! line.ready ) {
+
+				continue;
+
+			}
+
+			const ps = line.positions;
+			for ( const anchor of line.anchors ) {
+
+				const a = ps[ anchor.i0 ];
+				const b = ps[ anchor.i1 ];
+				const alpha = anchor.alpha;
+				anchorPositions[ p ++ ] = a.x + ( b.x - a.x ) * alpha - _vector.x;
+				anchorPositions[ p ++ ] = a.y + ( b.y - a.y ) * alpha - _vector.y;
+				anchorPositions[ p ++ ] = a.z + ( b.z - a.z ) * alpha - _vector.z;
+
+			}
+
+		}
+
+		debugPoints.geometry.dispose();
+		debugPoints.geometry.setAttribute( 'position', new BufferAttribute( anchorPositions, 3 ) );
+		debugPoints.position.copy( _vector );
+		debugPoints.updateMatrixWorld();
 
 	}
 

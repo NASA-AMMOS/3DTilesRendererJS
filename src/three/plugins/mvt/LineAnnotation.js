@@ -40,6 +40,10 @@ export class LineAnnotation {
 		// per-sample settled positions in tiles.group local space, filled during settling
 		this.positions = [];
 
+		// anchors placed along the path, each `{ i0, i1, alpha, lat, lon }` — a point on the
+		// segment between samples i0 and i1 at interpolant alpha
+		this.anchors = [];
+
 		// becomes true once every sample has been settled onto the surface
 		this.ready = false;
 
@@ -174,6 +178,78 @@ function subsamplePath( points, spacing ) {
 
 }
 
+// Place anchors along a path at a fixed `spacing` ( in tile coordinate space ), recording
+// the bounding sample indices and interpolant so a settled 3D position can be recovered
+// later. Short paths receive a single anchor at their midpoint.
+function placeAnchors( sampled, lat, lon, spacing ) {
+
+	const anchors = [];
+
+	// segment lengths and total length in tile space
+	const segLengths = [];
+	let totalLength = 0;
+	for ( let i = 0, l = sampled.length - 1; i < l; i ++ ) {
+
+		const dx = sampled[ i + 1 ].x - sampled[ i ].x;
+		const dy = sampled[ i + 1 ].y - sampled[ i ].y;
+		const d = Math.sqrt( dx * dx + dy * dy );
+		segLengths.push( d );
+		totalLength += d;
+
+	}
+
+	if ( totalLength === 0 ) {
+
+		return anchors;
+
+	}
+
+	// first anchor offset half a spacing in; fall back to the midpoint for short paths
+	let target = spacing * 0.5;
+	if ( target > totalLength ) {
+
+		target = totalLength * 0.5;
+
+	}
+
+	let accum = 0;
+	let seg = 0;
+	while ( target <= totalLength ) {
+
+		// advance to the segment containing `target`
+		while ( seg < segLengths.length && accum + segLengths[ seg ] < target ) {
+
+			accum += segLengths[ seg ];
+			seg ++;
+
+		}
+
+		if ( seg >= segLengths.length ) {
+
+			break;
+
+		}
+
+		const i0 = seg;
+		const i1 = seg + 1;
+		const alpha = segLengths[ seg ] > 0 ? ( target - accum ) / segLengths[ seg ] : 0;
+
+		anchors.push( {
+			i0,
+			i1,
+			alpha,
+			lat: MathUtils.lerp( lat[ i0 ], lat[ i1 ], alpha ),
+			lon: MathUtils.lerp( lon[ i0 ], lon[ i1 ], alpha ),
+		} );
+
+		target += spacing;
+
+	}
+
+	return anchors;
+
+}
+
 /**
  * Parse all labeled line ( type 2 ) features from a decoded MVT tile into a set of
  * stitched, subsampled {@link LineAnnotation} instances.
@@ -196,6 +272,9 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 	const {
 		filter = () => true,
 		subsampleFraction = 1 / 64,
+		// anchor spacing as a fraction of the tile extent; ~1/2 ≈ MapLibre's default
+		// `symbol-spacing` of 250 screen px for a tile displayed near 512 px
+		anchorFraction = 1 / 2,
 	} = options;
 
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
@@ -209,6 +288,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 		const layer = vectorTile.layers[ layerName ];
 		const extent = layer.extent;
 		const spacing = extent * subsampleFraction;
+		const anchorSpacing = extent * anchorFraction;
 
 		// collect every line fragment in the layer in tile coordinate space
 		const segments = [];
@@ -276,6 +356,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 
 			}
 
+			annotation.anchors = placeAnchors( sampled, annotation.lat, annotation.lon, anchorSpacing );
 			annotations.push( annotation );
 
 		}
