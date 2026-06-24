@@ -1,14 +1,13 @@
 /** @import { Camera, Scene } from 'three' */
-import { Frustum, MathUtils, Matrix4, Raycaster } from 'three';
+import { MathUtils, Matrix4 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
+import { SettlingManager } from './SettlingManager.js';
+import { parseLineAnnotations } from './LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
-const PARALLEL_EPSILON = 1e-10;
-
 const _matrix = /* @__PURE__ */ new Matrix4();
-const _raycaster = /* @__PURE__ */ new Raycaster();
 
 // provide all meshes in the scene
 function collectMeshes( object ) {
@@ -25,74 +24,6 @@ function collectMeshes( object ) {
 	} );
 
 	return meshes;
-
-}
-
-// check if the given raycaster intersects the provided frustum shape
-function rayIntersectsFrustum( raycaster, frustum ) {
-
-	// TODO: this function has some false positives and could be improved
-	const { ray } = raycaster;
-	const { planes } = frustum;
-	let t0 = 0;
-	let t1 = raycaster.far;
-
-	for ( let i = 0; i < 6; i ++ ) {
-
-		const plane = planes[ i ];
-
-		// positive plane normal points _inside_ the frustum
-		const denom = plane.normal.dot( ray.direction );
-
-		if ( Math.abs( denom ) < PARALLEL_EPSILON ) {
-
-			// parallel to the plane — if origin is outside, the ray never enters
-			if ( plane.distanceToPoint( ray.origin ) < 0 ) {
-
-				return false;
-
-			}
-
-		} else {
-
-			const t = ray.distanceToPlane( plane );
-			if ( denom > 0 ) {
-
-				// entering plane: null means entry is behind the ray origin, no constraint
-				if ( t !== null && t > t0 ) {
-
-					t0 = t;
-
-				}
-
-			} else {
-
-				// exiting plane: null means we already exited before the ray origin
-				if ( t === null ) {
-
-					return false;
-
-				}
-
-				if ( t < t1 ) {
-
-					t1 = t;
-
-				}
-
-			}
-
-			if ( t0 > t1 ) {
-
-				return false;
-
-			}
-
-		}
-
-	}
-
-	return true;
 
 }
 
@@ -161,20 +92,17 @@ export class MVTAnnotationsPlugin {
 
 		// set of tile info (eg range, etc) and annotations associated with each tile
 		this.tileLoadState = new Map();
-		this.mvtTileItems = new Map();
+
+		// per MVT tile: { occupancyItems, settleItems } — items registered in the occupancy
+		// grid and items that need raycast settling. Points are in both; line annotations
+		// are in settleItems only ( anchors derived from them occupy the grid later )
+		this.vectorTileInfo = new Map();
 
 		// callback to filter which features become annotations:
 		this.sortCallback = sortCallback;
 		this.filterAnnotation = filterAnnotation;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
 		this.displayOccupancyGrid = displayOccupancyGrid;
-
-		// raycast parameters
-		this._settlingQueueSet = new Set();
-		this._settlingNeedsRebuild = false;
-		this._settleTask = null;
-
-		this.maxSettleTimeMs = 5;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -199,6 +127,10 @@ export class MVTAnnotationsPlugin {
 		// init container
 		this.tiles = tiles;
 		this.hierarchy = new MVTHierarchy( this.contentCache );
+		this.settling = new SettlingManager( {
+			tiles,
+			isPrioritized: item => occupancy.visible.has( item ),
+		} );
 
 		occupancy.sortCallback = ( a, b ) => {
 
@@ -250,7 +182,7 @@ export class MVTAnnotationsPlugin {
 
 			// tile geometry changed — existing items may have been settled on this geometry
 			// and need to be re-raycasted against the updated scene
-			this._settlingNeedsRebuild = true;
+			this.settling.markDirty();
 
 			// TODO: the ImageOverlay Tile Splits is causing an issue here.
 			const info = tileLoadState.get( tile );
@@ -288,14 +220,9 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			if ( this._settlingNeedsRebuild ) {
+			this.settling.camera = this.camera;
+			this.settling.update();
 
-				this._settlingNeedsRebuild = false;
-				this._enqueueSettlingAll();
-
-			}
-
-			this._processSettling();
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 			this._updateDebugGrid();
@@ -306,7 +233,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			if ( occupancy.hasPendingWork || this._settlingQueueSet.size > 0 ) {
+			if ( occupancy.hasPendingWork || this.settling.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
 
@@ -322,7 +249,7 @@ export class MVTAnnotationsPlugin {
 
 			if ( visible ) {
 
-				const { contentCache, occupancy, filterAnnotation, mvtTileItems } = this;
+				const { contentCache, occupancy, filterAnnotation, vectorTileInfo } = this;
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
 				if ( ! vectorTile ) {
@@ -334,7 +261,8 @@ export class MVTAnnotationsPlugin {
 				// get the normalized tile bound
 				const tileBounds = tiling.getTileBounds( x, y, level, true, false );
 				const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
-				const items = [];
+				const occupancyItems = new Set();
+				const settleItems = new Set();
 
 				// iterate over all the layers
 				for ( const layerName in vectorTile.layers ) {
@@ -385,8 +313,9 @@ export class MVTAnnotationsPlugin {
 							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
 
 							const canonical = occupancy.register( item );
-							items.push( canonical );
-							this._enqueueSettling( canonical );
+							occupancyItems.add( canonical );
+							settleItems.add( canonical );
+							this.settling.register( canonical );
 
 						}
 
@@ -394,22 +323,39 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				mvtTileItems.set( key, items );
+				// parse labeled line features into stitched, subsampled paths; these are
+				// settled but ( unlike points ) are not registered in the occupancy grid
+				const lines = parseLineAnnotations( vectorTile, x, y, level, tiling, {
+					filter: ( layerName, properties ) => filterAnnotation === null || filterAnnotation( layerName, properties ),
+				} );
+				for ( const line of lines ) {
+
+					settleItems.add( line );
+					this.settling.register( line );
+
+				}
+
+				vectorTileInfo.set( key, { occupancyItems, settleItems } );
 
 			} else {
 
-				const { occupancy, mvtTileItems } = this;
-				const items = mvtTileItems.get( key );
-				if ( items ) {
+				const { occupancy, vectorTileInfo } = this;
+				const info = vectorTileInfo.get( key );
+				if ( info ) {
 
-					for ( const item of items ) {
+					for ( const item of info.occupancyItems ) {
 
 						occupancy.unregister( item );
-						this._dequeueSettling( item );
 
 					}
 
-					mvtTileItems.delete( key );
+					for ( const item of info.settleItems ) {
+
+						this.settling.unregister( item );
+
+					}
+
+					vectorTileInfo.delete( key );
 
 				}
 
@@ -566,228 +512,6 @@ export class MVTAnnotationsPlugin {
 			}
 
 		}
-
-	}
-
-	_enqueueSettling( item ) {
-
-		this._settlingQueueSet.add( item );
-
-	}
-
-	_dequeueSettling( item ) {
-
-		this._settlingQueueSet.delete( item );
-
-	}
-
-	_enqueueSettlingAll() {
-
-		// enqueue all items for resettling
-		for ( const items of this.mvtTileItems.values() ) {
-
-			for ( const item of items ) {
-
-				this._enqueueSettling( item );
-
-			}
-
-		}
-
-	}
-
-	_getLocalSettlingRay( item ) {
-
-		// construct a ray for settling the items in the local tiles coordinate frame
-		const { tiles } = this;
-		const { origin, direction } = _raycaster.ray;
-
-		// construct the ray
-		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 1e6, origin );
-		tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, direction );
-		direction.sub( origin ).normalize();
-
-		_raycaster.far = 2 * 1e6;
-		_raycaster.firstHitOnly = true;
-
-	}
-
-	_processSettling() {
-
-		// tick the forever-running settling task, giving it a fresh time budget to
-		// advance the current pass before yielding.
-		if ( this._settleTask === null ) {
-
-			this._settleTask = this._settleGenerator();
-
-		}
-
-		this._settleTask.next();
-
-	}
-
-	*_settleGenerator() {
-
-		// runs forever: each pass classifies, bins, and raycasts whatever is in the
-		// queue when the pass begins, yielding whenever the per-tick budget is
-		// spent. items added after a pass starts are picked up on the next pass.
-		const { occupancy } = this;
-		const { visible } = occupancy;
-
-		// per-generator scratch reused across passes. kept local ( rather than as
-		// module temps ) because a pass can span multiple frames across yields, so
-		// shared temps could be clobbered by another plugin instance between ticks.
-		const ndcMatrix = new Matrix4();
-		const frustum = new Frustum();
-		const intersectingFrustum = new Set();
-		const settlingBins = [[], [], [], []];
-
-		// the deadline is owned by the generator and reset to a fresh budget each
-		// time it resumes after a yield.
-		let deadline = performance.now() + this.maxSettleTimeMs;
-
-		while ( true ) {
-
-			const { _settlingQueueSet, tiles, camera } = this;
-
-			// classify non-visible items by whether their ray intersects the frustum
-			if ( camera !== null ) {
-
-				// the frustum may change across the generator calls but it's assumed
-				// to not be significant.
-				ndcMatrix
-					.copy( tiles.group.matrixWorld )
-					.premultiply( camera.matrixWorldInverse )
-					.premultiply( camera.projectionMatrix );
-
-				frustum.setFromProjectionMatrix( ndcMatrix );
-
-				for ( const item of _settlingQueueSet ) {
-
-					// if it's already visible then we will prioritize it regardless
-					if ( visible.has( item ) ) {
-
-						continue;
-
-					}
-
-					// check if the projection ray intersects the frustum
-					this._getLocalSettlingRay( item );
-					if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
-
-						intersectingFrustum.add( item );
-
-					}
-
-					if ( performance.now() >= deadline ) {
-
-						yield;
-						deadline = performance.now() + this.maxSettleTimeMs;
-
-					}
-
-				}
-
-			}
-
-			// bin items by priority tier
-			for ( const item of _settlingQueueSet ) {
-
-				const inFrustum = intersectingFrustum.has( item );
-				let tier = 0;
-				if ( ! item.ready && inFrustum ) {
-
-					tier = 3;
-
-				} else if ( visible.has( item ) ) {
-
-					tier = 2;
-
-				} else if ( inFrustum ) {
-
-					tier = 1;
-
-				}
-
-				settlingBins[ tier ].push( item );
-
-				if ( performance.now() >= deadline ) {
-
-					yield;
-					deadline = performance.now() + this.maxSettleTimeMs;
-
-				}
-
-			}
-
-			// settle items, draining the highest priority bin first
-			for ( let t = settlingBins.length - 1; t >= 0; t -- ) {
-
-				const bin = settlingBins[ t ];
-				while ( bin.length > 0 ) {
-
-					const item = bin.pop();
-					_settlingQueueSet.delete( item );
-
-					// skip items that were unregistered while in the queue
-					if ( occupancy.getById( item.id ) === item ) {
-
-						this._settleItem( item );
-
-					}
-
-					if ( performance.now() >= deadline ) {
-
-						yield;
-
-						deadline = performance.now() + this.maxSettleTimeMs;
-
-					}
-
-				}
-
-			}
-
-			// clear the working state for the next pass
-			intersectingFrustum.clear();
-			settlingBins.forEach( bins => bins.length = 0 );
-
-			// always yield at the end of a pass so an empty queue can't busy-spin
-			yield;
-			deadline = performance.now() + this.maxSettleTimeMs;
-
-		}
-
-	}
-
-	_settleItem( item ) {
-
-		// casts a ray for the given item to settle it on the surface
-		const { tiles } = this;
-		const { origin, direction } = _raycaster.ray;
-
-		// get the local ray
-		this._getLocalSettlingRay( item );
-
-		// transform to world space for raycasting
-		origin.applyMatrix4( tiles.group.matrixWorld );
-		direction.transformDirection( tiles.group.matrixWorld );
-
-		// snap the item to the surface
-		const hits = _raycaster.intersectObject( tiles.group, true );
-		if ( hits.length > 0 ) {
-
-			hits[ 0 ].point.applyMatrix4( tiles.group.matrixWorldInverse );
-			item.position.copy( hits[ 0 ].point );
-
-		} else {
-
-			// TODO: we are still seeing some points slip through tile gaps
-			tiles.ellipsoid.getCartographicToPosition( item.lat, item.lon, 0, item.position );
-
-		}
-
-		item.ready = true;
 
 	}
 

@@ -88,7 +88,7 @@ export class PointAnnotationItem extends AnnotationItem {
 	copyPosition( source ) {
 
 		this.position.copy( source.position );
-		this.ready = true;
+		this.ready = source.ready;
 
 	}
 
