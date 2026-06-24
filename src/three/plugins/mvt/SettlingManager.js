@@ -1,3 +1,4 @@
+/** @import { Camera } from 'three'; */
 import { Frustum, Matrix4, Raycaster } from 'three';
 
 const PARALLEL_EPSILON = 1e-10;
