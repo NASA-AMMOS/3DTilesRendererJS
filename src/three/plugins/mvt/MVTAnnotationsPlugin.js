@@ -1,5 +1,5 @@
 /** @import { Camera, Scene } from 'three' */
-import { MathUtils, Matrix4 } from 'three';
+import { BufferAttribute, LineSegments, MathUtils, Matrix4, Vector3 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -8,6 +8,8 @@ import { parseLineAnnotations } from './LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+const _vector = /* @__PURE__ */ new Vector3();
+const _lineList = [];
 
 // provide all meshes in the scene
 function collectMeshes( object ) {
@@ -51,6 +53,8 @@ function collectMeshes( object ) {
  * @param {Scene} [options.scene=null] - Three.js scene reference (stored for caller use).
  * @param {boolean} [options.displayOccupancyGrid=false] - Overlay a debug canvas showing the
  *   screen-space occupation grid.
+ * @param {boolean} [options.displayLines=false] - Draw a debug overlay of the settled line
+ *   annotation paths.
  */
 export class MVTAnnotationsPlugin {
 
@@ -76,9 +80,11 @@ export class MVTAnnotationsPlugin {
 
 			},
 			filterAnnotation = () => false,
+			filterLine = () => false,
 			onAnnotationsUpdate = () => {},
 			camera = null,
 			displayOccupancyGrid = false,
+			displayLines = false,
 		} = options;
 
 		this.overlay = overlay;
@@ -101,8 +107,10 @@ export class MVTAnnotationsPlugin {
 		// callback to filter which features become annotations:
 		this.sortCallback = sortCallback;
 		this.filterAnnotation = filterAnnotation;
+		this.filterLine = filterLine;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
 		this.displayOccupancyGrid = displayOccupancyGrid;
+		this.displayLines = displayLines;
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -226,6 +234,7 @@ export class MVTAnnotationsPlugin {
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 			this._updateDebugGrid();
+			this._updateDebugLines();
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
 
@@ -249,7 +258,7 @@ export class MVTAnnotationsPlugin {
 
 			if ( visible ) {
 
-				const { contentCache, occupancy, filterAnnotation, vectorTileInfo } = this;
+				const { contentCache, occupancy, filterAnnotation, filterLine, vectorTileInfo } = this;
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
 				if ( ! vectorTile ) {
@@ -326,7 +335,7 @@ export class MVTAnnotationsPlugin {
 				// parse labeled line features into stitched, subsampled paths; these are
 				// settled but ( unlike points ) are not registered in the occupancy grid
 				const lines = parseLineAnnotations( vectorTile, x, y, level, tiling, {
-					filter: ( layerName, properties ) => filterAnnotation === null || filterAnnotation( layerName, properties ),
+					filter: filterLine,
 				} );
 				for ( const line of lines ) {
 
@@ -400,6 +409,14 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		if ( this._debugLines ) {
+
+			this._debugLines.removeFromParent();
+			this._debugLines.geometry.dispose();
+			this._debugLines.material.dispose();
+
+		}
+
 		this.hierarchy.removeEventListener( 'toggle', this._onToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
@@ -410,6 +427,28 @@ export class MVTAnnotationsPlugin {
 			this._onVisibilityChange( { scene, tile, visible: false } );
 
 		} );
+
+	}
+
+	// collect all currently loaded line annotations ( for rendering / debug )
+	getLineAnnotations( target = [] ) {
+
+		target.length = 0;
+		for ( const { settleItems } of this.vectorTileInfo.values() ) {
+
+			for ( const item of settleItems ) {
+
+				if ( item.isLineAnnotation ) {
+
+					target.push( item );
+
+				}
+
+			}
+
+		}
+
+		return target;
 
 	}
 
@@ -512,6 +551,93 @@ export class MVTAnnotationsPlugin {
 			}
 
 		}
+
+	}
+
+	_updateDebugLines() {
+
+		const { displayLines, tiles } = this;
+		if ( ! displayLines ) {
+
+			if ( this._debugLines ) {
+
+				this._debugLines.removeFromParent();
+				this._debugLines.geometry.dispose();
+				this._debugLines.material.dispose();
+				this._debugLines = null;
+
+			}
+
+			return;
+
+		} else if ( ! this._debugLines ) {
+
+			// debug overlay drawn in the tiles group, rebuilt each frame
+			const lineSegments = new LineSegments();
+			lineSegments.material.depthTest = false;
+			lineSegments.material.transparent = true;
+			lineSegments.material.depthWrite = false;
+			lineSegments.frustumCulled = false;
+			tiles.group.add( lineSegments );
+			this._debugLines = lineSegments;
+
+		}
+
+		const debugLines = this._debugLines;
+		const lines = this.getLineAnnotations( _lineList );
+
+		// place the object near the camera ( in tiles.group local space ) so vertex
+		// coordinates stay small and avoid float jitter at globe scale
+		if ( this.camera !== null ) {
+
+			_vector.setFromMatrixPosition( this.camera.matrixWorld );
+			tiles.group.worldToLocal( _vector );
+
+		}
+
+		// count settled segment vertices across all lines
+		let vertexCount = 0;
+		for ( const line of lines ) {
+
+			if ( line.ready ) {
+
+				vertexCount += ( line.count - 1 ) * 2;
+
+			}
+
+		}
+
+		// build one segment buffer relative to the camera-local origin
+		const positions = new Float32Array( vertexCount * 3 );
+		let o = 0;
+		for ( const line of lines ) {
+
+			if ( ! line.ready ) {
+
+				continue;
+
+			}
+
+			const ps = line.positions;
+			for ( let i = 0, l = ps.length - 1; i < l; i ++ ) {
+
+				const a = ps[ i ];
+				const b = ps[ i + 1 ];
+				positions[ o ++ ] = a.x - _vector.x;
+				positions[ o ++ ] = a.y - _vector.y;
+				positions[ o ++ ] = a.z - _vector.z;
+				positions[ o ++ ] = b.x - _vector.x;
+				positions[ o ++ ] = b.y - _vector.y;
+				positions[ o ++ ] = b.z - _vector.z;
+
+			}
+
+		}
+
+		debugLines.geometry.dispose();
+		debugLines.geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
+		debugLines.position.copy( _vector );
+		debugLines.updateMatrixWorld();
 
 	}
 
