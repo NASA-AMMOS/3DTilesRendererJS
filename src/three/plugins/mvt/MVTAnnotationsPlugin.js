@@ -429,6 +429,8 @@ export class MVTAnnotationsPlugin {
 		const { tileLoadState } = this;
 		const info = tileLoadState.get( tile );
 
+		// TODO: is this "active" state needed? It should be trackable via visibility but it seems to be
+		// causing some issues.
 		info.active = state;
 		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
