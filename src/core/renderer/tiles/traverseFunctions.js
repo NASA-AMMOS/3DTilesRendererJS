@@ -461,6 +461,8 @@ function markVisibleTiles( tile, renderer ) {
 // Final traverse to toggle tile visibility.
 function toggleTiles( tile, renderer ) {
 
+	resetFrameState( tile, renderer );
+
 	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed ) {
 

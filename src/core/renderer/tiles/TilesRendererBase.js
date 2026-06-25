@@ -879,6 +879,16 @@ export class TilesRendererBase {
 
 		this.dispatchEvent( { type: 'update-after' } );
 
+		this.visibleTiles.forEach( tile => {
+
+			if ( tile.traversal.lastFrameVisited < this.frameCount ) {
+
+				debugger;
+
+			}
+
+		} );
+
 	}
 
 	/**
