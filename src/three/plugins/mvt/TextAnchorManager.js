@@ -26,50 +26,39 @@ export class TextAnchorManager {
 	// anchors for any of the path's slots that no existing anchor claimed
 	addLine( line ) {
 
-		const id = line.id;
-		const anchors = this._anchorsById.get( id ) ?? [];
+		// TODO: is it possible to have disjoint road paths with common ids?
+		// TODO: lets snap to the nearest point instead of replacing an existing point?
+		const { _anchorsById } = this;
 
-		const claimed = new Set();
-		const survivors = [];
+		const id = line.id;
+		if ( ! _anchorsById.has( id ) ) {
+
+			_anchorsById.set( id, [] );
+
+		}
+
+		const existingAnchors = _anchorsById.get( id );
+		const slotsClaimed = new Set();
 
 		// migrate existing anchors that fall within this path's tile range, snapping each to
 		// its nearest slot. two anchors snapping to the same slot are duplicates at the same
 		// location for the same path, so the later one is dropped
-		for ( const anchor of anchors ) {
+		for ( const anchor of existingAnchors ) {
 
 			// anchors on a different fragment ( outside this tile ) are left untouched
-			if ( ! rangeContains( line.range, anchor.lat, anchor.lon ) || true ) {
+			if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
 
-				survivors.push( anchor );
-				continue;
-
-			}
-
-			const slotIndex = anchor.addLine( line );
-			if ( slotIndex < 0 ) {
-
-				// the path has no slot near this anchor; keep it unchanged
-				survivors.push( anchor );
-				continue;
+				const slotIndex = anchor.addLine( line );
+				slotsClaimed.add( slotIndex );
 
 			}
-
-			if ( claimed.has( slotIndex ) ) {
-
-				// duplicate — another anchor already owns this slot, so drop this one
-				continue;
-
-			}
-
-			claimed.add( slotIndex );
-			survivors.push( anchor );
 
 		}
 
 		// spawn anchors for slots with no pre-existing anchor
 		for ( let i = 0, l = line.anchors.length; i < l; i ++ ) {
 
-			if ( claimed.has( i ) ) {
+			if ( slotsClaimed.has( i ) ) {
 
 				continue;
 
@@ -77,12 +66,11 @@ export class TextAnchorManager {
 
 			const anchor = new TextAnchorAnnotation( id );
 			anchor.addLine( line, i );
-			claimed.add( i );
-			survivors.push( anchor );
+			slotsClaimed.add( i );
+			existingAnchors.push( anchor );
+
 
 		}
-
-		this._anchorsById.set( id, survivors );
 
 	}
 
@@ -90,30 +78,23 @@ export class TextAnchorManager {
 	removeLine( line ) {
 
 		const id = line.id;
-		const anchors = this._anchorsById.get( id );
-		if ( ! anchors ) {
+		const existingAnchors = this._anchorsById.get( id );
 
-			return;
+		for ( let i = 0, l = existingAnchors.length; i < l; i ++ ) {
 
-		}
-
-		const survivors = [];
-		for ( const anchor of anchors ) {
-
+			const anchor = existingAnchors[ i ];
 			anchor.removeLine( line );
-			if ( anchor.lines.length > 0 ) {
+			if ( anchor.referencePaths.length === 0 ) {
 
-				survivors.push( anchor );
+				existingAnchors.splice( i, 1 );
+				i --;
+				l --;
 
 			}
 
 		}
 
-		if ( survivors.length > 0 ) {
-
-			this._anchorsById.set( id, survivors );
-
-		} else {
+		if ( existingAnchors.length === 0 ) {
 
 			this._anchorsById.delete( id );
 

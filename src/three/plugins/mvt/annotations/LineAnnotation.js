@@ -281,9 +281,11 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 	const {
 		filter = () => true,
 		subsampleFraction = 1 / 64,
-		// anchor spacing in radians ( geographic ) — ~250 m on the WGS84 ellipsoid. Density
+
+		// TODO: this needs to scale based on LoD rather than a fixed - this is hackily-scaled below
+		// anchor spacing in radians ( geographic ). Density
 		// tracks real-world length, independent of the tile's zoom / size
-		anchorSpacing = 250 / 6378137,
+		anchorSpacing = 50000 / 6378137,
 	} = options;
 
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
@@ -373,7 +375,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 			}
 
 			// construct the anchors
-			annotation.generateAnchors( anchorSpacing );
+			annotation.generateAnchors( anchorSpacing * ( range[ 2 ] - range[ 0 ] ) );
 
 			// append the annotation
 			lineAnnotations.push( annotation );

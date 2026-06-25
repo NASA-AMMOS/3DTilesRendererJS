@@ -128,15 +128,13 @@ export class LineAnnotationOverlay {
 		}
 
 		// anchors at their active ( highest-LoD settled ) path → point buffer
-		const anchorItems = anchorManager.getAnchors( _anchorList ).filter( anchor => anchor.getActiveEntry() !== null );
+		const anchorItems = anchorManager.getAnchors( _anchorList ).filter( anchor => anchor.ready );
 
 		const pointsAttr = new BufferAttribute( new Float32Array( anchorItems.length * 3 ), 3 );
 		offset = 0;
 		for ( const anchor of anchorItems ) {
 
-			const entry = anchor.getActiveEntry();
-			const ps = entry.line.positions;
-			_vector.lerpVectors( ps[ entry.i0 ], ps[ entry.i1 ], entry.alpha ).sub( _origin );
+			anchor.getPosition( _vector ).sub( _origin );
 			pointsAttr.setXYZ( offset ++, ..._vector );
 
 		}

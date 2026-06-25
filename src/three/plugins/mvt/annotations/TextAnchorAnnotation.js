@@ -9,16 +9,19 @@ export class TextAnchorAnnotation {
 	// cartographic position ( radians ) surfaced from the active path
 	get lat() {
 
-		// TODO: return "best" entry if there isn't one "ready"...
-		const entry = this._referenceEntry();
-		return entry !== null ? entry.lat : 0;
+		return this.getActiveReference().lat;
 
 	}
 
 	get lon() {
 
-		const entry = this._referenceEntry();
-		return entry !== null ? entry.lon : 0;
+		return this.getActiveReference().lon;
+
+	}
+
+	get ready() {
+
+		return this.getActiveReference()?.line.ready || false;
 
 	}
 
@@ -28,31 +31,38 @@ export class TextAnchorAnnotation {
 
 		// associated paths, each `{ line, i0, i1, alpha, lat, lon }` — the slot this anchor
 		// occupies on that LoD's path, with its cartographic position on that path
-		this.lines = [];
+		this.referencePaths = [];
+
+	}
+
+	getPosition( pos ) {
+
+		const { i0, i1, alpha, line } = this.getActiveReference();
+		return pos.lerpVectors( line.positions[ i0 ], line.positions[ i1 ], alpha );
 
 	}
 
 	// the highest-LoD entry whose path is settled, used for placement. null if none are ready
-	getActiveEntry() {
+	getActiveReference() {
 
-		let active = null;
-		for ( const entry of this.lines ) {
+		const { referencePaths: lines } = this;
+		for ( const entry of lines ) {
 
-			if ( ! entry.line.ready ) {
+			if ( entry.line.ready ) {
 
-				continue;
-
-			}
-
-			if ( active === null || entry.line.lodLevel > active.line.lodLevel ) {
-
-				active = entry;
+				return entry;
 
 			}
 
 		}
 
-		return active;
+		return lines[ 0 ] || null;
+
+	}
+
+	hasLine( line ) {
+
+		return Boolean( this.lines.find( item => item.line === line ) );
 
 	}
 
@@ -66,16 +76,10 @@ export class TextAnchorAnnotation {
 
 		}
 
-		if ( slotIndex < 0 ) {
-
-			return - 1;
-
-		}
-
 		// store the slot and its cartographic position on this specific path
 		// TODO: insert in order or sort
 		const slot = line.anchors[ slotIndex ];
-		this.lines.push( {
+		this.referencePaths.push( {
 			line,
 			i0: slot.i0,
 			i1: slot.i1,
@@ -83,48 +87,26 @@ export class TextAnchorAnnotation {
 			lat: slot.lat,
 			lon: slot.lon,
 		} );
+
+		this.referencePaths.sort( ( a, b ) => a.line.lodLevel - b.line.lodLevel );
+
 		return slotIndex;
 
 	}
 
 	removeLine( line ) {
 
-		const { lines } = this;
-		for ( let i = lines.length - 1; i >= 0; i -- ) {
+		const { referencePaths: referencePaths } = this;
+		for ( let i = 0; i < referencePaths.length; i ++ ) {
 
-			if ( lines[ i ].line === line ) {
+			if ( referencePaths[ i ].line === line ) {
 
-				lines.splice( i, 1 );
-
-			}
-
-		}
-
-	}
-
-	// the entry defining the anchor's current position: the active ( settled ) path if any,
-	// else the highest-LoD path ( cartographic position is valid before settling )
-	_referenceEntry() {
-
-		const active = this.getActiveEntry();
-		if ( active !== null ) {
-
-			return active;
-
-		}
-
-		let best = null;
-		for ( const entry of this.lines ) {
-
-			if ( best === null || entry.line.lodLevel > best.line.lodLevel ) {
-
-				best = entry;
+				referencePaths.splice( i, 1 );
+				i --;
 
 			}
 
 		}
-
-		return best;
 
 	}
 
@@ -132,22 +114,15 @@ export class TextAnchorAnnotation {
 	_nearestSlot( line ) {
 
 		// TODO: this is an issue
-		const ref = this._referenceEntry();
-		if ( ref === null ) {
-
-			return - 1;
-
-		}
-
-		const { lat, lon } = ref;
+		const { lat, lon } = this.getActiveReference();
 		const { anchors } = line;
 		let best = - 1;
 		let bestDist = Infinity;
 		for ( let i = 0, l = anchors.length; i < l; i ++ ) {
 
-			const a = anchors[ i ];
-			const dLat = a.lat - lat;
-			const dLon = a.lon - lon;
+			const anchor = anchors[ i ];
+			const dLat = anchor.lat - lat;
+			const dLon = anchor.lon - lon;
 			const d = dLat * dLat + dLon * dLon;
 			if ( d < bestDist ) {
 
