@@ -1,7 +1,8 @@
 // true if the cartographic point lies within the tile range ( all radians )
 function rangeContains( range, lat, lon ) {
 
-	return lon >= range.minLon && lon <= range.maxLon && lat >= range.minLat && lat <= range.maxLat;
+	const [ minLon, minLat, maxLon, maxLat ] = range;
+	return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
 
 }
 

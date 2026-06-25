@@ -3,12 +3,8 @@ import { EventDispatcher, Matrix4, Vector2, Vector3 } from 'three';
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
-const _delta = /* @__PURE__ */ new Vector3();
 
-// suppress annotations within ~6 degrees of the globe horizon
-const PERSPECTIVE_CULL_ANGLE = Math.acos( 0.1 );
-
-export class AnnotationItem {
+export class OccupancyAnnotation {
 
 	constructor() {
 
@@ -35,92 +31,6 @@ export class AnnotationItem {
 	}
 
 	copyPosition( source ) {
-
-	}
-
-}
-
-export class PointAnnotationItem extends AnnotationItem {
-
-	constructor() {
-
-		super();
-
-		this.position = new Vector3();
-		this.lat = 0;
-		this.lon = 0;
-		this.radius = 32;
-
-		this._screenPos = new Vector3();
-		this._facingAngle = 0;
-
-	}
-
-	updateTransform( matrix, resolution, cameraPosition ) {
-
-		const { position } = this;
-		const screenPos = this._screenPos;
-
-		// project to screen space
-		screenPos.copy( position ).applyMatrix4( matrix );
-
-		// transform to resolution coordinates
-		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
-		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
-		screenPos.z = ( screenPos.z < - 1 || screenPos.z > 1 ) ? 1 : 0;
-
-		// facing ratio: dot( surface normal, direction to camera )
-		// TODO: store geodetic normal on the item at creation time and use it here instead of
-		// normalize( position )
-		if ( cameraPosition !== null ) {
-
-			_delta.subVectors( cameraPosition, position );
-			this._facingAngle = position.lengthSq() > 0 ? position.angleTo( _delta ) : 0;
-
-		} else {
-
-			this._facingAngle = 0;
-
-		}
-
-	}
-
-	copyPosition( source ) {
-
-		this.position.copy( source.position );
-		this.ready = source.ready;
-
-	}
-
-	evaluate( handle ) {
-
-		const { _screenPos, radius, _facingAngle } = this;
-		if ( ! this.ready ) {
-
-			return false;
-
-		}
-
-		if ( _screenPos.z !== 0 ) {
-
-			return false;
-
-		}
-
-		if ( _facingAngle > PERSPECTIVE_CULL_ANGLE ) {
-
-			return false;
-
-		}
-
-		if ( handle.test( _screenPos.x, _screenPos.y, radius ) ) {
-
-			return false;
-
-		}
-
-		handle.mark( _screenPos.x, _screenPos.y, radius );
-		return true;
 
 	}
 

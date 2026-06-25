@@ -1,7 +1,6 @@
 /** @import { Camera, Scene } from 'three' */
-import { MathUtils, Matrix4 } from 'three';
+import { Matrix4 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
-import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
 import { AnchorManager } from './AnchorManager.js';
@@ -9,6 +8,7 @@ import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
 import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
 import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
+import { parsePointAnnotations } from './annotations/PointAnnotation.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -488,73 +488,5 @@ export class MVTAnnotationsPlugin {
 		forEachTileInBounds( range, level, tiling, callback );
 
 	}
-
-}
-
-function parsePointAnnotations( vectorTile, x, y, level, tiling, options ) {
-
-	const {
-		filter = () => true,
-	} = options;
-
-	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
-	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
-	const points = [];
-
-	for ( const layerName in vectorTile.layers ) {
-
-		const layer = vectorTile.layers[ layerName ];
-		const extent = layer.extent;
-
-		for ( let i = 0; i < layer.length; i ++ ) {
-
-			// process only points
-			const feature = layer.feature( i );
-			if ( feature.type !== 1 ) {
-
-				continue;
-
-			}
-
-			if ( filter !== null && ! filter( layerName, feature.properties ) ) {
-
-				continue;
-
-			}
-
-			// retrieve the geometry
-			const geometry = feature.loadGeometry();
-			for ( const [ point ] of geometry ) {
-
-				const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
-				// tile Y=0 is geographic north; with flipY the V axis increases northward
-				// so we invert vf when flipY is set
-				const vf = point.y / extent;
-				const v = tiling.flipY
-					? MathUtils.lerp( tMaxY, tMinY, vf )
-					: MathUtils.lerp( tMinY, tMaxY, vf );
-
-				const [ lon, lat ] = tiling.toCartographicPoint( u, v );
-
-				const item = new PointAnnotationItem();
-				// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
-				// across all zoom levels — stable and unique for cross-LoD annotation replacement.
-				// TODO: is this id always guaranteed to be unique and consistent across LoDs?
-				item.id = `${ layerName }:${ feature.id }`;
-				item.layer = layerName;
-				item.properties = feature.properties;
-				item.lat = lat;
-				item.lon = lon;
-				item.lodLevel = level;
-
-				points.push( item );
-
-			}
-
-		}
-
-	}
-
-	return points;
 
 }

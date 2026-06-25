@@ -1,4 +1,5 @@
 import { MathUtils, Vector3 } from 'three';
+import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
 /**
  * A stitched, subsampled polyline parsed from MVT line ( type 2 ) content. Holds the
@@ -10,7 +11,7 @@ import { MathUtils, Vector3 } from 'three';
  * occupy the grid.
  * @private
  */
-export class LineAnnotation {
+export class LineAnnotation extends OccupancyAnnotation {
 
 	/**
 	 * Number of samples in the path.
@@ -24,13 +25,8 @@ export class LineAnnotation {
 
 	constructor() {
 
-		// stable feature id ( `${ layerName }:${ feature.id }` ), used for cross-LoD association
-		this.id = '';
-		this.layer = '';
-		this.properties = null;
+		super();
 
-		// tile this path came from
-		this.lodLevel = 0;
 		this.range = null;
 
 		// per-sample cartographic coordinates in radians
@@ -43,8 +39,17 @@ export class LineAnnotation {
 		// anchors placed along the path, each `{ i0, i1, alpha, lat, lon }`
 		this.anchors = [];
 
-		// becomes true once every sample has been settled onto the surface
-		this.ready = false;
+	}
+
+	copyPosition() {
+
+		throw new Error();
+
+	}
+
+	evaluate() {
+
+		throw new Error();
 
 	}
 
@@ -285,17 +290,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 	const { flipY } = tiling;
 
-	// the tile's cartographic range, shared by every line parsed from it
-	// TODO: this is not a good way to handle the range...
-	const cornerA = tiling.toCartographicPoint( tMinX, tMinY );
-	const cornerB = tiling.toCartographicPoint( tMaxX, tMaxY );
-	const range = {
-		minLon: Math.min( cornerA[ 0 ], cornerB[ 0 ] ),
-		maxLon: Math.max( cornerA[ 0 ], cornerB[ 0 ] ),
-		minLat: Math.min( cornerA[ 1 ], cornerB[ 1 ] ),
-		maxLat: Math.max( cornerA[ 1 ], cornerB[ 1 ] ),
-	};
-
+	const range = tiling.getTileBounds( x, y, level, false, false );
 	const lineAnnotations = [];
 
 	for ( const layerName in vectorTile.layers ) {
