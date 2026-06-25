@@ -13,7 +13,7 @@ function rangeContains( range, lat, lon ) {
  * load and unload it migrates existing anchors onto the new geometry ( scoped to the loaded
  * tile ) and spawns anchors for any slots not already covered.
  */
-export class AnchorManager {
+export class TextAnchorManager {
 
 	constructor() {
 
@@ -38,7 +38,7 @@ export class AnchorManager {
 		for ( const anchor of anchors ) {
 
 			// anchors on a different fragment ( outside this tile ) are left untouched
-			if ( ! rangeContains( line.range, anchor.lat, anchor.lon ) ) {
+			if ( ! rangeContains( line.range, anchor.lat, anchor.lon ) || true ) {
 
 				survivors.push( anchor );
 				continue;

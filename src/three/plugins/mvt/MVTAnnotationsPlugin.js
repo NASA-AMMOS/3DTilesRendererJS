@@ -3,7 +3,7 @@ import { Matrix4 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
-import { AnchorManager } from './AnchorManager.js';
+import { TextAnchorManager } from './AnchorManager.js';
 import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
 import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
 import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
@@ -117,7 +117,7 @@ export class MVTAnnotationsPlugin {
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = null;
 		this.occupancy = new DelayedScreenOccupationManager();
-		this.anchorManager = new AnchorManager();
+		this.anchorManager = new TextAnchorManager();
 		this.settlingManager = null;
 
 		// save the camera used for positioning icons
