@@ -285,14 +285,16 @@ export class MVTAnnotationsPlugin {
 
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
+
+				const occupancyItems = new Set();
+				const settleItems = new Set();
+				vectorTileInfo.set( key, { occupancyItems, settleItems } );
+
 				if ( ! vectorTile ) {
 
 					return;
 
 				}
-
-				const occupancyItems = new Set();
-				const settleItems = new Set();
 
 				// parse the icon annotations
 				const points = parsePointAnnotations( vectorTile, x, y, level, tiling, {
@@ -319,31 +321,25 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				vectorTileInfo.set( key, { occupancyItems, settleItems } );
-
 			} else {
 
 				const info = vectorTileInfo.get( key );
-				if ( info ) {
+				vectorTileInfo.delete( key );
 
-					for ( const item of info.occupancyItems ) {
+				for ( const item of info.occupancyItems ) {
 
-						occupancy.unregister( item );
+					occupancy.unregister( item );
 
-					}
+				}
 
-					for ( const item of info.settleItems ) {
+				for ( const item of info.settleItems ) {
 
-						settlingManager.unregister( item );
-						if ( item instanceof LineAnnotation ) {
+					settlingManager.unregister( item );
+					if ( item instanceof LineAnnotation ) {
 
-							anchorManager.removeLine( item );
-
-						}
+						anchorManager.removeLine( item );
 
 					}
-
-					vectorTileInfo.delete( key );
 
 				}
 
