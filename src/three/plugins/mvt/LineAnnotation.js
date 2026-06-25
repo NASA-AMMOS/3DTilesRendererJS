@@ -48,6 +48,83 @@ export class LineAnnotation {
 
 	}
 
+	// Place anchors along a path at a fixed "spacing" (geographic, in radians), recording the
+	// bounding sample indices. Short paths receive a single anchor at their midpoint.
+	generateAnchors( spacing ) {
+
+		const { lat, lon } = this;
+
+		// segment lengths and total length in cartographic space so anchor count tracks the
+		// path's real-world length rather than the tile's size
+		const segLengths = [];
+		let totalLength = 0;
+		for ( let i = 0, l = lat.length - 1; i < l; i ++ ) {
+
+			const lat0 = lat[ i ];
+			const lat1 = lat[ i + 1 ];
+
+			const lon0 = lon[ i ];
+			const lon1 = lon[ i + 1 ];
+
+			// TODO: we should figure out a better way to handle this spacing...
+			const latMid = 0.5 * ( lat0 + lat1 );
+			const dLat = lat1 - lat0;
+			const dLon = ( lon1 - lon0 ) * Math.cos( latMid );
+			const d = Math.sqrt( dLat * dLat + dLon * dLon );
+			segLengths.push( d );
+			totalLength += d;
+
+		}
+
+		// first anchor offset half a spacing in, fall back to the midpoint for
+		// short paths
+		let target = spacing * 0.5;
+		if ( target > totalLength ) {
+
+			target = totalLength * 0.5;
+
+		}
+
+		let currLength = 0;
+		let currIndex = 0;
+		const anchorCandidates = [];
+		while ( target <= totalLength ) {
+
+			// advance to the segment containing "target"
+			while ( currIndex < segLengths.length && currLength + segLengths[ currIndex ] < target ) {
+
+				currLength += segLengths[ currIndex ];
+				currIndex ++;
+
+			}
+
+			if ( currIndex >= segLengths.length ) {
+
+				break;
+
+			}
+
+			const i0 = currIndex;
+			const i1 = currIndex + 1;
+			const d0 = segLengths[ i0 ];
+			const alpha = d0 > 0 ? ( target - currLength ) / d0 : 0;
+
+			anchorCandidates.push( {
+				i0,
+				i1,
+				alpha,
+				lat: MathUtils.lerp( lat[ i0 ], lat[ i1 ], alpha ),
+				lon: MathUtils.lerp( lon[ i0 ], lon[ i1 ], alpha ),
+			} );
+
+			target += spacing;
+
+		}
+
+		this.anchors = anchorCandidates;
+
+	}
+
 }
 
 // Merge line fragments that share an endpoint and the same key into single polylines.
@@ -176,82 +253,6 @@ function subsamplePath( points, spacing ) {
 
 }
 
-// Place anchors along a path at a fixed "spacing" (geographic, in radians), recording the
-// bounding sample indices. Short paths receive a single anchor at their midpoint.
-function placeAnchors( line, spacing ) {
-
-	const { lat, lon } = line;
-
-	// segment lengths and total length in cartographic space so anchor count tracks the
-	// path's real-world length rather than the tile's size
-	const segLengths = [];
-	let totalLength = 0;
-	for ( let i = 0, l = lat.length - 1; i < l; i ++ ) {
-
-		const lat0 = lat[ i ];
-		const lat1 = lat[ i + 1 ];
-
-		const lon0 = lon[ i ];
-		const lon1 = lon[ i + 1 ];
-
-		// TODO: we should figure out a better way to handle this spacing...
-		const latMid = 0.5 * ( lat0 + lat1 );
-		const dLat = lat1 - lat0;
-		const dLon = ( lon1 - lon0 ) * Math.cos( latMid );
-		const d = Math.sqrt( dLat * dLat + dLon * dLon );
-		segLengths.push( d );
-		totalLength += d;
-
-	}
-
-	// first anchor offset half a spacing in, fall back to the midpoint for
-	// short paths
-	let target = spacing * 0.5;
-	if ( target > totalLength ) {
-
-		target = totalLength * 0.5;
-
-	}
-
-	let currLength = 0;
-	let currIndex = 0;
-	const anchorCandidates = [];
-	while ( target <= totalLength ) {
-
-		// advance to the segment containing "target"
-		while ( currIndex < segLengths.length && currLength + segLengths[ currIndex ] < target ) {
-
-			currLength += segLengths[ currIndex ];
-			currIndex ++;
-
-		}
-
-		if ( currIndex >= segLengths.length ) {
-
-			break;
-
-		}
-
-		const i0 = currIndex;
-		const i1 = currIndex + 1;
-		const d0 = segLengths[ i0 ];
-		const alpha = d0 > 0 ? ( target - currLength ) / d0 : 0;
-
-		anchorCandidates.push( {
-			i0,
-			i1,
-			alpha,
-			lat: MathUtils.lerp( lat[ i0 ], lat[ i1 ], alpha ),
-			lon: MathUtils.lerp( lon[ i0 ], lon[ i1 ], alpha ),
-		} );
-
-		target += spacing;
-
-	}
-
-	return anchorCandidates;
-
-}
 
 /**
  * Parse all labeled line ( type 2 ) features from a decoded MVT tile into a set of
@@ -362,7 +363,9 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 				const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
 				const vf = point.y / extent;
 
-				// TODO: is this not already accounted for in the toCartographicPoint?
+				// TODO: is this not already accounted for in the toCartographicPoint? Is this supposed to
+				// just be ALWAYS true? This seems to be a flip of the internal content rather than the
+				// overall tiling?
 				const v = flipY
 					? MathUtils.lerp( tMaxY, tMinY, vf )
 					: MathUtils.lerp( tMinY, tMaxY, vf );
@@ -375,7 +378,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 			}
 
 			// construct the anchors
-			annotation.anchors = placeAnchors( annotation, anchorSpacing );
+			annotation.generateAnchors( anchorSpacing );
 
 			// append the annotation
 			lineAnnotations.push( annotation );
