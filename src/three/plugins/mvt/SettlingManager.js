@@ -396,6 +396,8 @@ export class SettlingManager {
 
 				}
 
+				// TODO: this could request multiple hits and choose the one with a roughly vertical normal and
+				// adjusts the line in the least vertical way
 				this._settleSample( lat[ i ], lon[ i ], positions[ i ] );
 
 				if ( this._deadlineExpired() ) {

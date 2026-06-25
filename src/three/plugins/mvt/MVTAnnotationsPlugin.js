@@ -112,18 +112,19 @@ export class MVTAnnotationsPlugin {
 			displayLines = false,
 		} = options;
 
+		// user settings
 		this.overlay = overlay;
+		this.camera = camera;
+		this.sortCallback = sortCallback;
+		this.filterAnnotation = filterAnnotation;
+		this.filterLine = filterLine;
+		this.onAnnotationsUpdate = onAnnotationsUpdate;
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = null;
 		this.occupancy = new DelayedScreenOccupationManager();
 		this.anchorManager = new TextAnchorManager();
 		this.settlingManager = null;
-
-		// save the camera used for positioning icons
-		this.camera = camera;
-
-		// set of tile info (eg range, etc) and annotations associated with each tile
 		this.tileLoadState = new Map();
 
 		// per MVT tile: { occupancyItems, settleItems } — items registered in the occupancy
@@ -131,20 +132,10 @@ export class MVTAnnotationsPlugin {
 		// are in settleItems only ( anchors derived from them occupy the grid later )
 		this.vectorTileInfo = new Map();
 
-		// callback to filter which features become annotations:
-		this.sortCallback = sortCallback;
-		this.filterAnnotation = filterAnnotation;
-		this.filterLine = filterLine;
-		this.onAnnotationsUpdate = onAnnotationsUpdate;
 
 		// debug overlays
 		this._occupancyOverlay = new OccupancyGridOverlay( this.occupancy );
 		this._lineOverlay = new LineAnnotationOverlay( this.anchorManager );
-
-		// TODO: add "text" manager for text
-		// TODO: add a "fade" manager for hiding an showing annotations
-		// TODO: debounce occupancy decisions — wait N frames before dispatching "added" / "removed"
-		//       so transient conflicts (camera micro-movement) don't cause visible flicker
 
 		this.displayOccupancyGrid = displayOccupancyGrid;
 		this.displayLines = displayLines;
@@ -153,7 +144,7 @@ export class MVTAnnotationsPlugin {
 
 	async init( tiles ) {
 
-		const { overlay, occupancy, tileLoadState, _lineOverlay } = this;
+		const { overlay, occupancy, _lineOverlay } = this;
 
 		// ensure the overlay is initialized
 		overlay.init();
@@ -226,25 +217,11 @@ export class MVTAnnotationsPlugin {
 		this._onVisibilityChange = ( { scene, tile, visible } ) => {
 
 			// tile geometry changed — existing items may have been settled on this geometry
-			// and need to be re-raycasted against the updated scene
+			// and need to be re-settled against the updated scene
 			this.settlingManager.markDirty();
 
 			// TODO: the ImageOverlay Tile Splits is causing an issue here.
-			const info = tileLoadState.get( tile );
-
-			if ( visible ) {
-
-				this._loadMVTForTile( scene, tile );
-
-			} else {
-
-				this._forEachTileInBounds( info.range, ( x, y, l ) => {
-
-					this.hierarchy.setTargetState( x, y, l, false );
-
-				} );
-
-			}
+			this._markVectorTile( tile, visible );
 
 		};
 
@@ -289,23 +266,22 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		this._onToggle = ( { x, y, level, visible } ) => {
+		this._onVectorTileToggle = ( { x, y, level, visible } ) => {
 
 			tiles.dispatchEvent( { type: 'needs-update' } );
 
+			const {
+				contentCache,
+				occupancy,
+				filterAnnotation,
+				filterLine,
+				vectorTileInfo,
+				settlingManager,
+				anchorManager,
+			} = this;
+
 			const key = `${ x }_${ y }_${ level }`;
-
 			if ( visible ) {
-
-				const {
-					contentCache,
-					occupancy,
-					filterAnnotation,
-					filterLine,
-					vectorTileInfo,
-					settlingManager,
-					anchorManager,
-				} = this;
 
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
@@ -318,7 +294,7 @@ export class MVTAnnotationsPlugin {
 				const occupancyItems = new Set();
 				const settleItems = new Set();
 
-				// get the normalized tile bound
+				// parse the icon annotations
 				const points = parsePointAnnotations( vectorTile, x, y, level, tiling, {
 					filter: filterAnnotation,
 				} );
@@ -331,8 +307,7 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				// parse labeled line features into stitched, subsampled paths; these are
-				// settled but ( unlike points ) are not registered in the occupancy grid
+				// parse the paths
 				const lines = parseLineAnnotations( vectorTile, x, y, level, tiling, {
 					filter: filterLine,
 				} );
@@ -347,13 +322,6 @@ export class MVTAnnotationsPlugin {
 				vectorTileInfo.set( key, { occupancyItems, settleItems } );
 
 			} else {
-
-				const {
-					occupancy,
-					vectorTileInfo,
-					settlingManager,
-					anchorManager,
-				} = this;
 
 				const info = vectorTileInfo.get( key );
 				if ( info ) {
@@ -385,13 +353,12 @@ export class MVTAnnotationsPlugin {
 
 		this._onDisposeTile = ( { tile } ) => {
 
-			const { tileLoadState } = this;
-			tileLoadState.delete( tile );
+			this.tileLoadState.delete( tile );
 
 		};
 
 		// register events
-		this.hierarchy.addEventListener( 'toggle', this._onToggle );
+		this.hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		tiles.addEventListener( 'dispose-tile', this._onDisposeTile );
@@ -404,7 +371,7 @@ export class MVTAnnotationsPlugin {
 			this.processTileModel( scene, tile );
 			if ( tiles.visibleTiles.has( tile ) ) {
 
-				this._loadMVTForTile( scene, tile );
+				this._markVectorTile( tile, true );
 
 			}
 
@@ -417,14 +384,18 @@ export class MVTAnnotationsPlugin {
 		this._occupancyOverlay.dispose();
 		this._lineOverlay.dispose();
 
-		this.hierarchy.removeEventListener( 'toggle', this._onToggle );
+		this.hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		this.tiles.removeEventListener( 'dispose-tile', this._onDisposeTile );
 
-		this.tiles.forEachLoadedModel( ( scene, tile ) => {
+		this.tileLoadState.forEach( ( info, tile ) => {
 
-			this._onVisibilityChange( { scene, tile, visible: false } );
+			if ( info.active ) {
+
+				this._markVectorTile( tile, false );
+
+			}
 
 		} );
 
@@ -432,41 +403,40 @@ export class MVTAnnotationsPlugin {
 
 	processTileModel( scene, tile ) {
 
+		const { tiles, overlay } = this;
+
+		// TODO: this currently only work with ellipsoidal projection
+		_matrix.identity();
+		if ( scene.parent !== null ) {
+
+			_matrix.copy( tiles.group.matrixWorldInverse );
+
+		}
+
+		// TODO: why are we passing range vs region here?
+		scene.updateMatrixWorld();
+		const meshes = collectMeshes( scene );
+		const { range } = getMeshesCartographicRange( meshes, tiles.ellipsoid, _matrix, overlay.projection );
+
+		// TODO: why not process here?
 		this.tileLoadState.set( tile, {
-			range: null,
+			range,
+			active: false,
 		} );
 
 	}
 
 	//
 
-	_loadMVTForTile( scene, tile ) {
+	_markVectorTile( tile, state ) {
 
-		const { overlay, tiles, tileLoadState } = this;
+		const { tileLoadState } = this;
 		const info = tileLoadState.get( tile );
 
-		// initialize the bounds
-		if ( info.range === null ) {
-
-			// TODO: this currently only work with ellipsoidal projection
-			_matrix.identity();
-			if ( scene.parent !== null ) {
-
-				_matrix.copy( tiles.group.matrixWorldInverse );
-
-			}
-
-			// TODO: why are we passing range vs region here?
-			scene.updateMatrixWorld();
-			const meshes = collectMeshes( scene );
-			const { range } = getMeshesCartographicRange( meshes, tiles.ellipsoid, _matrix, overlay.projection );
-			info.range = range;
-
-		}
-
+		info.active = state;
 		this._forEachTileInBounds( info.range, ( x, y, l ) => {
 
-			this.hierarchy.setTargetState( x, y, l, true );
+			this.hierarchy.setTargetState( x, y, l, state );
 
 		} );
 
