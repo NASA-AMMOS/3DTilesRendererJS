@@ -103,7 +103,7 @@ const KIND_TO_ICON = {
 const params = {
 
 	occupancyGrid: false,
-	lines: false,
+	annotationLines: false,
 
 };
 
@@ -145,8 +145,8 @@ function reinstantiateTiles() {
 		overlay,
 		camera,
 		filterAnnotation: ( layer, properties ) => properties.kind in KIND_TO_ICON,
-		// include all line features ( debug-visualized via the `lines` GUI toggle )
-		filterLine: () => true,
+		// only named lines ( i.e. things that would get a label ), debug-visualized via the `lines` GUI toggle
+		filterLine: ( layer, properties ) => 'name' in properties,
 		onAnnotationsUpdate: ( added, removed ) => annotationsPoints.update( added, removed ),
 	} ) );
 
@@ -246,7 +246,7 @@ function init() {
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).displayOccupancyGrid = v;
 
 	} );
-	gui.add( params, 'lines' ).onChange( v => {
+	gui.add( params, 'annotationLines' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).displayLines = v;
 

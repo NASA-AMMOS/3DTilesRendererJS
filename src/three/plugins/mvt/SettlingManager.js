@@ -76,8 +76,8 @@ function rayIntersectsFrustum( raycaster, frustum ) {
 
 /**
  * Owns the raycast "settling" of annotation items onto the 3D tile surface. Items are
- * registered ( ref-counted, so an item referenced by multiple tiles stays settled until
- * its last reference is removed ) and progressively raycast within a per-tick time budget,
+ * registered (ref-counted, so an item referenced by multiple tiles stays settled until
+ * its last reference is removed) and progressively raycast within a per-tick time budget,
  * prioritizing on-screen items.
  * @param {Object} [options={}]
  * @param {Object} [options.tiles=null] - The TilesRenderer; supplies the ellipsoid and group.
@@ -108,10 +108,10 @@ export class SettlingManager {
 		this.maxSettleTimeMs = maxSettleTimeMs;
 		this._isPrioritized = isPrioritized;
 
-		// item -> reference count; an item is settled while its count is > 0
+		// item to reference count
 		this._refs = new Map();
 
-		// items awaiting ( re )settling
+		// items awaiting resettling
 		this._queue = new Set();
 
 		this._needsRebuild = false;
@@ -119,6 +119,12 @@ export class SettlingManager {
 
 		// shared per-tick budget deadline
 		this._deadline = 0;
+
+	}
+
+	getItems() {
+
+		return Array.from( this._refs.keys() );
 
 	}
 

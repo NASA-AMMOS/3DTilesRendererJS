@@ -11,7 +11,6 @@ import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overl
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _origin = /* @__PURE__ */ new Vector3();
 const _vector = /* @__PURE__ */ new Vector3();
-const _lineList = [];
 const _anchorList = [];
 
 // provide all meshes in the scene
@@ -138,7 +137,7 @@ export class MVTAnnotationsPlugin {
 		// init container
 		this.tiles = tiles;
 		this.hierarchy = new MVTHierarchy( this.contentCache );
-		this.settling = new SettlingManager( {
+		this.settlingManager = new SettlingManager( {
 			tiles,
 			isPrioritized: item => occupancy.visible.has( item ),
 		} );
@@ -194,7 +193,7 @@ export class MVTAnnotationsPlugin {
 
 			// tile geometry changed — existing items may have been settled on this geometry
 			// and need to be re-raycasted against the updated scene
-			this.settling.markDirty();
+			this.settlingManager.markDirty();
 
 			// TODO: the ImageOverlay Tile Splits is causing an issue here.
 			const info = tileLoadState.get( tile );
@@ -232,8 +231,8 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			this.settling.camera = this.camera;
-			this.settling.update();
+			this.settlingManager.camera = this.camera;
+			this.settlingManager.update();
 
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
@@ -246,7 +245,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			if ( occupancy.hasPendingWork || this.settling.hasPendingWork ) {
+			if ( occupancy.hasPendingWork || this.settlingManager.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
 
@@ -268,7 +267,7 @@ export class MVTAnnotationsPlugin {
 					filterAnnotation,
 					filterLine,
 					vectorTileInfo,
-					settling,
+					settlingManager,
 					anchorManager,
 				} = this;
 
@@ -292,7 +291,7 @@ export class MVTAnnotationsPlugin {
 					const canonical = occupancy.register( point );
 					occupancyItems.add( canonical );
 					settleItems.add( canonical );
-					settling.register( canonical );
+					settlingManager.register( canonical );
 
 				}
 
@@ -304,7 +303,7 @@ export class MVTAnnotationsPlugin {
 				for ( const line of lines ) {
 
 					settleItems.add( line );
-					settling.register( line );
+					settlingManager.register( line );
 					anchorManager.addLine( line );
 
 				}
@@ -313,7 +312,13 @@ export class MVTAnnotationsPlugin {
 
 			} else {
 
-				const { occupancy, vectorTileInfo, settling, anchorManager } = this;
+				const {
+					occupancy,
+					vectorTileInfo,
+					settlingManager,
+					anchorManager,
+				} = this;
+
 				const info = vectorTileInfo.get( key );
 				if ( info ) {
 
@@ -325,7 +330,7 @@ export class MVTAnnotationsPlugin {
 
 					for ( const item of info.settleItems ) {
 
-						settling.unregister( item );
+						settlingManager.unregister( item );
 						if ( item instanceof LineAnnotation ) {
 
 							anchorManager.removeLine( item );
@@ -409,28 +414,6 @@ export class MVTAnnotationsPlugin {
 			this._onVisibilityChange( { scene, tile, visible: false } );
 
 		} );
-
-	}
-
-	// collect all currently loaded line annotations ( for rendering / debug )
-	getLineAnnotations( target = [] ) {
-
-		target.length = 0;
-		for ( const { settleItems } of this.vectorTileInfo.values() ) {
-
-			for ( const item of settleItems ) {
-
-				if ( item instanceof LineAnnotation ) {
-
-					target.push( item );
-
-				}
-
-			}
-
-		}
-
-		return target;
 
 	}
 
@@ -538,7 +521,7 @@ export class MVTAnnotationsPlugin {
 
 	_updateDebugLines() {
 
-		const { displayLines, tiles } = this;
+		const { displayLines, tiles, settlingManager } = this;
 		if ( ! displayLines ) {
 
 			if ( this._debugLines ) {
@@ -626,8 +609,9 @@ export class MVTAnnotationsPlugin {
 		}
 
 		// get the lines to display
-		const lines = this.getLineAnnotations( _lineList )
-			.filter( line => line.ready );
+		const lines = settlingManager
+			.getItems()
+			.filter( item => item instanceof LineAnnotation && item.ready );
 
 		// count settled segment vertices across all lines
 		let segmentCount = 0;
