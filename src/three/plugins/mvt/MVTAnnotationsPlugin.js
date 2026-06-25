@@ -347,7 +347,7 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		this._onDisposeTile = ( { tile } ) => {
+		this._onDisposeModel = ( { tile } ) => {
 
 			this.tileLoadState.delete( tile );
 
@@ -357,7 +357,7 @@ export class MVTAnnotationsPlugin {
 		this.hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		tiles.addEventListener( 'dispose-tile', this._onDisposeTile );
+		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 
 		//
 
@@ -383,7 +383,7 @@ export class MVTAnnotationsPlugin {
 		this.hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		this.tiles.removeEventListener( 'dispose-tile', this._onDisposeTile );
+		this.tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 
 		this.tileLoadState.forEach( ( info, tile ) => {
 
