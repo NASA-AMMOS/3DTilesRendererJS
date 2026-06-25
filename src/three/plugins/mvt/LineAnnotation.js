@@ -24,14 +24,14 @@ export class LineAnnotation {
 
 	constructor() {
 
-		// type discriminator, mirrors three's `isXxx` convention
-		this.isLineAnnotation = true;
-
 		// stable feature id ( `${ layerName }:${ feature.id }` ), used for cross-LoD association
 		this.id = '';
 		this.layer = '';
 		this.properties = null;
+
+		// tile this path came from: LoD level and cartographic range ( radians )
 		this.lodLevel = 0;
+		this.range = null;
 
 		// per-sample cartographic coordinates in radians
 		this.lat = [];
@@ -272,14 +272,23 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 	const {
 		filter = () => true,
 		subsampleFraction = 1 / 64,
-		// anchor spacing as a fraction of the tile extent; ~1/2 ≈ MapLibre's default
-		// `symbol-spacing` of 250 screen px for a tile displayed near 512 px
-		anchorFraction = 1 / 2,
+		// anchor spacing as a fraction of the tile extent
+		anchorFraction = 1 / 16,
 	} = options;
 
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 	const { flipY } = tiling;
+
+	// the tile's cartographic range, shared by every line parsed from it
+	const cornerA = tiling.toCartographicPoint( tMinX, tMinY );
+	const cornerB = tiling.toCartographicPoint( tMaxX, tMaxY );
+	const range = {
+		minLon: Math.min( cornerA[ 0 ], cornerB[ 0 ] ),
+		maxLon: Math.max( cornerA[ 0 ], cornerB[ 0 ] ),
+		minLat: Math.min( cornerA[ 1 ], cornerB[ 1 ] ),
+		maxLat: Math.max( cornerA[ 1 ], cornerB[ 1 ] ),
+	};
 
 	const annotations = [];
 
@@ -339,6 +348,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 			annotation.layer = layerName;
 			annotation.properties = seg.properties;
 			annotation.lodLevel = level;
+			annotation.range = range;
 
 			for ( const point of sampled ) {
 

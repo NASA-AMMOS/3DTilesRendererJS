@@ -4,12 +4,14 @@ import { MVTHierarchy } from './MVTHierarchy.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
-import { parseLineAnnotations } from './LineAnnotation.js';
+import { AnchorManager } from './AnchorManager.js';
+import { LineAnnotation, parseLineAnnotations } from './LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vector = /* @__PURE__ */ new Vector3();
 const _lineList = [];
+const _anchorList = [];
 
 // provide all meshes in the scene
 function collectMeshes( object ) {
@@ -139,6 +141,7 @@ export class MVTAnnotationsPlugin {
 			tiles,
 			isPrioritized: item => occupancy.visible.has( item ),
 		} );
+		this.anchorManager = new AnchorManager();
 
 		occupancy.sortCallback = ( a, b ) => {
 
@@ -341,6 +344,7 @@ export class MVTAnnotationsPlugin {
 
 					settleItems.add( line );
 					this.settling.register( line );
+					this.anchorManager.addLine( line );
 
 				}
 
@@ -361,6 +365,11 @@ export class MVTAnnotationsPlugin {
 					for ( const item of info.settleItems ) {
 
 						this.settling.unregister( item );
+						if ( item instanceof LineAnnotation ) {
+
+							this.anchorManager.removeLine( item );
+
+						}
 
 					}
 
@@ -446,7 +455,7 @@ export class MVTAnnotationsPlugin {
 
 			for ( const item of settleItems ) {
 
-				if ( item.isLineAnnotation ) {
+				if ( item instanceof LineAnnotation ) {
 
 					target.push( item );
 
@@ -671,14 +680,17 @@ export class MVTAnnotationsPlugin {
 		debugLines.position.copy( _vector );
 		debugLines.updateMatrixWorld();
 
-		// build anchor points by interpolating each settled line's positions at its anchors
+		// build anchor points from the persistent anchors at their active ( highest-LoD
+		// ready ) path, interpolating the settled positions at the anchor's slot
 		const debugPoints = this._debugPoints;
+		const anchorItems = this.anchorManager.getAnchors( _anchorList );
+
 		let anchorCount = 0;
-		for ( const line of lines ) {
+		for ( const anchor of anchorItems ) {
 
-			if ( line.ready ) {
+			if ( anchor.getActiveEntry() !== null ) {
 
-				anchorCount += line.anchors.length;
+				anchorCount ++;
 
 			}
 
@@ -686,25 +698,22 @@ export class MVTAnnotationsPlugin {
 
 		const anchorPositions = new Float32Array( anchorCount * 3 );
 		let p = 0;
-		for ( const line of lines ) {
+		for ( const anchor of anchorItems ) {
 
-			if ( ! line.ready ) {
+			const entry = anchor.getActiveEntry();
+			if ( entry === null ) {
 
 				continue;
 
 			}
 
-			const ps = line.positions;
-			for ( const anchor of line.anchors ) {
-
-				const a = ps[ anchor.i0 ];
-				const b = ps[ anchor.i1 ];
-				const alpha = anchor.alpha;
-				anchorPositions[ p ++ ] = a.x + ( b.x - a.x ) * alpha - _vector.x;
-				anchorPositions[ p ++ ] = a.y + ( b.y - a.y ) * alpha - _vector.y;
-				anchorPositions[ p ++ ] = a.z + ( b.z - a.z ) * alpha - _vector.z;
-
-			}
+			const ps = entry.line.positions;
+			const a = ps[ entry.i0 ];
+			const b = ps[ entry.i1 ];
+			const alpha = entry.alpha;
+			anchorPositions[ p ++ ] = a.x + ( b.x - a.x ) * alpha - _vector.x;
+			anchorPositions[ p ++ ] = a.y + ( b.y - a.y ) * alpha - _vector.y;
+			anchorPositions[ p ++ ] = a.z + ( b.z - a.z ) * alpha - _vector.z;
 
 		}
 

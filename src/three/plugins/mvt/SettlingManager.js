@@ -1,5 +1,6 @@
 /** @import { Camera } from 'three'; */
 import { Frustum, Matrix4, Raycaster } from 'three';
+import { LineAnnotation } from './LineAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
 
@@ -78,9 +79,6 @@ function rayIntersectsFrustum( raycaster, frustum ) {
  * registered ( ref-counted, so an item referenced by multiple tiles stays settled until
  * its last reference is removed ) and progressively raycast within a per-tick time budget,
  * prioritizing on-screen items.
- *
- * Items are duck-typed: a point exposes scalar `lat`/`lon` and a `position` Vector3; a line
- * exposes `isLineAnnotation`, `lat`/`lon` arrays and a `positions` array.
  * @param {Object} [options={}]
  * @param {Object} [options.tiles=null] - The TilesRenderer; supplies the ellipsoid and group.
  * @param {Camera} [options.camera=null] - Camera used to prioritize on-screen items.
@@ -200,8 +198,10 @@ export class SettlingManager {
 	_getLocalSettlingRay( item ) {
 
 		// build the prioritization ray; a line uses its midpoint sample as a representative
-		if ( item.isLineAnnotation ) {
+		// TODO: add "settling" logic on the classes themselves?
+		if ( item instanceof LineAnnotation ) {
 
+			// TODO: this is a terrible way of determining the settling ray
 			const mid = item.lat.length >> 1;
 			this._setSettlingRay( item.lat[ mid ], item.lon[ mid ] );
 
@@ -378,7 +378,7 @@ export class SettlingManager {
 	*_settleItem( item ) {
 
 		// drape the item onto the surface. A point is a single sample; a line is many and
-		if ( item.isLineAnnotation ) {
+		if ( item instanceof LineAnnotation ) {
 
 			const { lat, lon, positions } = item;
 			for ( let i = 0, l = lat.length; i < l; i ++ ) {
