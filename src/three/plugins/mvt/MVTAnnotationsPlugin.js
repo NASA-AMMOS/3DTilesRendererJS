@@ -262,7 +262,16 @@ export class MVTAnnotationsPlugin {
 
 			if ( visible ) {
 
-				const { contentCache, occupancy, filterAnnotation, filterLine, vectorTileInfo } = this;
+				const {
+					contentCache,
+					occupancy,
+					filterAnnotation,
+					filterLine,
+					vectorTileInfo,
+					settling,
+					anchorManager,
+				} = this;
+
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
 				if ( ! vectorTile ) {
@@ -271,68 +280,19 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				// get the normalized tile bound
-				const tileBounds = tiling.getTileBounds( x, y, level, true, false );
-				const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 				const occupancyItems = new Set();
 				const settleItems = new Set();
 
-				// iterate over all the layers
-				for ( const layerName in vectorTile.layers ) {
+				// get the normalized tile bound
+				const points = parsePointAnnotations( vectorTile, x, y, level, tiling, {
+					filter: filterAnnotation,
+				} );
+				for ( const point of points ) {
 
-					const layer = vectorTile.layers[ layerName ];
-					const extent = layer.extent;
-
-					for ( let i = 0; i < layer.length; i ++ ) {
-
-						// process only points
-						const feature = layer.feature( i );
-						if ( feature.type !== 1 ) {
-
-							continue;
-
-						}
-
-						if ( filterAnnotation !== null && ! filterAnnotation( layerName, feature.properties ) ) {
-
-							continue;
-
-						}
-
-						// retrieve the geometry
-						const geometry = feature.loadGeometry();
-						for ( const [ point ] of geometry ) {
-
-							const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
-							// tile Y=0 is geographic north; with flipY the V axis increases northward
-							// so we invert vf when flipY is set
-							const vf = point.y / extent;
-							const v = tiling.flipY
-								? MathUtils.lerp( tMaxY, tMinY, vf )
-								: MathUtils.lerp( tMinY, tMaxY, vf );
-
-							const [ lon, lat ] = tiling.toCartographicPoint( u, v );
-
-							const item = new PointAnnotationItem();
-							// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
-							// across all zoom levels — stable and unique for cross-LoD annotation replacement.
-							// TODO: is this id always guaranteed to be unique and consistent across LoDs?
-							item.id = `${ layerName }:${ feature.id }`;
-							item.layer = layerName;
-							item.properties = feature.properties;
-							item.lat = lat;
-							item.lon = lon;
-							item.lodLevel = level;
-							tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, item.position );
-
-							const canonical = occupancy.register( item );
-							occupancyItems.add( canonical );
-							settleItems.add( canonical );
-							this.settling.register( canonical );
-
-						}
-
-					}
+					const canonical = occupancy.register( point );
+					occupancyItems.add( canonical );
+					settleItems.add( canonical );
+					settling.register( canonical );
 
 				}
 
@@ -344,8 +304,8 @@ export class MVTAnnotationsPlugin {
 				for ( const line of lines ) {
 
 					settleItems.add( line );
-					this.settling.register( line );
-					this.anchorManager.addLine( line );
+					settling.register( line );
+					anchorManager.addLine( line );
 
 				}
 
@@ -353,7 +313,7 @@ export class MVTAnnotationsPlugin {
 
 			} else {
 
-				const { occupancy, vectorTileInfo } = this;
+				const { occupancy, vectorTileInfo, settling, anchorManager } = this;
 				const info = vectorTileInfo.get( key );
 				if ( info ) {
 
@@ -365,10 +325,10 @@ export class MVTAnnotationsPlugin {
 
 					for ( const item of info.settleItems ) {
 
-						this.settling.unregister( item );
+						settling.unregister( item );
 						if ( item instanceof LineAnnotation ) {
 
-							this.anchorManager.removeLine( item );
+							anchorManager.removeLine( item );
 
 						}
 
@@ -650,7 +610,7 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		const { _debugLines, camera } = this;
+		const { _debugLines, _debugPoints, camera } = this;
 
 		// place the object near the camera ( in tiles.group local space ) so vertex
 		// coordinates stay small and avoid float jitter at globe scale
@@ -678,8 +638,7 @@ export class MVTAnnotationsPlugin {
 		}
 
 		// build one segment buffer relative to the camera-local origin
-		const positions = new Float32Array( segmentCount * 2 * 3 );
-		const posAttr = new BufferAttribute( positions, 3 );
+		const posAttr = new BufferAttribute( new Float32Array( segmentCount * 2 * 3 ), 3 );
 
 		let offset = 0;
 		for ( const line of lines ) {
@@ -696,29 +655,13 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		_debugLines.geometry.dispose();
-		_debugLines.geometry.setAttribute( 'position', posAttr );
-		_debugLines.position.copy( _origin );
-		_debugLines.updateMatrixWorld();
-
 		// build anchor points from the persistent anchors at their active ( highest-LoD
 		// ready ) path, interpolating the settled positions at the anchor's slot
-		const debugPoints = this._debugPoints;
-		const anchorItems = this.anchorManager.getAnchors( _anchorList );
+		const anchorItems = this.anchorManager.getAnchors( _anchorList )
+			.filter( anchor => anchor.getActiveEntry() !== null );
 
-		let anchorCount = 0;
-		for ( const anchor of anchorItems ) {
-
-			if ( anchor.getActiveEntry() !== null ) {
-
-				anchorCount ++;
-
-			}
-
-		}
-
-		const anchorPositions = new Float32Array( anchorCount * 3 );
-		let p = 0;
+		const pointsAttr = new BufferAttribute( new Float32Array( anchorItems.length * 3 ), 3 );
+		offset = 0;
 		for ( const anchor of anchorItems ) {
 
 			const entry = anchor.getActiveEntry();
@@ -732,16 +675,21 @@ export class MVTAnnotationsPlugin {
 			const a = ps[ entry.i0 ];
 			const b = ps[ entry.i1 ];
 			const alpha = entry.alpha;
-			anchorPositions[ p ++ ] = a.x + ( b.x - a.x ) * alpha - _origin.x;
-			anchorPositions[ p ++ ] = a.y + ( b.y - a.y ) * alpha - _origin.y;
-			anchorPositions[ p ++ ] = a.z + ( b.z - a.z ) * alpha - _origin.z;
+			_vector.lerpVectors( a, b, alpha ).sub( _origin );
+			pointsAttr.setXYZ( offset, ..._vector );
+			offset ++;
 
 		}
 
-		debugPoints.geometry.dispose();
-		debugPoints.geometry.setAttribute( 'position', new BufferAttribute( anchorPositions, 3 ) );
-		debugPoints.position.copy( _origin );
-		debugPoints.updateMatrixWorld();
+		_debugLines.geometry.dispose();
+		_debugLines.geometry.setAttribute( 'position', posAttr );
+		_debugLines.position.copy( _origin );
+		_debugLines.updateMatrixWorld();
+
+		_debugPoints.geometry.dispose();
+		_debugPoints.geometry.setAttribute( 'position', pointsAttr );
+		_debugPoints.position.copy( _origin );
+		_debugPoints.updateMatrixWorld();
 
 	}
 
@@ -761,5 +709,71 @@ export class MVTAnnotationsPlugin {
 		forEachTileInBounds( range, level, tiling, callback );
 
 	}
+
+}
+
+function parsePointAnnotations( vectorTile, x, y, level, tiling, options ) {
+
+	const {
+		filter = () => true,
+	} = options;
+
+	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
+	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
+	const points = [];
+
+	for ( const layerName in vectorTile.layers ) {
+
+		const layer = vectorTile.layers[ layerName ];
+		const extent = layer.extent;
+
+		for ( let i = 0; i < layer.length; i ++ ) {
+
+			// process only points
+			const feature = layer.feature( i );
+			if ( feature.type !== 1 ) {
+
+				continue;
+
+			}
+
+			if ( filter !== null && ! filter( layerName, feature.properties ) ) {
+
+				continue;
+
+			}
+
+			// retrieve the geometry
+			const geometry = feature.loadGeometry();
+			for ( const [ point ] of geometry ) {
+
+				const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
+				// tile Y=0 is geographic north; with flipY the V axis increases northward
+				// so we invert vf when flipY is set
+				const vf = point.y / extent;
+				const v = tiling.flipY
+					? MathUtils.lerp( tMaxY, tMinY, vf )
+					: MathUtils.lerp( tMinY, tMaxY, vf );
+
+				const [ lon, lat ] = tiling.toCartographicPoint( u, v );
+
+				const item = new PointAnnotationItem();
+				// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
+				// across all zoom levels — stable and unique for cross-LoD annotation replacement.
+				// TODO: is this id always guaranteed to be unique and consistent across LoDs?
+				item.id = `${ layerName }:${ feature.id }`;
+				item.layer = layerName;
+				item.properties = feature.properties;
+				item.lat = lat;
+				item.lon = lon;
+				item.lodLevel = level;
+
+			}
+
+		}
+
+	}
+
+	return points;
 
 }
