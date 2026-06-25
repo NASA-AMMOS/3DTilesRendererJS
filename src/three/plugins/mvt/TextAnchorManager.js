@@ -82,6 +82,12 @@ export class TextAnchorManager {
 
 		const id = line.id;
 		const existingAnchors = this._anchorsById.get( id );
+		if ( ! existingAnchors ) {
+
+			// this can happen if a line has no anchors added
+			return;
+
+		}
 
 		for ( let i = 0, l = existingAnchors.length; i < l; i ++ ) {
 

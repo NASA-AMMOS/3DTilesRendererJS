@@ -50,7 +50,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// occupancy cells
 		this.resolution = new Vector2( 1, 1 );
 		this.size = 12;
-		this.cells = new Uint8Array( 1 );
+		this.cells = new Uint32Array( 1 );
 
 		// grid dimensions in cells, computed once per update and reused by _cellRange
 		this._totalResolution = new Vector2();
@@ -68,15 +68,16 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this._itemsById = new Map();
 		this._itemsNeedsUpdate = false;
 
+		this._id = - 1;
 		this.handle = {
 			test: ( x, y, r ) => {
 
-				const { cells } = this;
+				const { cells, _id } = this;
 				let hasCells = false;
 				const blocked = this._cellRange( x, y, r, ( x, y, i ) => {
 
 					hasCells = true;
-					return cells[ i ] !== 0;
+					return cells[ i ] !== 0 && cells[ i ] !== _id;
 
 				} );
 				return blocked || ! hasCells;
@@ -84,10 +85,10 @@ export class ScreenOccupationManager extends EventDispatcher {
 			},
 			mark: ( x, y, r ) => {
 
-				const { cells } = this;
+				const { cells, _id } = this;
 				return this._cellRange( x, y, r, ( x, y, i ) => {
 
-					cells[ i ] = 1;
+					cells[ i ] = _id;
 					return false;
 
 				} );
@@ -242,6 +243,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
+			this._id = i;
 			if ( ndcMatrix !== null && item.evaluate( handle ) ) {
 
 				visible.add( item );
