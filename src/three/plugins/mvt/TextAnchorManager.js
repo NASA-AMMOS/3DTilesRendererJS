@@ -1,6 +1,6 @@
 import { TextAnchorAnnotation } from './annotations/TextAnchorAnnotation.js';
 
-// true if the cartographic point lies within the tile range ( all radians )
+// true if the cartographic point lies within the tile range
 function rangeContains( range, lat, lon ) {
 
 	const [ minLon, minLat, maxLon, maxLat ] = range;
@@ -66,9 +66,12 @@ export class TextAnchorManager {
 
 			const anchor = new TextAnchorAnnotation( id );
 			anchor.addLine( line, i );
-			slotsClaimed.add( i );
-			existingAnchors.push( anchor );
+			if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
 
+				slotsClaimed.add( i );
+				existingAnchors.push( anchor );
+
+			}
 
 		}
 

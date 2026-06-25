@@ -32,6 +32,7 @@ export class TextAnchorAnnotation {
 		// associated paths, each `{ line, i0, i1, alpha, lat, lon }` — the slot this anchor
 		// occupies on that LoD's path, with its cartographic position on that path
 		this.referencePaths = [];
+		this._lastUsed = null;
 
 	}
 
@@ -45,18 +46,40 @@ export class TextAnchorAnnotation {
 	// the highest-LoD entry whose path is settled, used for placement. null if none are ready
 	getActiveReference() {
 
-		const { referencePaths: lines } = this;
-		for ( const entry of lines ) {
+		const { referencePaths, _lastUsed } = this;
+		const target = referencePaths[ 0 ] ?? null;
+		if ( target?.ready ) {
 
-			if ( entry.line.ready ) {
+			this._lastUsed = target;
+			return target;
 
-				return entry;
+		} else {
+
+			let result = target;
+			for ( const entry of referencePaths ) {
+
+				if ( entry.line.ready ) {
+
+					result = entry;
+					break;
+
+				}
 
 			}
 
+			result = result ?? _lastUsed;
+
+			if ( _lastUsed && _lastUsed.line.lodLevel > result.line.lodLevel ) {
+
+				result = _lastUsed;
+
+			}
+
+			this._lastUsed = result;
+			return result;
+
 		}
 
-		return lines[ 0 ] || null;
 
 	}
 
