@@ -5,6 +5,7 @@ import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
 import { AnchorManager } from './AnchorManager.js';
+import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
 import { LineAnnotation, parseLineAnnotations } from './LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
@@ -66,6 +67,18 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	get displayOccupancyGrid() {
+
+		return this._occupancyOverlay.enabled;
+
+	}
+
+	set displayOccupancyGrid( v ) {
+
+		this._occupancyOverlay.enabled = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -111,13 +124,17 @@ export class MVTAnnotationsPlugin {
 		this.filterAnnotation = filterAnnotation;
 		this.filterLine = filterLine;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
-		this.displayOccupancyGrid = displayOccupancyGrid;
 		this.displayLines = displayLines;
+
+		// debug overlays
+		this._occupancyOverlay = new OccupancyGridOverlay( this.occupancy );
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
 		// TODO: debounce occupancy decisions — wait N frames before dispatching "added" / "removed"
 		//       so transient conflicts (camera micro-movement) don't cause visible flicker
+
+		this.displayOccupancyGrid = displayOccupancyGrid;
 
 	}
 
@@ -236,7 +253,7 @@ export class MVTAnnotationsPlugin {
 
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
-			this._updateDebugGrid();
+			this._occupancyOverlay.update();
 			this._updateDebugLines();
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
@@ -378,12 +395,7 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
-		if ( this._debugCanvas ) {
-
-			this._debugCanvas.remove();
-			this._debugCanvas = null;
-
-		}
+		this._occupancyOverlay.dispose();
 
 		if ( this._debugLines ) {
 
@@ -456,66 +468,6 @@ export class MVTAnnotationsPlugin {
 			this.hierarchy.setTargetState( x, y, l, true );
 
 		} );
-
-	}
-
-	_updateDebugGrid() {
-
-		const { displayOccupancyGrid } = this;
-		if ( ! displayOccupancyGrid ) {
-
-			if ( this._debugCanvas ) {
-
-				this._debugCanvas.remove();
-				this._debugCanvas = null;
-
-			}
-
-			return;
-
-		} else if ( displayOccupancyGrid && ! this._debugCanvas ) {
-
-			// debug occupancy grid overlay
-			const debugCanvas = document.createElement( 'canvas' );
-			debugCanvas.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;opacity:0.5;';
-			document.body.appendChild( debugCanvas );
-			this._debugCanvas = debugCanvas;
-
-		}
-
-		// TODO: see if we can simplify this
-		const { occupancy, _debugCanvas } = this;
-		const { cells, size, resolution, buffer } = occupancy;
-		const dpr = window.devicePixelRatio;
-		const bufferX = resolution.width * buffer;
-		const bufferY = resolution.height * buffer;
-		const cols = Math.ceil( ( resolution.width + 2 * bufferX ) / size );
-		const rows = Math.ceil( ( resolution.height + 2 * bufferY ) / size );
-
-		_debugCanvas.width = Math.round( dpr * ( resolution.width + 2 * bufferX ) );
-		_debugCanvas.height = Math.round( dpr * ( resolution.height + 2 * bufferY ) );
-		_debugCanvas.style.width = `${ resolution.width + 2 * bufferX }px`;
-		_debugCanvas.style.height = `${ resolution.height + 2 * bufferY }px`;
-		_debugCanvas.style.left = `${ - bufferX }px`;
-		_debugCanvas.style.top = `${ - bufferY }px`;
-
-		const drawSize = size * dpr;
-		const ctx = _debugCanvas.getContext( '2d' );
-		ctx.clearRect( 0, 0, _debugCanvas.width, _debugCanvas.height );
-		for ( let cy = 0; cy < rows; cy ++ ) {
-
-			for ( let cx = 0; cx < cols; cx ++ ) {
-
-				const occupied = cells[ cy * cols + cx ] !== 0;
-				ctx.fillStyle = occupied ? 'rgba( 255, 80, 80, 0.6 )' : 'rgba( 80, 255, 80, 0.15 )';
-				ctx.fillRect( cx * drawSize + 0.5, cy * drawSize + 0.5, drawSize - 1, drawSize - 1 );
-				ctx.strokeStyle = occupied ? 'rgba( 255, 80, 80, 1 )' : 'rgba( 80, 255, 80, 0.25 )';
-				ctx.lineWidth = 1;
-				ctx.strokeRect( cx * drawSize + 0.5, cy * drawSize + 0.5, drawSize - 1, drawSize - 1 );
-
-			}
-
-		}
 
 	}
 
@@ -751,6 +703,8 @@ function parsePointAnnotations( vectorTile, x, y, level, tiling, options ) {
 				item.lat = lat;
 				item.lon = lon;
 				item.lodLevel = level;
+
+				points.push( item );
 
 			}
 
