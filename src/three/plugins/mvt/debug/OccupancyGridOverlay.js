@@ -1,7 +1,6 @@
-/**
- * Debug overlay that draws a screen occupation grid as a fixed, full-viewport canvas pinned
- * over the renderer. Occupied cells are red, free cells green.
- */
+// Debug overlay that draws a screen occupation grid as a fixed, full-viewport canvas pinned
+// over the renderer. Occupied cells are red, free cells green.
+// Takes the screen occupancy manager as a reference for rendering the results
 export class OccupancyGridOverlay {
 
 	constructor( occupancyManager ) {
@@ -12,16 +11,11 @@ export class OccupancyGridOverlay {
 
 	}
 
-	/**
-	 * Draw the grid for the given occupation manager. Pass `enabled = false` to remove the
-	 * overlay ( so the same call can be made every frame regardless of toggle state ).
-	 * @param {Object} occupancy - Exposes `cells`, `size`, `resolution`, `buffer`.
-	 * @param {boolean} [enabled=true]
-	 */
 	update() {
 
 		const { occupancyManager, enabled } = this;
 
+		// dispose of the canvas if disabled
 		if ( ! enabled ) {
 
 			this.dispose();
@@ -29,6 +23,7 @@ export class OccupancyGridOverlay {
 
 		}
 
+		// initialize the canvas if enabled
 		if ( this.canvas === null ) {
 
 			const canvas = document.createElement( 'canvas' );

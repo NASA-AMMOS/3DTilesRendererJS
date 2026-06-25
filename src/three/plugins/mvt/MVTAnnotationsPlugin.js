@@ -1,18 +1,16 @@
 /** @import { Camera, Scene } from 'three' */
-import { BufferAttribute, LineSegments, MathUtils, Matrix4, Points, Vector3, DataTexture } from 'three';
+import { MathUtils, Matrix4 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
 import { AnchorManager } from './AnchorManager.js';
 import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
-import { LineAnnotation, parseLineAnnotations } from './LineAnnotation.js';
+import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
+import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
-const _origin = /* @__PURE__ */ new Vector3();
-const _vector = /* @__PURE__ */ new Vector3();
-const _anchorList = [];
 
 // provide all meshes in the scene
 function collectMeshes( object ) {
@@ -79,6 +77,18 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	get displayAnnotationLines() {
+
+		return this._occupancyOverlay.enabled;
+
+	}
+
+	set displayAnnotationLines( v ) {
+
+		this._occupancyOverlay.enabled = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -107,6 +117,8 @@ export class MVTAnnotationsPlugin {
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = null;
 		this.occupancy = new DelayedScreenOccupationManager();
+		this.anchorManager = new AnchorManager();
+		this.settlingManager = null;
 
 		// save the camera used for positioning icons
 		this.camera = camera;
@@ -124,10 +136,10 @@ export class MVTAnnotationsPlugin {
 		this.filterAnnotation = filterAnnotation;
 		this.filterLine = filterLine;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
-		this.displayLines = displayLines;
 
 		// debug overlays
 		this._occupancyOverlay = new OccupancyGridOverlay( this.occupancy );
+		this._lineOverlay = new LineAnnotationOverlay( this.anchorManager );
 
 		// TODO: add "text" manager for text
 		// TODO: add a "fade" manager for hiding an showing annotations
@@ -135,12 +147,13 @@ export class MVTAnnotationsPlugin {
 		//       so transient conflicts (camera micro-movement) don't cause visible flicker
 
 		this.displayOccupancyGrid = displayOccupancyGrid;
+		this.displayLines = displayLines;
 
 	}
 
 	async init( tiles ) {
 
-		const { overlay, occupancy, tileLoadState } = this;
+		const { overlay, occupancy, tileLoadState, _lineOverlay } = this;
 
 		// ensure the overlay is initialized
 		overlay.init();
@@ -158,8 +171,12 @@ export class MVTAnnotationsPlugin {
 			tiles,
 			isPrioritized: item => occupancy.visible.has( item ),
 		} );
-		this.anchorManager = new AnchorManager();
 
+		// init fields
+		_lineOverlay.group = tiles.group;
+		_lineOverlay.settlingManager = this.settlingManager;
+
+		// init occupancy
 		occupancy.sortCallback = ( a, b ) => {
 
 			// visibility is prioritized first
@@ -254,7 +271,9 @@ export class MVTAnnotationsPlugin {
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 			this._occupancyOverlay.update();
-			this._updateDebugLines();
+			this._lineOverlay.enabled = this.displayLines;
+			this._lineOverlay.camera = this.camera;
+			this._lineOverlay.update();
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
 
@@ -396,25 +415,7 @@ export class MVTAnnotationsPlugin {
 	dispose() {
 
 		this._occupancyOverlay.dispose();
-
-		if ( this._debugLines ) {
-
-			this._debugLines.removeFromParent();
-			this._debugLines.geometry.dispose();
-			this._debugLines.material.dispose();
-			this._debugLines = null;
-
-		}
-
-		if ( this._debugPoints ) {
-
-			this._debugPoints.removeFromParent();
-			this._debugPoints.geometry.dispose();
-			this._debugPoints.material.dispose();
-			this._debugPoints.material.map.dispose();
-			this._debugPoints = null;
-
-		}
+		this._lineOverlay.dispose();
 
 		this.hierarchy.removeEventListener( 'toggle', this._onToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -468,164 +469,6 @@ export class MVTAnnotationsPlugin {
 			this.hierarchy.setTargetState( x, y, l, true );
 
 		} );
-
-	}
-
-	_updateDebugLines() {
-
-		const { displayLines, tiles, settlingManager } = this;
-		if ( ! displayLines ) {
-
-			if ( this._debugLines ) {
-
-				this._debugLines.removeFromParent();
-				this._debugLines.geometry.dispose();
-				this._debugLines.material.dispose();
-				this._debugLines = null;
-
-			}
-
-			if ( this._debugPoints ) {
-
-				this._debugPoints.removeFromParent();
-				this._debugPoints.geometry.dispose();
-				this._debugPoints.material.dispose();
-				this._debugPoints.material.map.dispose();
-				this._debugPoints = null;
-
-			}
-
-			return;
-
-		} else if ( ! this._debugLines ) {
-
-			// debug overlay drawn in the tiles group, rebuilt each frame
-			const lineSegments = new LineSegments();
-			lineSegments.material.transparent = true;
-			lineSegments.material.depthTest = false;
-			lineSegments.material.depthWrite = false;
-			lineSegments.frustumCulled = false;
-			lineSegments.raycast = () => {};
-
-			const size = 32;
-			const half = size / 2;
-			const tex = new DataTexture( new Uint8Array( size * size * 4 ), size, size );
-			tex.needsUpdate = true;
-			for ( let x = 0; x < size; x ++ ) {
-
-				for ( let y = 0; y < size; y ++ ) {
-
-					const dx = ( x - half ) / half;
-					const dy = ( y - half ) / half;
-					const d = Math.sqrt( dx * dx + dy * dy );
-					const px = y * size + x;
-					tex.image.data[ 4 * px + 0 ] = 255;
-					tex.image.data[ 4 * px + 1 ] = 255;
-					tex.image.data[ 4 * px + 2 ] = 255;
-					tex.image.data[ 4 * px + 3 ] = d < 1 ? 255 : 0;
-
-				}
-
-			}
-
-			// anchor positions drawn as points
-			const points = new Points();
-			points.material.transparent = true;
-			points.material.depthTest = false;
-			points.material.depthWrite = false;
-			points.material.map = tex;
-			points.material.size = 6;
-			points.material.sizeAttenuation = false;
-			points.frustumCulled = false;
-			points.raycast = () => {};
-
-			tiles.group.add( points, lineSegments );
-			this._debugLines = lineSegments;
-			this._debugPoints = points;
-
-		}
-
-		const { _debugLines, _debugPoints, camera } = this;
-
-		// place the object near the camera ( in tiles.group local space ) so vertex
-		// coordinates stay small and avoid float jitter at globe scale
-		if ( camera !== null ) {
-
-			_origin.setFromMatrixPosition( camera.matrixWorld );
-			tiles.group.worldToLocal( _origin );
-
-		} else {
-
-			_origin.set( 0, 0, 0 );
-
-		}
-
-		// get the lines to display
-		const lines = settlingManager
-			.getItems()
-			.filter( item => item instanceof LineAnnotation && item.ready );
-
-		// count settled segment vertices across all lines
-		let segmentCount = 0;
-		for ( const line of lines ) {
-
-			segmentCount += line.count - 1;
-
-		}
-
-		// build one segment buffer relative to the camera-local origin
-		const posAttr = new BufferAttribute( new Float32Array( segmentCount * 2 * 3 ), 3 );
-
-		let offset = 0;
-		for ( const line of lines ) {
-
-			const ps = line.positions;
-			for ( let i = 0, l = ps.length - 1; i < l; i ++ ) {
-
-				const a = ps[ i ];
-				const b = ps[ i + 1 ];
-				posAttr.setXYZ( offset ++, ..._vector.copy( a ).sub( _origin ) );
-				posAttr.setXYZ( offset ++, ..._vector.copy( b ).sub( _origin ) );
-
-			}
-
-		}
-
-		// build anchor points from the persistent anchors at their active ( highest-LoD
-		// ready ) path, interpolating the settled positions at the anchor's slot
-		const anchorItems = this.anchorManager.getAnchors( _anchorList )
-			.filter( anchor => anchor.getActiveEntry() !== null );
-
-		const pointsAttr = new BufferAttribute( new Float32Array( anchorItems.length * 3 ), 3 );
-		offset = 0;
-		for ( const anchor of anchorItems ) {
-
-			const entry = anchor.getActiveEntry();
-			if ( entry === null ) {
-
-				continue;
-
-			}
-
-			const ps = entry.line.positions;
-			const a = ps[ entry.i0 ];
-			const b = ps[ entry.i1 ];
-			const alpha = entry.alpha;
-			_vector.lerpVectors( a, b, alpha ).sub( _origin );
-			pointsAttr.setXYZ( offset, ..._vector );
-			offset ++;
-
-		}
-
-		_debugLines.geometry.dispose();
-		_debugLines.geometry.setAttribute( 'position', posAttr );
-		_debugLines.position.copy( _origin );
-		_debugLines.updateMatrixWorld();
-
-		_debugPoints.geometry.dispose();
-		_debugPoints.geometry.setAttribute( 'position', pointsAttr );
-		_debugPoints.position.copy( _origin );
-		_debugPoints.updateMatrixWorld();
 
 	}
 

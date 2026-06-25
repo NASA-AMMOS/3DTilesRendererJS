@@ -1,6 +1,6 @@
 /** @import { Camera } from 'three'; */
 import { Frustum, Matrix4, Raycaster } from 'three';
-import { LineAnnotation } from './LineAnnotation.js';
+import { LineAnnotation } from './annotations/LineAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
 
