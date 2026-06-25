@@ -13,19 +13,10 @@ function rangeContains( range, lat, lon ) {
  */
 class AnchorAnnotation {
 
-	constructor( id ) {
-
-		this.id = id;
-
-		// associated paths, each `{ line, i0, i1, alpha, lat, lon }` — the slot this anchor
-		// occupies on that LoD's path, with its cartographic position on that path
-		this.lines = [];
-
-	}
-
 	// cartographic position ( radians ) surfaced from the active path
 	get lat() {
 
+		// TODO: return "best" entry if there isn't one "ready"...
 		const entry = this._referenceEntry();
 		return entry !== null ? entry.lat : 0;
 
@@ -35,6 +26,16 @@ class AnchorAnnotation {
 
 		const entry = this._referenceEntry();
 		return entry !== null ? entry.lon : 0;
+
+	}
+
+	constructor( id ) {
+
+		this.id = id;
+
+		// associated paths, each `{ line, i0, i1, alpha, lat, lon }` — the slot this anchor
+		// occupies on that LoD's path, with its cartographic position on that path
+		this.lines = [];
 
 	}
 
@@ -79,6 +80,7 @@ class AnchorAnnotation {
 		}
 
 		// store the slot and its cartographic position on this specific path
+		// TODO: insert in order or sort
 		const slot = line.anchors[ slotIndex ];
 		this.lines.push( {
 			line,
@@ -136,6 +138,7 @@ class AnchorAnnotation {
 	// index of the path's anchor slot nearest this anchor's current position ( -1 if none )
 	_nearestSlot( line ) {
 
+		// TODO: this is an issue
 		const ref = this._referenceEntry();
 		if ( ref === null ) {
 
