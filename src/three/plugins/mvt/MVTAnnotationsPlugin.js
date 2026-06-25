@@ -9,6 +9,7 @@ import { LineAnnotation, parseLineAnnotations } from './LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+const _origin = /* @__PURE__ */ new Vector3();
 const _vector = /* @__PURE__ */ new Vector3();
 const _lineList = [];
 const _anchorList = [];
@@ -611,9 +612,6 @@ export class MVTAnnotationsPlugin {
 			lineSegments.frustumCulled = false;
 			lineSegments.raycast = () => {};
 
-			tiles.group.add( lineSegments );
-			this._debugLines = lineSegments;
-
 			const size = 32;
 			const half = size / 2;
 			const tex = new DataTexture( new Uint8Array( size * size * 4 ), size, size );
@@ -646,66 +644,62 @@ export class MVTAnnotationsPlugin {
 			points.frustumCulled = false;
 			points.raycast = () => {};
 
-			tiles.group.add( points );
+			tiles.group.add( points, lineSegments );
+			this._debugLines = lineSegments;
 			this._debugPoints = points;
 
 		}
 
-		const debugLines = this._debugLines;
-		const lines = this.getLineAnnotations( _lineList );
+		const { _debugLines, camera } = this;
 
 		// place the object near the camera ( in tiles.group local space ) so vertex
 		// coordinates stay small and avoid float jitter at globe scale
-		if ( this.camera !== null ) {
+		if ( camera !== null ) {
 
-			_vector.setFromMatrixPosition( this.camera.matrixWorld );
-			tiles.group.worldToLocal( _vector );
+			_origin.setFromMatrixPosition( camera.matrixWorld );
+			tiles.group.worldToLocal( _origin );
+
+		} else {
+
+			_origin.set( 0, 0, 0 );
 
 		}
 
+		// get the lines to display
+		const lines = this.getLineAnnotations( _lineList )
+			.filter( line => line.ready );
+
 		// count settled segment vertices across all lines
-		let vertexCount = 0;
+		let segmentCount = 0;
 		for ( const line of lines ) {
 
-			if ( line.ready ) {
-
-				vertexCount += ( line.count - 1 ) * 2;
-
-			}
+			segmentCount += line.count - 1;
 
 		}
 
 		// build one segment buffer relative to the camera-local origin
-		const positions = new Float32Array( vertexCount * 3 );
-		let o = 0;
+		const positions = new Float32Array( segmentCount * 2 * 3 );
+		const posAttr = new BufferAttribute( positions, 3 );
+
+		let offset = 0;
 		for ( const line of lines ) {
-
-			if ( ! line.ready ) {
-
-				continue;
-
-			}
 
 			const ps = line.positions;
 			for ( let i = 0, l = ps.length - 1; i < l; i ++ ) {
 
 				const a = ps[ i ];
 				const b = ps[ i + 1 ];
-				positions[ o ++ ] = a.x - _vector.x;
-				positions[ o ++ ] = a.y - _vector.y;
-				positions[ o ++ ] = a.z - _vector.z;
-				positions[ o ++ ] = b.x - _vector.x;
-				positions[ o ++ ] = b.y - _vector.y;
-				positions[ o ++ ] = b.z - _vector.z;
+				posAttr.setXYZ( offset ++, ..._vector.copy( a ).sub( _origin ) );
+				posAttr.setXYZ( offset ++, ..._vector.copy( b ).sub( _origin ) );
 
 			}
 
 		}
 
-		debugLines.geometry.dispose();
-		debugLines.geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
-		debugLines.position.copy( _vector );
-		debugLines.updateMatrixWorld();
+		_debugLines.geometry.dispose();
+		_debugLines.geometry.setAttribute( 'position', posAttr );
+		_debugLines.position.copy( _origin );
+		_debugLines.updateMatrixWorld();
 
 		// build anchor points from the persistent anchors at their active ( highest-LoD
 		// ready ) path, interpolating the settled positions at the anchor's slot
@@ -738,15 +732,15 @@ export class MVTAnnotationsPlugin {
 			const a = ps[ entry.i0 ];
 			const b = ps[ entry.i1 ];
 			const alpha = entry.alpha;
-			anchorPositions[ p ++ ] = a.x + ( b.x - a.x ) * alpha - _vector.x;
-			anchorPositions[ p ++ ] = a.y + ( b.y - a.y ) * alpha - _vector.y;
-			anchorPositions[ p ++ ] = a.z + ( b.z - a.z ) * alpha - _vector.z;
+			anchorPositions[ p ++ ] = a.x + ( b.x - a.x ) * alpha - _origin.x;
+			anchorPositions[ p ++ ] = a.y + ( b.y - a.y ) * alpha - _origin.y;
+			anchorPositions[ p ++ ] = a.z + ( b.z - a.z ) * alpha - _origin.z;
 
 		}
 
 		debugPoints.geometry.dispose();
 		debugPoints.geometry.setAttribute( 'position', new BufferAttribute( anchorPositions, 3 ) );
-		debugPoints.position.copy( _vector );
+		debugPoints.position.copy( _origin );
 		debugPoints.updateMatrixWorld();
 
 	}
