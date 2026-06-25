@@ -1,5 +1,5 @@
 /** @import { Camera, Scene } from 'three' */
-import { BufferAttribute, LineSegments, MathUtils, Matrix4, Points, Vector3 } from 'three';
+import { BufferAttribute, LineSegments, MathUtils, Matrix4, Points, Vector3, DataTexture } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { PointAnnotationItem } from './ScreenOccupationManager.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -415,6 +415,7 @@ export class MVTAnnotationsPlugin {
 		if ( this._debugCanvas ) {
 
 			this._debugCanvas.remove();
+			this._debugCanvas = null;
 
 		}
 
@@ -423,6 +424,7 @@ export class MVTAnnotationsPlugin {
 			this._debugLines.removeFromParent();
 			this._debugLines.geometry.dispose();
 			this._debugLines.material.dispose();
+			this._debugLines = null;
 
 		}
 
@@ -431,6 +433,8 @@ export class MVTAnnotationsPlugin {
 			this._debugPoints.removeFromParent();
 			this._debugPoints.geometry.dispose();
 			this._debugPoints.material.dispose();
+			this._debugPoints.material.map.dispose();
+			this._debugPoints = null;
 
 		}
 
@@ -590,6 +594,7 @@ export class MVTAnnotationsPlugin {
 				this._debugPoints.removeFromParent();
 				this._debugPoints.geometry.dispose();
 				this._debugPoints.material.dispose();
+				this._debugPoints.material.map.dispose();
 				this._debugPoints = null;
 
 			}
@@ -600,8 +605,8 @@ export class MVTAnnotationsPlugin {
 
 			// debug overlay drawn in the tiles group, rebuilt each frame
 			const lineSegments = new LineSegments();
-			lineSegments.material.depthTest = false;
 			lineSegments.material.transparent = true;
+			lineSegments.material.depthTest = false;
 			lineSegments.material.depthWrite = false;
 			lineSegments.frustumCulled = false;
 			lineSegments.raycast = () => {};
@@ -609,13 +614,35 @@ export class MVTAnnotationsPlugin {
 			tiles.group.add( lineSegments );
 			this._debugLines = lineSegments;
 
+			const size = 32;
+			const half = size / 2;
+			const tex = new DataTexture( new Uint8Array( size * size * 4 ), size, size );
+			tex.needsUpdate = true;
+			for ( let x = 0; x < size; x ++ ) {
+
+				for ( let y = 0; y < size; y ++ ) {
+
+					const dx = ( x - half ) / half;
+					const dy = ( y - half ) / half;
+					const d = Math.sqrt( dx * dx + dy * dy );
+					const px = y * size + x;
+					tex.image.data[ 4 * px + 0 ] = 255;
+					tex.image.data[ 4 * px + 1 ] = 255;
+					tex.image.data[ 4 * px + 2 ] = 255;
+					tex.image.data[ 4 * px + 3 ] = d < 1 ? 255 : 0;
+
+				}
+
+			}
+
 			// anchor positions drawn as points
 			const points = new Points();
-			points.material.color.set( 0xffffff );
-			points.material.size = 6;
-			points.material.sizeAttenuation = false;
 			points.material.transparent = true;
 			points.material.depthTest = false;
+			points.material.depthWrite = false;
+			points.material.map = tex;
+			points.material.size = 6;
+			points.material.sizeAttenuation = false;
 			points.frustumCulled = false;
 			points.raycast = () => {};
 
