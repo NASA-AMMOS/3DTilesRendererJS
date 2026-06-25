@@ -3,7 +3,7 @@ import { Matrix4 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
-import { TextAnchorManager } from './AnchorManager.js';
+import { TextAnchorManager } from './TextAnchorManager.js';
 import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
 import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
 import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
