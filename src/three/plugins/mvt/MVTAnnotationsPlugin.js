@@ -9,6 +9,7 @@ import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
 import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 import { parsePointAnnotations } from './annotations/PointAnnotation.js';
+import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -104,6 +105,7 @@ export class MVTAnnotationsPlugin {
 		this.debug = {
 			occupancy: new OccupancyGridOverlay( this.occupancy ),
 			paths: new LineAnnotationOverlay( this.anchorManager ),
+			hierarchy: new HierarchyOverlay(),
 		};
 
 	}
@@ -132,6 +134,10 @@ export class MVTAnnotationsPlugin {
 		// init fields
 		debug.paths.group = tiles.group;
 		debug.paths.settlingManager = this.settlingManager;
+
+		debug.hierarchy.hierarchy = this.hierarchy;
+		debug.hierarchy.tiles = tiles;
+		debug.hierarchy.tiling = overlay.tiling;
 
 		// init occupancy
 		occupancy.sortCallback = ( a, b ) => {
@@ -213,9 +219,6 @@ export class MVTAnnotationsPlugin {
 
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
-			debug.occupancy.update();
-			debug.paths.camera = this.camera;
-			debug.paths.update();
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
 
@@ -228,6 +231,12 @@ export class MVTAnnotationsPlugin {
 				tiles.dispatchEvent( { type: 'needs-update' } );
 
 			}
+
+			// debug
+			debug.paths.camera = this.camera;
+			debug.occupancy.update();
+			debug.paths.update();
+			debug.hierarchy.update();
 
 		};
 

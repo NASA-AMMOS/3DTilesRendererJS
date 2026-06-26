@@ -1,8 +1,18 @@
-import { BufferAttribute, DataTexture, LineSegments, Points, Vector3 } from 'three';
+import { BufferAttribute, DataTexture, LineSegments, Points, Vector3, Color } from 'three';
 import { LineAnnotation } from '../annotations/LineAnnotation.js';
+import { ColorManager } from './ColorManager.js';
+
+const ColorMode = {
+	NONE: 0,
+	ID: 1,
+	LEVEL: 2,
+	TILE: 3,
+	NAME: 4,
+};
 
 const _origin = /* @__PURE__ */ new Vector3();
 const _vector = /* @__PURE__ */ new Vector3();
+const _col = /* @__PURE__ */ new Color();
 
 // round white sprite used for the anchor points
 function createPointTexture() {
@@ -37,11 +47,18 @@ function createPointTexture() {
 // as round points, rebuilt each frame into the tiles group (camera-local to avoid jitter).
 export class LineAnnotationOverlay {
 
+	get ColorMode() {
+
+		return ColorMode;
+
+	}
+
 	constructor( anchorManager ) {
 
 		this.enabled = false;
-		this.camera = null;
+		this.colorMode = ColorMode.NONE;
 
+		this.camera = null;
 		this.settlingManager = null;
 		this.anchorManager = anchorManager;
 		this.group = null;
@@ -69,6 +86,7 @@ export class LineAnnotationOverlay {
 			lines.material.transparent = true;
 			lines.material.depthTest = false;
 			lines.material.depthWrite = false;
+			lines.material.vertexColors = true;
 			lines.frustumCulled = false;
 			lines.raycast = () => {};
 
@@ -79,6 +97,7 @@ export class LineAnnotationOverlay {
 			points.material.map = createPointTexture();
 			points.material.size = 6;
 			points.material.sizeAttenuation = false;
+			points.material.vertexColors = true;
 			points.frustumCulled = false;
 			points.raycast = () => {};
 
@@ -112,15 +131,23 @@ export class LineAnnotationOverlay {
 
 		}
 
-		const posAttr = new BufferAttribute( new Float32Array( segmentCount * 2 * 3 ), 3 );
+		const linePosAttr = new BufferAttribute( new Float32Array( segmentCount * 2 * 3 ), 3 );
+		const lineColAttr = new BufferAttribute( new Float32Array( segmentCount * 2 * 3 ), 3 );
 		let offset = 0;
 		for ( const line of lineItems ) {
 
-			const ps = line.positions;
-			for ( let i = 0, l = ps.length - 1; i < l; i ++ ) {
+			this._getColor( line, _col );
 
-				posAttr.setXYZ( offset ++, ..._vector.copy( ps[ i ] ).sub( _origin ) );
-				posAttr.setXYZ( offset ++, ..._vector.copy( ps[ i + 1 ] ).sub( _origin ) );
+			const positions = line.positions;
+			for ( let i = 0, l = positions.length - 1; i < l; i ++ ) {
+
+				linePosAttr.setXYZ( offset + 0, ..._vector.copy( positions[ i ] ).sub( _origin ) );
+				linePosAttr.setXYZ( offset + 1, ..._vector.copy( positions[ i + 1 ] ).sub( _origin ) );
+
+				lineColAttr.setXYZ( offset ++, ..._col );
+				lineColAttr.setXYZ( offset ++, ..._col );
+
+				offset += 2;
 
 			}
 
@@ -129,22 +156,31 @@ export class LineAnnotationOverlay {
 		// anchors at their active ( highest-LoD settled ) path → point buffer
 		const anchorItems = anchorManager.getAnchors().filter( anchor => anchor.ready );
 
-		const pointsAttr = new BufferAttribute( new Float32Array( anchorItems.length * 3 ), 3 );
+		const pointsPosAttr = new BufferAttribute( new Float32Array( anchorItems.length * 3 ), 3 );
+		const pointsColAttr = new BufferAttribute( new Float32Array( anchorItems.length * 2 * 3 ), 3 );
+
 		offset = 0;
 		for ( const anchor of anchorItems ) {
 
 			anchor.getPosition( _vector ).sub( _origin );
-			pointsAttr.setXYZ( offset ++, ..._vector );
+			pointsPosAttr.setXYZ( offset, ..._vector );
+
+			this._getColor( anchor.getActiveReference().line, _col );
+			pointsColAttr.setXYZ( offset, ..._col );
+
+			offset ++;
 
 		}
 
 		_lines.geometry.dispose();
-		_lines.geometry.setAttribute( 'position', posAttr );
+		_lines.geometry.setAttribute( 'position', linePosAttr );
+		_lines.geometry.setAttribute( 'color', lineColAttr );
 		_lines.position.copy( _origin );
 		_lines.updateMatrixWorld();
 
 		_points.geometry.dispose();
-		_points.geometry.setAttribute( 'position', pointsAttr );
+		_points.geometry.setAttribute( 'position', pointsPosAttr );
+		_points.geometry.setAttribute( 'color', pointsColAttr );
 		_points.position.copy( _origin );
 		_points.updateMatrixWorld();
 
@@ -168,6 +204,34 @@ export class LineAnnotationOverlay {
 			this._points.material.dispose();
 			this._points.material.map.dispose();
 			this._points = null;
+
+		}
+
+	}
+
+	_getColor( line, target ) {
+
+		switch ( this.colorMode ) {
+
+			case ColorMode.NONE:
+				target.set( 0xffffff );
+				break;
+
+			case ColorMode.ID:
+				ColorManager.getColor( line.id, target );
+				break;
+
+			case ColorMode.LEVEL:
+				ColorManager.getColor( line.lodLevel, target );
+				break;
+
+			case ColorMode.NAME:
+				ColorManager.getColor( line.properties.name, target );
+				break;
+
+			case ColorMode.TILE:
+				ColorManager.getColor( ...line.range, target );
+				break;
 
 		}
 

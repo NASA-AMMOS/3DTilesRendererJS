@@ -88,14 +88,7 @@ export class HierarchyOverlay {
 
 			} else {
 
-				hierarchy.getVisibleTiles().forEach( tile => {
-
-					this._onToggleCallback( { ...tile, visible: false } );
-
-				} );
-
-				hierarchy.removeEventListener( 'toggle', this._onToggleCallback );
-
+				this.dispose();
 
 			}
 
@@ -135,8 +128,14 @@ export class HierarchyOverlay {
 
 	dispose() {
 
-		this.enabled = false;
-		this.update();
+		const { hierarchy } = this;
+		hierarchy.getVisibleTiles().forEach( tile => {
+
+			this._onToggleCallback( { ...tile, visible: false } );
+
+		} );
+
+		hierarchy.removeEventListener( 'toggle', this._onToggleCallback );
 
 	}
 
