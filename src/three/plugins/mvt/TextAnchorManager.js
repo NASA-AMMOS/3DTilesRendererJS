@@ -141,7 +141,6 @@ export class TextAnchorManager {
 					anchor.referencePaths.find( ref => ref.line.lodLevel === lodLevel )
 				) {
 
-					// TODO: it may be best to allow for the same anchor to associate with multiple references?
 					return;
 
 				}
