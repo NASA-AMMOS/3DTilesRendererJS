@@ -101,7 +101,7 @@ export class TextAnchorAnnotation {
 
 		// store the slot and its cartographic position on this specific path
 		// TODO: insert in order or sort
-		const slot = line.anchors[ slotIndex ];
+		const slot = line.anchorPositions[ slotIndex ];
 		const { referencePaths } = this;
 		referencePaths.push( {
 			line,
@@ -143,12 +143,12 @@ export class TextAnchorAnnotation {
 
 		// TODO: this is an issue
 		const { lat, lon } = this.getActiveReference();
-		const { anchors } = line;
+		const { anchorPositions } = line;
 		let best = - 1;
 		let bestDist = Infinity;
-		for ( let i = 0, l = anchors.length; i < l; i ++ ) {
+		for ( let i = 0, l = anchorPositions.length; i < l; i ++ ) {
 
-			const anchor = anchors[ i ];
+			const anchor = anchorPositions[ i ];
 			const dLat = anchor.lat - lat;
 			const dLon = anchor.lon - lon;
 			const d = dLat * dLat + dLon * dLon;

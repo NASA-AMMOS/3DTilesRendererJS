@@ -23,6 +23,12 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 	}
 
+	get anchorCount() {
+
+		return this.anchorPositions.length;
+
+	}
+
 	constructor() {
 
 		super();
@@ -37,7 +43,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 		this.positions = [];
 
 		// anchors placed along the path, each `{ i0, i1, alpha, lat, lon }`
-		this.anchors = [];
+		this.anchorPositions = [];
 
 	}
 
@@ -126,7 +132,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		}
 
-		this.anchors = anchorCandidates;
+		this.anchorPositions = anchorCandidates;
 
 	}
 

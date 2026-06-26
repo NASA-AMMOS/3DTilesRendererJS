@@ -23,6 +23,7 @@ export class TextAnchorManager {
 
 	}
 
+	// retrieve all lines
 	getLines() {
 
 		const res = [];
@@ -40,7 +41,7 @@ export class TextAnchorManager {
 
 	}
 
-	// collect every anchor for rendering / debug
+	// retrieve all anchors
 	getAnchors() {
 
 		const target = [];
@@ -97,7 +98,7 @@ export class TextAnchorManager {
 		} );
 
 		// spawn anchors for slots with no pre-existing anchor
-		for ( let i = 0, l = line.anchors.length; i < l; i ++ ) {
+		for ( let i = 0, l = line.anchorCount; i < l; i ++ ) {
 
 			if ( slotsClaimed.has( i ) ) {
 
