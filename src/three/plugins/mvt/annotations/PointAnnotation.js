@@ -16,7 +16,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 		this.lon = 0;
 		this.radius = 32;
 
-		this._screenPos = new Vector3();
+		this.screenPos = new Vector3();
 		this._facingAngle = 0;
 
 	}
@@ -24,7 +24,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 	updateTransform( matrix, resolution, cameraPosition ) {
 
 		const { position } = this;
-		const screenPos = this._screenPos;
+		const screenPos = this.screenPos;
 
 		// project to screen space
 		screenPos.copy( position ).applyMatrix4( matrix );
@@ -59,14 +59,14 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 	evaluate( handle ) {
 
-		const { _screenPos, radius, _facingAngle } = this;
+		const { screenPos, radius, _facingAngle } = this;
 		if ( ! this.ready ) {
 
 			return false;
 
 		}
 
-		if ( _screenPos.z !== 0 ) {
+		if ( screenPos.z !== 0 ) {
 
 			return false;
 
@@ -78,13 +78,13 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 		}
 
-		if ( handle.test( _screenPos.x, _screenPos.y, radius ) ) {
+		if ( handle.test( screenPos.x, screenPos.y, radius ) ) {
 
 			return false;
 
 		}
 
-		handle.mark( _screenPos.x, _screenPos.y, radius );
+		handle.mark( screenPos.x, screenPos.y, radius );
 		return true;
 
 	}

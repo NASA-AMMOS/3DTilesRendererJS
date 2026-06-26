@@ -16,6 +16,7 @@ export class OccupancyAnnotation {
 		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
 		this.visible = false;
+		this.screenPos = new Vector3();
 
 	}
 

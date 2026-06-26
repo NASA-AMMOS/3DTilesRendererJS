@@ -1,8 +1,9 @@
+import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
 // A text anchor that lays on a give line and stores references to path from different LoDs,
 // choosing the best one to "snap" to.
 let annotationIndex = 0;
-export class TextAnchorAnnotation {
+export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	// TODO: cache these - possibly update in "evaluate"
 	get lat() {
@@ -23,13 +24,19 @@ export class TextAnchorAnnotation {
 
 	}
 
+	set ready( value ) {}
+
 	get properties() {
 
 		return this.getActiveReference().line.properties;
 
 	}
 
+	set properties( value ) {}
+
 	constructor( id ) {
+
+		super();
 
 		// ensure a unique id since we are deduping them separately
 		// An id isn't really needed for the text anchor other than for sort stability and to

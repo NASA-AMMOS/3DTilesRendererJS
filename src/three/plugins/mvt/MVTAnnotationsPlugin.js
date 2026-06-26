@@ -178,10 +178,10 @@ export class MVTAnnotationsPlugin {
 				// persistence sort for visual stability
 				return a.visibleTime < b.visibleTime ? - 1 : 1;
 
-			} else if ( b._screenPos.y !== a._screenPos.y ) {
+			} else if ( b.screenPos.y !== a.screenPos.y ) {
 
 				// distance up the screen
-				return b._screenPos.y - a._screenPos.y;
+				return b.screenPos.y - a.screenPos.y;
 
 			} else {
 
@@ -236,7 +236,16 @@ export class MVTAnnotationsPlugin {
 
 			// text anchors
 			anchorManager.update();
-			// TODO: register the anchors to the occupancy grid
+			anchorManager.added.forEach( item => {
+
+				occupancy.register( item );
+
+			} );
+			anchorManager.removed.forEach( item => {
+
+				occupancy.unregister( item );
+
+			} );
 			anchorManager.reset();
 
 			// raycasters
