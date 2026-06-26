@@ -17,16 +17,44 @@ export class TextAnchorManager {
 
 	constructor() {
 
-		// path id -> Anchor[]
 		this._anchorsById = new Map();
+		this._linesById = new Map();
 		this._scheduled = false;
-		this._lines = new Set();
 
 	}
 
 	getLines() {
 
-		return Array.from( this._lines );
+		const res = [];
+		this._linesById.forEach( value => {
+
+			value.forEach( line => {
+
+				res.push( line );
+
+			} );
+
+		} );
+
+		return res;
+
+	}
+
+	// collect every anchor for rendering / debug
+	getAnchors() {
+
+		const target = [];
+		this._anchorsById.forEach( anchors => {
+
+			anchors.forEach( anchor => {
+
+				target.push( anchor );
+
+			} );
+
+		} );
+
+		return target;
 
 	}
 
@@ -34,26 +62,29 @@ export class TextAnchorManager {
 	// anchors for any of the path's slots that no existing anchor claimed
 	addLine( line ) {
 
-		this._lines.add( line );
-
 		// TODO: is it possible to have disjoint road paths with common ids?
 		// TODO: lets snap to the nearest point instead of replacing an existing point?
-		const { _anchorsById } = this;
+		const { _anchorsById, _linesById } = this;
 
 		const id = line.id;
 		if ( ! _anchorsById.has( id ) ) {
 
-			_anchorsById.set( id, [] );
+			_anchorsById.set( id, new Set() );
 
 		}
+
+		if ( ! _linesById.has( id ) ) {
+
+			_linesById.set( id, new Set() );
+
+		}
+
+		_linesById.get( id ).add( line );
 
 		const existingAnchors = _anchorsById.get( id );
 		const slotsClaimed = new Set();
 
-		// migrate existing anchors that fall within this path's tile range, snapping each to
-		// its nearest slot. two anchors snapping to the same slot are duplicates at the same
-		// location for the same path, so the later one is dropped
-		for ( const anchor of existingAnchors ) {
+		existingAnchors.forEach( anchor => {
 
 			// anchors on a different fragment ( outside this tile ) are left untouched
 			if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
@@ -63,7 +94,7 @@ export class TextAnchorManager {
 
 			}
 
-		}
+		} );
 
 		// spawn anchors for slots with no pre-existing anchor
 		for ( let i = 0, l = line.anchors.length; i < l; i ++ ) {
@@ -79,7 +110,7 @@ export class TextAnchorManager {
 			if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
 
 				slotsClaimed.add( i );
-				existingAnchors.push( anchor );
+				existingAnchors.add( anchor );
 
 			}
 
@@ -90,10 +121,16 @@ export class TextAnchorManager {
 	// remove a path; anchors left with no associated paths are dropped
 	removeLine( line ) {
 
-		this._lines.delete( line );
-
+		const { _anchorsById, _linesById } = this;
 		const id = line.id;
-		const { _anchorsById } = this;
+
+		_linesById.get( id ).delete( line );
+		if ( _linesById.get( id ).size === 0 ) {
+
+			_linesById.delete( id );
+
+		}
+
 		const existingAnchors = _anchorsById.get( id );
 		if ( ! existingAnchors ) {
 
@@ -102,34 +139,15 @@ export class TextAnchorManager {
 
 		}
 
-		for ( let i = 0, l = existingAnchors.length; i < l; i ++ ) {
+		existingAnchors.forEach( anchor => {
 
-			const anchor = existingAnchors[ i ];
 			anchor.removeLine( line );
 
-		}
+		} );
 
 		// run a delayed cleanup in case there are other lines etc that will be
 		// added / removed from the manager and anchors.
 		this.scheduleCleanup();
-
-	}
-
-	// collect every anchor for rendering / debug
-	getAnchors( target = [] ) {
-
-		target.length = 0;
-		for ( const anchors of this._anchorsById.values() ) {
-
-			for ( const anchor of anchors ) {
-
-				target.push( anchor );
-
-			}
-
-		}
-
-		return target;
 
 	}
 
@@ -145,31 +163,26 @@ export class TextAnchorManager {
 
 				// iterate over all anchor sets
 				const { _anchorsById } = this;
-				for ( const id of _anchorsById.keys() ) {
+				_anchorsById.forEach( ( anchors, id ) => {
 
-					// remove any anchors with no paths
-					const existingAnchors = _anchorsById.get( id );
-					for ( let i = 0, l = existingAnchors.length; i < l; i ++ ) {
+					anchors.forEach( anchor => {
 
-						const anchor = existingAnchors[ i ];
 						if ( anchor.referencePaths.length === 0 ) {
 
-							existingAnchors.splice( i, 1 );
-							i --;
-							l --;
+							anchors.delete( anchor );
 
 						}
 
-					}
+					} );
 
 					// remove any empty anchor lists
-					if ( existingAnchors.length === 0 ) {
+					if ( anchors.size === 0 ) {
 
 						_anchorsById.delete( id );
 
 					}
 
-				}
+				} );
 
 			} );
 
