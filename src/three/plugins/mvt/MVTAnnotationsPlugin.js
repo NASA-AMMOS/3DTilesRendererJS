@@ -114,6 +114,22 @@ export class MVTAnnotationsPlugin {
 
 		const { overlay, occupancy, debug } = this;
 
+		// init
+		this.tiles = tiles;
+		this.hierarchy = new MVTHierarchy( this.contentCache );
+		this.settlingManager = new SettlingManager( {
+			tiles,
+			isPrioritized: item => occupancy.visible.has( item ),
+		} );
+
+		// init debug
+		debug.paths.group = tiles.group;
+		debug.paths.settlingManager = this.settlingManager;
+
+		debug.hierarchy.hierarchy = this.hierarchy;
+		debug.hierarchy.tiles = tiles;
+		debug.hierarchy.tiling = overlay.tiling;
+
 		// ensure the overlay is initialized
 		overlay.init();
 
@@ -122,22 +138,6 @@ export class MVTAnnotationsPlugin {
 			await overlay.whenReady();
 
 		}
-
-		// init container
-		this.tiles = tiles;
-		this.hierarchy = new MVTHierarchy( this.contentCache );
-		this.settlingManager = new SettlingManager( {
-			tiles,
-			isPrioritized: item => occupancy.visible.has( item ),
-		} );
-
-		// init fields
-		debug.paths.group = tiles.group;
-		debug.paths.settlingManager = this.settlingManager;
-
-		debug.hierarchy.hierarchy = this.hierarchy;
-		debug.hierarchy.tiles = tiles;
-		debug.hierarchy.tiling = overlay.tiling;
 
 		// init occupancy
 		occupancy.sortCallback = ( a, b ) => {
