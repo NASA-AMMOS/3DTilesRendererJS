@@ -19,12 +19,22 @@ export class TextAnchorManager {
 
 		// path id -> Anchor[]
 		this._anchorsById = new Map();
+		this._scheduled = false;
+		this._lines = new Set();
+
+	}
+
+	getLines() {
+
+		return Array.from( this._lines );
 
 	}
 
 	// associate a newly loaded path with existing anchors within its tile range, then create
 	// anchors for any of the path's slots that no existing anchor claimed
 	addLine( line ) {
+
+		this._lines.add( line );
 
 		// TODO: is it possible to have disjoint road paths with common ids?
 		// TODO: lets snap to the nearest point instead of replacing an existing point?
@@ -80,8 +90,11 @@ export class TextAnchorManager {
 	// remove a path; anchors left with no associated paths are dropped
 	removeLine( line ) {
 
+		this._lines.delete( line );
+
 		const id = line.id;
-		const existingAnchors = this._anchorsById.get( id );
+		const { _anchorsById } = this;
+		const existingAnchors = _anchorsById.get( id );
 		if ( ! existingAnchors ) {
 
 			// this can happen if a line has no anchors added
@@ -93,21 +106,12 @@ export class TextAnchorManager {
 
 			const anchor = existingAnchors[ i ];
 			anchor.removeLine( line );
-			if ( anchor.referencePaths.length === 0 ) {
-
-				existingAnchors.splice( i, 1 );
-				i --;
-				l --;
-
-			}
 
 		}
 
-		if ( existingAnchors.length === 0 ) {
-
-			this._anchorsById.delete( id );
-
-		}
+		// run a delayed cleanup in case there are other lines etc that will be
+		// added / removed from the manager and anchors.
+		this.scheduleCleanup();
 
 	}
 
@@ -126,6 +130,50 @@ export class TextAnchorManager {
 		}
 
 		return target;
+
+	}
+
+	scheduleCleanup() {
+
+		if ( ! this._scheduled ) {
+
+			// queue a cleanup task
+			this._scheduled = true;
+			queueMicrotask( () => {
+
+				this._scheduled = false;
+
+				// iterate over all anchor sets
+				const { _anchorsById } = this;
+				for ( const id of _anchorsById.keys() ) {
+
+					// remove any anchors with no paths
+					const existingAnchors = _anchorsById.get( id );
+					for ( let i = 0, l = existingAnchors.length; i < l; i ++ ) {
+
+						const anchor = existingAnchors[ i ];
+						if ( anchor.referencePaths.length === 0 ) {
+
+							existingAnchors.splice( i, 1 );
+							i --;
+							l --;
+
+						}
+
+					}
+
+					// remove any empty anchor lists
+					if ( existingAnchors.length === 0 ) {
+
+						_anchorsById.delete( id );
+
+					}
+
+				}
+
+			} );
+
+		}
 
 	}
 

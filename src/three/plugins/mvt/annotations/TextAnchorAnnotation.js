@@ -102,7 +102,8 @@ export class TextAnchorAnnotation {
 		// store the slot and its cartographic position on this specific path
 		// TODO: insert in order or sort
 		const slot = line.anchors[ slotIndex ];
-		this.referencePaths.push( {
+		const { referencePaths } = this;
+		referencePaths.push( {
 			line,
 			i0: slot.i0,
 			i1: slot.i1,
@@ -111,7 +112,11 @@ export class TextAnchorAnnotation {
 			lon: slot.lon,
 		} );
 
-		this.referencePaths.sort( ( a, b ) => a.line.lodLevel - b.line.lodLevel );
+		referencePaths.sort( ( a, b ) => {
+
+			return a.line.lodLevel - b.line.lodLevel;
+
+		} );
 
 		return slotIndex;
 
@@ -119,7 +124,7 @@ export class TextAnchorAnnotation {
 
 	removeLine( line ) {
 
-		const { referencePaths: referencePaths } = this;
+		const { referencePaths } = this;
 		for ( let i = 0; i < referencePaths.length; i ++ ) {
 
 			if ( referencePaths[ i ].line === line ) {

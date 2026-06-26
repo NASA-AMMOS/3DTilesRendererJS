@@ -122,7 +122,7 @@ export class LineAnnotationOverlay {
 		}
 
 		// settled line paths → segment buffer
-		const lineItems = settlingManager.getItems().filter( item => item instanceof LineAnnotation && item.ready );
+		const lineItems = anchorManager.getLines().filter( item => item instanceof LineAnnotation && item.ready );
 
 		let segmentCount = 0;
 		for ( const line of lineItems ) {
