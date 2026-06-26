@@ -10,7 +10,7 @@ export class PointAnnotationManager {
 
 	}
 
-	addAnnotation( annotation ) {
+	add( annotation ) {
 
 		const { annotations, added } = this;
 		const { id } = annotation;
@@ -25,7 +25,7 @@ export class PointAnnotationManager {
 
 	}
 
-	removeAnnotation( annotation ) {
+	delete( annotation ) {
 
 		const { annotations } = this;
 		const { id } = annotation;

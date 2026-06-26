@@ -202,7 +202,7 @@ export class TextAnchorManager {
 	}
 
 	// remove a path; anchors left with no associated paths are dropped
-	removeLine( line ) {
+	deleteLine( line ) {
 
 		const { _anchorsById, _linesById } = this;
 		const id = line.id;

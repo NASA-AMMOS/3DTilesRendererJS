@@ -16,7 +16,6 @@ export class OccupancyAnnotation {
 		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
 		this.visible = false;
-		this._refCount = 0;
 
 	}
 
@@ -65,7 +64,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.added = new Set();
 
 		// prevents duplicate items during simultaneous LoD tile swaps
-		this._itemsById = new Map();
+		this._itemSet = new Set();
 		this._itemsNeedsUpdate = false;
 
 		this._id = - 1;
@@ -148,14 +147,14 @@ export class ScreenOccupationManager extends EventDispatcher {
 	syncItems() {
 
 		// reconstruct the items list
-		const { items, _itemsById } = this;
+		const { items, _itemSet } = this;
 		if ( this._itemsNeedsUpdate ) {
 
 			this._itemsNeedsUpdate = false;
-			items.length = _itemsById.size;
+			items.length = _itemSet.size;
 
 			let i = 0;
-			for ( const item of _itemsById.values() ) {
+			for ( const item of _itemSet.values() ) {
 
 				items[ i ] = item;
 				i ++;
@@ -271,60 +270,17 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
-	getById( id ) {
-
-		return this._itemsById.get( id );
-
-	}
-
 	register( item ) {
 
-		// register an item to be included in the occupation grid calculations
-		const { _itemsById } = this;
-		const existing = _itemsById.get( item.id );
-		if ( existing ) {
-
-			// use ref counting to avoid double-displaying redundant items
-			existing._refCount ++;
-			if ( item.lodLevel > existing.lodLevel ) {
-
-				// use the highest LoD levels lat / lon assuming it's the most accurate
-				existing.lodLevel = item.lodLevel;
-				existing.lat = item.lat;
-				existing.lon = item.lon;
-
-			}
-
-			return existing;
-
-		} else {
-
-			// otherwise add the new item
-			item._refCount = 1;
-			_itemsById.set( item.id, item );
-			this._itemsNeedsUpdate = true;
-			return item;
-
-		}
+		this._itemSet.add( item );
+		this._itemsNeedsUpdate = true;
 
 	}
 
 	unregister( item ) {
 
-		// remove the item if our ref count has reached 0
-		item._refCount --;
-		if ( item._refCount > 0 ) {
-
-			return;
-
-		}
-
-		if ( this._itemsById.get( item.id ) === item ) {
-
-			this._itemsById.delete( item.id );
-			this._itemsNeedsUpdate = true;
-
-		}
+		this._itemSet.delete( item );
+		this._itemsNeedsUpdate = true;
 
 	}
 

@@ -10,6 +10,7 @@ import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotati
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 import { parsePointAnnotations } from './annotations/PointAnnotation.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
+import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -93,12 +94,9 @@ export class MVTAnnotationsPlugin {
 		this.hierarchy = new MVTHierarchy();
 		this.occupancy = new DelayedScreenOccupationManager();
 		this.anchorManager = new TextAnchorManager();
+		this.pointManager = new PointAnnotationManager();
 		this.settlingManager = new SettlingManager();
 		this.tileLoadState = new Map();
-
-		// per MVT tile: { occupancyItems, settleItems } — items registered in the occupancy
-		// grid and items that need raycast settling. Points are in both; line annotations
-		// are in settleItems only ( anchors derived from them occupy the grid later )
 		this.vectorTileInfo = new Map();
 
 		// debug overlays
@@ -122,6 +120,8 @@ export class MVTAnnotationsPlugin {
 			hierarchy,
 			settlingManager,
 			contentCache,
+			pointManager,
+			anchorManager,
 		} = this;
 
 		// init debug
@@ -215,13 +215,35 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			// TODO: call update to text, point manager, update settling & occupancy
-			// from added / removed fields.
+			// update all sub managers
 			hierarchy.update();
 
+			// point annotations
+			pointManager.update();
+			pointManager.added.forEach( item => {
+
+				occupancy.register( item );
+				settlingManager.register( item );
+
+			} );
+			pointManager.removed.forEach( item => {
+
+				occupancy.unregister( item );
+				settlingManager.unregister( item );
+
+			} );
+			pointManager.reset();
+
+			// text anchors
+			anchorManager.update();
+			// TODO: register the anchors to the occupancy grid
+			anchorManager.reset();
+
+			// raycasters
 			settlingManager.camera = camera;
 			settlingManager.update();
 
+			// occupancy
 			occupancy.camera = camera;
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
@@ -252,11 +274,11 @@ export class MVTAnnotationsPlugin {
 
 			const {
 				contentCache,
-				occupancy,
 				filterAnnotation,
 				vectorTileInfo,
 				settlingManager,
 				anchorManager,
+				pointManager,
 			} = this;
 
 			const key = `${ x }_${ y }_${ level }`;
@@ -265,9 +287,8 @@ export class MVTAnnotationsPlugin {
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
 
-				const occupancyItems = new Set();
-				const settleItems = new Set();
-				vectorTileInfo.set( key, { occupancyItems, settleItems } );
+				const annotationItems = new Set();
+				vectorTileInfo.set( key, { annotationItems } );
 
 				if ( ! vectorTile ) {
 
@@ -275,16 +296,16 @@ export class MVTAnnotationsPlugin {
 
 				}
 
+				// TODO: parse these together at once
+
 				// parse the icon annotations
 				const points = parsePointAnnotations( vectorTile, x, y, level, tiling, {
 					filter: filterAnnotation,
 				} );
 				for ( const point of points ) {
 
-					const canonical = occupancy.register( point );
-					occupancyItems.add( canonical );
-					settleItems.add( canonical );
-					settlingManager.register( canonical );
+					pointManager.add( point );
+					annotationItems.add( point );
 
 				}
 
@@ -294,7 +315,7 @@ export class MVTAnnotationsPlugin {
 				} );
 				for ( const line of lines ) {
 
-					settleItems.add( line );
+					annotationItems.add( line );
 					settlingManager.register( line );
 
 				}
@@ -306,18 +327,15 @@ export class MVTAnnotationsPlugin {
 				const info = vectorTileInfo.get( key );
 				vectorTileInfo.delete( key );
 
-				for ( const item of info.occupancyItems ) {
+				for ( const item of info.annotationItems ) {
 
-					occupancy.unregister( item );
-
-				}
-
-				for ( const item of info.settleItems ) {
-
-					settlingManager.unregister( item );
 					if ( item instanceof LineAnnotation ) {
 
-						anchorManager.removeLine( item );
+						anchorManager.deleteLine( item );
+
+					} else {
+
+						pointManager.delete( item );
 
 					}
 
