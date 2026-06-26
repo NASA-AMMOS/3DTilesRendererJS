@@ -90,10 +90,10 @@ export class MVTAnnotationsPlugin {
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
 
 		// hierarchy for managing tile loading and visibility
-		this.hierarchy = null;
+		this.hierarchy = new MVTHierarchy();
 		this.occupancy = new DelayedScreenOccupationManager();
 		this.anchorManager = new TextAnchorManager();
-		this.settlingManager = null;
+		this.settlingManager = new SettlingManager();
 		this.tileLoadState = new Map();
 
 		// per MVT tile: { occupancyItems, settleItems } — items registered in the occupancy
@@ -112,22 +112,29 @@ export class MVTAnnotationsPlugin {
 
 	async init( tiles ) {
 
-		const { overlay, occupancy, debug } = this;
-
 		// init
 		this.tiles = tiles;
-		this.hierarchy = new MVTHierarchy( this.contentCache );
-		this.settlingManager = new SettlingManager( {
-			tiles,
-			isPrioritized: item => occupancy.visible.has( item ),
-		} );
+
+		const {
+			overlay,
+			occupancy,
+			debug,
+			hierarchy,
+			settlingManager,
+			contentCache,
+		} = this;
 
 		// init debug
 		debug.paths.group = tiles.group;
 
-		debug.hierarchy.hierarchy = this.hierarchy;
+		debug.hierarchy.hierarchy = hierarchy;
 		debug.hierarchy.tiles = tiles;
 		debug.hierarchy.tiling = overlay.tiling;
+
+		settlingManager.occupancy = occupancy;
+		settlingManager.tiles = tiles;
+
+		hierarchy.contentCache = contentCache;
 
 		// ensure the overlay is initialized
 		overlay.init();
@@ -189,7 +196,7 @@ export class MVTAnnotationsPlugin {
 
 			// tile geometry changed — existing items may have been settled on this geometry
 			// and need to be re-settled against the updated scene
-			this.settlingManager.markDirty();
+			settlingManager.markDirty();
 
 			// TODO: the ImageOverlay Tile Splits is causing an issue here.
 			this._markVectorTile( tile, visible );
@@ -198,7 +205,7 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
-			this.hierarchy.update();
+			hierarchy.update();
 
 			// sync camera and localToWorld matrix into occupancy grid
 			if ( this.camera !== null ) {
@@ -213,8 +220,8 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			this.settlingManager.camera = this.camera;
-			this.settlingManager.update();
+			settlingManager.camera = this.camera;
+			settlingManager.update();
 
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
@@ -225,7 +232,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			if ( occupancy.hasPendingWork || this.settlingManager.hasPendingWork ) {
+			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
 
@@ -327,7 +334,7 @@ export class MVTAnnotationsPlugin {
 		};
 
 		// register events
-		this.hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
+		hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
@@ -350,15 +357,16 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
-		this.debug.occupancy.dispose();
-		this.debug.paths.dispose();
+		const { debug, tiles, hierarchy, tileLoadState } = this;
+		debug.occupancy.dispose();
+		debug.paths.dispose();
 
-		this.hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
-		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
-		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		this.tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
+		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 
-		this.tileLoadState.forEach( ( info, tile ) => {
+		tileLoadState.forEach( ( info, tile ) => {
 
 			if ( info.active ) {
 

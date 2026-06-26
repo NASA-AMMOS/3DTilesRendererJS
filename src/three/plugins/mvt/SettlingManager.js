@@ -94,19 +94,13 @@ export class SettlingManager {
 
 	}
 
-	constructor( options = {} ) {
+	constructor() {
 
-		const {
-			tiles = null,
-			camera = null,
-			maxSettleTimeMs = 5,
-			isPrioritized = () => false,
-		} = options;
-
-		this.tiles = tiles;
-		this.camera = camera;
-		this.maxSettleTimeMs = maxSettleTimeMs;
-		this._isPrioritized = isPrioritized;
+		this.tiles = null;
+		this.occupancy = null;
+		this.camera = null;
+		this.maxSettleTimeMs = 5;
+		this.isPrioritized = item => this.occupancy.visible.has( item );
 
 		// item to reference count
 		this._refs = new Map();
@@ -256,7 +250,7 @@ export class SettlingManager {
 				for ( const item of _queue ) {
 
 					// prioritized items ( e.g. already displayed ) are handled regardless
-					if ( this._isPrioritized( item ) ) {
+					if ( this.isPrioritized( item ) ) {
 
 						continue;
 
@@ -290,7 +284,7 @@ export class SettlingManager {
 
 					tier = 3;
 
-				} else if ( this._isPrioritized( item ) ) {
+				} else if ( this.isPrioritized( item ) ) {
 
 					tier = 2;
 

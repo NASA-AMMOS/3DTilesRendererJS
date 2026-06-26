@@ -126,8 +126,6 @@ export class LineAnnotation extends OccupancyAnnotation {
 				alpha,
 
 				ref: null,
-
-				// TODO: remove lat / lon here
 				lat: MathUtils.lerp( lat[ i0 ], lat[ i1 ], alpha ),
 				lon: MathUtils.lerp( lon[ i0 ], lon[ i1 ], alpha ),
 			} );

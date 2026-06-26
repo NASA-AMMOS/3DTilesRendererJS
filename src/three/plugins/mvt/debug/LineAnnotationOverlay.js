@@ -42,7 +42,6 @@ function createPointTexture() {
 
 }
 
-
 // Debug overlay that draws settled line-annotation paths as line segments and their anchors
 // as round points, rebuilt each frame into the tiles group (camera-local to avoid jitter).
 export class LineAnnotationOverlay {
@@ -211,6 +210,7 @@ export class LineAnnotationOverlay {
 
 	}
 
+	// retrieve the color for the given line
 	_getColor( line, target ) {
 
 		switch ( this.colorMode ) {

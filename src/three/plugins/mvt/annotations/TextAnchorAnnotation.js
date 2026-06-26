@@ -1,11 +1,10 @@
-/**
- * A persistent anchor annotation for a labeled line ( road ). It tracks the slot it occupies
- * on each associated LoD path — storing the cartographic position per path — and surfaces the
- * position of the active ( highest-LoD settled ) path, so it survives LoD transitions instead
- * of being recreated per tile.
- */
+
+// A text anchor that lays on a give line and stores references to path from different LoDs,
+// choosing the best one to "snap" to.
+let annotationIndex = 0;
 export class TextAnchorAnnotation {
 
+	// TODO: cache these - possibly update in "evaluate"
 	get lat() {
 
 		return this.getActiveReference().lat;
@@ -20,16 +19,24 @@ export class TextAnchorAnnotation {
 
 	get ready() {
 
-		return this.getActiveReference()?.line.ready || false;
+		return this.getActiveReference().line.ready;
+
+	}
+
+	get properties() {
+
+		return this.getActiveReference().line.properties;
 
 	}
 
 	constructor( id ) {
 
-		this.id = id;
+		// ensure a unique id since we are deduping them separately
+		// An id isn't really needed for the text anchor other than for sort stability and to
+		// accommodate the annotation deduping in the screen annotation system.
+		// TODO: consider removing the deduping from the screen occupation manager
+		this.id = `${ id }_${ annotationIndex ++ }`;
 
-		// associated paths, each `{ line, i0, i1, alpha, lat, lon }` — the slot this anchor
-		// occupies on that LoD's path, with its cartographic position on that path
 		this.referencePaths = [];
 		this._lastUsed = null;
 
@@ -42,7 +49,7 @@ export class TextAnchorAnnotation {
 
 	}
 
-	// the highest-LoD entry whose path is settled, used for placement. null if none are ready
+	// the highest-LoD entry whose path is settled, used for placement
 	getActiveReference() {
 
 		const { referencePaths, _lastUsed } = this;
@@ -82,14 +89,8 @@ export class TextAnchorAnnotation {
 
 	}
 
-	hasLine( line ) {
-
-		return Boolean( this.lines.find( item => item.line === line ) );
-
-	}
-
-	// associate a path, snapping to the nearest of its precomputed anchor slots ( or the
-	// given slotIndex ). returns the claimed slot index, or -1 if the path has no slots
+	// add a reference to the given line, associating this anchor with the provided anchor
+	// position index
 	addLine( line, slotIndex ) {
 
 		// store the slot and its cartographic position on this specific path

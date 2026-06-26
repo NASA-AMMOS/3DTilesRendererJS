@@ -8,18 +8,30 @@ function rangeContains( range, lat, lon ) {
 
 }
 
-/**
- * Owns the persistent set of line-label anchors, indexed by path ( road ) id. As LoD paths
- * load and unload it migrates existing anchors onto the new geometry ( scoped to the loaded
- * tile ) and spawns anchors for any slots not already covered.
- */
+// Manages the set of anchors per
 export class TextAnchorManager {
 
 	constructor() {
 
+		this.added = new Set();
+		this.removed = new Set();
+
 		this._anchorsById = new Map();
 		this._linesById = new Map();
 		this._scheduled = false;
+
+	}
+
+	reset() {
+
+		this.added.clear();
+		this.removed.clear();
+
+	}
+
+	update() {
+
+		// TODO: gather the removed items here instead of scheduling
 
 	}
 
@@ -59,10 +71,11 @@ export class TextAnchorManager {
 
 	}
 
+	// add a set of lines
+	// NOTE: This is is designed to be called with all lines from a single tile at once
 	addLines( lines ) {
 
-		// NOTE: This is is designed to be called with all lines from a single tile at once
-		const { _anchorsById, _linesById } = this;
+		const { _anchorsById, _linesById, added } = this;
 		const newLineMap = new Map();
 		lines.forEach( line => {
 
@@ -162,6 +175,7 @@ export class TextAnchorManager {
 
 							anchorPosition.ref = anchor;
 							anchorSet.add( anchor );
+							added.add( anchor );
 
 						}
 
@@ -231,7 +245,7 @@ export class TextAnchorManager {
 				this._scheduled = false;
 
 				// iterate over all anchor sets
-				const { _anchorsById } = this;
+				const { _anchorsById, removed } = this;
 				_anchorsById.forEach( ( anchors, id ) => {
 
 					anchors.forEach( anchor => {
@@ -239,6 +253,7 @@ export class TextAnchorManager {
 						if ( anchor.referencePaths.length === 0 ) {
 
 							anchors.delete( anchor );
+							removed.add( anchor );
 
 						}
 
