@@ -57,9 +57,10 @@ export class LineAnnotationOverlay {
 
 		this.enabled = false;
 		this.colorMode = ColorMode.NONE;
+		this.displayLines = true;
+		this.displayAnchors = true;
 
 		this.camera = null;
-		this.settlingManager = null;
 		this.anchorManager = anchorManager;
 		this.group = null;
 
@@ -70,7 +71,7 @@ export class LineAnnotationOverlay {
 
 	update() {
 
-		const { enabled, group, camera, settlingManager, anchorManager } = this;
+		const { enabled, group, camera, anchorManager, displayAnchors, displayLines } = this;
 
 		if ( ! enabled ) {
 
@@ -123,7 +124,6 @@ export class LineAnnotationOverlay {
 
 		// settled line paths → segment buffer
 		const lineItems = anchorManager.getLines().filter( item => item instanceof LineAnnotation && item.ready );
-
 		let segmentCount = 0;
 		for ( const line of lineItems ) {
 
@@ -144,8 +144,8 @@ export class LineAnnotationOverlay {
 				linePosAttr.setXYZ( offset + 0, ..._vector.copy( positions[ i ] ).sub( _origin ) );
 				linePosAttr.setXYZ( offset + 1, ..._vector.copy( positions[ i + 1 ] ).sub( _origin ) );
 
-				lineColAttr.setXYZ( offset ++, ..._col );
-				lineColAttr.setXYZ( offset ++, ..._col );
+				lineColAttr.setXYZ( offset + 0, ..._col );
+				lineColAttr.setXYZ( offset + 1, ..._col );
 
 				offset += 2;
 
@@ -177,12 +177,14 @@ export class LineAnnotationOverlay {
 		_lines.geometry.setAttribute( 'color', lineColAttr );
 		_lines.position.copy( _origin );
 		_lines.updateMatrixWorld();
+		_lines.visible = displayLines;
 
 		_points.geometry.dispose();
 		_points.geometry.setAttribute( 'position', pointsPosAttr );
 		_points.geometry.setAttribute( 'color', pointsColAttr );
 		_points.position.copy( _origin );
 		_points.updateMatrixWorld();
+		_points.visible = displayAnchors;
 
 	}
 
@@ -213,10 +215,6 @@ export class LineAnnotationOverlay {
 
 		switch ( this.colorMode ) {
 
-			case ColorMode.NONE:
-				target.set( 0xffffff );
-				break;
-
 			case ColorMode.ID:
 				ColorManager.getColor( line.id, target );
 				break;
@@ -232,6 +230,11 @@ export class LineAnnotationOverlay {
 			case ColorMode.TILE:
 				ColorManager.getColor( ...line.range, target );
 				break;
+
+			default:
+				target.set( 0xffffff );
+				break;
+
 
 		}
 

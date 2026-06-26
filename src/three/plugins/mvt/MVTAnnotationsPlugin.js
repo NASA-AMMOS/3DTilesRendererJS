@@ -124,7 +124,6 @@ export class MVTAnnotationsPlugin {
 
 		// init debug
 		debug.paths.group = tiles.group;
-		debug.paths.settlingManager = this.settlingManager;
 
 		debug.hierarchy.hierarchy = this.hierarchy;
 		debug.hierarchy.tiles = tiles;
@@ -290,9 +289,10 @@ export class MVTAnnotationsPlugin {
 
 					settleItems.add( line );
 					settlingManager.register( line );
-					anchorManager.addLine( line );
 
 				}
+
+				anchorManager.addLines( lines );
 
 			} else {
 

@@ -59,63 +59,131 @@ export class TextAnchorManager {
 
 	}
 
-	// associate a newly loaded path with existing anchors within its tile range, then create
-	// anchors for any of the path's slots that no existing anchor claimed
-	addLine( line ) {
+	addLines( lines ) {
 
-		// TODO: is it possible to have disjoint road paths with common ids?
-		// TODO: lets snap to the nearest point instead of replacing an existing point?
+		// NOTE: This is is designed to be called with all lines from a single tile at once
 		const { _anchorsById, _linesById } = this;
+		const newLineMap = new Map();
+		lines.forEach( line => {
 
-		const id = line.id;
-		if ( ! _anchorsById.has( id ) ) {
+			if ( ! newLineMap.has( line.id ) ) {
 
-			_anchorsById.set( id, new Set() );
-
-		}
-
-		if ( ! _linesById.has( id ) ) {
-
-			_linesById.set( id, new Set() );
-
-		}
-
-		_linesById.get( id ).add( line );
-
-		const existingAnchors = _anchorsById.get( id );
-		const slotsClaimed = new Set();
-
-		existingAnchors.forEach( anchor => {
-
-			// anchors on a different fragment ( outside this tile ) are left untouched
-			if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
-
-				const slotIndex = anchor.addLine( line );
-				slotsClaimed.add( slotIndex );
+				newLineMap.set( line.id, [] );
 
 			}
+
+			newLineMap.get( line.id ).push( line );
 
 		} );
 
-		// spawn anchors for slots with no pre-existing anchor
-		for ( let i = 0, l = line.anchorCount; i < l; i ++ ) {
+		// for each new line
+		newLineMap.forEach( ( newLines, id ) => {
 
-			if ( slotsClaimed.has( i ) ) {
+			// create the sets if they don't exist yet for these sets of lines
+			if ( ! _anchorsById.has( id ) ) {
 
-				continue;
-
-			}
-
-			const anchor = new TextAnchorAnnotation( id );
-			anchor.addLine( line, i );
-			if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
-
-				slotsClaimed.add( i );
-				existingAnchors.add( anchor );
+				_anchorsById.set( id, new Set() );
 
 			}
 
-		}
+			if ( ! _linesById.has( id ) ) {
+
+				_linesById.set( id, new Set() );
+
+			}
+
+			const { range, lodLevel } = newLines[ 0 ];
+
+			// For each existing anchor, match it to the closest new anchor in the relevant set
+			const anchorSet = _anchorsById.get( id );
+			anchorSet.forEach( anchor => {
+
+				// find the closest anchor in the set of lines
+				let bestDist = Infinity;
+				let bestLine = null;
+				let bestIndex = - 1;
+				if (
+					! rangeContains( range, anchor.lat, anchor.lon ) ||
+					anchor.referencePaths.find( ref => ref.line.lodLevel === lodLevel )
+				) {
+
+					// TODO: it may be best to allow for the same anchor to associate with multiple references?
+					return;
+
+				}
+
+				newLines.forEach( line => {
+
+					line.anchorPositions.forEach( ( anchorPosition, index ) => {
+
+						if ( anchorPosition.ref === null ) {
+
+							// TODO: should we use a consistent canonical position here? Or the current "best"?
+							// TODO: does it make sense to "snap" this anchor to the closest line point, instead? Avoiding
+							// a jump? But then we will slowly accumulate anchors. Or we can "snap" at first and then revert once
+							// it hides? Or slide towards the goal (probably uncomfortable)?
+							const dLat = anchor.lat - anchorPosition.lat;
+							const dLon = anchor.lon - anchorPosition.lon;
+							const dist = dLat * dLat + dLon * dLon;
+							if ( dist < bestDist ) {
+
+								bestDist = dist;
+								bestLine = line;
+								bestIndex = index;
+
+							}
+
+						}
+
+					} );
+
+				} );
+
+				// save the reference
+				if ( bestLine ) {
+
+					anchor.addLine( bestLine, bestIndex );
+					bestLine.anchorPositions[ bestIndex ].ref = anchor;
+
+				}
+
+			} );
+
+			// Then, add any anchors that need to be created
+			newLines.forEach( line => {
+
+				line.anchorPositions.forEach( ( anchorPosition, index ) => {
+
+					if ( anchorPosition.ref === null ) {
+
+						const anchor = new TextAnchorAnnotation( id );
+						anchor.addLine( line, index );
+						if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
+
+							anchorPosition.ref = anchor;
+							anchorSet.add( anchor );
+
+						}
+
+					}
+
+				} );
+
+			} );
+
+		} );
+
+		// finally, add the lines to the set
+		newLineMap.forEach( ( lines, id ) => {
+
+			const lineSet = _linesById.get( id );
+			lines.forEach( line => {
+
+				lineSet.add( line );
+
+			} );
+
+		} );
 
 	}
 

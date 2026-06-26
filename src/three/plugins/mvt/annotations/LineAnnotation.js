@@ -124,6 +124,10 @@ export class LineAnnotation extends OccupancyAnnotation {
 				i0,
 				i1,
 				alpha,
+
+				ref: null,
+
+				// TODO: remove lat / lon here
 				lat: MathUtils.lerp( lat[ i0 ], lat[ i1 ], alpha ),
 				lon: MathUtils.lerp( lon[ i0 ], lon[ i1 ], alpha ),
 			} );
@@ -291,7 +295,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 		// TODO: this needs to scale based on LoD rather than a fixed - this is hackily-scaled below
 		// anchor spacing in radians ( geographic ). Density
 		// tracks real-world length, independent of the tile's zoom / size
-		anchorSpacing = 100000 / 6378137,
+		anchorSpacing = 500000 / 6378137,
 	} = options;
 
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
@@ -328,7 +332,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 			}
 
 			// feature.id is the OSM element id preserved across LoDs — the paths's stable key
-			const id = `${ layerName }:${ feature.id }`;
+			const id = `${ layerName }:${ feature.properties.name || feature.id }`;
 			const geometry = feature.loadGeometry();
 			for ( const line of geometry ) {
 

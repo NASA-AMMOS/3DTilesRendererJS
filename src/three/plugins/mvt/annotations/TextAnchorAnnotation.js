@@ -6,7 +6,6 @@
  */
 export class TextAnchorAnnotation {
 
-	// cartographic position ( radians ) surfaced from the active path
 	get lat() {
 
 		return this.getActiveReference().lat;
@@ -91,18 +90,12 @@ export class TextAnchorAnnotation {
 
 	// associate a path, snapping to the nearest of its precomputed anchor slots ( or the
 	// given slotIndex ). returns the claimed slot index, or -1 if the path has no slots
-	addLine( line, slotIndex = - 1 ) {
-
-		if ( slotIndex < 0 ) {
-
-			slotIndex = this._nearestSlot( line );
-
-		}
+	addLine( line, slotIndex ) {
 
 		// store the slot and its cartographic position on this specific path
-		// TODO: insert in order or sort
 		const slot = line.anchorPositions[ slotIndex ];
 		const { referencePaths } = this;
+
 		referencePaths.push( {
 			line,
 			i0: slot.i0,
@@ -112,9 +105,10 @@ export class TextAnchorAnnotation {
 			lon: slot.lon,
 		} );
 
+		// sort in order from most important to least
 		referencePaths.sort( ( a, b ) => {
 
-			return a.line.lodLevel - b.line.lodLevel;
+			return b.line.lodLevel - a.line.lodLevel;
 
 		} );
 
@@ -135,33 +129,6 @@ export class TextAnchorAnnotation {
 			}
 
 		}
-
-	}
-
-	// index of the path's anchor slot nearest this anchor's current position ( -1 if none )
-	_nearestSlot( line ) {
-
-		// TODO: this is an issue
-		const { lat, lon } = this.getActiveReference();
-		const { anchorPositions } = line;
-		let best = - 1;
-		let bestDist = Infinity;
-		for ( let i = 0, l = anchorPositions.length; i < l; i ++ ) {
-
-			const anchor = anchorPositions[ i ];
-			const dLat = anchor.lat - lat;
-			const dLon = anchor.lon - lon;
-			const d = dLat * dLat + dLon * dLon;
-			if ( d < bestDist ) {
-
-				bestDist = d;
-				best = i;
-
-			}
-
-		}
-
-		return best;
 
 	}
 
