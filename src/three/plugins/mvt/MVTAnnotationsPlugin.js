@@ -196,33 +196,33 @@ export class MVTAnnotationsPlugin {
 
 			// tile geometry changed — existing items may have been settled on this geometry
 			// and need to be re-settled against the updated scene
-			settlingManager.markDirty();
+			settlingManager.needsUpdate = true;
 
-			// TODO: the ImageOverlay Tile Splits is causing an issue here.
+			// TODO: the ImageOverlay Tile Splits is causing an issue here since we can't
+			// automatically load higher res data than what the tiles are allowing
 			this._markVectorTile( tile, visible );
 
 		};
 
 		this._onUpdateAfter = () => {
 
-			hierarchy.update();
-
 			// sync camera and localToWorld matrix into occupancy grid
-			if ( this.camera !== null ) {
+			const { camera } = this;
+			if ( camera !== null ) {
 
-				tiles.getResolution( this.camera, occupancy.resolution );
-				occupancy.camera = this.camera;
+				tiles.getResolution( camera, occupancy.resolution );
 				occupancy.matrix.copy( tiles.group.matrixWorld );
-
-			} else {
-
-				occupancy.camera = null;
 
 			}
 
-			settlingManager.camera = this.camera;
+			// TODO: call update to text, point manager, update settling & occupancy
+			// from added / removed fields.
+			hierarchy.update();
+
+			settlingManager.camera = camera;
 			settlingManager.update();
 
+			occupancy.camera = camera;
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 

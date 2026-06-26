@@ -1,9 +1,7 @@
-/** @import { Camera } from 'three'; */
 import { Frustum, Matrix4, Raycaster } from 'three';
 import { LineAnnotation } from './annotations/LineAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
-
 const _raycaster = /* @__PURE__ */ new Raycaster();
 
 // check if the given raycaster intersects the provided frustum shape
@@ -74,18 +72,7 @@ function rayIntersectsFrustum( raycaster, frustum ) {
 
 }
 
-/**
- * Owns the raycast "settling" of annotation items onto the 3D tile surface. Items are
- * registered (ref-counted, so an item referenced by multiple tiles stays settled until
- * its last reference is removed) and progressively raycast within a per-tick time budget,
- * prioritizing on-screen items.
- * @param {Object} [options={}]
- * @param {Object} [options.tiles=null] - The TilesRenderer; supplies the ellipsoid and group.
- * @param {Camera} [options.camera=null] - Camera used to prioritize on-screen items.
- * @param {number} [options.maxSettleTimeMs=5] - Per-tick raycast time budget.
- * @param {( item: Object ) => boolean} [options.isPrioritized] - Predicate marking items that
- *   should be settled first regardless of frustum ( e.g. already displayed ).
- */
+// Takes a set of line or point annotations and "settles" them onto the tile set.
 export class SettlingManager {
 
 	get hasPendingWork() {
@@ -108,7 +95,7 @@ export class SettlingManager {
 		// items awaiting resettling
 		this._queue = new Set();
 
-		this._needsRebuild = false;
+		this.needsUpdate = false;
 		this._task = null;
 
 		// shared per-tick budget deadline
@@ -116,12 +103,8 @@ export class SettlingManager {
 
 	}
 
-	getItems() {
-
-		return Array.from( this._refs.keys() );
-
-	}
-
+	// TODO: is this needed? We should only register new, deduped items from the lines
+	// and anchors managers
 	register( item ) {
 
 		// ref-counted: the same item may be registered by multiple tiles
@@ -148,19 +131,12 @@ export class SettlingManager {
 
 	}
 
-	// flag every registered item for resettling ( e.g. when tile geometry changes )
-	markDirty() {
-
-		this._needsRebuild = true;
-
-	}
-
 	update() {
 
 		// rebuild requeues everything that is still registered
-		if ( this._needsRebuild ) {
+		if ( this.needsUpdate ) {
 
-			this._needsRebuild = false;
+			this.needsUpdate = false;
 			for ( const item of this._refs.keys() ) {
 
 				this._queue.add( item );
@@ -413,6 +389,7 @@ export class SettlingManager {
 
 	}
 
+	// deadline
 	_deadlineExpired() {
 
 		return performance.now() >= this._deadline;
