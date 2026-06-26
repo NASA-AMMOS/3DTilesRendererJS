@@ -315,7 +315,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, options =
 			}
 
 			// skip lines that don't match the filter
-			if ( ! filter( layerName, feature.properties ) ) {
+			if ( ! filter( layerName, feature.properties, feature.type ) ) {
 
 				continue;
 

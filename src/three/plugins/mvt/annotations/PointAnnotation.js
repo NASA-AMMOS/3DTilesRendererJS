@@ -115,7 +115,7 @@ export function parsePointAnnotations( vectorTile, x, y, level, tiling, options 
 
 			}
 
-			if ( filter !== null && ! filter( layerName, feature.properties ) ) {
+			if ( filter !== null && ! filter( layerName, feature.properties, feature.type ) ) {
 
 				continue;
 

@@ -105,7 +105,6 @@ export class MVTAnnotationsPlugin {
 
 			},
 			filterAnnotation = () => false,
-			filterLine = () => false,
 			onAnnotationsUpdate = () => {},
 			camera = null,
 			displayOccupancyGrid = false,
@@ -117,7 +116,6 @@ export class MVTAnnotationsPlugin {
 		this.camera = camera;
 		this.sortCallback = sortCallback;
 		this.filterAnnotation = filterAnnotation;
-		this.filterLine = filterLine;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
 
 		// hierarchy for managing tile loading and visibility
@@ -274,7 +272,6 @@ export class MVTAnnotationsPlugin {
 				contentCache,
 				occupancy,
 				filterAnnotation,
-				filterLine,
 				vectorTileInfo,
 				settlingManager,
 				anchorManager,
@@ -311,7 +308,7 @@ export class MVTAnnotationsPlugin {
 
 				// parse the paths
 				const lines = parseLineAnnotations( vectorTile, x, y, level, tiling, {
-					filter: filterLine,
+					filter: filterAnnotation,
 				} );
 				for ( const line of lines ) {
 

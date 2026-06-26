@@ -144,9 +144,12 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
-		filterAnnotation: ( layer, properties ) => properties.kind in KIND_TO_ICON,
-		// only named lines ( i.e. things that would get a label ), debug-visualized via the `lines` GUI toggle
-		filterLine: ( layer, properties ) => 'name' in properties,
+		filterAnnotation: ( layer, properties, type ) => {
+
+			if ( type === 1 ) return properties.kind in KIND_TO_ICON;
+			else return 'name' in properties;
+
+		},
 		onAnnotationsUpdate: ( added, removed ) => annotationsPoints.update( added, removed ),
 	} ) );
 

@@ -3,7 +3,6 @@ import { LineAnnotation } from '../annotations/LineAnnotation.js';
 
 const _origin = /* @__PURE__ */ new Vector3();
 const _vector = /* @__PURE__ */ new Vector3();
-const _anchorList = [];
 
 // round white sprite used for the anchor points
 function createPointTexture() {
@@ -128,7 +127,7 @@ export class LineAnnotationOverlay {
 		}
 
 		// anchors at their active ( highest-LoD settled ) path → point buffer
-		const anchorItems = anchorManager.getAnchors( _anchorList ).filter( anchor => anchor.ready );
+		const anchorItems = anchorManager.getAnchors().filter( anchor => anchor.ready );
 
 		const pointsAttr = new BufferAttribute( new Float32Array( anchorItems.length * 3 ), 3 );
 		offset = 0;
