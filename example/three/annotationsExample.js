@@ -104,6 +104,7 @@ const params = {
 
 	occupancyGrid: false,
 	annotationLines: false,
+	tileHierarchy: false,
 
 };
 
@@ -252,6 +253,11 @@ function init() {
 	gui.add( params, 'annotationLines' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths.enabled = v;
+
+	} );
+	gui.add( params, 'tileHierarchy' ).onChange( v => {
+
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.hierarchy.enabled = v;
 
 	} );
 
