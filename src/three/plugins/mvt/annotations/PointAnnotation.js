@@ -91,11 +91,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 }
 
-export function parsePointAnnotations( vectorTile, x, y, level, tiling, options ) {
-
-	const {
-		filter = () => true,
-	} = options;
+export function parsePointAnnotations( vectorTile, x, y, level, tiling, filter ) {
 
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tiling.getTileBounds( x, y, level, true, false );
 	const points = [];

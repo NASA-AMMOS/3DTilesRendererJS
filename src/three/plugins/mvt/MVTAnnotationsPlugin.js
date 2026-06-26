@@ -299,9 +299,7 @@ export class MVTAnnotationsPlugin {
 				// TODO: parse these together at once
 
 				// parse the icon annotations
-				const points = parsePointAnnotations( vectorTile, x, y, level, tiling, {
-					filter: filterAnnotation,
-				} );
+				const points = parsePointAnnotations( vectorTile, x, y, level, tiling, filterAnnotation );
 				for ( const point of points ) {
 
 					pointManager.add( point );
@@ -310,9 +308,7 @@ export class MVTAnnotationsPlugin {
 				}
 
 				// parse the paths
-				const lines = parseLineAnnotations( vectorTile, x, y, level, tiling, {
-					filter: filterAnnotation,
-				} );
+				const lines = parseLineAnnotations( vectorTile, x, y, level, tiling, filterAnnotation );
 				for ( const line of lines ) {
 
 					annotationItems.add( line );
