@@ -18,7 +18,6 @@ export class TextAnchorManager {
 
 		this._anchorsById = new Map();
 		this._linesById = new Map();
-		this._scheduled = false;
 
 	}
 
@@ -31,7 +30,29 @@ export class TextAnchorManager {
 
 	update() {
 
-		// TODO: gather the removed items here instead of scheduling
+		// gather the removed items
+		const { _anchorsById, removed } = this;
+		_anchorsById.forEach( ( anchors, id ) => {
+
+			anchors.forEach( anchor => {
+
+				if ( anchor.referencePaths.length === 0 ) {
+
+					anchors.delete( anchor );
+					removed.add( anchor );
+
+				}
+
+			} );
+
+			// remove any empty anchor lists
+			if ( anchors.size === 0 ) {
+
+				_anchorsById.delete( id );
+
+			}
+
+		} );
 
 	}
 
@@ -237,46 +258,6 @@ export class TextAnchorManager {
 		// run a delayed cleanup in case there are other lines etc that will be
 		// added / removed from the manager and anchors.
 		this.scheduleCleanup();
-
-	}
-
-	scheduleCleanup() {
-
-		if ( ! this._scheduled ) {
-
-			// queue a cleanup task
-			this._scheduled = true;
-			queueMicrotask( () => {
-
-				this._scheduled = false;
-
-				// iterate over all anchor sets
-				const { _anchorsById, removed } = this;
-				_anchorsById.forEach( ( anchors, id ) => {
-
-					anchors.forEach( anchor => {
-
-						if ( anchor.referencePaths.length === 0 ) {
-
-							anchors.delete( anchor );
-							removed.add( anchor );
-
-						}
-
-					} );
-
-					// remove any empty anchor lists
-					if ( anchors.size === 0 ) {
-
-						_anchorsById.delete( id );
-
-					}
-
-				} );
-
-			} );
-
-		}
 
 	}
 

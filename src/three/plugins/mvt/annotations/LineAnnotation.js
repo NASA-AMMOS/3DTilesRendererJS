@@ -140,99 +140,6 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 }
 
-// Merge line fragments that share an endpoint and the same key into single polylines.
-// Port of maplibre-gl-js src/symbol/merge_lines.ts, generalized to operate on plain
-// { key, id, properties, points } segments. Merging is confined to matching keys so
-// distinct roads with coincident endpoints are never joined.
-function stitchSegments( segments ) {
-
-	// TODO: is this necessary?
-	// TODO: review / simplify this
-	const leftIndex = {};
-	const rightIndex = {};
-	const merged = [];
-	let count = 0;
-
-	for ( const seg of segments ) {
-
-		const leftKey = endKey( seg, false );
-		const rightKey = endKey( seg, true );
-
-		if ( ( leftKey in rightIndex ) && ( rightKey in leftIndex ) && ( rightIndex[ leftKey ] !== leftIndex[ rightKey ] ) ) {
-
-			// fragments adjacent to both ends — merge all three
-			const j = mergeFromLeft( leftKey, rightKey, seg.points );
-			const i = mergeFromRight( leftKey, rightKey, merged[ j ].points );
-
-			delete leftIndex[ leftKey ];
-			delete rightIndex[ rightKey ];
-
-			rightIndex[ endKey( merged[ i ], true ) ] = i;
-			merged[ j ].points = null;
-
-		} else if ( leftKey in rightIndex ) {
-
-			// fragment adjacent to the start of the current segment
-			mergeFromRight( leftKey, rightKey, seg.points );
-
-		} else if ( rightKey in leftIndex ) {
-
-			// fragment adjacent to the end of the current segment
-			mergeFromLeft( leftKey, rightKey, seg.points );
-
-		} else {
-
-			// no adjacent fragment — seed a new merged segment
-			add( seg );
-			leftIndex[ leftKey ] = count - 1;
-			rightIndex[ rightKey ] = count - 1;
-
-		}
-
-	}
-
-	return merged.filter( seg => seg.points );
-
-	function endKey( seg, onRight ) {
-
-		const point = onRight ? seg.points[ seg.points.length - 1 ] : seg.points[ 0 ];
-		return `${ seg.key }:${ point.x }:${ point.y }`;
-
-	}
-
-	function add( seg ) {
-
-		merged.push( seg );
-		count ++;
-
-	}
-
-	function mergeFromRight( leftKey, rightKey, points ) {
-
-		const i = rightIndex[ leftKey ];
-		delete rightIndex[ leftKey ];
-		rightIndex[ rightKey ] = i;
-
-		merged[ i ].points.pop();
-		merged[ i ].points = merged[ i ].points.concat( points );
-		return i;
-
-	}
-
-	function mergeFromLeft( leftKey, rightKey, points ) {
-
-		const i = leftIndex[ rightKey ];
-		delete leftIndex[ rightKey ];
-		leftIndex[ leftKey ] = i;
-
-		merged[ i ].points.shift();
-		merged[ i ].points = points.concat( merged[ i ].points );
-		return i;
-
-	}
-
-}
-
 // Densify a polyline in tile coordinate space so no gap between consecutive samples
 // exceeds "spacing", preserving the original vertices. "spacing" is constant in tile
 // space, the geographic sample density scales with the tile's LoD automatically.
@@ -322,11 +229,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter, t
 
 		}
 
-		// stitch fragments into coherent paths, then densify and project to cartographic
-		// TODO: is this stitching needed?
-		const stitched = stitchSegments( segments );
-
-		for ( const seg of stitched ) {
+		for ( const seg of segments ) {
 
 			const subSampledPoints = subsamplePath( seg.points, spacing );
 
