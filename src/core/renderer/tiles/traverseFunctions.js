@@ -48,6 +48,12 @@ function canUnconditionallyRefine( tile ) {
 // Resets the frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
+	if ( ! isProcessed( tile ) ) {
+
+		return;
+
+	}
+
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	if ( tile.traversal.lastFrameVisited !== renderer.frameCount ) {
