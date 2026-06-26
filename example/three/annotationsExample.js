@@ -246,12 +246,12 @@ function init() {
 	const gui = new GUI();
 	gui.add( params, 'occupancyGrid' ).onChange( v => {
 
-		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).displayOccupancyGrid = v;
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.occupancy.enabled = v;
 
 	} );
 	gui.add( params, 'annotationLines' ).onChange( v => {
 
-		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).displayLines = v;
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths.enabled = v;
 
 	} );
 

@@ -243,7 +243,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
-			this._id = i;
+			this._id = i + 1;
 			if ( ndcMatrix !== null && item.evaluate( handle ) ) {
 
 				visible.add( item );

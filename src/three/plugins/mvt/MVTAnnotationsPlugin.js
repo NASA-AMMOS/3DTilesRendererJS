@@ -52,40 +52,12 @@ function collectMeshes( object ) {
  *   content is parsed for point features.
  * @param {Camera} [options.camera=null] - Initial camera. Can be updated with `setCamera()`.
  * @param {Scene} [options.scene=null] - Three.js scene reference (stored for caller use).
- * @param {boolean} [options.displayOccupancyGrid=false] - Overlay a debug canvas showing the
- *   screen-space occupation grid.
- * @param {boolean} [options.displayLines=false] - Draw a debug overlay of the settled line
- *   annotation paths.
  */
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {
 
 		return this.overlay.imageSource._contentCache;
-
-	}
-
-	get displayOccupancyGrid() {
-
-		return this._occupancyOverlay.enabled;
-
-	}
-
-	set displayOccupancyGrid( v ) {
-
-		this._occupancyOverlay.enabled = v;
-
-	}
-
-	get displayAnnotationLines() {
-
-		return this._occupancyOverlay.enabled;
-
-	}
-
-	set displayAnnotationLines( v ) {
-
-		this._occupancyOverlay.enabled = v;
 
 	}
 
@@ -107,8 +79,6 @@ export class MVTAnnotationsPlugin {
 			filterAnnotation = () => false,
 			onAnnotationsUpdate = () => {},
 			camera = null,
-			displayOccupancyGrid = false,
-			displayLines = false,
 		} = options;
 
 		// user settings
@@ -130,19 +100,17 @@ export class MVTAnnotationsPlugin {
 		// are in settleItems only ( anchors derived from them occupy the grid later )
 		this.vectorTileInfo = new Map();
 
-
 		// debug overlays
-		this._occupancyOverlay = new OccupancyGridOverlay( this.occupancy );
-		this._lineOverlay = new LineAnnotationOverlay( this.anchorManager );
-
-		this.displayOccupancyGrid = displayOccupancyGrid;
-		this.displayLines = displayLines;
+		this.debug = {
+			occupancy: new OccupancyGridOverlay( this.occupancy ),
+			paths: new LineAnnotationOverlay( this.anchorManager ),
+		};
 
 	}
 
 	async init( tiles ) {
 
-		const { overlay, occupancy, _lineOverlay } = this;
+		const { overlay, occupancy, debug } = this;
 
 		// ensure the overlay is initialized
 		overlay.init();
@@ -162,8 +130,8 @@ export class MVTAnnotationsPlugin {
 		} );
 
 		// init fields
-		_lineOverlay.group = tiles.group;
-		_lineOverlay.settlingManager = this.settlingManager;
+		debug.paths.group = tiles.group;
+		debug.paths.settlingManager = this.settlingManager;
 
 		// init occupancy
 		occupancy.sortCallback = ( a, b ) => {
@@ -245,10 +213,9 @@ export class MVTAnnotationsPlugin {
 
 			occupancy.update();
 			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
-			this._occupancyOverlay.update();
-			this._lineOverlay.enabled = this.displayLines;
-			this._lineOverlay.camera = this.camera;
-			this._lineOverlay.update();
+			debug.occupancy.update();
+			debug.paths.camera = this.camera;
+			debug.paths.update();
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
 
@@ -374,8 +341,8 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
-		this._occupancyOverlay.dispose();
-		this._lineOverlay.dispose();
+		this.debug.occupancy.dispose();
+		this.debug.paths.dispose();
 
 		this.hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
