@@ -48,7 +48,7 @@ export class TextAnchorAnnotation {
 
 		const { referencePaths, _lastUsed } = this;
 		const target = referencePaths[ 0 ] ?? null;
-		if ( target?.ready ) {
+		if ( target?.line.ready ) {
 
 			this._lastUsed = target;
 			return target;
