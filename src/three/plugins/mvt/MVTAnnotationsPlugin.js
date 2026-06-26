@@ -287,47 +287,46 @@ export class MVTAnnotationsPlugin {
 				const { tiling } = overlay;
 				const vectorTile = contentCache.get( x, y, level );
 
-				const annotationItems = new Set();
-				vectorTileInfo.set( key, { annotationItems } );
-
 				if ( ! vectorTile ) {
 
+					vectorTileInfo.set( key, { annotations: [] } );
 					return;
 
 				}
 
-				// TODO: parse these together at once
-
 				// parse the icon annotations
-				const points = parsePointAnnotations( vectorTile, x, y, level, tiling, filterAnnotation );
-				for ( const point of points ) {
+				const annotations = [];
+				parsePointAnnotations( vectorTile, x, y, level, tiling, filterAnnotation, annotations );
+				parseLineAnnotations( vectorTile, x, y, level, tiling, filterAnnotation, annotations );
+				vectorTileInfo.set( key, { annotations } );
 
-					pointManager.add( point );
-					annotationItems.add( point );
+				for ( const ann of annotations ) {
+
+					if ( ann instanceof LineAnnotation ) {
+
+						settlingManager.register( ann );
+
+					} else {
+
+						pointManager.add( ann );
+
+					}
 
 				}
 
-				// parse the paths
-				const lines = parseLineAnnotations( vectorTile, x, y, level, tiling, filterAnnotation );
-				for ( const line of lines ) {
-
-					annotationItems.add( line );
-					settlingManager.register( line );
-
-				}
-
-				anchorManager.addLines( lines );
+				// add the anchors
+				anchorManager.addLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
 
 			} else {
 
-				const info = vectorTileInfo.get( key );
+				const { annotations } = vectorTileInfo.get( key );
 				vectorTileInfo.delete( key );
 
-				for ( const item of info.annotationItems ) {
+				for ( const item of annotations ) {
 
 					if ( item instanceof LineAnnotation ) {
 
-						anchorManager.deleteLine( item );
+						settlingManager.unregister( item );
 
 					} else {
 
@@ -336,6 +335,9 @@ export class MVTAnnotationsPlugin {
 					}
 
 				}
+
+				// remove the anchors
+				anchorManager.deleteLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
 
 			}
 

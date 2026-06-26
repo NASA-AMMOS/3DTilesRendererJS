@@ -267,24 +267,8 @@ function subsamplePath( points, spacing ) {
 }
 
 
-/**
- * Parse all labeled line ( type 2 ) features from a decoded MVT tile into a set of
- * stitched, subsampled {@link LineAnnotation} instances.
- *
- * @private
- * @param {Object} vectorTile - The decoded vector tile ( `{ layers }` ).
- * @param {number} x - Tile column.
- * @param {number} y - Tile row.
- * @param {number} level - Tile zoom level; stored as `lodLevel` and drives sample density.
- * @param {Object} tiling - The overlay tiling helper ( `getTileBounds`, `toCartographicPoint`, `flipY` ).
- * @param {Object} [options={}]
- * @param {( layerName: string, properties: Object ) => boolean} [options.filter] - Return
- *   true to include a feature. Defaults to including everything.
- * @param {number} [options.subsampleFraction=1/64] - Maximum sample spacing as a fraction
- *   of the layer extent.
- * @returns {LineAnnotation[]}
- */
-export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter ) {
+// parse the vector tile geometry into line annotations
+export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter, target = [] ) {
 
 	// TODO: this needs to scale based on LoD rather than a fixed - this is hackily-scaled below
 	// anchor spacing in radians ( geographic ). Density
@@ -296,8 +280,6 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter ) 
 	const { flipY } = tiling;
 
 	const range = tiling.getTileBounds( x, y, level, false, false );
-	const lineAnnotations = [];
-
 	for ( const layerName in vectorTile.layers ) {
 
 		const layer = vectorTile.layers[ layerName ];
@@ -381,12 +363,12 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter ) 
 			annotation.generateAnchors( anchorSpacing * ( range[ 2 ] - range[ 0 ] ) );
 
 			// append the annotation
-			lineAnnotations.push( annotation );
+			target.push( annotation );
 
 		}
 
 	}
 
-	return lineAnnotations;
+	return target;
 
 }

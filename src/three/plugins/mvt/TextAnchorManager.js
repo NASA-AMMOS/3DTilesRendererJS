@@ -201,6 +201,12 @@ export class TextAnchorManager {
 
 	}
 
+	deleteLines( lines ) {
+
+		lines.forEach( line => this.deleteLine( line ) );
+
+	}
+
 	// remove a path; anchors left with no associated paths are dropped
 	deleteLine( line ) {
 

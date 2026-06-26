@@ -91,11 +91,9 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 }
 
-export function parsePointAnnotations( vectorTile, x, y, level, tiling, filter ) {
+export function parsePointAnnotations( vectorTile, x, y, level, tiling, filter, target = [] ) {
 
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tiling.getTileBounds( x, y, level, true, false );
-	const points = [];
-
 	for ( const layerName in vectorTile.layers ) {
 
 		const layer = vectorTile.layers[ layerName ];
@@ -111,7 +109,7 @@ export function parsePointAnnotations( vectorTile, x, y, level, tiling, filter )
 
 			}
 
-			if ( filter !== null && ! filter( layerName, feature.properties, feature.type ) ) {
+			if ( ! filter( layerName, feature.properties, feature.type ) ) {
 
 				continue;
 
@@ -142,7 +140,7 @@ export function parsePointAnnotations( vectorTile, x, y, level, tiling, filter )
 				item.lon = lon;
 				item.lodLevel = level;
 
-				points.push( item );
+				target.push( item );
 
 			}
 
@@ -150,6 +148,6 @@ export function parsePointAnnotations( vectorTile, x, y, level, tiling, filter )
 
 	}
 
-	return points;
+	return target;
 
 }
