@@ -87,13 +87,10 @@ export class SettlingManager {
 		this.occupancy = null;
 		this.camera = null;
 		this.maxSettleTimeMs = 5;
-		this.isPrioritized = item => this.occupancy.visible.has( item );
-
-		// item to reference count
-		this._refs = new Map();
 
 		// items awaiting resettling
 		this._queue = new Set();
+		this._items = new Set();
 
 		this.needsUpdate = false;
 		this._task = null;
@@ -103,31 +100,17 @@ export class SettlingManager {
 
 	}
 
-	// TODO: is this needed? We should only register new, deduped items from the lines
-	// and anchors managers
 	register( item ) {
 
-		// ref-counted: the same item may be registered by multiple tiles
-		const count = this._refs.get( item ) ?? 0;
-		this._refs.set( item, count + 1 );
+		this._items.add( item );
 		this._queue.add( item );
 
 	}
 
 	unregister( item ) {
 
-		// drop the reference; the item is only fully removed once no tile wants it
-		const count = this._refs.get( item ) ?? 0;
-		if ( count <= 1 ) {
-
-			this._refs.delete( item );
-			this._queue.delete( item );
-
-		} else {
-
-			this._refs.set( item, count - 1 );
-
-		}
+		this._items.delete( item );
+		this._queue.delete( item );
 
 	}
 
@@ -137,7 +120,7 @@ export class SettlingManager {
 		if ( this.needsUpdate ) {
 
 			this.needsUpdate = false;
-			for ( const item of this._refs.keys() ) {
+			for ( const item of this._items.values() ) {
 
 				this._queue.add( item );
 
@@ -156,7 +139,20 @@ export class SettlingManager {
 
 	}
 
-	_setSettlingRay( lat, lon ) {
+	// deadline
+	_deadlineExpired() {
+
+		return performance.now() >= this._deadline;
+
+	}
+
+	_resetDeadline() {
+
+		this._deadline = performance.now() + this.maxSettleTimeMs;
+
+	}
+
+	_getSettlingRay( lat, lon ) {
 
 		// construct a downward ray at the given cartographic point in the local tiles frame
 		const { tiles } = this;
@@ -171,19 +167,28 @@ export class SettlingManager {
 
 	}
 
-	_getLocalSettlingRay( item ) {
+	_settleSample( lat, lon, target ) {
 
-		// build the prioritization ray; a line uses its midpoint sample as a representative
-		// TODO: add "settling" logic on the classes themselves?
-		if ( item instanceof LineAnnotation ) {
+		// cast a ray to snap a single cartographic sample onto the surface
+		const { tiles } = this;
+		const { origin, direction } = _raycaster.ray;
 
-			// TODO: this is a terrible way of determining the settling ray
-			const mid = item.lat.length >> 1;
-			this._setSettlingRay( item.lat[ mid ], item.lon[ mid ] );
+		// build the local ray and transform to world space for raycasting
+		this._getSettlingRay( lat, lon );
+		origin.applyMatrix4( tiles.group.matrixWorld );
+		direction.transformDirection( tiles.group.matrixWorld );
+
+		const hits = _raycaster.intersectObject( tiles.group );
+		if ( hits.length > 0 ) {
+
+			target
+				.copy( hits[ 0 ].point )
+				.applyMatrix4( tiles.group.matrixWorldInverse );
 
 		} else {
 
-			this._setSettlingRay( item.lat, item.lon );
+			// TODO: we are still seeing some points slip through tile gaps - should we hide them in this case?
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, target );
 
 		}
 
@@ -194,22 +199,16 @@ export class SettlingManager {
 		// runs forever: each pass classifies, bins, and raycasts whatever is in the
 		// queue when the pass begins, yielding whenever the per-tick budget is
 		// spent. items added after a pass starts are picked up on the next pass.
-
-		// per-generator scratch reused across passes. kept local ( rather than as
-		// module temps ) because a pass can span multiple frames across yields, so
-		// shared temps could be clobbered by another manager instance between ticks.
 		const ndcMatrix = new Matrix4();
 		const frustum = new Frustum();
 		const intersectingFrustum = new Set();
 		const settlingBins = [[], [], [], []];
 
-		// the shared budget deadline is reset to a fresh window each time the pass resumes
-		// after a yield.
 		this._resetDeadline();
 
 		while ( true ) {
 
-			const { _queue, _refs, tiles, camera } = this;
+			const { _queue, _items, tiles, camera, occupancy } = this;
 
 			// classify non-prioritized items by whether their ray intersects the frustum
 			if ( camera !== null ) {
@@ -225,18 +224,37 @@ export class SettlingManager {
 
 				for ( const item of _queue ) {
 
-					// prioritized items ( e.g. already displayed ) are handled regardless
-					if ( this.isPrioritized( item ) ) {
+					// visible items are prioritized regardless
+					if ( occupancy.visible.has( item ) ) {
 
 						continue;
 
 					}
 
-					// check if the projection ray intersects the frustum
-					this._getLocalSettlingRay( item );
-					if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
+					if ( item instanceof LineAnnotation ) {
 
-						intersectingFrustum.add( item );
+						// check if the middle anchor rays intersects the frustum
+						const { anchorPositions } = item;
+						const anchorPosition = anchorPositions[ anchorPositions.length >> 1 ];
+
+						this._getSettlingRay( anchorPosition.lat, anchorPosition.lon );
+						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
+
+							intersectingFrustum.add( item );
+							break;
+
+						}
+
+
+					} else {
+
+						// check if the point projection ray intersects the frustum
+						this._getSettlingRay( item.lat, item.lon );
+						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
+
+							intersectingFrustum.add( item );
+
+						}
 
 					}
 
@@ -260,7 +278,7 @@ export class SettlingManager {
 
 					tier = 3;
 
-				} else if ( this.isPrioritized( item ) ) {
+				} else if ( occupancy.visible.has( item ) ) {
 
 					tier = 2;
 
@@ -291,14 +309,12 @@ export class SettlingManager {
 					_queue.delete( item );
 
 					// skip items that were unregistered while queued
-					if ( ! _refs.has( item ) ) {
+					if ( ! _items.has( item ) ) {
 
 						continue;
 
 					}
 
-					// settle the item; a long line yields mid-settle ( inline, only when the
-					// budget is spent ) so its samples spread across ticks
 					yield* this._settleItem( item );
 
 					// yield between items once the budget is spent
@@ -325,46 +341,15 @@ export class SettlingManager {
 
 	}
 
-	_settleSample( lat, lon, target ) {
-
-		// cast a ray to snap a single cartographic sample onto the surface
-		const { tiles } = this;
-		const { origin, direction } = _raycaster.ray;
-
-		// build the local ray and transform to world space for raycasting
-		this._setSettlingRay( lat, lon );
-		origin.applyMatrix4( tiles.group.matrixWorld );
-		direction.transformDirection( tiles.group.matrixWorld );
-
-		const hits = _raycaster.intersectObject( tiles.group, true );
-		if ( hits.length > 0 ) {
-
-			hits[ 0 ].point.applyMatrix4( tiles.group.matrixWorldInverse );
-			target.copy( hits[ 0 ].point );
-
-		} else {
-
-			// TODO: we are still seeing some points slip through tile gaps
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, target );
-
-		}
-
-	}
-
 	*_settleItem( item ) {
 
-		// drape the item onto the surface. A point is a single sample; a line is many and
+		// TODO: add "settling" logic on the classes themselves?
 		if ( item instanceof LineAnnotation ) {
 
+			// drape the line onto the surface
+			const { _items } = this;
 			const { lat, lon, positions } = item;
 			for ( let i = 0, l = lat.length; i < l; i ++ ) {
-
-				// bail if the item was unregistered while paused
-				if ( ! this._refs.has( item ) ) {
-
-					return;
-
-				}
 
 				// TODO: this could request multiple hits and choose the one with a roughly vertical normal and
 				// adjusts the line in the least vertical way
@@ -375,30 +360,25 @@ export class SettlingManager {
 					yield;
 					this._resetDeadline();
 
+					// bail if the item was unregistered while paused
+					if ( ! _items.has( item ) ) {
+
+						return;
+
+					}
+
 				}
 
 			}
 
 		} else {
 
+			// settle the point onto the surface
 			this._settleSample( item.lat, item.lon, item.position );
 
 		}
 
 		item.ready = true;
-
-	}
-
-	// deadline
-	_deadlineExpired() {
-
-		return performance.now() >= this._deadline;
-
-	}
-
-	_resetDeadline() {
-
-		this._deadline = performance.now() + this.maxSettleTimeMs;
 
 	}
 
