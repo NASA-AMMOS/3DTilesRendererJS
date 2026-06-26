@@ -69,7 +69,7 @@ export class TextAnchorAnnotation {
 
 			result = result ?? _lastUsed;
 
-			if ( _lastUsed && _lastUsed.line.lodLevel > result.line.lodLevel ) {
+			if ( _lastUsed && _lastUsed.line.ready && _lastUsed.line.lodLevel > result.line.lodLevel ) {
 
 				result = _lastUsed;
 
