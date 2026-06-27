@@ -103,6 +103,8 @@ const KIND_TO_ICON = {
 const params = {
 
 	occupancyGrid: false,
+	annotationLines: false,
+	tileHierarchy: false,
 
 };
 
@@ -143,7 +145,12 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
-		filterAnnotation: ( layer, properties ) => properties.kind in KIND_TO_ICON,
+		filterAnnotation: ( layer, properties, type ) => {
+
+			if ( type === 1 ) return properties.kind in KIND_TO_ICON;
+			else return 'name' in properties;
+
+		},
 		onAnnotationsUpdate: ( added, removed ) => annotationsPoints.update( added, removed ),
 	} ) );
 
@@ -240,7 +247,17 @@ function init() {
 	const gui = new GUI();
 	gui.add( params, 'occupancyGrid' ).onChange( v => {
 
-		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).displayOccupancyGrid = v;
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.occupancy.enabled = v;
+
+	} );
+	gui.add( params, 'annotationLines' ).onChange( v => {
+
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths.enabled = v;
+
+	} );
+	gui.add( params, 'tileHierarchy' ).onChange( v => {
+
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.hierarchy.enabled = v;
 
 	} );
 

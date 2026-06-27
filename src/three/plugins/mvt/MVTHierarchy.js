@@ -18,7 +18,6 @@ function getKey( x, y, level ) {
 
 }
 
-
 class MVTTile {
 
 	constructor() {
@@ -105,7 +104,7 @@ class MVTTile {
 const _toPrune = new Set();
 export class MVTHierarchy extends EventDispatcher {
 
-	constructor( content ) {
+	constructor() {
 
 		super();
 
@@ -113,7 +112,7 @@ export class MVTHierarchy extends EventDispatcher {
 		this.cache = {
 			[ this.root.getKey() ]: this.root,
 		};
-		this.contentCache = content;
+		this.contentCache = null;
 		this._lastTime = - 1;
 
 	}
@@ -270,6 +269,25 @@ export class MVTHierarchy extends EventDispatcher {
 			return tileRequired;
 
 		}
+
+	}
+
+	getVisibleTiles() {
+
+		let arr = [];
+		for ( const key in this.cache ) {
+
+			const child = this.cache[ key ];
+
+			if ( child.visible ) {
+
+				arr.push( child );
+
+			}
+
+		}
+
+		return arr;
 
 	}
 

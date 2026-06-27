@@ -3,12 +3,8 @@ import { EventDispatcher, Matrix4, Vector2, Vector3 } from 'three';
 const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
-const _delta = /* @__PURE__ */ new Vector3();
 
-// suppress annotations within ~6 degrees of the globe horizon
-const PERSPECTIVE_CULL_ANGLE = Math.acos( 0.1 );
-
-export class AnnotationItem {
+export class OccupancyAnnotation {
 
 	constructor() {
 
@@ -20,7 +16,7 @@ export class AnnotationItem {
 		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
 		this.visible = false;
-		this._refCount = 0;
+		this.screenPos = new Vector3();
 
 	}
 
@@ -40,92 +36,6 @@ export class AnnotationItem {
 
 }
 
-export class PointAnnotationItem extends AnnotationItem {
-
-	constructor() {
-
-		super();
-
-		this.position = new Vector3();
-		this.lat = 0;
-		this.lon = 0;
-		this.radius = 32;
-
-		this._screenPos = new Vector3();
-		this._facingAngle = 0;
-
-	}
-
-	updateTransform( matrix, resolution, cameraPosition ) {
-
-		const { position } = this;
-		const screenPos = this._screenPos;
-
-		// project to screen space
-		screenPos.copy( position ).applyMatrix4( matrix );
-
-		// transform to resolution coordinates
-		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
-		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
-		screenPos.z = ( screenPos.z < - 1 || screenPos.z > 1 ) ? 1 : 0;
-
-		// facing ratio: dot( surface normal, direction to camera )
-		// TODO: store geodetic normal on the item at creation time and use it here instead of
-		// normalize( position )
-		if ( cameraPosition !== null ) {
-
-			_delta.subVectors( cameraPosition, position );
-			this._facingAngle = position.lengthSq() > 0 ? position.angleTo( _delta ) : 0;
-
-		} else {
-
-			this._facingAngle = 0;
-
-		}
-
-	}
-
-	copyPosition( source ) {
-
-		this.position.copy( source.position );
-		this.ready = true;
-
-	}
-
-	evaluate( handle ) {
-
-		const { _screenPos, radius, _facingAngle } = this;
-		if ( ! this.ready ) {
-
-			return false;
-
-		}
-
-		if ( _screenPos.z !== 0 ) {
-
-			return false;
-
-		}
-
-		if ( _facingAngle > PERSPECTIVE_CULL_ANGLE ) {
-
-			return false;
-
-		}
-
-		if ( handle.test( _screenPos.x, _screenPos.y, radius ) ) {
-
-			return false;
-
-		}
-
-		handle.mark( _screenPos.x, _screenPos.y, radius );
-		return true;
-
-	}
-
-}
-
 export class ScreenOccupationManager extends EventDispatcher {
 
 	constructor() {
@@ -140,7 +50,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// occupancy cells
 		this.resolution = new Vector2( 1, 1 );
 		this.size = 12;
-		this.cells = new Uint8Array( 1 );
+		this.cells = new Uint32Array( 1 );
 
 		// grid dimensions in cells, computed once per update and reused by _cellRange
 		this._totalResolution = new Vector2();
@@ -155,18 +65,19 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.added = new Set();
 
 		// prevents duplicate items during simultaneous LoD tile swaps
-		this._itemsById = new Map();
+		this._itemSet = new Set();
 		this._itemsNeedsUpdate = false;
 
+		this._id = - 1;
 		this.handle = {
 			test: ( x, y, r ) => {
 
-				const { cells } = this;
+				const { cells, _id } = this;
 				let hasCells = false;
 				const blocked = this._cellRange( x, y, r, ( x, y, i ) => {
 
 					hasCells = true;
-					return cells[ i ] !== 0;
+					return cells[ i ] !== 0 && cells[ i ] !== _id;
 
 				} );
 				return blocked || ! hasCells;
@@ -174,10 +85,10 @@ export class ScreenOccupationManager extends EventDispatcher {
 			},
 			mark: ( x, y, r ) => {
 
-				const { cells } = this;
+				const { cells, _id } = this;
 				return this._cellRange( x, y, r, ( x, y, i ) => {
 
-					cells[ i ] = 1;
+					cells[ i ] = _id;
 					return false;
 
 				} );
@@ -237,14 +148,14 @@ export class ScreenOccupationManager extends EventDispatcher {
 	syncItems() {
 
 		// reconstruct the items list
-		const { items, _itemsById } = this;
+		const { items, _itemSet } = this;
 		if ( this._itemsNeedsUpdate ) {
 
 			this._itemsNeedsUpdate = false;
-			items.length = _itemsById.size;
+			items.length = _itemSet.size;
 
 			let i = 0;
-			for ( const item of _itemsById.values() ) {
+			for ( const item of _itemSet.values() ) {
 
 				items[ i ] = item;
 				i ++;
@@ -332,6 +243,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 			const item = items[ i ];
+			this._id = i + 1;
 			if ( ndcMatrix !== null && item.evaluate( handle ) ) {
 
 				visible.add( item );
@@ -359,60 +271,17 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
-	getById( id ) {
-
-		return this._itemsById.get( id );
-
-	}
-
 	register( item ) {
 
-		// register an item to be included in the occupation grid calculations
-		const { _itemsById } = this;
-		const existing = _itemsById.get( item.id );
-		if ( existing ) {
-
-			// use ref counting to avoid double-displaying redundant items
-			existing._refCount ++;
-			if ( item.lodLevel > existing.lodLevel ) {
-
-				// use the highest LoD levels lat / lon assuming it's the most accurate
-				existing.lodLevel = item.lodLevel;
-				existing.lat = item.lat;
-				existing.lon = item.lon;
-
-			}
-
-			return existing;
-
-		} else {
-
-			// otherwise add the new item
-			item._refCount = 1;
-			_itemsById.set( item.id, item );
-			this._itemsNeedsUpdate = true;
-			return item;
-
-		}
+		this._itemSet.add( item );
+		this._itemsNeedsUpdate = true;
 
 	}
 
 	unregister( item ) {
 
-		// remove the item if our ref count has reached 0
-		item._refCount --;
-		if ( item._refCount > 0 ) {
-
-			return;
-
-		}
-
-		if ( this._itemsById.get( item.id ) === item ) {
-
-			this._itemsById.delete( item.id );
-			this._itemsNeedsUpdate = true;
-
-		}
+		this._itemSet.delete( item );
+		this._itemsNeedsUpdate = true;
 
 	}
 

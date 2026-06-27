@@ -48,6 +48,12 @@ function canUnconditionallyRefine( tile ) {
 // Resets the frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
+	if ( ! isProcessed( tile ) ) {
+
+		return;
+
+	}
+
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	if ( tile.traversal.lastFrameVisited !== renderer.frameCount ) {
@@ -460,6 +466,8 @@ function markVisibleTiles( tile, renderer ) {
 
 // Final traverse to toggle tile visibility.
 function toggleTiles( tile, renderer ) {
+
+	resetFrameState( tile, renderer );
 
 	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed ) {

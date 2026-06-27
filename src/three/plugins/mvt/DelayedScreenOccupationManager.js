@@ -129,12 +129,6 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 	}
 
 	// pass through to the underlying occupation manager
-	getById( id ) {
-
-		return this.manager.getById( id );
-
-	}
-
 	register( item ) {
 
 		return this.manager.register( item );
