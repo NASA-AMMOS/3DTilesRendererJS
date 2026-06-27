@@ -254,10 +254,6 @@ export class TextAnchorManager {
 
 		} );
 
-		// run a delayed cleanup in case there are other lines etc that will be
-		// added / removed from the manager and anchors.
-		this.scheduleCleanup();
-
 	}
 
 }
