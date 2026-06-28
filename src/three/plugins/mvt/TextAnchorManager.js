@@ -36,7 +36,7 @@ export class TextAnchorManager {
 
 			anchors.forEach( anchor => {
 
-				if ( anchor.referencePaths.length === 0 ) {
+				if ( anchor.isEmpty() ) {
 
 					anchors.delete( anchor );
 					removed.add( anchor );
@@ -126,7 +126,8 @@ export class TextAnchorManager {
 
 			}
 
-			const { range, lodLevel } = newLines[ 0 ];
+			// all lines are expected to be of the same LoD and tile if passed in at once
+			const baseLine = newLines[ 0 ];
 
 			// For each existing anchor, match it to the closest new anchor in the relevant set
 			const anchorSet = _anchorsById.get( id );
@@ -137,8 +138,8 @@ export class TextAnchorManager {
 				let bestLine = null;
 				let bestIndex = - 1;
 				if (
-					! rangeContains( range, anchor.lat, anchor.lon ) ||
-					anchor.referencePaths.find( ref => ref.line.lodLevel === lodLevel )
+					! baseLine.hasCoverage( anchor.lat, anchor.lon ) ||
+					anchor.hasLoD( baseLine.lodLevel )
 				) {
 
 					return;
@@ -191,7 +192,7 @@ export class TextAnchorManager {
 
 						const anchor = new TextAnchorAnnotation( id );
 						anchor.addLine( line, index );
-						if ( rangeContains( line.range, anchor.lat, anchor.lon ) ) {
+						if ( line.hasCoverage( anchor.lat, anchor.lon ) ) {
 
 							anchorPosition.ref = anchor;
 							anchorSet.add( anchor );

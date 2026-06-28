@@ -5,7 +5,6 @@ import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 let annotationIndex = 0;
 export class TextAnchorAnnotation extends OccupancyAnnotation {
 
-	// TODO: cache these - possibly update in "evaluate"
 	get lat() {
 
 		return this.getActiveReference().lat;
@@ -15,6 +14,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	get lon() {
 
 		return this.getActiveReference().lon;
+
+	}
+
+	get text() {
+
+		return this.properties.name || '';
 
 	}
 
@@ -46,6 +51,50 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		this.referencePaths = [];
 		this._lastUsed = null;
+
+	}
+
+	// overrides
+	evaluate() {
+
+		// TODO: update the "active reference" here to avoid iteration every frame
+		const { text } = this;
+		const { screenPositions } = this.getActiveReference().line;
+
+		if ( ! text ) {
+
+			return false;
+
+		}
+
+		// TODO:
+		// 1. March along the path in both directions starting at the anchor, measuring
+		// out a distance long enough for all the letters while evaluating occupation.
+		// 2. Early out if the angle is too steep, corners too tight, crossing?
+		// 3. Determine the text direction by average path direction? Or flip character halfway through?
+		// Or early out if it flips? Or by lowest end point?
+		// 4. Place the characters along the line, orienting to the path, marking the
+		// locations in the grid.
+
+	}
+
+	updateTransform( matrix, resolution, cameraPosition ) {
+
+		// update the screen positions for shared line
+		this.getActiveReference().line.updateTransform( matrix, resolution, cameraPosition );
+
+	}
+
+	// anchor functions
+	isEmpty() {
+
+		return this.referencePaths.length === 0;
+
+	}
+
+	hasLoD( lod ) {
+
+		return this.referencePaths.find( ref => ref.line.lodLevel === lod );
 
 	}
 

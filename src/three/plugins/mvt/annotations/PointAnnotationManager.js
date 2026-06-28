@@ -12,6 +12,8 @@ export class PointAnnotationManager {
 
 	add( annotation ) {
 
+		// TODO: we need to "refine" the point annotation positions based on LoD level
+		// so we always have the most precise lat / lon position
 		const { annotations, added } = this;
 		const { id } = annotation;
 		if ( ! annotations.has( id ) ) {

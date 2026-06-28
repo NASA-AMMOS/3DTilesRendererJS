@@ -1,28 +1,17 @@
-import { MathUtils, Vector3 } from 'three';
+import { MathUtils, Vector3, Vector2, Matrix4 } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
-/**
- * A stitched, subsampled polyline parsed from MVT line ( type 2 ) content. Holds the
- * per-sample cartographic coordinates and a parallel array of settled world positions
- * ( populated later during raycast settling ), plus the feature metadata.
- *
- * This is the unit of "settling" for labeled lines. It is intentionally NOT registered
- * directly into the screen occupation grid — anchors derived from these paths are what
- * occupy the grid.
- * @private
- */
+// Share path annotation used for text anchors
 export class LineAnnotation extends OccupancyAnnotation {
 
-	/**
-	 * Number of samples in the path.
-	 * @returns {number}
-	 */
+	// number of points in the path
 	get count() {
 
 		return this.lat.length;
 
 	}
 
+	// number of anchors
 	get anchorCount() {
 
 		return this.anchorPositions.length;
@@ -33,6 +22,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		super();
 
+		// the range of the tile this line is associated with
 		this.range = null;
 
 		// per-sample cartographic coordinates in radians
@@ -42,20 +32,61 @@ export class LineAnnotation extends OccupancyAnnotation {
 		// per-sample settled positions in tiles.group local space, filled during settling
 		this.positions = [];
 
-		// anchors placed along the path, each `{ i0, i1, alpha, lat, lon }`
+		// anchors placed along the path, each `{ i0, i1, alpha, lat, lon, ref }`
 		this.anchorPositions = [];
+
+		// screen positions and dirty variables
+		this.screenPositions = [];
+		this.cachedMatrix = new Matrix4();
+		this.cachedResolution = new Vector2();
 
 	}
 
-	copyPosition() {
+	hasCoverage( lat, lon ) {
 
-		throw new Error();
+		const [ minLon, minLat, maxLon, maxLat ] = this.range;
+		return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
 
 	}
 
 	evaluate() {
 
 		throw new Error();
+
+	}
+
+	updateTransform( matrix, resolution, cameraPosition ) {
+
+		const { positions, screenPositions, cachedMatrix, cachedResolution } = this;
+		if ( cachedMatrix.equals( matrix ) && cachedResolution.equals( resolution ) ) {
+
+			return;
+
+		}
+
+		cachedMatrix.copy( matrix );
+		cachedResolution.copy( resolution );
+
+		while ( screenPositions.length < positions.length ) {
+
+			screenPositions.push( new Vector3() );
+
+		}
+
+		for ( let i = 0, l = screenPositions.length; i < l; i ++ ) {
+
+			const position = positions[ i ];
+			const screenPos = screenPositions[ i ];
+
+			// project to screen space
+			screenPos.copy( position ).applyMatrix4( matrix );
+
+			// transform to resolution coordinates
+			screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
+			screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
+			screenPos.z = MathUtils.mapLinear( screenPos.z, - 1, 1, 0, 1 );
+
+		}
 
 	}
 
