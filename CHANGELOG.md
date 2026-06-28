@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Export INDEXED_COLOR for DebugTilesPlugin
 - TilesFadePlugin: Remove "displayActiveTiles" hack so tiles renderer settings are respected.
 - TilesRenderer: Fixed unconditional traversal behavior.
+- TilesRenderer: Fixed tiles occasionally getting "stuck" visible during traversal.
 
 ## [0.4.28] - 2026.06.09
 ### Fixed
