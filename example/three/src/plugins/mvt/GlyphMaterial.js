@@ -71,33 +71,33 @@ export class GlyphMaterial extends PointsMaterial {
 				`
 			);
 
-			shader.fragmentShader = shader.fragmentShader.replace(
-				'#include <color_pars_fragment>',
-				/* glsl */`
-					#include <color_pars_fragment>
+			shader.fragmentShader = /* glsl */`
+
 					uniform sampler2D glyphAtlas;
 					uniform vec2 glyphCellSize;
 					varying vec2 vGlyphUV;
 					varying float vAlpha;
-				`
-			);
 
-			shader.fragmentShader = shader.fragmentShader.replace(
-				'#include <opaque_fragment>',
-				/* glsl */`
-					if ( vGlyphUV.x >= 0.0 ) {
+					void main() {
 
-						vec4 glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize * vec2( 1.0, - 1.0 ) );
-						outgoingLight = mix( outgoingLight, glyph.rgb, glyph.a );
-						diffuseColor.a = glyph.a;
+						vec4 diffuseColor = vec4( 0.0 );
+						if ( vGlyphUV.x >= 0.0 ) {
+
+							vec4 glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize * vec2( 1.0, - 1.0 ) );
+							diffuseColor = glyph;
+
+						}
+
+						gl_FragColor = diffuseColor;
+						#include <tonemapping_fragment>
+						#include <colorspace_fragment>
+						#include <premultiplied_alpha_fragment>
+
 
 					}
 
-					diffuseColor.a *= vAlpha;
 
-					#include <opaque_fragment>
-				`
-			);
+			`;
 
 		};
 

@@ -108,6 +108,9 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @param {Object} [styles={}]
 	 * @param {string} [styles.font=''] CSS font string (e.g. `'bold 48px sans-serif'`).
 	 * @param {string} [styles.color='white'] CSS fill color.
+	 * @param {string|null} [styles.strokeStyle=null] CSS stroke color drawn under the fill, or
+	 *   null to skip the stroke.
+	 * @param {number} [styles.strokeWidth=1] Stroke width in atlas pixels.
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
@@ -116,15 +119,31 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		const {
 			font = '',
 			color = 'white',
+			strokeStyle = null,
+			strokeWidth = 1,
 		} = styles;
 
 		return this._draw( key, ( ctx, x, y, w, h ) => {
 
+			const cx = x + w / 2;
+			const cy = y + h / 2;
+
 			ctx.font = font;
-			ctx.fillStyle = color;
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
-			ctx.fillText( char, x + w / 2, y + h / 2 );
+
+			// stroke first so the fill sits on top of the halo
+			if ( strokeStyle !== null ) {
+
+				ctx.lineJoin = 'round';
+				ctx.lineWidth = strokeWidth;
+				ctx.strokeStyle = strokeStyle;
+				ctx.strokeText( char, cx, cy );
+
+			}
+
+			ctx.fillStyle = color;
+			ctx.fillText( char, cx, cy );
 
 		} );
 

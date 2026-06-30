@@ -1,4 +1,13 @@
+import { Vector3 } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
+
+// screen-space spacing / footprint per character, in pixels
+const CHARACTER_SIZE = 12;
+
+// scratch reused across evaluate() calls ( synchronous, single pass )
+const _cumulative = [];
+const _segIndices = [];
+const _segAlphas = [];
 
 // A text anchor that lays on a give line and stores references to path from different LoDs,
 // choosing the best one to "snap" to.
@@ -52,29 +61,125 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		this.referencePaths = [];
 		this._lastUsed = null;
 
+		// world-space ( tiles.group local ) position per character, filled by evaluate()
+		this.characterPositions = [];
+
 	}
 
 	// overrides
-	evaluate() {
+	evaluate( handle ) {
 
-		// TODO: update the "active reference" here to avoid iteration every frame
 		const { text } = this;
-		const { screenPositions } = this.getActiveReference().line;
-
 		if ( ! text ) {
 
 			return false;
 
 		}
 
-		// TODO:
-		// 1. March along the path in both directions starting at the anchor, measuring
-		// out a distance long enough for all the letters while evaluating occupation.
-		// 2. Early out if the angle is too steep, corners too tight, crossing?
-		// 3. Determine the text direction by average path direction? Or flip character halfway through?
-		// Or early out if it flips? Or by lowest end point?
-		// 4. Place the characters along the line, orienting to the path, marking the
-		// locations in the grid.
+		// TODO: update the "active reference" here to avoid iteration every frame
+		const { line, i0, alpha } = this.getActiveReference();
+		if ( ! line.ready ) {
+
+			return false;
+
+		}
+
+		const { screenPositions, positions } = line;
+		const sampleCount = positions.length;
+		if ( sampleCount < 2 ) {
+
+			return false;
+
+		}
+
+		// cumulative 2d screen-space arc length per sample
+		_cumulative.length = sampleCount;
+		_cumulative[ 0 ] = 0;
+		for ( let i = 1; i < sampleCount; i ++ ) {
+
+			const a = screenPositions[ i - 1 ];
+			const b = screenPositions[ i ];
+			const dx = b.x - a.x;
+			const dy = b.y - a.y;
+			_cumulative[ i ] = _cumulative[ i - 1 ] + Math.sqrt( dx * dx + dy * dy );
+
+		}
+
+		const totalLength = _cumulative[ sampleCount - 1 ];
+
+		// arc length of the anchor along the screen-projected path
+		const anchorLength = _cumulative[ i0 ] + alpha * ( _cumulative[ i0 + 1 ] - _cumulative[ i0 ] );
+
+		// march the characters out from the anchor in both directions, centered. measure and
+		// test every character first so a string that doesn't fit leaves no marks behind.
+		// TODO: early out on tight corners / steep angles; determine direction + character flip
+		const length = text.length;
+		const halfChar = ( length - 1 ) * 0.5;
+		const radius = CHARACTER_SIZE / 2;
+
+		let seg = 0;
+		for ( let k = 0; k < length; k ++ ) {
+
+			const target = anchorLength + ( k - halfChar ) * CHARACTER_SIZE;
+
+			// the path is too short on screen to hold the whole string
+			if ( target < 0 || target > totalLength ) {
+
+				return false;
+
+			}
+
+			// advance to the segment containing "target" ( monotonic across k )
+			while ( seg < sampleCount - 2 && _cumulative[ seg + 1 ] < target ) {
+
+				seg ++;
+
+			}
+
+			const segLength = _cumulative[ seg + 1 ] - _cumulative[ seg ];
+			const segAlpha = segLength > 0 ? ( target - _cumulative[ seg ] ) / segLength : 0;
+
+			const a = screenPositions[ seg ];
+			const b = screenPositions[ seg + 1 ];
+			const sx = a.x + ( b.x - a.x ) * segAlpha;
+			const sy = a.y + ( b.y - a.y ) * segAlpha;
+			const sz = a.z + ( b.z - a.z ) * segAlpha;
+
+			// off-screen in depth, or colliding with an already-placed annotation
+			if ( sz < 0 || sz > 1 || handle.test( sx, sy, radius ) ) {
+
+				return false;
+
+			}
+
+			_segIndices[ k ] = seg;
+			_segAlphas[ k ] = segAlpha;
+
+		}
+
+		// it fits: mark occupancy and record a world-space position per character
+		const { characterPositions } = this;
+		while ( characterPositions.length < length ) {
+
+			characterPositions.push( new Vector3() );
+
+		}
+
+		characterPositions.length = length;
+		for ( let k = 0; k < length; k ++ ) {
+
+			const index = _segIndices[ k ];
+			const segAlpha = _segAlphas[ k ];
+
+			const a = screenPositions[ index ];
+			const b = screenPositions[ index + 1 ];
+			handle.mark( a.x + ( b.x - a.x ) * segAlpha, a.y + ( b.y - a.y ) * segAlpha, radius );
+
+			characterPositions[ k ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
+
+		}
+
+		return true;
 
 	}
 
