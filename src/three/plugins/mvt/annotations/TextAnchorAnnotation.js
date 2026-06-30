@@ -64,6 +64,9 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// tiles.group local position per character, filled by evaluate()
 		this.characterPositions = [];
 
+		// screen-space baseline angle per character ( radians ), filled by evaluate()
+		this.characterAngles = [];
+
 	}
 
 	// overrides
@@ -169,7 +172,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		// it fits: mark occupancy and record a world-space position per character
-		const { characterPositions } = this;
+		const { characterPositions, characterAngles } = this;
 		while ( characterPositions.length < length ) {
 
 			characterPositions.push( new Vector3() );
@@ -177,6 +180,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		characterPositions.length = length;
+		characterAngles.length = length;
 
 		// flip the character-to-slot mapping when the path runs right-to-left on screen so the
 		// label always reads left-to-right
@@ -192,6 +196,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			handle.mark( a.x + ( b.x - a.x ) * segAlpha, a.y + ( b.y - a.y ) * segAlpha, radius );
 
 			characterPositions[ k ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
+
+			// baseline angle from the segment direction ( screen space, y down ), pointing in the
+			// reading direction so glyphs stay upright after a flip
+			const dx = ( b.x - a.x ) * ( flip ? - 1 : 1 );
+			const dy = ( b.y - a.y ) * ( flip ? - 1 : 1 );
+			characterAngles[ k ] = Math.atan2( dy, dx );
 
 		}
 

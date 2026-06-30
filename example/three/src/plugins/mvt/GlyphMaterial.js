@@ -57,8 +57,10 @@ export class GlyphMaterial extends PointsMaterial {
 					#include <color_pars_vertex>
 					attribute vec2 glyphUV;
 					attribute float alpha;
+					attribute float rotation;
 					varying vec2 vGlyphUV;
 					varying float vAlpha;
+					varying float vAngle;
 				`
 			);
 
@@ -68,6 +70,7 @@ export class GlyphMaterial extends PointsMaterial {
 					#include <color_vertex>
 					vGlyphUV = glyphUV;
 					vAlpha = alpha;
+					vAngle = rotation;
 				`
 			);
 
@@ -77,13 +80,22 @@ export class GlyphMaterial extends PointsMaterial {
 					uniform vec2 glyphCellSize;
 					varying vec2 vGlyphUV;
 					varying float vAlpha;
+					varying float vAngle;
 
 					void main() {
 
 						vec4 diffuseColor = vec4( 0.0 );
 						if ( vGlyphUV.x >= 0.0 ) {
 
-							vec4 glyph = texture2D( glyphAtlas, vGlyphUV + gl_PointCoord * glyphCellSize * vec2( 1.0, - 1.0 ) );
+							// rotate the point-sprite lookup around its center so the glyph follows
+							// the path direction; clamp keeps the rotated corners inside the slot
+							vec2 pc = gl_PointCoord - 0.5;
+							float c = cos( vAngle );
+							float s = sin( vAngle );
+							pc = vec2( c * pc.x + s * pc.y, - s * pc.x + c * pc.y ) + 0.5;
+							pc = clamp( pc, 0.0, 1.0 );
+
+							vec4 glyph = texture2D( glyphAtlas, vGlyphUV + pc * glyphCellSize * vec2( 1.0, - 1.0 ) );
 							diffuseColor = glyph;
 
 						}

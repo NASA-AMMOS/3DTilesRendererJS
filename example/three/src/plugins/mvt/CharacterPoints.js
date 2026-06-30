@@ -115,15 +115,18 @@ export class CharacterPoints extends Points {
 		let posAttr = geometry.getAttribute( 'position' );
 		let glyphUVAttr = geometry.getAttribute( 'glyphUV' );
 		let alphaAttr = geometry.getAttribute( 'alpha' );
+		let angleAttr = geometry.getAttribute( 'angle' );
 		if ( ! posAttr || posAttr.count < count ) {
 
 			geometry.dispose();
 			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
 			glyphUVAttr = new BufferAttribute( new Float32Array( count * 2 ), 2 );
 			alphaAttr = new BufferAttribute( new Float32Array( count ), 1 );
+			angleAttr = new BufferAttribute( new Float32Array( count ), 1 );
 			geometry.setAttribute( 'position', posAttr );
 			geometry.setAttribute( 'glyphUV', glyphUVAttr );
 			geometry.setAttribute( 'alpha', alphaAttr );
+			geometry.setAttribute( 'angle', angleAttr );
 
 		}
 
@@ -133,6 +136,7 @@ export class CharacterPoints extends Points {
 		for ( const anchor of _anchors ) {
 
 			const positions = anchor.characterPositions;
+			const angles = anchor.characterAngles;
 			const text = anchor.text;
 			for ( let c = 0, l = positions.length; c < l; c ++ ) {
 
@@ -151,6 +155,7 @@ export class CharacterPoints extends Points {
 				}
 
 				alphaAttr.setX( i, 1 );
+				angleAttr.setX( i, angles[ c ] );
 				i ++;
 
 			}
@@ -160,6 +165,7 @@ export class CharacterPoints extends Points {
 		posAttr.needsUpdate = true;
 		glyphUVAttr.needsUpdate = true;
 		alphaAttr.needsUpdate = true;
+		angleAttr.needsUpdate = true;
 
 	}
 
