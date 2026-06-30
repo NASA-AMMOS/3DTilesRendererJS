@@ -57,7 +57,7 @@ export class GlyphMaterial extends PointsMaterial {
 					#include <color_pars_vertex>
 					attribute vec2 glyphUV;
 					attribute float alpha;
-					attribute float rotation;
+					attribute float angle;
 					varying vec2 vGlyphUV;
 					varying float vAlpha;
 					varying float vAngle;
@@ -70,7 +70,7 @@ export class GlyphMaterial extends PointsMaterial {
 					#include <color_vertex>
 					vGlyphUV = glyphUV;
 					vAlpha = alpha;
-					vAngle = rotation;
+					vAngle = angle;
 				`
 			);
 

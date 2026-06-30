@@ -4,6 +4,10 @@ import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 // screen-space spacing / footprint per character, in pixels
 const CHARACTER_SIZE = 10;
 
+// reject labels whose projected baseline turns more than this in total ( radians ), since
+// sharply curving text becomes hard to read
+const MAX_LABEL_ANGLE = Math.PI / 2;
+
 // scratch reused across evaluate() calls ( synchronous, single pass )
 const _cumulative = [];
 const _segIndices = [];
@@ -115,7 +119,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		// march the characters out from the anchor in both directions, centered. measure and
 		// test every character first so a string that doesn't fit leaves no marks behind.
-		// TODO: early out on tight corners / steep angles
+		// TODO: also reject foreshortened paths ( tiny screen-space segments )
 		const length = text.length;
 		const halfChar = ( length - 1 ) * 0.5;
 		const radius = CHARACTER_SIZE / 2;
@@ -123,6 +127,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		let seg = 0;
 		let firstX = 0;
 		let lastX = 0;
+		let prevAngle = 0;
+		let totalTurn = 0;
 		for ( let k = 0; k < length; k ++ ) {
 
 			const target = anchorLength + ( k - halfChar ) * CHARACTER_SIZE;
@@ -165,6 +171,23 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			}
 
 			lastX = sx;
+
+			// accumulate the absolute turn between consecutive character tangents and reject
+			// paths that curve too sharply across the label to stay readable
+			const angle = Math.atan2( b.y - a.y, b.x - a.x );
+			if ( k > 0 ) {
+
+				const delta = Math.atan2( Math.sin( angle - prevAngle ), Math.cos( angle - prevAngle ) );
+				totalTurn += Math.abs( delta );
+				if ( totalTurn > MAX_LABEL_ANGLE ) {
+
+					return false;
+
+				}
+
+			}
+
+			prevAngle = angle;
 
 			_segIndices[ k ] = seg;
 			_segAlphas[ k ] = segAlpha;
