@@ -88,7 +88,9 @@ export class GlyphMaterial extends PointsMaterial {
 
 						}
 
+						diffuseColor.a *= vAlpha;
 						gl_FragColor = diffuseColor;
+
 						#include <tonemapping_fragment>
 						#include <colorspace_fragment>
 						#include <premultiplied_alpha_fragment>

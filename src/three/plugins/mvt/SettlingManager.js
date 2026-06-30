@@ -152,18 +152,18 @@ export class SettlingManager {
 
 	}
 
-	_getSettlingRay( lat, lon ) {
+	_getSettlingRay( lat, lon, raycaster ) {
 
 		// construct a downward ray at the given cartographic point in the local tiles frame
 		const { tiles } = this;
-		const { origin, direction } = _raycaster.ray;
+		const { origin, direction } = raycaster.ray;
 
 		tiles.ellipsoid.getCartographicToPosition( lat, lon, 1e8, origin );
 		tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, direction );
 		direction.sub( origin ).normalize();
 
-		_raycaster.far = 2 * 1e8;
-		_raycaster.firstHitOnly = true;
+		raycaster.far = 2 * 1e8;
+		raycaster.firstHitOnly = true;
 
 	}
 
@@ -174,7 +174,7 @@ export class SettlingManager {
 		const { origin, direction } = _raycaster.ray;
 
 		// build the local ray and transform to world space for raycasting
-		this._getSettlingRay( lat, lon );
+		this._getSettlingRay( lat, lon, _raycaster );
 		origin.applyMatrix4( tiles.group.matrixWorld );
 		direction.transformDirection( tiles.group.matrixWorld );
 
@@ -236,8 +236,9 @@ export class SettlingManager {
 						// check if the middle anchor rays intersects the frustum
 						const { anchorPositions } = item;
 						const anchorPosition = anchorPositions[ anchorPositions.length >> 1 ];
+						const { lat, lon } = anchorPosition;
 
-						this._getSettlingRay( anchorPosition.lat, anchorPosition.lon );
+						this._getSettlingRay( lat, lon, _raycaster );
 						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
 
 							intersectingFrustum.add( item );
@@ -249,7 +250,7 @@ export class SettlingManager {
 					} else {
 
 						// check if the point projection ray intersects the frustum
-						this._getSettlingRay( item.lat, item.lon );
+						this._getSettlingRay( item.lat, item.lon, _raycaster );
 						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
 
 							intersectingFrustum.add( item );

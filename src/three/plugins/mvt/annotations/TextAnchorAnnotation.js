@@ -2,7 +2,7 @@ import { Vector3 } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
 // screen-space spacing / footprint per character, in pixels
-const CHARACTER_SIZE = 12;
+const CHARACTER_SIZE = 10;
 
 // scratch reused across evaluate() calls ( synchronous, single pass )
 const _cumulative = [];
@@ -61,7 +61,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		this.referencePaths = [];
 		this._lastUsed = null;
 
-		// world-space ( tiles.group local ) position per character, filled by evaluate()
+		// tiles.group local position per character, filled by evaluate()
 		this.characterPositions = [];
 
 	}
@@ -112,12 +112,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		// march the characters out from the anchor in both directions, centered. measure and
 		// test every character first so a string that doesn't fit leaves no marks behind.
-		// TODO: early out on tight corners / steep angles; determine direction + character flip
+		// TODO: early out on tight corners / steep angles
 		const length = text.length;
 		const halfChar = ( length - 1 ) * 0.5;
 		const radius = CHARACTER_SIZE / 2;
 
 		let seg = 0;
+		let firstX = 0;
+		let lastX = 0;
 		for ( let k = 0; k < length; k ++ ) {
 
 			const target = anchorLength + ( k - halfChar ) * CHARACTER_SIZE;
@@ -152,6 +154,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
+			// track the screen x of the path ends to decide reading direction below
+			if ( k === 0 ) {
+
+				firstX = sx;
+
+			}
+
+			lastX = sx;
+
 			_segIndices[ k ] = seg;
 			_segAlphas[ k ] = segAlpha;
 
@@ -166,10 +177,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		characterPositions.length = length;
+
+		// flip the character-to-slot mapping when the path runs right-to-left on screen so the
+		// label always reads left-to-right
+		const flip = lastX < firstX;
 		for ( let k = 0; k < length; k ++ ) {
 
-			const index = _segIndices[ k ];
-			const segAlpha = _segAlphas[ k ];
+			const slot = flip ? length - 1 - k : k;
+			const index = _segIndices[ slot ];
+			const segAlpha = _segAlphas[ slot ];
 
 			const a = screenPositions[ index ];
 			const b = screenPositions[ index + 1 ];
