@@ -46,29 +46,43 @@ function collectMeshes( object ) {
  */
 
 /**
- * Bundles the callbacks the `MVTAnnotationsPlugin` needs into a single object, so a caller passes
- * one `driver` rather than several loose callbacks. Subclass and override the methods to customize
- * which features become annotations, their placement priority, per-character sizing, and how
- * visibility changes are rendered.
+ * Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
+ * the methods to customize which features become annotations, their placement priority, per-character
+ * sizing, the displayed text, and how visibility changes are rendered.
  */
 export class MVTAnnotationsDriver {
 
 	constructor() {
 
-		// the plugin mounts this group under tiles.group on init and removes it on dispose; add
-		// any three.js objects the driver renders to it
+		/**
+		 * Render group for the driver's own three.js objects. The plugin mounts it under
+		 * `tiles.group` on `init` and removes it on `dispose`; add any objects the driver draws to it.
+		 * @type {Group}
+		 */
 		this.group = new Group();
 
 	}
 
-	// return true to include a feature as an annotation ( type 1 = point, 2 = line )
+	/**
+	 * Whether an MVT feature should be included as an annotation.
+	 * @param {string} layer - The MVT layer name the feature belongs to.
+	 * @param {Object} properties - The feature's property map.
+	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
+	 * @returns {boolean} True to include the feature as an annotation.
+	 */
 	filterAnnotation( layer, properties, type ) {
 
 		return false;
 
 	}
 
-	// relative placement priority — lower is placed first and wins collisions
+	/**
+	 * Relative placement priority between two annotations, following the `Array.prototype.sort`
+	 * contract. Lower values sort first, are placed first, and win collisions.
+	 * @param {Object} a - The first annotation.
+	 * @param {Object} b - The second annotation.
+	 * @returns {number} Negative if `a` precedes `b`, positive if it follows, `0` if equal.
+	 */
 	sortAnnotations( a, b ) {
 
 		const rankA = a.properties[ 'rank' ] ?? 1e10;
@@ -77,23 +91,41 @@ export class MVTAnnotationsDriver {
 
 	}
 
-	// per-character advance width ( pixels ) used for text label spacing
+	/**
+	 * Advance width of a single character, in pixels, used to space glyphs along text labels.
+	 * @param {string} char - The character to measure.
+	 * @returns {number} The advance width in pixels.
+	 */
 	measureChar( char ) {
 
 		return 1;
 
 	}
 
-	// the string a line / road annotation should display for the given feature properties
+	/**
+	 * The string a line / road annotation should display for the given feature.
+	 * @param {Object} properties - The feature's property map.
+	 * @returns {string} The label text, or an empty string to render nothing.
+	 */
 	getText( properties ) {
 
 		return properties.name ?? '';
 
 	}
 
-	// called each frame with the annotations that became visible / hidden
+	/**
+	 * Called each frame with the annotations whose visibility changed, for the caller to render.
+	 * @param {Set} added - Annotations that became visible this frame.
+	 * @param {Set} removed - Annotations that became hidden this frame.
+	 * @returns {void}
+	 */
 	onAnnotationsUpdate( added, removed ) {}
 
+	/**
+	 * Releases any resources the driver created (geometries, materials, textures, etc.). Called by
+	 * the plugin from its own `dispose`.
+	 * @returns {void}
+	 */
 	dispose() {}
 
 }
