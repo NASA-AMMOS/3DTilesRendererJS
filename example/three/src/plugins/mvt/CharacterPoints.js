@@ -13,8 +13,8 @@ export class CharacterPoints extends Points {
 	constructor( options = {} ) {
 
 		const {
-			size = 5,
-			glyphSize = 32,
+			size = 14,
+			glyphSize = 14 * window.devicePixelRatio,
 			slotCount = 256,
 			font = null,
 			strokeStyle = 'black',
@@ -61,7 +61,7 @@ export class CharacterPoints extends Points {
 		this._lastUpdateTime = now;
 
 		// add new anchors, refresh LoD-swapped references, reverse in-progress fade-outs
-		const { _entryMap, _orderedEntries } = this;
+		const { _entryMap, _orderedEntries, fadeInDuration, fadeOutDuration } = this;
 		for ( const item of added ) {
 
 			const existing = _entryMap.get( item.id );
@@ -73,7 +73,8 @@ export class CharacterPoints extends Points {
 
 			} else {
 
-				existing.item = item; // keep reference fresh (LoD swap)
+				// keep reference fresh (LoD swap)
+				existing.item = item;
 				if ( existing.state === 'out' ) existing.state = 'in';
 
 			}
@@ -98,7 +99,7 @@ export class CharacterPoints extends Points {
 
 			if ( entry.state === 'in' ) {
 
-				entry.fade = Math.min( 1, entry.fade + dt / this.fadeInDuration );
+				entry.fade = Math.min( 1, entry.fade + dt / fadeInDuration );
 				if ( entry.fade >= 1 ) {
 
 					entry.state = 'visible';
@@ -107,7 +108,7 @@ export class CharacterPoints extends Points {
 
 			} else if ( entry.state === 'out' ) {
 
-				entry.fade = Math.max( 0, entry.fade - dt / this.fadeOutDuration );
+				entry.fade = Math.max( 0, entry.fade - dt / fadeOutDuration );
 				if ( entry.fade <= 0 ) {
 
 					toRemove.push( id );
@@ -157,21 +158,22 @@ export class CharacterPoints extends Points {
 	measureCharacter( char ) {
 
 		const { _advanceCache } = this;
-		let advance = _advanceCache.get( char );
-		if ( advance === undefined ) {
+		if ( ! _advanceCache.has( char ) ) {
 
-			advance = this._measureCtx.measureText( char ).width / this._measureSize;
+			const advance = this._measureCtx.measureText( char ).width / this._measureSize;
 			_advanceCache.set( char, advance );
 
 		}
 
-		return advance + 0.15;
+		return _advanceCache.get( char ) + 0.15;
 
 	}
 
 	// uv bounds of the glyph for `char`, rasterizing it into the atlas on first use
 	_glyphUV( char ) {
 
+		// TODO: we need to use a smart counter to determine when
+		// to free a slot
 		const { glyphAtlas } = this;
 		if ( ! glyphAtlas.has( char ) ) {
 
@@ -190,8 +192,7 @@ export class CharacterPoints extends Points {
 
 	_updateGeometry() {
 
-		const origin = this.position;
-		const { _orderedEntries, geometry } = this;
+		const { _orderedEntries, geometry, position } = this;
 
 		// total character count across all entries ( including fading ones )
 		let count = 0;
@@ -201,6 +202,7 @@ export class CharacterPoints extends Points {
 
 		}
 
+		// expand the geometry buffers if needed
 		let posAttr = geometry.getAttribute( 'position' );
 		let glyphUVAttr = geometry.getAttribute( 'glyphUV' );
 		let alphaAttr = geometry.getAttribute( 'alpha' );
@@ -232,7 +234,7 @@ export class CharacterPoints extends Points {
 			for ( let c = 0, l = positions.length; c < l; c ++ ) {
 
 				const p = positions[ c ];
-				posAttr.setXYZ( i, p.x - origin.x, p.y - origin.y, p.z - origin.z );
+				posAttr.setXYZ( i, p.x - position.x, p.y - position.y, p.z - position.z );
 
 				const uv = this._glyphUV( text[ c ] );
 				if ( uv !== null ) {
