@@ -102,7 +102,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	}
 
 	/**
-	 * Renders a single character centered in the slot.
+	 * Renders a single character in the slot, centered on its ink bounding box.
 	 * @param {string} key
 	 * @param {string} char - The character to draw.
 	 * @param {Object} [styles={}]
@@ -132,18 +132,24 @@ export class GlyphAtlasTexture extends CanvasTexture {
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
 
+			// center the glyph by its ink bounding box, not its advance width, so asymmetric side
+			// bearings ( e.g. 'j', 'l', punctuation ) don't shift the visible glyph off center
+			const m = ctx.measureText( char );
+			const drawX = cx - ( m.actualBoundingBoxRight - m.actualBoundingBoxLeft ) / 2;
+			const drawY = cy - ( m.actualBoundingBoxDescent - m.actualBoundingBoxAscent ) / 2;
+
 			// stroke first so the fill sits on top of the halo
 			if ( strokeStyle !== null ) {
 
 				ctx.lineJoin = 'round';
 				ctx.lineWidth = strokeWidth;
 				ctx.strokeStyle = strokeStyle;
-				ctx.strokeText( char, cx, cy );
+				ctx.strokeText( char, drawX, drawY );
 
 			}
 
 			ctx.fillStyle = color;
-			ctx.fillText( char, cx, cy );
+			ctx.fillText( char, drawX, drawY );
 
 		} );
 

@@ -185,6 +185,8 @@ function reinstantiateTiles() {
 			characterPoints.update( a.text, r.text );
 
 		},
+		// deferred: characterPoints is created below, but this only runs at update time
+		measureCharacter: char => characterPoints.measureCharacter( char ),
 	} ) );
 
 	// use the camera cartographic region plugin to prevent particularly low-lod
@@ -230,8 +232,8 @@ function reinstantiateTiles() {
 	tiles.group.add( annotationsPoints );
 
 	characterPoints = new CharacterPoints( {
-		size: 16,
-		glyphSize: 2 * 16 * renderer.getPixelRatio(),
+		size: 14,
+		glyphSize: 2 * 14 * renderer.getPixelRatio(),
 		strokeStyle: '#3f3e4c',
 		strokeWidth: 6 * renderer.getPixelRatio(),
 	} );

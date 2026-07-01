@@ -14,7 +14,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 		this.position = new Vector3();
 		this.lat = 0;
 		this.lon = 0;
-		this.radius = 32;
+		this.radius = 28;
 
 		this.screenPos = new Vector3();
 		this._facingAngle = 0;

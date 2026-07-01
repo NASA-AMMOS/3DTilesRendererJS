@@ -71,6 +71,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// screen-space baseline angle per character ( radians ), filled by evaluate()
 		this.characterAngles = [];
 
+		// per-character advance width provider ( em units ), assigned by the plugin
+		this.measureCharacter = () => 1;
+
+		// cached per-character advance widths ( screen px ) and their total, computed lazily in
+		// evaluate() since the text never changes
+		this._advances = null;
+		this._totalWidth = 0;
+
 	}
 
 	// overrides
@@ -121,17 +129,42 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// test every character first so a string that doesn't fit leaves no marks behind.
 		// TODO: also reject foreshortened paths ( tiny screen-space segments )
 		const length = text.length;
-		const halfChar = ( length - 1 ) * 0.5;
 		const radius = CHARACTER_SIZE / 2;
 
+		// per-character advance widths in screen px ( em fraction × em size ), cached since the
+		// text never changes
+		let advances = this._advances;
+		if ( advances === null ) {
+
+			advances = [];
+			let total = 0;
+			for ( let k = 0; k < length; k ++ ) {
+
+				const w = this.measureCharacter( text[ k ] ) * CHARACTER_SIZE;
+				advances.push( w );
+				total += w;
+
+			}
+
+			this._advances = advances;
+			this._totalWidth = total;
+
+		}
+
+		const totalWidth = this._totalWidth;
+
 		let seg = 0;
+		let cursor = 0;
 		let firstX = 0;
 		let lastX = 0;
 		let prevAngle = 0;
 		let totalTurn = 0;
 		for ( let k = 0; k < length; k ++ ) {
 
-			const target = anchorLength + ( k - halfChar ) * CHARACTER_SIZE;
+			// place each character's center along the arc by its advance, centered on the anchor
+			const center = cursor + advances[ k ] * 0.5 - totalWidth * 0.5;
+			cursor += advances[ k ];
+			const target = anchorLength + center;
 
 			// the path is too short on screen to hold the whole string
 			if ( target < 0 || target > totalLength ) {

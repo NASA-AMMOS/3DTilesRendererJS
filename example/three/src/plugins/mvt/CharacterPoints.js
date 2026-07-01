@@ -13,7 +13,7 @@ export class CharacterPoints extends Points {
 	constructor( options = {} ) {
 
 		const {
-			size = 16,
+			size = 5,
 			glyphSize = 32,
 			slotCount = 256,
 			font = null,
@@ -26,11 +26,23 @@ export class CharacterPoints extends Points {
 		this.renderOrder = 1001;
 		this.frustumCulled = false;
 
-		// currently-visible text anchors
-		this._anchors = new Set();
+		this.fadeInDuration = 0.3;
+		this.fadeOutDuration = 0.3;
+
+		// Map<itemId, entry> keyed by stable id; entry: { item, fade: 0..1, state: 'in'|'visible'|'out' }
+		this._entryMap = new Map();
+		this._orderedEntries = [];
+		this._lastUpdateTime = - 1;
 
 		// CSS font used to rasterize glyphs, sized to fit the atlas slot
-		this._font = font ?? `400 ${ Math.round( glyphSize * 0.7 ) }px sans-serif`;
+		const fontSize = Math.round( glyphSize * 0.7 );
+		this._font = font ?? `400 ${ fontSize }px Arial`;
+
+		// canvas context for measuring advance widths, normalized to em units ( width / fontSize )
+		this._measureSize = fontSize;
+		this._measureCtx = document.createElement( 'canvas' ).getContext( '2d' );
+		this._measureCtx.font = this._font;
+		this._advanceCache = new Map();
 
 		// black halo so glyphs read over the imagery
 		this._strokeStyle = strokeStyle;
@@ -44,16 +56,77 @@ export class CharacterPoints extends Points {
 
 	update( added, removed ) {
 
-		const { _anchors } = this;
+		const now = performance.now() / 1000;
+		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
+		this._lastUpdateTime = now;
+
+		// add new anchors, refresh LoD-swapped references, reverse in-progress fade-outs
+		const { _entryMap, _orderedEntries } = this;
 		for ( const item of added ) {
 
-			_anchors.add( item );
+			const existing = _entryMap.get( item.id );
+			if ( ! existing ) {
+
+				const entry = { item, fade: 0, state: 'in' };
+				_entryMap.set( item.id, entry );
+				_orderedEntries.push( entry );
+
+			} else {
+
+				existing.item = item; // keep reference fresh (LoD swap)
+				if ( existing.state === 'out' ) existing.state = 'in';
+
+			}
 
 		}
 
+		// start fade-out for removed anchors
 		for ( const item of removed ) {
 
-			_anchors.delete( item );
+			const entry = _entryMap.get( item.id );
+			if ( entry && entry.state !== 'out' ) {
+
+				entry.state = 'out';
+
+			}
+
+		}
+
+		// tick fades; collect fully-faded-out anchors for removal
+		const toRemove = [];
+		for ( const [ id, entry ] of _entryMap ) {
+
+			if ( entry.state === 'in' ) {
+
+				entry.fade = Math.min( 1, entry.fade + dt / this.fadeInDuration );
+				if ( entry.fade >= 1 ) {
+
+					entry.state = 'visible';
+
+				}
+
+			} else if ( entry.state === 'out' ) {
+
+				entry.fade = Math.max( 0, entry.fade - dt / this.fadeOutDuration );
+				if ( entry.fade <= 0 ) {
+
+					toRemove.push( id );
+
+				}
+
+			}
+
+		}
+
+		if ( toRemove.length > 0 ) {
+
+			for ( const id of toRemove ) {
+
+				_entryMap.delete( id );
+
+			}
+
+			this._orderedEntries = _orderedEntries.filter( e => _entryMap.has( e.item.id ) );
 
 		}
 
@@ -80,6 +153,22 @@ export class CharacterPoints extends Points {
 
 	}
 
+	// advance width of `char` in em units ( fraction of the font size ), cached per character
+	measureCharacter( char ) {
+
+		const { _advanceCache } = this;
+		let advance = _advanceCache.get( char );
+		if ( advance === undefined ) {
+
+			advance = this._measureCtx.measureText( char ).width / this._measureSize;
+			_advanceCache.set( char, advance );
+
+		}
+
+		return advance + 0.15;
+
+	}
+
 	// uv bounds of the glyph for `char`, rasterizing it into the atlas on first use
 	_glyphUV( char ) {
 
@@ -102,13 +191,13 @@ export class CharacterPoints extends Points {
 	_updateGeometry() {
 
 		const origin = this.position;
-		const { _anchors, geometry } = this;
+		const { _orderedEntries, geometry } = this;
 
-		// total visible character count
+		// total character count across all entries ( including fading ones )
 		let count = 0;
-		for ( const anchor of _anchors ) {
+		for ( const entry of _orderedEntries ) {
 
-			count += anchor.characterPositions.length;
+			count += entry.item.characterPositions.length;
 
 		}
 
@@ -133,8 +222,10 @@ export class CharacterPoints extends Points {
 		geometry.setDrawRange( 0, count );
 
 		let i = 0;
-		for ( const anchor of _anchors ) {
+		for ( const entry of _orderedEntries ) {
 
+			const anchor = entry.item;
+			const { fade } = entry;
 			const positions = anchor.characterPositions;
 			const angles = anchor.characterAngles;
 			const text = anchor.text;
@@ -154,7 +245,7 @@ export class CharacterPoints extends Points {
 
 				}
 
-				alphaAttr.setX( i, 1 );
+				alphaAttr.setX( i, fade );
 				angleAttr.setX( i, angles[ c ] );
 				i ++;
 
