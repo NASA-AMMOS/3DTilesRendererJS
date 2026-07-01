@@ -104,14 +104,14 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	}
 
 	/**
-	 * Renders a single character in the slot, centered on its ink bounding box.
+	 * Renders a single character in the slot, centered on its text metrics bounding box.
 	 * @param {string} key
 	 * @param {string} char - The character to draw.
 	 * @param {Object} [styles={}]
 	 * @param {string} [styles.font=''] CSS font string (e.g. `'bold 48px sans-serif'`).
 	 * @param {string} [styles.color='white'] CSS fill color.
 	 * @param {string|null} [styles.strokeStyle=null] CSS stroke color drawn under the fill, or
-	 *   null to skip the stroke.
+	 * null to skip the stroke.
 	 * @param {number} [styles.strokeWidth=1] Stroke width in atlas pixels.
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.

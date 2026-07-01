@@ -51,11 +51,11 @@ function collectMeshes( object ) {
  * placement. Rendering is left entirely to the caller via `onAnnotationsUpdate`.
  * @param {Object} options
  * @param {Object} options.overlay - The `PMTilesOverlay` (or compatible overlay) whose tile
- *   content is parsed for point features.
+ * content is parsed for point features.
  * @param {Camera} [options.camera=null] - Initial camera. Can be updated with `setCamera()`.
  * @param {Scene} [options.scene=null] - Three.js scene reference (stored for caller use).
- * @param {( char: string ) => number} [options.measureChar] - Returns a per-character
- *   advance width used for text label spacing. Temporary hook — wiring to be cleaned up.
+ * @param {Function} [options.measureChar] - Takes a character nd returns a per-character
+ * advance width used for text label spacing.
  */
 export class MVTAnnotationsPlugin {
 

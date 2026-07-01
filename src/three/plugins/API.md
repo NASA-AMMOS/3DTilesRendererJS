@@ -297,12 +297,6 @@ _extends [`ImageOverlay`](#imageoverlay)_
 Overlay that renders XYZ-template MVT vector tiles on top of 3D tile geometry.
 See the [Mapbox Vector Tile specification](https://github.com/mapbox/vector-tile-spec).
 
-Requires the optional peer dependencies `@mapbox/vector-tile` and `pbf`, which are
-imported dynamically on first use and must be installed separately:
-```
-npm install @mapbox/vector-tile pbf
-```
-
 
 ### .constructor
 
@@ -338,13 +332,10 @@ _extends [`MVTOverlay`](#mvtoverlay)_
 Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
 Projection and zoom levels are read automatically from the PMTiles archive header.
 
-Requires the optional peer dependency `pmtiles`, which is imported dynamically on first use
-and must be installed separately. Vector archives additionally require `@mapbox/vector-tile`
-and `pbf`:
-```
-npm install pmtiles @mapbox/vector-tile pbf
-```
-
+> [!NOTE]
+> Direct use of PMTiles requires range requests, which are not automatically cached
+> by the browser. It's recommended to implement a service worker to cache response content
+> to save bandwidth.
 
 ### .constructor
 
@@ -938,7 +929,7 @@ Returns true when all slots are allocated.
 ### .constructor
 
 ```js
-constructor( slotCount: number, slotSize: number )
+constructor( slotCount = 32: number, slotSize = 64: number )
 ```
 
 ### .has
@@ -991,11 +982,18 @@ drawChar(
 
 		// CSS fill color.
 		color = 'white': string,
+
+		// CSS stroke color drawn under the fill, or null to skip the
+		// stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in atlas pixels.
+		strokeWidth = 1: number,
 	}
 ): Object
 ```
 
-Renders a single character centered in the slot.
+Renders a single character in the slot, centered on its text metrics bounding box.
 
 
 ### .drawImage
@@ -1244,7 +1242,7 @@ placement. Rendering is left entirely to the caller via `onAnnotationsUpdate`.
 ```js
 constructor(
 	{
-		// The `PMTilesOverlay` (or compatible overlay) whose tile  
+		// The `PMTilesOverlay` (or compatible overlay) whose tile
 		// content is parsed for point features.
 		overlay: Object,
 
@@ -1254,9 +1252,9 @@ constructor(
 		// Three.js scene reference (stored for caller use).
 		scene = null: Scene,
 
-		// Overlay a debug canvas showing the   screen-space occupation
-		// grid.
-		displayOccupancyGrid = false: boolean,
+		// Takes a character nd returns a per-character advance width
+		// used for text label spacing.
+		measureChar?: function,
 	}
 )
 ```
