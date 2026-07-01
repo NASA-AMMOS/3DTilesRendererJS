@@ -42,6 +42,14 @@ export class GlyphPoints extends Points {
 
 	}
 
+	dispose() {
+
+		this.glyphAtlas.dispose();
+		this.geometry.dispose();
+		this.material.dispose();
+
+	}
+
 	// callback for adding and remove items from the set of glyphs
 	update( added, removed ) {
 
