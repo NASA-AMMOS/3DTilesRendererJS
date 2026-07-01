@@ -249,7 +249,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter, t
 	// TODO: this needs to scale based on LoD rather than a fixed - this is hackily-scaled below
 	// anchor spacing in radians. Density  tracks real-world length, independent of the tile's
 	// zoom / size
-	const anchorSpacing = 1000000 / 6378137;
+	const anchorSpacing = 500000 / 6378137;
 	const subsampleFraction = 1 / 64;
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
