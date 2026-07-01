@@ -20,9 +20,11 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @param {number} slotCount - Maximum number of slots in the atlas.
 	 * @param {number} slotSize - Width and height of each slot in pixels.
 	 */
-	constructor( slotCount, slotSize ) {
+	constructor( slotCount = 32, slotSize = 64 ) {
 
 		super( null );
+
+		this.generateMipmaps = false;
 
 		this.slotSize = 0;
 
@@ -102,12 +104,15 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	}
 
 	/**
-	 * Renders a single character centered in the slot.
+	 * Renders a single character in the slot, centered on its ink bounding box.
 	 * @param {string} key
 	 * @param {string} char - The character to draw.
 	 * @param {Object} [styles={}]
 	 * @param {string} [styles.font=''] CSS font string (e.g. `'bold 48px sans-serif'`).
 	 * @param {string} [styles.color='white'] CSS fill color.
+	 * @param {string|null} [styles.strokeStyle=null] CSS stroke color drawn under the fill, or
+	 *   null to skip the stroke.
+	 * @param {number} [styles.strokeWidth=1] Stroke width in atlas pixels.
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
 	 */
@@ -116,17 +121,44 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		const {
 			font = '',
 			color = 'white',
+			strokeStyle = null,
+			strokeWidth = 1,
 		} = styles;
 
 		return this._draw( key, ( ctx, x, y, w, h ) => {
 
+			const cx = x + w / 2;
+			const cy = y + h / 2;
+
+			// center the glyph by its ink bounding box width
+			const m = this.measureChar( char );
+			const drawX = cx - ( m.actualBoundingBoxRight + m.actualBoundingBoxLeft ) / 2;
+			const drawY = cy + h / 4;
+
+			// stroke first so the fill sits on top of the halo
+			if ( strokeStyle !== null ) {
+
+				ctx.font = font;
+				ctx.lineJoin = 'round';
+				ctx.lineWidth = strokeWidth;
+				ctx.strokeStyle = strokeStyle;
+				ctx.strokeText( char, drawX, drawY );
+
+			}
+
 			ctx.font = font;
 			ctx.fillStyle = color;
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
-			ctx.fillText( char, x + w / 2, y + h / 2 );
+			ctx.fillText( char, drawX, drawY );
 
 		} );
+
+	}
+
+	measureChar( char, font ) {
+
+		const { ctx } = this;
+		ctx.font = font;
+		return ctx.measureText( char );
 
 	}
 

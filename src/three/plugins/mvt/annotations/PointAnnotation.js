@@ -14,7 +14,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 		this.position = new Vector3();
 		this.lat = 0;
 		this.lon = 0;
-		this.radius = 32;
+		this.radius = 28;
 
 		this.screenPos = new Vector3();
 		this._facingAngle = 0;
@@ -23,8 +23,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 	updateTransform( matrix, resolution, cameraPosition ) {
 
-		const { position } = this;
-		const screenPos = this.screenPos;
+		const { position, screenPos } = this;
 
 		// project to screen space
 		screenPos.copy( position ).applyMatrix4( matrix );
@@ -47,13 +46,6 @@ export class PointAnnotation extends OccupancyAnnotation {
 			this._facingAngle = 0;
 
 		}
-
-	}
-
-	copyPosition( source ) {
-
-		this.position.copy( source.position );
-		this.ready = source.ready;
 
 	}
 

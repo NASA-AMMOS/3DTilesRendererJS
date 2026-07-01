@@ -25,6 +25,7 @@ import {
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { AnnotationPoints } from './src/plugins/mvt/AnnotationPoints.js';
+import { CharacterPoints } from './src/plugins/mvt/CharacterPoints.js';
 import { MeshBVHPlugin } from './src/plugins/MeshBVHPlugin.js';
 
 // CDN source for the icons
@@ -110,6 +111,7 @@ const params = {
 
 let controls, scene, renderer, camera, tiles;
 let annotationsPoints = null;
+let characterPoints = null;
 
 // raycasting
 const pointer = new Vector2();
@@ -119,6 +121,30 @@ let lastClientX = 0, lastClientY = 0;
 
 init();
 animate();
+
+// route occupancy annotations to the right renderer: point annotations expose a `position`,
+// text-anchor annotations expose `characterPositions`
+function splitAnnotations( set ) {
+
+	const points = [];
+	const text = [];
+	for ( const item of set ) {
+
+		if ( item.characterPositions !== undefined ) {
+
+			text.push( item );
+
+		} else {
+
+			points.push( item );
+
+		}
+
+	}
+
+	return { points, text };
+
+}
 
 function reinstantiateTiles() {
 
@@ -151,7 +177,16 @@ function reinstantiateTiles() {
 			else return 'name' in properties;
 
 		},
-		onAnnotationsUpdate: ( added, removed ) => annotationsPoints.update( added, removed ),
+		onAnnotationsUpdate: ( added, removed ) => {
+
+			const a = splitAnnotations( added );
+			const r = splitAnnotations( removed );
+			annotationsPoints.update( a.points, r.points );
+			characterPoints.update( a.text, r.text );
+
+		},
+		// deferred: characterPoints is created below, but this only runs at update time
+		measureChar: char => characterPoints.measureChar( char ),
 	} ) );
 
 	// use the camera cartographic region plugin to prevent particularly low-lod
@@ -167,8 +202,6 @@ function reinstantiateTiles() {
 	} ) );
 
 	annotationsPoints = new AnnotationPoints( {
-		size: 20,
-		glyphSize: 2 * 20 * renderer.getPixelRatio(),
 		getKind: ( layer, properties ) => {
 
 			return KIND_TO_ICON[ properties.kind ] || null;
@@ -195,6 +228,12 @@ function reinstantiateTiles() {
 	);
 
 	tiles.group.add( annotationsPoints );
+
+	characterPoints = new CharacterPoints( {
+		strokeStyle: '#3f3e4c',
+		strokeWidth: 6 * renderer.getPixelRatio(),
+	} );
+	tiles.group.add( characterPoints );
 
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );

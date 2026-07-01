@@ -30,10 +30,6 @@ export class OccupancyAnnotation {
 
 	}
 
-	copyPosition( source ) {
-
-	}
-
 }
 
 export class ScreenOccupationManager extends EventDispatcher {
