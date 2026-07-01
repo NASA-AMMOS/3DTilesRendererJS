@@ -54,7 +54,7 @@ function collectMeshes( object ) {
  *   content is parsed for point features.
  * @param {Camera} [options.camera=null] - Initial camera. Can be updated with `setCamera()`.
  * @param {Scene} [options.scene=null] - Three.js scene reference (stored for caller use).
- * @param {( char: string ) => number} [options.measureCharacter] - Returns a per-character
+ * @param {( char: string ) => number} [options.measureChar] - Returns a per-character
  *   advance width used for text label spacing. Temporary hook — wiring to be cleaned up.
  */
 export class MVTAnnotationsPlugin {
@@ -82,7 +82,7 @@ export class MVTAnnotationsPlugin {
 			},
 			filterAnnotation = () => false,
 			onAnnotationsUpdate = () => {},
-			measureCharacter = () => 1,
+			measureChar = () => 1,
 			camera = null,
 		} = options;
 
@@ -94,7 +94,7 @@ export class MVTAnnotationsPlugin {
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
 
 		// TODO: temporary — provides per-character advance widths for text label layout
-		this.measureCharacter = measureCharacter;
+		this.measureChar = measureChar;
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -244,7 +244,7 @@ export class MVTAnnotationsPlugin {
 			anchorManager.update();
 			anchorManager.added.forEach( item => {
 
-				item.measureCharacter = this.measureCharacter;
+				item.measureChar = this.measureChar;
 				occupancy.register( item );
 
 			} );

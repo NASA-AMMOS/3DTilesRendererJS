@@ -130,8 +130,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 			// center the glyph by its ink bounding box width
 			const m = this.measureChar( char );
-			const drawX = cx - ( m.actualBoundingBoxRight - m.actualBoundingBoxLeft ) / 2;
-			const drawY = cy + strokeWidth;
+			const drawX = cx - ( m.actualBoundingBoxRight + m.actualBoundingBoxLeft ) / 2;
+			const drawY = cy + h / 4;
 
 			// stroke first so the fill sits on top of the halo
 			if ( strokeStyle !== null ) {

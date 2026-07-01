@@ -13,8 +13,8 @@ export class CharacterPoints extends Points {
 	constructor( options = {} ) {
 
 		const {
-			size = 14,
-			glyphSize = 14 * window.devicePixelRatio,
+			size = 16,
+			glyphSize = 16 * window.devicePixelRatio,
 			slotCount = 256,
 			font = null,
 			strokeStyle = 'black',
@@ -153,19 +153,20 @@ export class CharacterPoints extends Points {
 	}
 
 	// advance width of `char` in em units ( fraction of the font size ), cached per character
-	measureCharacter( char ) {
+	measureChar( char ) {
 
-		const { _advanceCache } = this;
+		const { _advanceCache, material, glyphAtlas, _font } = this;
 		if ( ! _advanceCache.has( char ) ) {
 
-			const info = this.glyphAtlas.measureChar( char, this._font );
-			const advance = ( info.actualBoundingBoxRight - info.actualBoundingBoxLeft ) / this._measureSize;
+			const multiplier = material.size / glyphAtlas.slotSize;
+			const info = glyphAtlas.measureChar( char, _font );
+			const advance = info.width + 2;
 
-			_advanceCache.set( char, advance );
+			_advanceCache.set( char, advance * multiplier );
 
 		}
 
-		return _advanceCache.get( char ) + 0.15;
+		return _advanceCache.get( char );
 
 	}
 

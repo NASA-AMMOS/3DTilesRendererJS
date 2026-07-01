@@ -93,11 +93,12 @@ export class LineAnnotation extends OccupancyAnnotation {
 		cumulativeLen[ 0 ] = 0;
 		for ( let i = 1; i < screenPositions.length; i ++ ) {
 
-			const a = screenPositions[ i - 1 ];
-			const b = screenPositions[ i ];
-			const dx = b.x - a.x;
-			const dy = b.y - a.y;
-			cumulativeLen[ i ] = cumulativeLen[ i - 1 ] + Math.sqrt( dx * dx + dy * dy );
+			const p0 = screenPositions[ i - 1 ];
+			const p1 = screenPositions[ i ];
+			const dx = p1.x - p0.x;
+			const dy = p1.y - p0.y;
+			const len = Math.sqrt( dx * dx + dy * dy );
+			cumulativeLen[ i ] = cumulativeLen[ i - 1 ] + len;
 
 		}
 

@@ -2,7 +2,8 @@ import { Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
 // screen-space spacing / footprint per character, in pixels
-const CHARACTER_SIZE = 10;
+// TODO: This should come from a user setting
+const CHARACTER_SIZE = 16;
 
 // reject labels whose projected baseline turns more than this in total ( radians ), since
 // sharply curving text becomes hard to read
@@ -72,7 +73,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		this.characterAngles = [];
 
 		// per-character advance width provider ( em units ), assigned by the plugin
-		this.measureCharacter = () => 1;
+		this.measureChar = () => 1;
 
 		// cached per-character advance widths ( screen px ) and their total, computed lazily in
 		// evaluate() since the text never changes
@@ -93,7 +94,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		// TODO: update the "active reference" here to avoid iteration every frame
 		const { line } = this.getActiveReference();
-		const { cumulativeLen, screenPositions } = line;
+		const { cumulativeLen } = line;
 		if ( ! line.ready ) {
 
 			return false;
@@ -133,7 +134,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		let total = 0;
 		for ( let k = 0, l = text.length; k < l; k ++ ) {
 
-			const w = this.measureCharacter( text[ k ] ) * CHARACTER_SIZE;
+			const w = this.measureChar( text[ k ] );
 			_advances[ k ] = w;
 			total += w;
 
@@ -161,16 +162,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const radius = CHARACTER_SIZE / 2;
 
 		let seg = 0;
-		let firstX = 0;
-		let lastX = 0;
 		let charCursor = 0;
 		let prevAngle = 0;
 		let totalTurn = 0;
-		for ( let k = 0; k < length; k ++ ) {
+		for ( let i = 0; i < length; i ++ ) {
 
 			// place each character's center along the arc by its advance, centered on the anchor
-			const charCenter = charCursor + _advances[ k ] * 0.5 - _totalWidth * 0.5;
-			charCursor += _advances[ k ];
+			const charCenter = charCursor + _advances[ i ] * 0.5 - _totalWidth * 0.5;
+			charCursor += _advances[ i ];
 
 			// absolute target position relative to the line
 			const target = anchorOffset + charCenter;
@@ -204,19 +203,10 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
-			// track the screen x of the path ends to decide reading direction below
-			if ( k === 0 ) {
-
-				firstX = _vec.x;
-
-			}
-
-			lastX = _vec.x;
-
 			// accumulate the absolute turn between consecutive character tangents and reject
 			// paths that curve too sharply across the label to stay readable
 			const angle = Math.atan2( p1.y - p0.y, p1.x - p0.x );
-			if ( k > 0 ) {
+			if ( i > 0 ) {
 
 				const delta = Math.atan2( Math.sin( angle - prevAngle ), Math.cos( angle - prevAngle ) );
 				totalTurn += Math.abs( delta );
@@ -230,8 +220,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			prevAngle = angle;
 
-			outputIndices[ k ] = seg;
-			outputAlphas[ k ] = segAlpha;
+			outputIndices[ i ] = seg;
+			outputAlphas[ i ] = segAlpha;
 
 		}
 
@@ -263,7 +253,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const { line } = this.getActiveReference();
 		const { screenPositions, positions } = line;
 
-		const flip = this._getTextDirection( screenPositions, segIndices, segAlphas );
+		const flip = false;//this._getTextDirection( screenPositions, segIndices, segAlphas );
 		const length = _advances.length;
 		const radius = CHARACTER_SIZE / 2;
 
@@ -282,16 +272,16 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			const index = segIndices[ slot ];
 			const segAlpha = segAlphas[ slot ];
 
-			const a = screenPositions[ index ];
-			const b = screenPositions[ index + 1 ];
-			handle.mark( a.x + ( b.x - a.x ) * segAlpha, a.y + ( b.y - a.y ) * segAlpha, radius );
+			const p0 = screenPositions[ index ];
+			const p1 = screenPositions[ index + 1 ];
+			handle.mark( p0.x + ( p1.x - p0.x ) * segAlpha, p0.y + ( p1.y - p0.y ) * segAlpha, radius );
 
 			characterPositions[ k ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
 
 			// baseline angle from the segment direction ( screen space, y down ), pointing in the
 			// reading direction so glyphs stay upright after a flip
-			const dx = ( b.x - a.x ) * ( flip ? - 1 : 1 );
-			const dy = ( b.y - a.y ) * ( flip ? - 1 : 1 );
+			const dx = ( p1.x - p0.x ) * ( flip ? - 1 : 1 );
+			const dy = ( p1.y - p0.y ) * ( flip ? - 1 : 1 );
 			characterAngles[ k ] = Math.atan2( dy, dx );
 
 		}
