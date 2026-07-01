@@ -64,7 +64,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		this.id = `${ id }_${ annotationIndex ++ }`;
 
 		this.referencePaths = [];
-		this._lastUsed = null;
+		this._activeReference = null;
 
 		// tiles.group local position per character, filled by evaluate()
 		this.characterPositions = [];
@@ -324,6 +324,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	updateTransform( matrix, resolution, cameraPosition ) {
 
 		// update the screen positions for shared line
+		this.updateActiveReference();
 		this.getActiveReference().line.updateTransform( matrix, resolution, cameraPosition );
 
 	}
@@ -351,11 +352,17 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// the highest-LoD entry whose path is settled, used for placement
 	getActiveReference() {
 
-		const { referencePaths, _lastUsed } = this;
+		return this._activeReference;
+
+	}
+
+	updateActiveReference() {
+
+		const { referencePaths, _activeReference } = this;
 		const target = referencePaths[ 0 ] ?? null;
 		if ( target?.line.ready ) {
 
-			this._lastUsed = target;
+			this._activeReference = target;
 			return target;
 
 		} else {
@@ -372,15 +379,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
-			result = result ?? _lastUsed;
+			result = result ?? _activeReference;
 
-			if ( _lastUsed && _lastUsed.line.ready && _lastUsed.line.lodLevel > result.line.lodLevel ) {
+			if ( _activeReference && _activeReference.line.ready && _activeReference.line.lodLevel > result.line.lodLevel ) {
 
-				result = _lastUsed;
+				result = _activeReference;
 
 			}
 
-			this._lastUsed = result;
+			this._activeReference = result;
 			return result;
 
 		}
@@ -412,7 +419,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		} );
 
-		return slotIndex;
+		this.updateActiveReference();
 
 	}
 
@@ -429,6 +436,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			}
 
 		}
+
+		this.updateActiveReference();
 
 	}
 
