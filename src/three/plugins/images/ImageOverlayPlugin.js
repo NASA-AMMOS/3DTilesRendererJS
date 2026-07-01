@@ -1439,7 +1439,15 @@ export class ImageOverlay {
 		}
 
 		const item = { priority: - performance.now() };
-		const promise = this.downloadQueue.add( item, () => fetch( url, options ) );
+		const promise = this.downloadQueue.add( item, () => fetch( url, options ) ).catch( err => {
+
+			if ( err.name !== 'AbortError' ) {
+
+				throw err;
+
+			}
+
+		} );
 		if ( options.signal ) {
 
 			options.signal.addEventListener( 'abort', () => this.downloadQueue.remove( item ), { once: true } );
