@@ -88,18 +88,18 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @param {string} key
 	 * @returns {{ x: number, y: number, w: number, h: number } | null}
 	 */
-	getUV( key ) {
+	getUV( key, target = {} ) {
 
+		target = {};
 		const slot = this.get( key );
 		if ( slot === null ) return null;
 
-		const { width, height } = this.image;
-		return {
-			x: slot.x / width,
-			y: ( height - slot.y ) / height,
-			w: this.slotSize / width,
-			h: this.slotSize / height,
-		};
+		const { width, height, slotSize } = this.image;
+		target.x = slot.x / width;
+		target.y = ( height - slot.y ) / height;
+		target.w = slotSize / width;
+		target.h = slotSize / height;
+		return target;
 
 	}
 
@@ -421,6 +421,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		ctx.beginPath();
 		ctx.rect( slot.x, slot.y, slot.w, slot.h );
 		ctx.clip();
+
+		ctx.clearRect( slot.x, slot.y, slot.w, slot.h );
 		callback( ctx, slot.x, slot.y, slot.w, slot.h );
 		ctx.restore();
 
