@@ -84,6 +84,13 @@ export class MVTAnnotationsDriver {
 
 	}
 
+	// the string a line / road annotation should display for the given feature properties
+	getText( properties ) {
+
+		return properties.name ?? '';
+
+	}
+
 	// called each frame with the annotations that became visible / hidden
 	onAnnotationsUpdate( added, removed ) {}
 
@@ -130,6 +137,7 @@ export class MVTAnnotationsPlugin {
 		// stable bound callbacks handed to sub-objects that invoke them ( preserves driver `this` )
 		this._measureChar = char => this.driver.measureChar( char );
 		this._filterAnnotation = ( layer, properties, type ) => this.driver.filterAnnotation( layer, properties, type );
+		this._getText = properties => this.driver.getText( properties );
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -284,6 +292,7 @@ export class MVTAnnotationsPlugin {
 			anchorManager.added.forEach( item => {
 
 				item.measureChar = this._measureChar;
+				item.getText = this._getText;
 				occupancy.register( item );
 
 			} );
