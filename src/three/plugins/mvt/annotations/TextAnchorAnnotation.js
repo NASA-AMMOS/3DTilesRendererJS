@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
 // screen-space spacing / footprint per character, in pixels
@@ -9,7 +9,6 @@ const CHARACTER_SIZE = 10;
 const MAX_LABEL_ANGLE = Math.PI / 2;
 
 // scratch reused across evaluate() calls ( synchronous, single pass )
-const _cumulative = [];
 const _segIndices = [];
 const _segAlphas = [];
 
@@ -92,14 +91,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		// TODO: update the "active reference" here to avoid iteration every frame
-		const { line, i0, alpha } = this.getActiveReference();
+		const { line, i0, i1, alpha } = this.getActiveReference();
 		if ( ! line.ready ) {
 
 			return false;
 
 		}
 
-		const { screenPositions, positions } = line;
+		const { screenPositions, cumulativeLen, positions } = line;
 		const sampleCount = positions.length;
 		if ( sampleCount < 2 ) {
 
@@ -107,38 +106,34 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		}
 
-		// cumulative 2d screen-space arc length per sample
-		_cumulative.length = sampleCount;
-		_cumulative[ 0 ] = 0;
-		for ( let i = 1; i < sampleCount; i ++ ) {
+		// arc-length position of the anchor along the screen-projected path
+		const totalLength = cumulativeLen[ cumulativeLen.length - 1 ];
+		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 
-			const a = screenPositions[ i - 1 ];
-			const b = screenPositions[ i ];
-			const dx = b.x - a.x;
-			const dy = b.y - a.y;
-			_cumulative[ i ] = _cumulative[ i - 1 ] + Math.sqrt( dx * dx + dy * dy );
+		// lay out and test every character; bail if it can't fit or the baseline curves too sharply
+		const flip = this._layoutCharacters( handle, anchorOffset, totalLength );
+		if ( flip === null ) {
+
+			return false;
 
 		}
 
-		const totalLength = _cumulative[ sampleCount - 1 ];
+		// it fits: commit occupancy marks, world positions, and baseline angles
+		this._placeCharacters( handle, flip );
+		return true;
 
-		// arc length of the anchor along the screen-projected path
-		const anchorLength = _cumulative[ i0 ] + alpha * ( _cumulative[ i0 + 1 ] - _cumulative[ i0 ] );
+	}
 
-		// march the characters out from the anchor in both directions, centered. measure and
-		// test every character first so a string that doesn't fit leaves no marks behind.
-		// TODO: also reject foreshortened paths ( tiny screen-space segments )
-		const length = text.length;
-		const radius = CHARACTER_SIZE / 2;
+	// per-character advance widths in screen px ( em fraction × em size ), cached since the text
+	// never changes. also caches their total in `_totalWidth`.
+	_ensureAdvances() {
 
-		// per-character advance widths in screen px ( em fraction × em size ), cached since the
-		// text never changes
-		let advances = this._advances;
-		if ( advances === null ) {
+		if ( this._advances === null ) {
 
-			advances = [];
+			const { text } = this;
+			const advances = [];
 			let total = 0;
-			for ( let k = 0; k < length; k ++ ) {
+			for ( let k = 0, l = text.length; k < l; k ++ ) {
 
 				const w = this.measureCharacter( text[ k ] ) * CHARACTER_SIZE;
 				advances.push( w );
@@ -151,7 +146,24 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		}
 
+		return this._advances;
+
+	}
+
+	// march the characters out from the anchor in both directions, centered, measuring and testing
+	// each one so a string that doesn't fit leaves no marks behind. records per-character segment
+	// index / alpha into the module scratch. returns the reading-direction flip on success, or
+	// null if the label can't be placed.
+	// TODO: also reject foreshortened paths ( tiny screen-space segments )
+	_layoutCharacters( handle, anchorOffset, totalLength ) {
+
+		const { line } = this.getActiveReference();
+		const { cumulativeLen, screenPositions } = line;
+		const sampleCount = screenPositions.length;
+		const advances = this._ensureAdvances();
 		const totalWidth = this._totalWidth;
+		const length = advances.length;
+		const radius = CHARACTER_SIZE / 2;
 
 		let seg = 0;
 		let cursor = 0;
@@ -164,24 +176,24 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			// place each character's center along the arc by its advance, centered on the anchor
 			const center = cursor + advances[ k ] * 0.5 - totalWidth * 0.5;
 			cursor += advances[ k ];
-			const target = anchorLength + center;
+			const target = anchorOffset + center;
 
 			// the path is too short on screen to hold the whole string
 			if ( target < 0 || target > totalLength ) {
 
-				return false;
+				return null;
 
 			}
 
 			// advance to the segment containing "target" ( monotonic across k )
-			while ( seg < sampleCount - 2 && _cumulative[ seg + 1 ] < target ) {
+			while ( seg < sampleCount - 2 && cumulativeLen[ seg + 1 ] < target ) {
 
 				seg ++;
 
 			}
 
-			const segLength = _cumulative[ seg + 1 ] - _cumulative[ seg ];
-			const segAlpha = segLength > 0 ? ( target - _cumulative[ seg ] ) / segLength : 0;
+			const segLength = cumulativeLen[ seg + 1 ] - cumulativeLen[ seg ];
+			const segAlpha = segLength > 0 ? ( target - cumulativeLen[ seg ] ) / segLength : 0;
 
 			const a = screenPositions[ seg ];
 			const b = screenPositions[ seg + 1 ];
@@ -192,7 +204,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			// off-screen in depth, or colliding with an already-placed annotation
 			if ( sz < 0 || sz > 1 || handle.test( sx, sy, radius ) ) {
 
-				return false;
+				return null;
 
 			}
 
@@ -214,7 +226,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 				totalTurn += Math.abs( delta );
 				if ( totalTurn > MAX_LABEL_ANGLE ) {
 
-					return false;
+					return null;
 
 				}
 
@@ -227,8 +239,23 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		}
 
-		// it fits: mark occupancy and record a world-space position per character
-		const { characterPositions, characterAngles } = this;
+		// flip the character-to-slot mapping when the path runs right-to-left on screen so the
+		// label always reads left-to-right
+		return lastX < firstX;
+
+	}
+
+	// commit a successful layout: mark occupancy and record a world-space position + baseline
+	// angle per character, applying the reading-direction flip
+	_placeCharacters( handle, flip ) {
+
+		const { characterPositions, characterAngles, _advances } = this;
+		const { line } = this.getActiveReference();
+		const { screenPositions, positions } = line;
+
+		const length = _advances.length;
+		const radius = CHARACTER_SIZE / 2;
+
 		while ( characterPositions.length < length ) {
 
 			characterPositions.push( new Vector3() );
@@ -238,9 +265,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		characterPositions.length = length;
 		characterAngles.length = length;
 
-		// flip the character-to-slot mapping when the path runs right-to-left on screen so the
-		// label always reads left-to-right
-		const flip = lastX < firstX;
 		for ( let k = 0; k < length; k ++ ) {
 
 			const slot = flip ? length - 1 - k : k;
@@ -260,8 +284,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			characterAngles[ k ] = Math.atan2( dy, dx );
 
 		}
-
-		return true;
 
 	}
 

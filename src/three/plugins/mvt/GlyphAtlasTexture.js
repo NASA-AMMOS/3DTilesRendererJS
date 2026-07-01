@@ -128,19 +128,15 @@ export class GlyphAtlasTexture extends CanvasTexture {
 			const cx = x + w / 2;
 			const cy = y + h / 2;
 
-			ctx.font = font;
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
-
-			// center the glyph by its ink bounding box, not its advance width, so asymmetric side
-			// bearings ( e.g. 'j', 'l', punctuation ) don't shift the visible glyph off center
-			const m = ctx.measureText( char );
+			// center the glyph by its ink bounding box width
+			const m = this.measureChar( char );
 			const drawX = cx - ( m.actualBoundingBoxRight - m.actualBoundingBoxLeft ) / 2;
-			const drawY = cy - ( m.actualBoundingBoxDescent - m.actualBoundingBoxAscent ) / 2;
+			const drawY = cy + strokeWidth;
 
 			// stroke first so the fill sits on top of the halo
 			if ( strokeStyle !== null ) {
 
+				ctx.font = font;
 				ctx.lineJoin = 'round';
 				ctx.lineWidth = strokeWidth;
 				ctx.strokeStyle = strokeStyle;
@@ -148,10 +144,19 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 			}
 
+			ctx.font = font;
 			ctx.fillStyle = color;
 			ctx.fillText( char, drawX, drawY );
 
 		} );
+
+	}
+
+	measureChar( char, font ) {
+
+		const { ctx } = this;
+		ctx.font = font;
+		return ctx.measureText( char );
 
 	}
 

@@ -37,6 +37,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		// screen positions and dirty variables
 		this.screenPositions = [];
+		this.cumulativeLen = [];
 		this.cachedMatrix = new Matrix4();
 		this.cachedResolution = new Vector2();
 
@@ -57,7 +58,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 	updateTransform( matrix, resolution, cameraPosition ) {
 
-		const { positions, screenPositions, cachedMatrix, cachedResolution } = this;
+		const { positions, screenPositions, cachedMatrix, cachedResolution, cumulativeLen } = this;
 		if ( cachedMatrix.equals( matrix ) && cachedResolution.equals( resolution ) ) {
 
 			return;
@@ -85,6 +86,18 @@ export class LineAnnotation extends OccupancyAnnotation {
 			screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 			screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 			screenPos.z = MathUtils.mapLinear( screenPos.z, - 1, 1, 0, 1 );
+
+		}
+
+		cumulativeLen.length = screenPositions.length;
+		cumulativeLen[ 0 ] = 0;
+		for ( let i = 1; i < screenPositions.length; i ++ ) {
+
+			const a = screenPositions[ i - 1 ];
+			const b = screenPositions[ i ];
+			const dx = b.x - a.x;
+			const dy = b.y - a.y;
+			cumulativeLen[ i ] = cumulativeLen[ i - 1 ] + Math.sqrt( dx * dx + dy * dy );
 
 		}
 

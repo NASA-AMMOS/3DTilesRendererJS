@@ -40,8 +40,6 @@ export class CharacterPoints extends Points {
 
 		// canvas context for measuring advance widths, normalized to em units ( width / fontSize )
 		this._measureSize = fontSize;
-		this._measureCtx = document.createElement( 'canvas' ).getContext( '2d' );
-		this._measureCtx.font = this._font;
 		this._advanceCache = new Map();
 
 		// black halo so glyphs read over the imagery
@@ -160,7 +158,9 @@ export class CharacterPoints extends Points {
 		const { _advanceCache } = this;
 		if ( ! _advanceCache.has( char ) ) {
 
-			const advance = this._measureCtx.measureText( char ).width / this._measureSize;
+			const info = this.glyphAtlas.measureChar( char, this._font );
+			const advance = ( info.actualBoundingBoxRight - info.actualBoundingBoxLeft ) / this._measureSize;
+
 			_advanceCache.set( char, advance );
 
 		}
