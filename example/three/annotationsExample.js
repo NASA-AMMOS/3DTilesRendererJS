@@ -193,7 +193,7 @@ function reinstantiateTiles() {
 	// tiles from loading beneath the camera, causing navigation issues.
 	const cameraRegion = new CameraCartographicRegion( {
 		camera,
-		radius: 2000,
+		radius: 1500,
 		errorTarget: 5000,
 	} );
 

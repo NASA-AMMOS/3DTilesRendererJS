@@ -32,38 +32,46 @@ export class LineAnnotation extends OccupancyAnnotation {
 		// per-sample settled positions in tiles.group local space, filled during settling
 		this.positions = [];
 
-		// anchors placed along the path, each `{ i0, i1, alpha, lat, lon, ref }`
+		// anchors placed along the path, each { i0, i1, alpha, lat, lon, ref }
 		this.anchorPositions = [];
 
-		// screen positions and dirty variables
+		// screen positions, cumulative length used for calculating text layout
 		this.screenPositions = [];
 		this.cumulativeLen = [];
+
+		// cache variables
 		this.cachedMatrix = new Matrix4();
 		this.cachedResolution = new Vector2();
 
-		// set true when settling updates `positions` so updateTransform recomputes the screen
-		// projection even when the camera hasn't moved
+		// set true when settling updates "positions" so updateTransform recomputes the screen
+		// projection even when the camera hasn't moved.
 		this.needsUpdate = false;
 
 	}
 
-	hasCoverage( lat, lon ) {
-
-		const [ minLon, minLat, maxLon, maxLat ] = this.range;
-		return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
-
-	}
-
+	// overrides
 	evaluate() {
 
 		throw new Error();
 
 	}
 
+	// update screen space points and cumulative values for text placement
 	updateTransform( matrix, resolution, cameraPosition ) {
 
-		const { positions, screenPositions, cachedMatrix, cachedResolution, cumulativeLen } = this;
-		if ( ! this.needsUpdate && cachedMatrix.equals( matrix ) && cachedResolution.equals( resolution ) ) {
+		const {
+			positions,
+			screenPositions,
+			cachedMatrix,
+			cachedResolution,
+			cumulativeLen,
+		} = this;
+
+		if (
+			! this.needsUpdate &&
+			cachedMatrix.equals( matrix ) &&
+			cachedResolution.equals( resolution )
+		) {
 
 			return;
 
@@ -94,6 +102,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		}
 
+		// roll up the cumulative placement
 		cumulativeLen.length = screenPositions.length;
 		cumulativeLen[ 0 ] = 0;
 		for ( let i = 1; i < screenPositions.length; i ++ ) {
@@ -106,6 +115,17 @@ export class LineAnnotation extends OccupancyAnnotation {
 			cumulativeLen[ i ] = cumulativeLen[ i - 1 ] + len;
 
 		}
+
+	}
+
+	//
+
+	// whether a lat / lon falls within the same tile as this line
+	hasCoverage( lat, lon ) {
+
+		// e
+		const [ minLon, minLat, maxLon, maxLat ] = this.range;
+		return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
 
 	}
 
@@ -127,7 +147,8 @@ export class LineAnnotation extends OccupancyAnnotation {
 			const lon0 = lon[ i ];
 			const lon1 = lon[ i + 1 ];
 
-			// TODO: we should figure out a better way to handle this spacing...
+			// TODO: this is using some rough sphere math to space the anchors evenly regardless of
+			// lat but we should figure out a better way to handle this spacing
 			const latMid = 0.5 * ( lat0 + lat1 );
 			const dLat = lat1 - lat0;
 			const dLon = ( lon1 - lon0 ) * Math.cos( latMid );
@@ -137,8 +158,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		}
 
-		// first anchor offset half a spacing in, fall back to the midpoint for
-		// short paths
+		// first anchor offset half a spacing in, fall back to the midpoint for short paths
 		let target = spacing * 0.5;
 		if ( target > totalLength ) {
 
@@ -223,13 +243,12 @@ function subsamplePath( points, spacing ) {
 
 }
 
-
 // parse the vector tile geometry into line annotations
 export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter, target = [] ) {
 
 	// TODO: this needs to scale based on LoD rather than a fixed - this is hackily-scaled below
-	// anchor spacing in radians ( geographic ). Density
-	// tracks real-world length, independent of the tile's zoom / size
+	// anchor spacing in radians. Density  tracks real-world length, independent of the tile's
+	// zoom / size
 	const anchorSpacing = 1000000 / 6378137;
 	const subsampleFraction = 1 / 64;
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );

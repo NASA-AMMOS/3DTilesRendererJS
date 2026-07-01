@@ -29,6 +29,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	get text() {
 
+		// TODO: this should be derivable from the user specified driver
 		return this.properties.name || '';
 
 	}
@@ -62,18 +63,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		this.referencePaths = [];
 		this._activeReference = null;
 
-		// tiles.group local position per character, filled by evaluate()
+		// local position & angle per character
 		this.characterPositions = [];
-
-		// screen-space baseline angle per character ( radians ), filled by evaluate()
 		this.characterAngles = [];
 
-		// per-character advance width provider ( em units ), assigned by the plugin
+		// per-character advance width provider (pixels)
 		this.measureChar = () => 1;
 
-		// cached per-character advance widths ( screen px ) and their total, computed lazily in
-		// evaluate() since the text never changes
-		this._advances = [];
+		// total advance width of the label ( screen px ) and per-character footprint radius,
+		// recomputed each layout ( individual advances come from the cached measureChar )
 		this._totalWidth = 0;
 		this._charRadius = 1;
 
@@ -105,7 +103,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		const maxCharWidth = this.measureChar( 'M' );
-		this._updateAdvances();
+		this._updateTotalWidth();
 		this._charRadius = Math.sqrt( maxCharWidth ** 2 ) / 2;
 
 		_segIndices.length = text.length;
@@ -124,19 +122,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	// per-character advance widths in screen px, cached since the text
-	// never changes. also caches their total in `_totalWidth`.
-	_updateAdvances() {
+	// sum the label's per-character advance widths ( screen px ) into `_totalWidth`; the individual
+	// widths come straight from the cached measureChar during layout
+	_updateTotalWidth() {
 
-		const { text, _advances } = this;
-		_advances.length = text.length;
-
+		const { text } = this;
 		let total = 0;
 		for ( let k = 0, l = text.length; k < l; k ++ ) {
 
-			const w = this.measureChar( text[ k ] );
-			_advances[ k ] = w;
-			total += w;
+			total += this.measureChar( text[ k ] );
 
 		}
 
@@ -197,7 +191,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// TODO: also reject foreshortened paths (tiny screen-space segments)
 	_layoutCharacters( handle, outputIndices, outputAlphas ) {
 
-		const { _advances, _totalWidth, _charRadius } = this;
+		const { text, _totalWidth, _charRadius } = this;
 		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
@@ -205,7 +199,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		const pointCount = screenPositions.length;
 		const totalLength = cumulativeLen[ cumulativeLen.length - 1 ];
-		const length = _advances.length;
+		const length = text.length;
 
 		let seg = 0;
 		let charCursor = 0;
@@ -215,8 +209,9 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			// place each character's center along the arc by its advance, centered on the anchor
 			const slot = flip ? length - 1 - i : i;
-			const charCenter = charCursor + _advances[ slot ] * 0.5 - _totalWidth * 0.5;
-			charCursor += _advances[ slot ];
+			const advance = this.measureChar( text[ slot ] );
+			const charCenter = charCursor + advance * 0.5 - _totalWidth * 0.5;
+			charCursor += advance;
 
 			// absolute target position relative to the line
 			const target = anchorOffset + charCenter;
@@ -280,12 +275,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// angle per character, applying the reading-direction flip
 	_placeCharacters( handle, segIndices, segAlphas ) {
 
-		const { characterPositions, characterAngles, _advances, _charRadius } = this;
+		const { characterPositions, characterAngles, text, _charRadius } = this;
 		const { line } = this.getActiveReference();
 		const { screenPositions, positions } = line;
 
 		const flip = this._getTextDirection();
-		const length = _advances.length;
+		const length = text.length;
 
 		while ( characterPositions.length < length ) {
 

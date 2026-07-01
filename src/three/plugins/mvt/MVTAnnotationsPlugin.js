@@ -92,8 +92,6 @@ export class MVTAnnotationsPlugin {
 		this.sortCallback = sortCallback;
 		this.filterAnnotation = filterAnnotation;
 		this.onAnnotationsUpdate = onAnnotationsUpdate;
-
-		// TODO: temporary — provides per-character advance widths for text label layout
 		this.measureChar = measureChar;
 
 		// hierarchy for managing tile loading and visibility
