@@ -12,14 +12,25 @@ export class PointAnnotationManager {
 
 	add( annotation ) {
 
-		// TODO: we need to "refine" the point annotation positions based on LoD level
-		// so we always have the most precise lat / lon position
 		const { annotations, added } = this;
 		const { id } = annotation;
 		if ( ! annotations.has( id ) ) {
 
 			annotations.set( id, { annotation, ref: 0 } );
 			added.add( annotation );
+
+		} else {
+
+			// refine the position of the canonical annotation if the new one is from a
+			// higher LoD.
+			const canonicalAnnotation = annotations.get( id ).annotation;
+			if ( annotation.lodLevel > canonicalAnnotation.lodLevel ) {
+
+				canonicalAnnotation.lodLevel = annotation.lodLevel;
+				canonicalAnnotation.lat = annotation.lat;
+				canonicalAnnotation.lon = annotation.lon;
+
+			}
 
 		}
 
