@@ -1,10 +1,6 @@
 import { Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
-// screen-space spacing / footprint per character, in pixels
-// TODO: This should come from a user setting
-const CHARACTER_SIZE = 16;
-
 // reject labels whose projected baseline turns more than this in total ( radians ), since
 // sharply curving text becomes hard to read
 const MAX_LABEL_ANGLE = Math.PI / 2;
@@ -79,6 +75,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// evaluate() since the text never changes
 		this._advances = [];
 		this._totalWidth = 0;
+		this._charRadius = 1;
 
 	}
 
@@ -107,7 +104,10 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		}
 
+		const maxCharWidth = this.measureChar( 'M' );
 		this._updateAdvances();
+		this._charRadius = Math.sqrt( maxCharWidth ** 2 ) / 2;
+
 		_segIndices.length = text.length;
 		_segAlphas.length = text.length;
 
@@ -197,7 +197,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// TODO: also reject foreshortened paths (tiny screen-space segments)
 	_layoutCharacters( handle, outputIndices, outputAlphas ) {
 
-		const { _advances, _totalWidth } = this;
+		const { _advances, _totalWidth, _charRadius } = this;
 		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
@@ -206,7 +206,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const pointCount = screenPositions.length;
 		const totalLength = cumulativeLen[ cumulativeLen.length - 1 ];
 		const length = _advances.length;
-		const radius = CHARACTER_SIZE / 2;
 
 		let seg = 0;
 		let charCursor = 0;
@@ -245,7 +244,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			_vec.lerpVectors( p0, p1, segAlpha );
 
 			// off-screen in depth, or colliding with an already-placed annotation
-			if ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, radius ) ) {
+			if ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, _charRadius ) ) {
 
 				return false;
 
@@ -281,13 +280,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// angle per character, applying the reading-direction flip
 	_placeCharacters( handle, segIndices, segAlphas ) {
 
-		const { characterPositions, characterAngles, _advances } = this;
+		const { characterPositions, characterAngles, _advances, _charRadius } = this;
 		const { line } = this.getActiveReference();
 		const { screenPositions, positions } = line;
 
 		const flip = this._getTextDirection();
 		const length = _advances.length;
-		const radius = CHARACTER_SIZE / 2;
 
 		while ( characterPositions.length < length ) {
 
@@ -307,7 +305,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			const p0 = screenPositions[ index ];
 			const p1 = screenPositions[ index + 1 ];
-			handle.mark( p0.x + ( p1.x - p0.x ) * segAlpha, p0.y + ( p1.y - p0.y ) * segAlpha, radius );
+			handle.mark( p0.x + ( p1.x - p0.x ) * segAlpha, p0.y + ( p1.y - p0.y ) * segAlpha, _charRadius );
 
 			characterPositions[ i ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
 
