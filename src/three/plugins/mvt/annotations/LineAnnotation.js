@@ -41,6 +41,10 @@ export class LineAnnotation extends OccupancyAnnotation {
 		this.cachedMatrix = new Matrix4();
 		this.cachedResolution = new Vector2();
 
+		// set true when settling updates `positions` so updateTransform recomputes the screen
+		// projection even when the camera hasn't moved
+		this.needsUpdate = false;
+
 	}
 
 	hasCoverage( lat, lon ) {
@@ -59,12 +63,13 @@ export class LineAnnotation extends OccupancyAnnotation {
 	updateTransform( matrix, resolution, cameraPosition ) {
 
 		const { positions, screenPositions, cachedMatrix, cachedResolution, cumulativeLen } = this;
-		if ( cachedMatrix.equals( matrix ) && cachedResolution.equals( resolution ) ) {
+		if ( ! this.needsUpdate && cachedMatrix.equals( matrix ) && cachedResolution.equals( resolution ) ) {
 
 			return;
 
 		}
 
+		this.needsUpdate = false;
 		cachedMatrix.copy( matrix );
 		cachedResolution.copy( resolution );
 

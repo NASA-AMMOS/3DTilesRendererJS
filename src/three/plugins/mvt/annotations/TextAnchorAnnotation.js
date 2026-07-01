@@ -124,7 +124,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	// per-character advance widths in screen px ( em fraction × em size ), cached since the text
+	// per-character advance widths in screen px, cached since the text
 	// never changes. also caches their total in `_totalWidth`.
 	_updateAdvances() {
 
@@ -144,17 +144,64 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
+	// determine the reading direction based on the positioning of the end points
+	_getTextDirection() {
+
+		const { _totalWidth } = this;
+		const { line, i0, i1, alpha } = this.getActiveReference();
+		const { cumulativeLen, screenPositions } = line;
+		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
+
+		// the label is centered on the anchor, so its ends sit half a total-width to each side
+		const halfWidth = _totalWidth * 0.5;
+		const startOffset = anchorOffset - halfWidth;
+		const endOffset = anchorOffset + halfWidth;
+
+		let startIndex = 0;
+		let startAlpha = 0;
+		let endIndex = cumulativeLen.length - 2;
+		let endAlpha = 1;
+		for ( let i = 0, l = cumulativeLen.length - 2; i < l; i ++ ) {
+
+			const n = i + 1;
+
+			const l0 = cumulativeLen[ i ];
+			const l1 = cumulativeLen[ n ];
+
+			if ( startOffset >= l0 && startOffset <= l1 ) {
+
+				startIndex = i;
+				startAlpha = MathUtils.mapLinear( startOffset, l0, l1, 0, 1 );
+
+			}
+
+			if ( endOffset >= l0 && endOffset <= l1 ) {
+
+				endIndex = i;
+				endAlpha = MathUtils.mapLinear( endOffset, l0, l1, 0, 1 );
+
+			}
+
+		}
+
+		const firstX = _vec.lerpVectors( screenPositions[ startIndex ], screenPositions[ startIndex + 1 ], startAlpha ).x;
+		const lastX = _vec.lerpVectors( screenPositions[ endIndex ], screenPositions[ endIndex + 1 ], endAlpha ).x;
+		return lastX < firstX;
+
+	}
+
 	// march the characters out from the anchor in both directions, centered, measuring and testing
 	// each one so a string that doesn't fit leaves no marks behind. records per-character segment
 	// index / alpha into the module scratch. returns the reading-direction flip on success, or
 	// null if the label can't be placed.
-	// TODO: also reject foreshortened paths ( tiny screen-space segments )
+	// TODO: also reject foreshortened paths (tiny screen-space segments)
 	_layoutCharacters( handle, outputIndices, outputAlphas ) {
 
 		const { _advances, _totalWidth } = this;
 		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
+		const flip = this._getTextDirection();
 
 		const pointCount = screenPositions.length;
 		const totalLength = cumulativeLen[ cumulativeLen.length - 1 ];
@@ -168,8 +215,9 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		for ( let i = 0; i < length; i ++ ) {
 
 			// place each character's center along the arc by its advance, centered on the anchor
-			const charCenter = charCursor + _advances[ i ] * 0.5 - _totalWidth * 0.5;
-			charCursor += _advances[ i ];
+			const slot = flip ? length - 1 - i : i;
+			const charCenter = charCursor + _advances[ slot ] * 0.5 - _totalWidth * 0.5;
+			charCursor += _advances[ slot ];
 
 			// absolute target position relative to the line
 			const target = anchorOffset + charCenter;
@@ -220,28 +268,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			prevAngle = angle;
 
-			outputIndices[ i ] = seg;
-			outputAlphas[ i ] = segAlpha;
+			outputIndices[ slot ] = seg;
+			outputAlphas[ slot ] = segAlpha;
 
 		}
 
-		// flip the character-to-slot mapping when the path runs right-to-left on screen so the
-		// label always reads left-to-right
 		return true;
-
-	}
-
-	// determine the text direction based on the width end points of the string
-	_getTextDirection( screenPositions, segIndices, segAlphas ) {
-
-		const ss0 = segIndices[ 0 ];
-		const ss1 = ss0 + 1;
-		const se0 = segIndices[ segIndices.length - 1 ];
-		const se1 = se0 + 1;
-
-		const firstX = _vec.lerpVectors( screenPositions[ ss0 ], screenPositions[ ss1 ], segAlphas[ 0 ] ).x;
-		const lastX = _vec.lerpVectors( screenPositions[ se0 ], screenPositions[ se1 ], segAlphas[ segAlphas.length - 1 ] ).x;
-		return lastX < firstX;
 
 	}
 
@@ -253,7 +285,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const { line } = this.getActiveReference();
 		const { screenPositions, positions } = line;
 
-		const flip = false;//this._getTextDirection( screenPositions, segIndices, segAlphas );
+		const flip = this._getTextDirection();
 		const length = _advances.length;
 		const radius = CHARACTER_SIZE / 2;
 
@@ -266,23 +298,24 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		characterPositions.length = length;
 		characterAngles.length = length;
 
-		for ( let k = 0; k < length; k ++ ) {
+		for ( let i = 0; i < length; i ++ ) {
 
-			const slot = flip ? length - 1 - k : k;
-			const index = segIndices[ slot ];
-			const segAlpha = segAlphas[ slot ];
+			// the layout already applied the flip when storing per-character data, so index it
+			// straight; flip only affects the baseline angle's sign below
+			const index = segIndices[ i ];
+			const segAlpha = segAlphas[ i ];
 
 			const p0 = screenPositions[ index ];
 			const p1 = screenPositions[ index + 1 ];
 			handle.mark( p0.x + ( p1.x - p0.x ) * segAlpha, p0.y + ( p1.y - p0.y ) * segAlpha, radius );
 
-			characterPositions[ k ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
+			characterPositions[ i ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
 
 			// baseline angle from the segment direction ( screen space, y down ), pointing in the
 			// reading direction so glyphs stay upright after a flip
 			const dx = ( p1.x - p0.x ) * ( flip ? - 1 : 1 );
 			const dy = ( p1.y - p0.y ) * ( flip ? - 1 : 1 );
-			characterAngles[ k ] = Math.atan2( dy, dx );
+			characterAngles[ i ] = Math.atan2( dy, dx );
 
 		}
 

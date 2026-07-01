@@ -372,6 +372,10 @@ export class SettlingManager {
 
 			}
 
+			// draped positions changed — force the screen transform to recompute even if the
+			// camera is static, so the anchor can place without waiting for camera motion
+			item.needsUpdate = true;
+
 		} else {
 
 			// settle the point onto the surface
