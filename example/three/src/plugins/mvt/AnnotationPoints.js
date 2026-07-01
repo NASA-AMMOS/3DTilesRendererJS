@@ -1,6 +1,6 @@
-import { BufferAttribute, BufferGeometry, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
-import { GlyphAtlasTexture } from '3d-tiles-renderer/plugins';
+import { BufferAttribute, Matrix4, Vector2, Vector3, Vector4 } from 'three';
 import { GlyphMaterial } from './GlyphMaterial.js';
+import { GlyphPoints } from './GlyphPoints.js';
 
 const _viewport = /* @__PURE__ */ new Vector4();
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
@@ -10,54 +10,27 @@ const _ssRay = /* @__PURE__ */ new Vector2();
 const _ssPoint = /* @__PURE__ */ new Vector2();
 const _worldPoint = /* @__PURE__ */ new Vector3();
 
-export class AnnotationPoints extends Points {
-
-	get size() {
-
-		return this.material.size;
-
-	}
-
-	set size( v ) {
-
-		this.material.size = v;
-
-	}
+export class AnnotationPoints extends GlyphPoints {
 
 	constructor( options = {} ) {
 
 		const {
 			getKind = () => null,
 			size = 20,
-			glyphSize = 20,
+			glyphSize = 20 * window.devicePixelRatio,
 			slotCount = 64,
 		} = options;
 
-
-		super( new BufferGeometry(), new GlyphMaterial() );
+		super( new GlyphMaterial() );
 
 		this.getKind = getKind;
-
-		this.renderOrder = 1000;
-		this.frustumCulled = false;
-
-		this.fadeInDuration = 0.3;
-		this.fadeOutDuration = 0.3;
 		this.size = size;
 
 		// Viewport size in pixels — must be kept current by the owner (plugin updates each frame).
 		this.resolution = new Vector2();
-
-		// Map<itemId, entry> — keyed by stable id, not object reference.
-		// entry: { item, fade: 0..1, state: 'in' | 'visible' | 'out' }
-		this._entryMap = new Map();
-		this._orderedEntries = [];
 		this.needsUpdate = false;
-		this._lastUpdateTime = - 1;
 
-		this.glyphAtlas = new GlyphAtlasTexture( slotCount, glyphSize );
-		this.material.glyphTexture = this.glyphAtlas;
-		this.glyphAtlas.getSlotSize( this.material.glyphCellSize );
+		this.glyphAtlas.resize( slotCount, glyphSize );
 
 	}
 
@@ -68,107 +41,6 @@ export class AnnotationPoints extends Points {
 		// use the active viewport (not getDrawingBufferSize) so raycasting matches the GPU's NDC→pixel mapping in sub-viewport scenarios
 		renderer.getViewport( _viewport );
 		resolution.set( _viewport.z, _viewport.w );
-
-	}
-
-	onAfterRender( renderer, scene, camera ) {
-
-		const { parent } = this;
-
-		// transform the root of this object to be near the camera to avoid gpu jitter
-		if ( parent ) {
-
-			_mvMatrix.copy( parent.matrixWorld ).invert();
-
-		} else {
-
-			_mvMatrix.identity();
-
-		}
-
-		this.position.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _mvMatrix );
-		this.updateMatrixWorld( true );
-
-	}
-
-	// Call when the occupation manager fires a change. Returns true while any point is still animating.
-	update( added, removed ) {
-
-		const now = performance.now() / 1000;
-		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
-		this._lastUpdateTime = now;
-
-		// Add new items, update LoD-swapped references, reverse in-progress fade-outs.
-		const { _entryMap, _orderedEntries } = this;
-		for ( const item of added ) {
-
-			const existing = _entryMap.get( item.id );
-			if ( ! existing ) {
-
-				const entry = { item, fade: 0, state: 'in' };
-				_entryMap.set( item.id, entry );
-				_orderedEntries.push( entry );
-
-			} else {
-
-				existing.item = item; // keep reference fresh (LoD swap)
-				if ( existing.state === 'out' ) existing.state = 'in';
-
-			}
-
-		}
-
-		// Start fade-out for removed items.
-		for ( const item of removed ) {
-
-			const entry = _entryMap.get( item.id );
-			if ( entry && entry.state !== 'out' ) {
-
-				entry.state = 'out';
-
-			}
-
-		}
-
-		// Tick fades; collect fully-faded-out items for removal.
-		const toRemove = [];
-		for ( const [ id, entry ] of _entryMap ) {
-
-			if ( entry.state === 'in' ) {
-
-				entry.fade = Math.min( 1, entry.fade + dt / this.fadeInDuration );
-				if ( entry.fade >= 1 ) {
-
-					entry.state = 'visible';
-
-				}
-
-			} else if ( entry.state === 'out' ) {
-
-				entry.fade = Math.max( 0, entry.fade - dt / this.fadeOutDuration );
-				if ( entry.fade <= 0 ) {
-
-					toRemove.push( id );
-
-				}
-
-			}
-
-		}
-
-		if ( toRemove.length > 0 ) {
-
-			for ( const id of toRemove ) {
-
-				_entryMap.delete( id );
-
-			}
-
-			this._orderedEntries = _orderedEntries.filter( e => _entryMap.has( e.item.id ) );
-
-		}
-
-		this._updateGeometry();
 
 	}
 

@@ -20,7 +20,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @param {number} slotCount - Maximum number of slots in the atlas.
 	 * @param {number} slotSize - Width and height of each slot in pixels.
 	 */
-	constructor( slotCount, slotSize ) {
+	constructor( slotCount = 32, slotSize = 64 ) {
 
 		super( null );
 

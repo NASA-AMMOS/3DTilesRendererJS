@@ -1,14 +1,8 @@
-import { BufferAttribute, BufferGeometry, Matrix4, Points } from 'three';
-import { GlyphAtlasTexture } from '3d-tiles-renderer/plugins';
+import { BufferAttribute } from 'three';
 import { GlyphMaterial } from './GlyphMaterial.js';
+import { GlyphPoints } from './GlyphPoints.js';
 
-const _mvMatrix = /* @__PURE__ */ new Matrix4();
-
-// Draws one glyph per character for the currently-visible text anchors. Each anchor's
-// `characterPositions` (and the characters in its `text`) are recomputed every frame by its
-// evaluate(), so the geometry is rebuilt on every update. Glyphs are rasterized lazily into a
-// shared atlas the first time a character is seen. ( Orientation / kerning come later. )
-export class CharacterPoints extends Points {
+export class CharacterPoints extends GlyphPoints {
 
 	constructor( options = {} ) {
 
@@ -18,137 +12,23 @@ export class CharacterPoints extends Points {
 			slotCount = 256,
 			font = null,
 			strokeStyle = 'black',
-			strokeWidth = null,
+			strokeWidth = 0,
 		} = options;
 
-		super( new BufferGeometry(), new GlyphMaterial( { size } ) );
-
-		this.renderOrder = 1001;
-		this.frustumCulled = false;
-
-		this.fadeInDuration = 0.3;
-		this.fadeOutDuration = 0.3;
-
-		// Map<itemId, entry> keyed by stable id; entry: { item, fade: 0..1, state: 'in'|'visible'|'out' }
-		this._entryMap = new Map();
-		this._orderedEntries = [];
-		this._lastUpdateTime = - 1;
+		super( new GlyphMaterial( { size } ) );
 
 		// CSS font used to rasterize glyphs, sized to fit the atlas slot
 		const fontSize = Math.round( glyphSize * 0.7 );
 		this._font = font ?? `400 ${ fontSize }px Arial`;
 
 		// canvas context for measuring advance widths, normalized to em units ( width / fontSize )
-		this._measureSize = fontSize;
 		this._advanceCache = new Map();
 
 		// black halo so glyphs read over the imagery
 		this._strokeStyle = strokeStyle;
-		this._strokeWidth = strokeWidth ?? Math.max( 1, Math.round( glyphSize * 0.08 ) );
+		this._strokeWidth = strokeWidth;
 
-		this.glyphAtlas = new GlyphAtlasTexture( slotCount, glyphSize );
-		this.material.glyphTexture = this.glyphAtlas;
-		this.glyphAtlas.getSlotSize( this.material.glyphCellSize );
-
-	}
-
-	update( added, removed ) {
-
-		const now = performance.now() / 1000;
-		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
-		this._lastUpdateTime = now;
-
-		// add new anchors, refresh LoD-swapped references, reverse in-progress fade-outs
-		const { _entryMap, _orderedEntries, fadeInDuration, fadeOutDuration } = this;
-		for ( const item of added ) {
-
-			const existing = _entryMap.get( item.id );
-			if ( ! existing ) {
-
-				const entry = { item, fade: 0, state: 'in' };
-				_entryMap.set( item.id, entry );
-				_orderedEntries.push( entry );
-
-			} else {
-
-				// keep reference fresh (LoD swap)
-				existing.item = item;
-				if ( existing.state === 'out' ) existing.state = 'in';
-
-			}
-
-		}
-
-		// start fade-out for removed anchors
-		for ( const item of removed ) {
-
-			const entry = _entryMap.get( item.id );
-			if ( entry && entry.state !== 'out' ) {
-
-				entry.state = 'out';
-
-			}
-
-		}
-
-		// tick fades; collect fully-faded-out anchors for removal
-		const toRemove = [];
-		for ( const [ id, entry ] of _entryMap ) {
-
-			if ( entry.state === 'in' ) {
-
-				entry.fade = Math.min( 1, entry.fade + dt / fadeInDuration );
-				if ( entry.fade >= 1 ) {
-
-					entry.state = 'visible';
-
-				}
-
-			} else if ( entry.state === 'out' ) {
-
-				entry.fade = Math.max( 0, entry.fade - dt / fadeOutDuration );
-				if ( entry.fade <= 0 ) {
-
-					toRemove.push( id );
-
-				}
-
-			}
-
-		}
-
-		if ( toRemove.length > 0 ) {
-
-			for ( const id of toRemove ) {
-
-				_entryMap.delete( id );
-
-			}
-
-			this._orderedEntries = _orderedEntries.filter( e => _entryMap.has( e.item.id ) );
-
-		}
-
-		this._updateGeometry();
-
-	}
-
-	onAfterRender( renderer, scene, camera ) {
-
-		// keep the root near the camera to avoid gpu jitter at globe scale
-		const { parent } = this;
-		if ( parent ) {
-
-			_mvMatrix.copy( parent.matrixWorld ).invert();
-
-		} else {
-
-			_mvMatrix.identity();
-
-		}
-
-		this.position.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _mvMatrix );
-		this.updateMatrixWorld( true );
+		this.glyphAtlas.resize( slotCount, glyphSize );
 
 	}
 

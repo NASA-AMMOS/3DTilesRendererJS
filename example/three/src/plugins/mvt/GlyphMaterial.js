@@ -1,16 +1,23 @@
 import { PointsMaterial, Vector2 } from 'three';
+import { GlyphAtlasTexture } from '3d-tiles-renderer/plugins';
 
 export class GlyphMaterial extends PointsMaterial {
 
-	get glyphTexture() {
+	get glyphAtlas() {
 
-		return this._glyphTexture;
+		return this._glyphAtlas;
 
 	}
 
-	set glyphTexture( v ) {
+	set glyphAtlas( v ) {
 
-		this._glyphTexture = v;
+		this._glyphAtlas = v;
+		if ( v !== null ) {
+
+			v.getSlotSize( this._glyphCellSize );
+
+		}
+
 		if ( this._uniforms ) {
 
 			this._uniforms.glyphAtlas.value = v;
@@ -28,7 +35,6 @@ export class GlyphMaterial extends PointsMaterial {
 	constructor( parameters = {} ) {
 
 		const {
-			glyphAtlas = null,
 			size = 25,
 			sizeAttenuation = false,
 			...rest
@@ -40,14 +46,15 @@ export class GlyphMaterial extends PointsMaterial {
 		this.depthTest = false;
 		this.depthWrite = false;
 
-		// glyph atlas state — set before first render; setters sync to uniforms after compile
-		this._glyphTexture = glyphAtlas;
+		// owns the glyph atlas ( unless one is provided ); the cell size is kept in sync with it
+		// and pushed to the uniforms after compile
 		this._glyphCellSize = new Vector2();
+		this._glyphAtlas = new GlyphAtlasTexture();
 		this._uniforms = null;
 
 		this.onBeforeCompile = ( shader ) => {
 
-			shader.uniforms.glyphAtlas = { value: this._glyphTexture };
+			shader.uniforms.glyphAtlas = { value: this._glyphAtlas };
 			shader.uniforms.glyphCellSize = { value: this._glyphCellSize };
 			this._uniforms = shader.uniforms;
 
@@ -114,6 +121,12 @@ export class GlyphMaterial extends PointsMaterial {
 			`;
 
 		};
+
+	}
+
+	onBeforeRender() {
+
+		this._glyphAtlas.getSlotSize( this._glyphCellSize );
 
 	}
 
