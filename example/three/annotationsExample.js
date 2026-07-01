@@ -173,8 +173,15 @@ function reinstantiateTiles() {
 		camera,
 		filterAnnotation: ( layer, properties, type ) => {
 
-			if ( type === 1 ) return properties.kind in KIND_TO_ICON;
-			else return 'name' in properties;
+			if ( type === 1 ) {
+
+				return properties.kind in KIND_TO_ICON;
+
+			} else {
+
+				return 'name' in properties;
+
+			}
 
 		},
 		onAnnotationsUpdate: ( added, removed ) => {
@@ -204,12 +211,19 @@ function reinstantiateTiles() {
 	annotationsPoints = new AnnotationPoints( {
 		getKind: ( layer, properties ) => {
 
-			return KIND_TO_ICON[ properties.kind ] || null;
+			return KIND_TO_ICON[ properties.kind ] || 'point';
 
 		}
 	} );
 
 	// load and draw all the icons
+	annotationsPoints.glyphAtlas.drawChar( 'point', '●', {
+		fillStyle: 'white',
+		strokeStyle: '#3f3e4c',
+		strokeWidth: 3 * renderer.getPixelRatio(),
+		font: '30px sans-serif',
+	} );
+
 	MAKI_ICONS.forEach( icon =>
 		fetch( MAKI_BASE + icon + '.svg' )
 			.then( r => r.text() )
@@ -231,7 +245,7 @@ function reinstantiateTiles() {
 
 	characterPoints = new CharacterPoints( {
 		strokeStyle: '#3f3e4c',
-		strokeWidth: 6 * renderer.getPixelRatio(),
+		strokeWidth: 3 * renderer.getPixelRatio(),
 	} );
 	tiles.group.add( characterPoints );
 
@@ -324,7 +338,7 @@ function updateTooltip() {
 		const { properties } = hits[ 0 ];
 		if ( properties ) {
 
-			tooltip.textContent = properties.name || `${ properties.kind.replace( '_', ' ' ) } (unnamed)`;
+			tooltip.textContent = properties.name || properties[ 'name:en' ] || `${ properties.kind.replace( '_', ' ' ) } (unnamed)`;
 			tooltip.style.display = 'block';
 			const x = Math.min( Math.max( lastClientX - tooltip.offsetWidth / 2, 4 ), window.innerWidth - tooltip.offsetWidth - 4 );
 			const y = Math.max( lastClientY - tooltip.offsetHeight - 10, 4 );

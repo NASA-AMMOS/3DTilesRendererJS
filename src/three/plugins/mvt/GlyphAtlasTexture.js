@@ -140,7 +140,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 				ctx.font = font;
 				ctx.lineJoin = 'round';
-				ctx.lineWidth = strokeWidth;
+				ctx.lineWidth = strokeWidth * 2;
 				ctx.strokeStyle = strokeStyle;
 				ctx.strokeText( char, drawX, drawY );
 
