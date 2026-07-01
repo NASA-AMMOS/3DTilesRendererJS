@@ -9,10 +9,31 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	/**
 	 * Returns true when all slots are allocated.
-	 * @returns {boolean}  */
+	 * @type {boolean}
+	 **/
 	get isFull() {
 
 		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
+
+	}
+
+	/**
+	 * Returns the total number of icons that can be added to the atlas.
+	 * @type {number}
+	 **/
+	get capacity() {
+
+		return this._capacity;
+
+	}
+
+	/**
+	 * Returns the number of icons currently used.
+	 * @type {number}
+	 **/
+	get count() {
+
+		return this._slots.size;
 
 	}
 
@@ -27,6 +48,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		this.generateMipmaps = false;
 
 		this.slotSize = 0;
+		this._columns = - 1;
+		this._capacity = - 1;
 
 		// key -> slot index
 		this._slots = new Map();
@@ -357,6 +380,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 			);
 
 		}
+
+		this.dispose();
 
 		this.image = canvas;
 		this.ctx = ctx;

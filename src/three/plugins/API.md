@@ -920,10 +920,28 @@ Slots are addressed by string key and can be drawn with text, images, or paths.
 ### .isFull
 
 ```js
-isFull: 
+isFull: boolean
 ```
 
 Returns true when all slots are allocated.
+
+
+### .capacity
+
+```js
+capacity: number
+```
+
+Returns the total number of icons that can be added to the atlas.
+
+
+### .count
+
+```js
+count: number
+```
+
+Returns the number of icons currently used.
 
 
 ### .constructor

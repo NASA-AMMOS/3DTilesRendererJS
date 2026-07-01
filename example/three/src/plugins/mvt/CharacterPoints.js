@@ -11,7 +11,7 @@ export class CharacterPoints extends GlyphPoints {
 		const {
 			size = 16,
 			glyphSize = 16 * window.devicePixelRatio,
-			slotCount = 256,
+			slotCount = 64,
 			font = null,
 			strokeStyle = 'black',
 			strokeWidth = 0,
@@ -26,11 +26,13 @@ export class CharacterPoints extends GlyphPoints {
 		// canvas context for measuring advance widths, normalized to em units ( width / fontSize )
 		this._advanceCache = new Map();
 
-		// black halo so glyphs read over the imagery
+		// styling
 		this._strokeStyle = strokeStyle;
 		this._strokeWidth = strokeWidth;
 
+		// the refs and unused list of the character glyphs
 		this._refs = {};
+		this._unused = [];
 
 		this.glyphAtlas.resize( slotCount, glyphSize );
 
@@ -56,9 +58,11 @@ export class CharacterPoints extends GlyphPoints {
 
 	update( added, removed ) {
 
-		const finishedFade = super.update( added, removed );
+		super.update( added, removed );
+		const { _refs, _unused, _removed, glyphAtlas } = this;
 
-		const { _refs, glyphAtlas } = this;
+		// iterate over all the added annotations and increment the ref, drawing the
+		// glyph to the atlas if needed.
 		added.forEach( ( { text } ) => {
 
 			for ( let i = 0, l = text.length; i < l; i ++ ) {
@@ -66,6 +70,26 @@ export class CharacterPoints extends GlyphPoints {
 				const char = text[ i ];
 				if ( ! ( char in _refs ) ) {
 
+					// if we've reached our capacity
+					if ( glyphAtlas.capacity === glyphAtlas.count ) {
+
+						if ( _unused.length > 0 ) {
+
+							// if there are unused slots then free up one of those
+							const unusedChar = _unused.pop();
+							glyphAtlas.release( unusedChar );
+							delete _refs[ unusedChar ];
+
+						} else {
+
+							// otherwise resize the atlas to fit more glyphs
+							glyphAtlas.resize( glyphAtlas.capacity * 2 );
+
+						}
+
+					}
+
+					// draw the glyph
 					_refs[ char ] = 0;
 					glyphAtlas.drawChar( char, char, {
 						font: this._font,
@@ -82,7 +106,8 @@ export class CharacterPoints extends GlyphPoints {
 
 		} );
 
-		finishedFade.forEach( ( { text } ) => {
+		// decrement the refs and queue up any characters as unused if they reach 0
+		_removed.forEach( ( { text } ) => {
 
 			for ( let i = 0, l = text.length; i < l; i ++ ) {
 
@@ -90,8 +115,7 @@ export class CharacterPoints extends GlyphPoints {
 				_refs[ char ] --;
 				if ( _refs[ char ] === 0 ) {
 
-					glyphAtlas.release( char );
-					delete _refs[ char ];
+					_unused.push( char );
 
 				}
 
