@@ -202,8 +202,6 @@ function reinstantiateTiles() {
 	} ) );
 
 	annotationsPoints = new AnnotationPoints( {
-		size: 20,
-		glyphSize: 2 * 20 * renderer.getPixelRatio(),
 		getKind: ( layer, properties ) => {
 
 			return KIND_TO_ICON[ properties.kind ] || null;

@@ -24,6 +24,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 		super( null );
 
+		this.generateMipmaps = false;
+
 		this.slotSize = 0;
 
 		// key -> slot index

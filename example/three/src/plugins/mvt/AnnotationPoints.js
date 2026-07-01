@@ -16,8 +16,8 @@ export class AnnotationPoints extends GlyphPoints {
 
 		const {
 			getKind = () => null,
-			size = 20,
-			glyphSize = 20 * window.devicePixelRatio,
+			size = 18,
+			glyphSize = 18 * window.devicePixelRatio,
 			slotCount = 64,
 		} = options;
 
