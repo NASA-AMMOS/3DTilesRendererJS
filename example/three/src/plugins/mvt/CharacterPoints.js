@@ -2,6 +2,8 @@ import { BufferAttribute } from 'three';
 import { GlyphMaterial } from './GlyphMaterial.js';
 import { GlyphPoints } from './GlyphPoints.js';
 
+const _uvTarget = {};
+
 export class CharacterPoints extends GlyphPoints {
 
 	constructor( options = {} ) {
@@ -28,6 +30,8 @@ export class CharacterPoints extends GlyphPoints {
 		this._strokeStyle = strokeStyle;
 		this._strokeWidth = strokeWidth;
 
+		this._refs = {};
+
 		this.glyphAtlas.resize( slotCount, glyphSize );
 
 	}
@@ -50,30 +54,56 @@ export class CharacterPoints extends GlyphPoints {
 
 	}
 
-	// uv bounds of the glyph for `char`, rasterizing it into the atlas on first use
-	_glyphUV( char ) {
+	update( added, removed ) {
 
-		// TODO: we need to use a smart counter to determine when
-		// to free a slot
-		const { glyphAtlas } = this;
-		if ( ! glyphAtlas.has( char ) ) {
+		const finishedFade = super.update( added, removed );
 
-			glyphAtlas.drawChar( char, char, {
-				font: this._font,
-				color: 'white',
-				strokeStyle: this._strokeStyle,
-				strokeWidth: this._strokeWidth,
-			} );
+		const { _refs, glyphAtlas } = this;
+		added.forEach( ( { text } ) => {
 
-		}
+			for ( let i = 0, l = text.length; i < l; i ++ ) {
 
-		return glyphAtlas.getUV( char );
+				const char = text[ i ];
+				if ( ! ( char in _refs ) ) {
+
+					_refs[ char ] = 0;
+					glyphAtlas.drawChar( char, char, {
+						font: this._font,
+						color: 'white',
+						strokeStyle: this._strokeStyle,
+						strokeWidth: this._strokeWidth,
+					} );
+
+				}
+
+				_refs[ char ] ++;
+
+			}
+
+		} );
+
+		finishedFade.forEach( ( { text } ) => {
+
+			for ( let i = 0, l = text.length; i < l; i ++ ) {
+
+				const char = text[ i ];
+				_refs[ char ] --;
+				if ( _refs[ char ] === 0 ) {
+
+					glyphAtlas.release( char );
+					delete _refs[ char ];
+
+				}
+
+			}
+
+		} );
 
 	}
 
 	_updateGeometry() {
 
-		const { _orderedEntries, geometry, position } = this;
+		const { _orderedEntries, geometry, position, glyphAtlas } = this;
 
 		// total character count across all entries ( including fading ones )
 		let count = 0;
@@ -117,7 +147,7 @@ export class CharacterPoints extends GlyphPoints {
 				const p = positions[ c ];
 				posAttr.setXYZ( i, p.x - position.x, p.y - position.y, p.z - position.z );
 
-				const uv = this._glyphUV( text[ c ] );
+				const uv = glyphAtlas.getUV( text[ c ], _uvTarget );
 				if ( uv !== null ) {
 
 					glyphUVAttr.setXY( i, uv.x, uv.y );

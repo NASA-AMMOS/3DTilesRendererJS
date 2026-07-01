@@ -38,6 +38,7 @@ export class GlyphPoints extends Points {
 		this._entryMap = new Map();
 		this._orderedEntries = [];
 		this._lastUpdateTime = - 1;
+		this._removed = [];
 
 	}
 
@@ -48,7 +49,9 @@ export class GlyphPoints extends Points {
 		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
 		this._lastUpdateTime = now;
 
-		const { _entryMap, _orderedEntries, fadeInDuration, fadeOutDuration } = this;
+		const { _entryMap, _orderedEntries, _removed, fadeInDuration, fadeOutDuration } = this;
+		_removed.length = 0;
+
 		for ( const item of added ) {
 
 			const existing = _entryMap.get( item.id );
@@ -79,7 +82,6 @@ export class GlyphPoints extends Points {
 
 		}
 
-		const toRemove = [];
 		for ( const [ id, entry ] of _entryMap ) {
 
 			if ( entry.state === 'in' ) {
@@ -96,7 +98,8 @@ export class GlyphPoints extends Points {
 				entry.fade = Math.max( 0, entry.fade - dt / fadeOutDuration );
 				if ( entry.fade <= 0 ) {
 
-					toRemove.push( id );
+					_entryMap.delete( id );
+					_removed.push( entry.item );
 
 				}
 
@@ -104,19 +107,15 @@ export class GlyphPoints extends Points {
 
 		}
 
-		if ( toRemove.length > 0 ) {
-
-			for ( const id of toRemove ) {
-
-				_entryMap.delete( id );
-
-			}
+		if ( _removed.length > 0 ) {
 
 			this._orderedEntries = _orderedEntries.filter( e => _entryMap.has( e.item.id ) );
 
 		}
 
 		this._updateGeometry();
+
+		return _removed;
 
 	}
 
