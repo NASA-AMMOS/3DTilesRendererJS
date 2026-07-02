@@ -115,7 +115,7 @@ export class MVTAnnotationsDriver {
 
 	/**
 	 * Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
-	 * decides what is parsed, this is a dynamic filter re-evaluated on `refreshFilter()`.
+	 * decides what is parsed, this is a dynamic filter re-evaluated on `refresh()`.
 	 * @param {Object} properties - The feature's property map.
 	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
 	 * @returns {boolean} True to display the annotation.
@@ -182,7 +182,6 @@ export class MVTAnnotationsPlugin {
 		// stable bound callbacks handed to sub-objects that invoke them ( preserves driver `this` )
 		this._measureChar = char => this.driver.measureChar( char );
 		this._filterAnnotation = ( layer, properties, type ) => this.driver.filterAnnotation( layer, properties, type );
-		this._getText = properties => this.driver.getText( properties );
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -337,7 +336,7 @@ export class MVTAnnotationsPlugin {
 			anchorManager.added.forEach( item => {
 
 				item.measureChar = this._measureChar;
-				item.getText = this._getText;
+				item.text = this.driver.getText( item.properties );
 				occupancy.register( item );
 
 			} );
@@ -509,12 +508,12 @@ export class MVTAnnotationsPlugin {
 
 	}
 
-	// re-evaluate the driver's isAnnotationEnabled over every parsed annotation. occupancy picks up
-	// the change automatically ( items fade in / out ) and settling is re-queued so any newly
+	// re-pull driver-derived state for every parsed annotation: `enabled` flags ( occupancy fades
+	// them in / out automatically ) and cached anchor text. settling is re-queued so any newly
 	// enabled annotations get draped.
-	refreshFilter() {
+	refresh() {
 
-		const { vectorTileInfo, settlingManager, tiles } = this;
+		const { vectorTileInfo, anchorManager, settlingManager, tiles } = this;
 		for ( const { annotations } of vectorTileInfo.values() ) {
 
 			for ( const ann of annotations ) {
@@ -522,6 +521,13 @@ export class MVTAnnotationsPlugin {
 				ann.enabled = this.driver.isAnnotationEnabled( ann.properties, ann instanceof LineAnnotation ? 2 : 1 );
 
 			}
+
+		}
+
+		// recompute label text ( getText may return a different string, e.g. on a language change )
+		for ( const anchor of anchorManager.getAnchors() ) {
+
+			anchor.text = this.driver.getText( anchor.properties );
 
 		}
 

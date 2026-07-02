@@ -27,12 +27,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	get text() {
-
-		return this.getText( this.properties );
-
-	}
-
 	get ready() {
 
 		return this.getActiveReference().line.ready;
@@ -78,8 +72,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// per-character advance width provider (pixels)
 		this.measureChar = () => 1;
 
-		// text provider — returns the string to display for the line's properties
-		this.getText = properties => properties.name ?? '';
+		// display text, set by the plugin on init and on refresh
+		this.text = '';
 
 		// total advance width of the label ( screen px ) and per-character footprint radius,
 		// recomputed each layout ( individual advances come from the cached measureChar )

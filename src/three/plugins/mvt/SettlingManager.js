@@ -317,7 +317,7 @@ export class SettlingManager {
 					}
 
 					// skip disabled ( filtered-out ) items — they're drained here and re-queued by
-					// the plugin's refreshFilter() if they become enabled again
+					// the plugin's refresh() if they become enabled again
 					if ( ! item.enabled ) {
 
 						continue;
