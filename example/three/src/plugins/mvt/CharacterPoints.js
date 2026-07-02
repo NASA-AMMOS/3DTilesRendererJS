@@ -32,7 +32,7 @@ export class CharacterPoints extends GlyphPoints {
 
 		// the refs and unused list of the character glyphs
 		this._refs = {};
-		this._unused = [];
+		this._unused = new Set();
 
 		this.glyphAtlas.resize( slotCount, glyphSize );
 
@@ -58,12 +58,15 @@ export class CharacterPoints extends GlyphPoints {
 
 	update( added, removed ) {
 
+		// TODO: if the "text" suddenly changes (eg from a language change) this will break
+		// since we will never get a "removed" event associated with the original text string.
+		// We may have to track the characters that have been used in a geometry update, instead.
 		super.update( added, removed );
-		const { _refs, _unused, _removed, glyphAtlas } = this;
+		const { _refs, _unused, _added, _removed, glyphAtlas } = this;
 
 		// iterate over all the added annotations and increment the ref, drawing the
 		// glyph to the atlas if needed.
-		added.forEach( ( { text } ) => {
+		_added.forEach( ( { text } ) => {
 
 			for ( let i = 0, l = text.length; i < l; i ++ ) {
 
@@ -73,12 +76,13 @@ export class CharacterPoints extends GlyphPoints {
 					// if we've reached our capacity
 					if ( glyphAtlas.capacity === glyphAtlas.count ) {
 
-						if ( _unused.length > 0 ) {
+						if ( _unused.size > 0 ) {
 
 							// if there are unused slots then free up one of those
-							const unusedChar = _unused.pop();
+							const unusedChar = _unused.values().next().value;
 							glyphAtlas.release( unusedChar );
 							delete _refs[ unusedChar ];
+							_unused.delete( unusedChar );
 
 						} else {
 
@@ -100,6 +104,7 @@ export class CharacterPoints extends GlyphPoints {
 
 				}
 
+				_unused.delete( char );
 				_refs[ char ] ++;
 
 			}
@@ -115,7 +120,7 @@ export class CharacterPoints extends GlyphPoints {
 				_refs[ char ] --;
 				if ( _refs[ char ] === 0 ) {
 
-					_unused.push( char );
+					_unused.add( char );
 
 				}
 
