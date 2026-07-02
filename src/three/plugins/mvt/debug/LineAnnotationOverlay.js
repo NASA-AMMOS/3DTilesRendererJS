@@ -122,7 +122,7 @@ export class LineAnnotationOverlay {
 		}
 
 		// settled line paths → segment buffer
-		const lineItems = anchorManager.getLines().filter( item => item instanceof LineAnnotation && item.ready );
+		const lineItems = Array.from( anchorManager.lines ).filter( item => item instanceof LineAnnotation && item.ready );
 		let segmentCount = 0;
 		for ( const line of lineItems ) {
 
@@ -153,7 +153,7 @@ export class LineAnnotationOverlay {
 		}
 
 		// anchors at their active ( highest-LoD settled ) path → point buffer
-		const anchorItems = anchorManager.getAnchors().filter( anchor => anchor.ready );
+		const anchorItems = Array.from( anchorManager.anchors ).filter( anchor => anchor.ready );
 
 		const pointsPosAttr = new BufferAttribute( new Float32Array( anchorItems.length * 3 ), 3 );
 		const pointsColAttr = new BufferAttribute( new Float32Array( anchorItems.length * 2 * 3 ), 3 );

@@ -6,24 +6,27 @@ export class PointAnnotationManager {
 
 		this.added = new Set();
 		this.removed = new Set();
-		this.annotations = new Map();
+		this.points = new Set();
+		this._annotationsById = new Map();
+
 
 	}
 
 	add( annotation ) {
 
-		const { annotations, added } = this;
+		const { _annotationsById, points, added } = this;
 		const { id } = annotation;
-		if ( ! annotations.has( id ) ) {
+		if ( ! _annotationsById.has( id ) ) {
 
-			annotations.set( id, { annotation, ref: 0 } );
+			_annotationsById.set( id, { annotation, ref: 0 } );
+			points.add( annotation );
 			added.add( annotation );
 
 		} else {
 
 			// refine the position of the canonical annotation if the new one is from a
 			// higher LoD.
-			const canonicalAnnotation = annotations.get( id ).annotation;
+			const canonicalAnnotation = _annotationsById.get( id ).annotation;
 			if ( annotation.lodLevel > canonicalAnnotation.lodLevel ) {
 
 				canonicalAnnotation.lodLevel = annotation.lodLevel;
@@ -34,15 +37,15 @@ export class PointAnnotationManager {
 
 		}
 
-		annotations.get( id ).ref ++;
+		_annotationsById.get( id ).ref ++;
 
 	}
 
 	delete( annotation ) {
 
-		const { annotations } = this;
+		const { _annotationsById } = this;
 		const { id } = annotation;
-		const info = annotations.get( id );
+		const info = _annotationsById.get( id );
 		info.ref --;
 
 
@@ -50,13 +53,14 @@ export class PointAnnotationManager {
 
 	update() {
 
-		const { removed, annotations } = this;
-		annotations.forEach( ( info, id ) => {
+		const { removed, points, _annotationsById } = this;
+		_annotationsById.forEach( ( info, id ) => {
 
 			if ( info.ref === 0 ) {
 
 				removed.add( info.annotation );
-				annotations.delete( id );
+				points.delete( info.annotation );
+				_annotationsById.delete( id );
 
 			}
 

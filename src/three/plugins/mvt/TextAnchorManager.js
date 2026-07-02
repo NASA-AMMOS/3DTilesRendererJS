@@ -11,6 +11,11 @@ export class TextAnchorManager {
 		this._anchorsById = new Map();
 		this._linesById = new Map();
 
+		// flat sets of every tracked line / anchor, maintained on add / delete for allocation-free
+		// iteration
+		this.lines = new Set();
+		this.anchors = new Set();
+
 	}
 
 	reset() {
@@ -31,6 +36,7 @@ export class TextAnchorManager {
 				if ( anchor.isEmpty() ) {
 
 					anchors.delete( anchor );
+					this.anchors.delete( anchor );
 					removed.add( anchor );
 
 				}
@@ -45,42 +51,6 @@ export class TextAnchorManager {
 			}
 
 		} );
-
-	}
-
-	// retrieve all lines
-	getLines() {
-
-		const res = [];
-		this._linesById.forEach( value => {
-
-			value.forEach( line => {
-
-				res.push( line );
-
-			} );
-
-		} );
-
-		return res;
-
-	}
-
-	// retrieve all anchors
-	getAnchors() {
-
-		const target = [];
-		this._anchorsById.forEach( anchors => {
-
-			anchors.forEach( anchor => {
-
-				target.push( anchor );
-
-			} );
-
-		} );
-
-		return target;
 
 	}
 
@@ -188,6 +158,7 @@ export class TextAnchorManager {
 
 							anchorPosition.ref = anchor;
 							anchorSet.add( anchor );
+							this.anchors.add( anchor );
 							added.add( anchor );
 
 						}
@@ -207,6 +178,7 @@ export class TextAnchorManager {
 			lines.forEach( line => {
 
 				lineSet.add( line );
+				this.lines.add( line );
 
 			} );
 
@@ -227,6 +199,7 @@ export class TextAnchorManager {
 		const id = line.id;
 
 		_linesById.get( id ).delete( line );
+		this.lines.delete( line );
 		if ( _linesById.get( id ).size === 0 ) {
 
 			_linesById.delete( id );

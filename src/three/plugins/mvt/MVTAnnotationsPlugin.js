@@ -303,28 +303,23 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
-			// Recompute driver-derived state on every parsed annotation before placement
-			for ( const { annotations } of this.vectorTileInfo.values() ) {
+			const { driver, camera } = this;
 
-				for ( const ann of annotations ) {
+			// Recalculate the field state per annotation
+			for ( const annotation of pointManager.points ) {
 
-					if ( ann instanceof LineAnnotation ) {
+				annotation.enabled = driver.isAnnotationEnabled( annotation.layer, annotation.properties, 1 );
 
-						ann.enabled = this.driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
-						ann.text = this.driver.getText( ann.properties );
+			}
 
-					} else {
+			for ( const line of anchorManager.lines ) {
 
-						ann.enabled = this.driver.isAnnotationEnabled( ann.layer, ann.properties, 1 );
-
-					}
-
-				}
+				line.enabled = driver.isAnnotationEnabled( line.layer, line.properties, 2 );
+				line.text = driver.getText( line.properties );
 
 			}
 
 			// sync camera and localToWorld matrix into occupancy grid
-			const { camera } = this;
 			if ( camera !== null ) {
 
 				tiles.getResolution( camera, occupancy.resolution );
