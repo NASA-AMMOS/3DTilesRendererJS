@@ -310,12 +310,12 @@ export class MVTAnnotationsPlugin {
 
 					if ( ann instanceof LineAnnotation ) {
 
-						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 2 );
+						ann.enabled = this.driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
 						ann.text = this.driver.getText( ann.properties );
 
 					} else {
 
-						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 1 );
+						ann.enabled = this.driver.isAnnotationEnabled( ann.layer, ann.properties, 1 );
 
 					}
 
