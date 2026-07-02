@@ -102,8 +102,12 @@ const KIND_TO_ICON = {
 
 };
 
+// localized name variants exposed by the protomaps v4 basemap
+const LANGUAGES = [ 'default', 'en', 'ja', 'ko' ];
+
 const params = {
 
+	language: 'default',
 	occupancyGrid: false,
 	annotationLines: false,
 	tileHierarchy: false,
@@ -127,6 +131,8 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 	constructor() {
 
 		super();
+
+		this.language = 'default';
 
 		const dpr = renderer.getPixelRatio();
 
@@ -187,6 +193,19 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 			return 'name' in properties;
 
 		}
+
+	}
+
+	getText( properties ) {
+
+		const { language } = this;
+		if ( language !== 'default' ) {
+
+			return properties[ `name:${ language }` ] ?? properties.name ?? '';
+
+		}
+
+		return properties.name ?? '';
 
 	}
 
@@ -264,6 +283,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new MeshBVHPlugin() );
 	driver = new ExampleAnnotationsDriver();
+	driver.language = params.language;
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
@@ -331,6 +351,12 @@ function init() {
 
 	// GUI
 	const gui = new GUI();
+	gui.add( params, 'language', LANGUAGES ).onChange( v => {
+
+		driver.language = v;
+		tiles.dispatchEvent( { type: 'needs-update' } );
+
+	} );
 	gui.add( params, 'occupancyGrid' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.occupancy.enabled = v;
