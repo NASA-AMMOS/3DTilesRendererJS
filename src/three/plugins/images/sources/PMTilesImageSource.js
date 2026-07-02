@@ -62,6 +62,8 @@ class PMTilesContentCache extends MVTContentCache {
 			getKey: () => this.url,
 			getBytes: async ( offset, length, signal ) => {
 
+				signal.aborted.throwIfAborted();
+
 				const { fetchOptions, url } = this;
 				const res = await this.fetchData( url, {
 					...fetchOptions,
