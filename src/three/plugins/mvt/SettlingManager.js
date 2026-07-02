@@ -316,6 +316,14 @@ export class SettlingManager {
 
 					}
 
+					// skip disabled ( filtered-out ) items — they're drained here and re-queued by
+					// the plugin's refreshFilter() if they become enabled again
+					if ( ! item.enabled ) {
+
+						continue;
+
+					}
+
 					yield* this._settleItem( item );
 
 					// yield between items once the budget is spent

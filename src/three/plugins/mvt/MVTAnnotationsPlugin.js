@@ -114,6 +114,19 @@ export class MVTAnnotationsDriver {
 	}
 
 	/**
+	 * Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
+	 * decides what is parsed, this is a dynamic filter re-evaluated on `refreshFilter()`.
+	 * @param {Object} properties - The feature's property map.
+	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
+	 * @returns {boolean} True to display the annotation.
+	 */
+	isAnnotationEnabled( properties, type ) {
+
+		return true;
+
+	}
+
+	/**
 	 * Called each frame with the annotations whose visibility changed, for the caller to render.
 	 * @param {Set} added - Annotations that became visible this frame.
 	 * @param {Set} removed - Annotations that became hidden this frame.
@@ -400,10 +413,12 @@ export class MVTAnnotationsPlugin {
 
 					if ( ann instanceof LineAnnotation ) {
 
+						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 2 );
 						settlingManager.register( ann );
 
 					} else {
 
+						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 1 );
 						pointManager.add( ann );
 
 					}
@@ -491,6 +506,27 @@ export class MVTAnnotationsPlugin {
 			}
 
 		} );
+
+	}
+
+	// re-evaluate the driver's isAnnotationEnabled over every parsed annotation. occupancy picks up
+	// the change automatically ( items fade in / out ) and settling is re-queued so any newly
+	// enabled annotations get draped.
+	refreshFilter() {
+
+		const { vectorTileInfo, settlingManager, tiles } = this;
+		for ( const { annotations } of vectorTileInfo.values() ) {
+
+			for ( const ann of annotations ) {
+
+				ann.enabled = this.driver.isAnnotationEnabled( ann.properties, ann instanceof LineAnnotation ? 2 : 1 );
+
+			}
+
+		}
+
+		settlingManager.needsUpdate = true;
+		tiles.dispatchEvent( { type: 'needs-update' } );
 
 	}
 

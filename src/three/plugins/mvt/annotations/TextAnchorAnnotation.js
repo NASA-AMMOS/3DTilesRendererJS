@@ -49,6 +49,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	set properties( value ) {}
 
+	// the anchor's enabled state tracks its active line's ( set by the plugin from the driver )
+	get enabled() {
+
+		return this.getActiveReference().line.enabled;
+
+	}
+
+	set enabled( value ) {}
+
 	constructor( id ) {
 
 		super();
