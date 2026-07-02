@@ -115,7 +115,7 @@ export class MVTAnnotationsDriver {
 
 	/**
 	 * Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
-	 * decides what is parsed, this is a dynamic filter re-evaluated on `refresh()`.
+	 * decides what is parsed once.
 	 * @param {Object} properties - The feature's property map.
 	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
 	 * @returns {boolean} True to display the annotation.
@@ -179,9 +179,10 @@ export class MVTAnnotationsPlugin {
 		this.camera = camera;
 		this.driver = driver;
 
-		// stable bound callbacks handed to sub-objects that invoke them ( preserves driver `this` )
+		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
 		this._filterAnnotation = ( layer, properties, type ) => this.driver.filterAnnotation( layer, properties, type );
+		this._getText = properties => this.driver.getText( properties );
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -303,6 +304,23 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
+			// recompute the dynamic display filter for every annotation before placement
+			for ( const { annotations } of this.vectorTileInfo.values() ) {
+
+				for ( const ann of annotations ) {
+
+					ann.enabled = this.driver.isAnnotationEnabled( ann.properties, ann instanceof LineAnnotation ? 2 : 1 );
+
+				}
+
+			}
+
+			for ( const anchor of anchorManager.getAnchors() ) {
+
+				anchor.enabled = this.driver.isAnnotationEnabled( anchor.properties, 2 );
+
+			}
+
 			// sync camera and localToWorld matrix into occupancy grid
 			const { camera } = this;
 			if ( camera !== null ) {
@@ -336,7 +354,7 @@ export class MVTAnnotationsPlugin {
 			anchorManager.added.forEach( item => {
 
 				item.measureChar = this._measureChar;
-				item.text = this.driver.getText( item.properties );
+				item.getText = this._getText;
 				occupancy.register( item );
 
 			} );
@@ -412,12 +430,10 @@ export class MVTAnnotationsPlugin {
 
 					if ( ann instanceof LineAnnotation ) {
 
-						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 2 );
 						settlingManager.register( ann );
 
 					} else {
 
-						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 1 );
 						pointManager.add( ann );
 
 					}
@@ -505,34 +521,6 @@ export class MVTAnnotationsPlugin {
 			}
 
 		} );
-
-	}
-
-	// re-pull driver-derived state for every parsed annotation: `enabled` flags ( occupancy fades
-	// them in / out automatically ) and cached anchor text. settling is re-queued so any newly
-	// enabled annotations get draped.
-	refresh() {
-
-		const { vectorTileInfo, anchorManager, settlingManager, tiles } = this;
-		for ( const { annotations } of vectorTileInfo.values() ) {
-
-			for ( const ann of annotations ) {
-
-				ann.enabled = this.driver.isAnnotationEnabled( ann.properties, ann instanceof LineAnnotation ? 2 : 1 );
-
-			}
-
-		}
-
-		// recompute label text ( getText may return a different string, e.g. on a language change )
-		for ( const anchor of anchorManager.getAnchors() ) {
-
-			anchor.text = this.driver.getText( anchor.properties );
-
-		}
-
-		settlingManager.needsUpdate = true;
-		tiles.dispatchEvent( { type: 'needs-update' } );
 
 	}
 

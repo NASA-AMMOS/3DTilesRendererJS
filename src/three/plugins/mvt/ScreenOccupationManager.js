@@ -8,6 +8,7 @@ export class OccupancyAnnotation {
 
 	constructor() {
 
+		this.enabled = true;
 		this.id = '';
 		this.layer = '';
 		this.properties = null;
@@ -16,7 +17,6 @@ export class OccupancyAnnotation {
 		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
 		this.visible = false;
-		this.enabled = true;
 		this.screenPos = new Vector3();
 
 	}

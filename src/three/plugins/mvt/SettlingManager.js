@@ -316,10 +316,10 @@ export class SettlingManager {
 
 					}
 
-					// skip disabled ( filtered-out ) items — they're drained here and re-queued by
-					// the plugin's refresh() if they become enabled again
+					// skip disabled items and mark them unsettled so they re-settle if re-enabled
 					if ( ! item.enabled ) {
 
+						item.ready = false;
 						continue;
 
 					}

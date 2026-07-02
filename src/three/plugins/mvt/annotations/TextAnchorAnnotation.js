@@ -43,14 +43,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	set properties( value ) {}
 
-	// the anchor's enabled state tracks its active line's ( set by the plugin from the driver )
-	get enabled() {
+	// display text, resolved live from the plugin-assigned getText each time it's read
+	get text() {
 
-		return this.getActiveReference().line.enabled;
+		return this.getText( this.properties );
 
 	}
-
-	set enabled( value ) {}
 
 	constructor( id ) {
 
@@ -72,8 +70,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// per-character advance width provider (pixels)
 		this.measureChar = () => 1;
 
-		// display text, set by the plugin on init and on refresh
-		this.text = '';
+		// display text provider, assigned by the plugin from the driver's getText
+		this.getText = () => '';
 
 		// total advance width of the label ( screen px ) and per-character footprint radius,
 		// recomputed each layout ( individual advances come from the cached measureChar )
