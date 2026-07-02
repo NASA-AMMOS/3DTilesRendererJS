@@ -8,6 +8,7 @@ export class OccupancyAnnotation {
 
 	constructor() {
 
+		this.enabled = true;
 		this.id = '';
 		this.layer = '';
 		this.properties = null;
@@ -240,7 +241,10 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			const item = items[ i ];
 			this._id = i + 1;
-			if ( ndcMatrix !== null && item.evaluate( handle ) ) {
+
+			// disabled items ( filtered out by the driver ) are skipped so they fall out of the
+			// visible set and fade out via the delayed manager, without being unregistered
+			if ( ndcMatrix !== null && item.enabled && item.evaluate( handle ) ) {
 
 				visible.add( item );
 				if ( ! prevVisible.has( item ) ) {

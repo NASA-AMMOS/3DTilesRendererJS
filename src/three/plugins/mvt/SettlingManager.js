@@ -316,6 +316,14 @@ export class SettlingManager {
 
 					}
 
+					// skip disabled items and mark them unsettled so they re-settle if re-enabled
+					if ( ! item.enabled ) {
+
+						item.ready = false;
+						continue;
+
+					}
+
 					yield* this._settleItem( item );
 
 					// yield between items once the budget is spent

@@ -114,6 +114,19 @@ export class MVTAnnotationsDriver {
 	}
 
 	/**
+	 * Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
+	 * decides what is parsed once.
+	 * @param {Object} properties - The feature's property map.
+	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
+	 * @returns {boolean} True to display the annotation.
+	 */
+	isAnnotationEnabled( properties, type ) {
+
+		return true;
+
+	}
+
+	/**
 	 * Called each frame with the annotations whose visibility changed, for the caller to render.
 	 * @param {Set} added - Annotations that became visible this frame.
 	 * @param {Set} removed - Annotations that became hidden this frame.
@@ -166,10 +179,9 @@ export class MVTAnnotationsPlugin {
 		this.camera = camera;
 		this.driver = driver;
 
-		// stable bound callbacks handed to sub-objects that invoke them ( preserves driver `this` )
+		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
 		this._filterAnnotation = ( layer, properties, type ) => this.driver.filterAnnotation( layer, properties, type );
-		this._getText = properties => this.driver.getText( properties );
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -291,8 +303,23 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
+			const { driver, camera } = this;
+
+			// Recalculate the field state per annotation
+			for ( const annotation of pointManager.points ) {
+
+				annotation.enabled = driver.isAnnotationEnabled( annotation.layer, annotation.properties, 1 );
+
+			}
+
+			for ( const line of anchorManager.lines ) {
+
+				line.enabled = driver.isAnnotationEnabled( line.layer, line.properties, 2 );
+				line.text = driver.getText( line.properties );
+
+			}
+
 			// sync camera and localToWorld matrix into occupancy grid
-			const { camera } = this;
 			if ( camera !== null ) {
 
 				tiles.getResolution( camera, occupancy.resolution );
@@ -324,7 +351,6 @@ export class MVTAnnotationsPlugin {
 			anchorManager.added.forEach( item => {
 
 				item.measureChar = this._measureChar;
-				item.getText = this._getText;
 				occupancy.register( item );
 
 			} );

@@ -102,7 +102,14 @@ const KIND_TO_ICON = {
 
 };
 
+// localized name variants exposed by the protomaps v4 basemap
+const LANGUAGES = [ 'default', 'en', 'ja', 'ko' ];
+
 const params = {
+
+	language: 'default',
+	displayIcons: true,
+	displayPaths: true,
 
 	occupancyGrid: false,
 	annotationLines: false,
@@ -127,6 +134,10 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 	constructor() {
 
 		super();
+
+		this.language = 'default';
+		this.displayIcons = true;
+		this.displayPaths = true;
 
 		const dpr = renderer.getPixelRatio();
 
@@ -187,6 +198,27 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 			return 'name' in properties;
 
 		}
+
+	}
+
+	isAnnotationEnabled( layer, properties, type ) {
+
+		if ( type === 1 && this.displayIcons ) return true;
+		if ( type === 2 && this.displayPaths ) return true;
+		return false;
+
+	}
+
+	getText( properties ) {
+
+		const { language } = this;
+		if ( language !== 'default' ) {
+
+			return properties[ `name:${ language }` ] ?? properties.name ?? '';
+
+		}
+
+		return properties.name ?? '';
 
 	}
 
@@ -264,6 +296,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new MeshBVHPlugin() );
 	driver = new ExampleAnnotationsDriver();
+	driver.language = params.language;
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
@@ -331,17 +364,37 @@ function init() {
 
 	// GUI
 	const gui = new GUI();
-	gui.add( params, 'occupancyGrid' ).onChange( v => {
+	gui.add( params, 'language', LANGUAGES ).onChange( v => {
+
+		driver.language = v;
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+	gui.add( params, 'displayIcons' ).onChange( v => {
+
+		driver.displayIcons = v;
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+	gui.add( params, 'displayPaths' ).onChange( v => {
+
+		driver.displayPaths = v;
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+
+	const debugFolder = gui.addFolder( 'Debug' );
+	debugFolder.add( params, 'occupancyGrid' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.occupancy.enabled = v;
 
 	} );
-	gui.add( params, 'annotationLines' ).onChange( v => {
+	debugFolder.add( params, 'annotationLines' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths.enabled = v;
 
 	} );
-	gui.add( params, 'tileHierarchy' ).onChange( v => {
+	debugFolder.add( params, 'tileHierarchy' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.hierarchy.enabled = v;
 

@@ -23,16 +23,18 @@ export class CharacterPoints extends GlyphPoints {
 		const fontSize = Math.round( glyphSize * 0.7 );
 		this._font = font ?? `400 ${ fontSize }px sans-serif`;
 
-		// canvas context for measuring advance widths, normalized to em units ( width / fontSize )
+		// advance-width cache, keyed per character
 		this._advanceCache = new Map();
 
 		// styling
 		this._strokeStyle = strokeStyle;
 		this._strokeWidth = strokeWidth;
 
-		// the refs and unused list of the character glyphs
-		this._refs = {};
-		this._unused = new Set();
+		// characters currently rasterized in the atlas, plus a reused scratch set of the characters
+		// needed this frame. the atlas is reconciled against what's actually rendered ( not against
+		// add / remove events ), so it stays correct even when an annotation's text changes.
+		this._drawn = new Set();
+		this._needed = new Set();
 
 		this.glyphAtlas.resize( slotCount, glyphSize );
 
@@ -56,89 +58,76 @@ export class CharacterPoints extends GlyphPoints {
 
 	}
 
-	update( added, removed ) {
+	// rasterize a character into the atlas, evicting a glyph that isn't needed this frame ( or
+	// growing the atlas if every rasterized glyph is still in use )
+	_drawChar( char, needed ) {
 
-		// TODO: if the "text" suddenly changes (eg from a language change) this will break
-		// since we will never get a "removed" event associated with the original text string.
-		// We may have to track the characters that have been used in a geometry update, instead.
-		super.update( added, removed );
-		const { _refs, _unused, _added, _removed, glyphAtlas } = this;
+		const { glyphAtlas, _drawn } = this;
+		if ( glyphAtlas.capacity === glyphAtlas.count ) {
 
-		// iterate over all the added annotations and increment the ref, drawing the
-		// glyph to the atlas if needed.
-		_added.forEach( ( { text } ) => {
+			let toRemove = null;
+			for ( const c of _drawn ) {
 
-			for ( let i = 0, l = text.length; i < l; i ++ ) {
+				if ( ! needed.has( c ) ) {
 
-				const char = text[ i ];
-				if ( ! ( char in _refs ) ) {
-
-					// if we've reached our capacity
-					if ( glyphAtlas.capacity === glyphAtlas.count ) {
-
-						if ( _unused.size > 0 ) {
-
-							// if there are unused slots then free up one of those
-							const unusedChar = _unused.values().next().value;
-							glyphAtlas.release( unusedChar );
-							delete _refs[ unusedChar ];
-							_unused.delete( unusedChar );
-
-						} else {
-
-							// otherwise resize the atlas to fit more glyphs
-							glyphAtlas.resize( glyphAtlas.capacity * 2 );
-
-						}
-
-					}
-
-					// draw the glyph
-					_refs[ char ] = 0;
-					glyphAtlas.drawChar( char, char, {
-						font: this._font,
-						color: 'white',
-						strokeStyle: this._strokeStyle,
-						strokeWidth: this._strokeWidth,
-					} );
-
-				}
-
-				_unused.delete( char );
-				_refs[ char ] ++;
-
-			}
-
-		} );
-
-		// decrement the refs and queue up any characters as unused if they reach 0
-		_removed.forEach( ( { text } ) => {
-
-			for ( let i = 0, l = text.length; i < l; i ++ ) {
-
-				const char = text[ i ];
-				_refs[ char ] --;
-				if ( _refs[ char ] === 0 ) {
-
-					_unused.add( char );
+					toRemove = c;
+					break;
 
 				}
 
 			}
 
+			if ( toRemove !== null ) {
+
+				glyphAtlas.release( toRemove );
+				_drawn.delete( toRemove );
+
+			} else {
+
+				glyphAtlas.resize( glyphAtlas.capacity * 2 );
+
+			}
+
+		}
+
+		glyphAtlas.drawChar( char, char, {
+			font: this._font,
+			color: 'white',
+			strokeStyle: this._strokeStyle,
+			strokeWidth: this._strokeWidth,
 		} );
+		_drawn.add( char );
 
 	}
 
 	_updateGeometry() {
 
-		const { _orderedEntries, geometry, position, glyphAtlas } = this;
+		const { _orderedEntries, _needed, geometry, position, glyphAtlas } = this;
 
-		// total character count across all entries ( including fading ones )
+		// collect the characters needed this frame from each items text, and the total glyph
+		// count
+		_needed.clear();
 		let count = 0;
 		for ( const entry of _orderedEntries ) {
 
-			count += entry.item.characterPositions.length;
+			const { text, characterPositions } = entry.item;
+			count += characterPositions.length;
+			for ( let c = 0, l = text.length; c < l; c ++ ) {
+
+				_needed.add( text[ c ] );
+
+			}
+
+		}
+
+		// make sure every needed character is rasterized before we look up its uv
+		for ( const char of _needed ) {
+
+			if ( ! glyphAtlas.has( char ) ) {
+
+				this._drawChar( char, _needed );
+
+			}
 
 		}
 
