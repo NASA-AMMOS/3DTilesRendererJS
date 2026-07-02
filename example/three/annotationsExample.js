@@ -11,6 +11,7 @@ import {
 	CesiumIonAuthPlugin,
 	PMTilesOverlay,
 	MVTAnnotationsPlugin,
+	MVTAnnotationsDriver,
 	UpdateOnChangePlugin,
 } from '3d-tiles-renderer/plugins';
 import { LoadRegionPlugin } from '3d-tiles-renderer/three/plugins';
@@ -110,8 +111,7 @@ const params = {
 };
 
 let controls, scene, renderer, camera, tiles;
-let annotationsPoints = null;
-let characterPoints = null;
+let driver = null;
 
 // raycasting
 const pointer = new Vector2();
@@ -119,32 +119,127 @@ const raycaster = new Raycaster();
 const tooltip = document.getElementById( 'tooltip' );
 let lastClientX = 0, lastClientY = 0;
 
-init();
-animate();
+// supplies the plugin's annotation callbacks and owns its render objects ( added to the driver's
+// group, which the plugin mounts under the tile group ): point annotations -> `annotationPoints`,
+// text anchors -> `characterPoints`
+class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 
-// route occupancy annotations to the right renderer: point annotations expose a `position`,
-// text-anchor annotations expose `characterPositions`
-function splitAnnotations( set ) {
+	constructor() {
 
-	const points = [];
-	const text = [];
-	for ( const item of set ) {
+		super();
 
-		if ( item.characterPositions !== undefined ) {
+		const dpr = renderer.getPixelRatio();
 
-			text.push( item );
+		// icons for point annotations
+		const annotationPoints = new AnnotationPoints( {
+			getKind: ( layer, properties ) => {
+
+				return KIND_TO_ICON[ properties.kind ] || 'point';
+
+			}
+		} );
+
+		// fallback dot + maki icons drawn into the atlas
+		annotationPoints.glyphAtlas.drawChar( 'point', '●', {
+			fillStyle: 'white',
+			strokeStyle: '#3f3e4c',
+			strokeWidth: 3 * dpr,
+			font: '30px sans-serif',
+		} );
+
+		MAKI_ICONS.forEach( icon =>
+			fetch( MAKI_BASE + icon + '.svg' )
+				.then( r => r.text() )
+				.then( svgText => {
+
+					annotationPoints.glyphAtlas.drawSVG( icon, svgText, {
+						fillStyle: 'white',
+						strokeStyle: '#3f3e4c',
+						strokeWidth: 3 * dpr,
+						iconScale: 0.9,
+					} );
+
+				} )
+				.catch( () => null )
+
+		);
+
+		// glyphs for text ( road ) annotations
+		const characterPoints = new CharacterPoints( {
+			strokeStyle: '#3f3e4c',
+			strokeWidth: 3 * dpr,
+		} );
+
+		this.group.add( annotationPoints, characterPoints );
+		this.annotationPoints = annotationPoints;
+		this.characterPoints = characterPoints;
+
+	}
+
+	filterAnnotation( layer, properties, type ) {
+
+		if ( type === 1 ) {
+
+			return properties.kind in KIND_TO_ICON;
 
 		} else {
 
-			points.push( item );
+			return 'name' in properties;
 
 		}
 
 	}
 
-	return { points, text };
+	measureChar( char ) {
+
+		return this.characterPoints.measureChar( char );
+
+	}
+
+	onAnnotationsUpdate( added, removed ) {
+
+		const a = splitAnnotations( added );
+		const r = splitAnnotations( removed );
+		this.annotationPoints.update( a.points, r.points );
+		this.characterPoints.update( a.text, r.text );
+
+		// route occupancy annotations to the right renderer: point annotations expose a `position`,
+		// text-anchor annotations expose `characterPositions`
+		function splitAnnotations( set ) {
+
+			const points = [];
+			const text = [];
+			for ( const item of set ) {
+
+				if ( item.characterPositions !== undefined ) {
+
+					text.push( item );
+
+				} else {
+
+					points.push( item );
+
+				}
+
+			}
+
+			return { points, text };
+
+		}
+
+	}
+
+	dispose() {
+
+		this.annotationPoints.dispose();
+		this.characterPoints.dispose();
+
+	}
 
 }
+
+init();
+animate();
 
 function reinstantiateTiles() {
 
@@ -168,32 +263,11 @@ function reinstantiateTiles() {
 	} ) );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new MeshBVHPlugin() );
+	driver = new ExampleAnnotationsDriver();
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
-		filterAnnotation: ( layer, properties, type ) => {
-
-			if ( type === 1 ) {
-
-				return properties.kind in KIND_TO_ICON;
-
-			} else {
-
-				return 'name' in properties;
-
-			}
-
-		},
-		onAnnotationsUpdate: ( added, removed ) => {
-
-			const a = splitAnnotations( added );
-			const r = splitAnnotations( removed );
-			annotationsPoints.update( a.points, r.points );
-			characterPoints.update( a.text, r.text );
-
-		},
-		// deferred: characterPoints is created below, but this only runs at update time
-		measureChar: char => characterPoints.measureChar( char ),
+		driver,
 	} ) );
 
 	// use the camera cartographic region plugin to prevent particularly low-lod
@@ -207,47 +281,6 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new LoadRegionPlugin( {
 		regions: [ cameraRegion ],
 	} ) );
-
-	annotationsPoints = new AnnotationPoints( {
-		getKind: ( layer, properties ) => {
-
-			return KIND_TO_ICON[ properties.kind ] || 'point';
-
-		}
-	} );
-
-	// load and draw all the icons
-	annotationsPoints.glyphAtlas.drawChar( 'point', '●', {
-		fillStyle: 'white',
-		strokeStyle: '#3f3e4c',
-		strokeWidth: 3 * renderer.getPixelRatio(),
-		font: '30px sans-serif',
-	} );
-
-	MAKI_ICONS.forEach( icon =>
-		fetch( MAKI_BASE + icon + '.svg' )
-			.then( r => r.text() )
-			.then( svgText => {
-
-				annotationsPoints.glyphAtlas.drawSVG( icon, svgText, {
-					fillStyle: 'white',
-					strokeStyle: '#3f3e4c',
-					strokeWidth: 3 * renderer.getPixelRatio(),
-					iconScale: 0.9,
-				} );
-
-			} )
-			.catch( () => null )
-
-	);
-
-	tiles.group.add( annotationsPoints );
-
-	characterPoints = new CharacterPoints( {
-		strokeStyle: '#3f3e4c',
-		strokeWidth: 3 * renderer.getPixelRatio(),
-	} );
-	tiles.group.add( characterPoints );
 
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
@@ -332,7 +365,7 @@ function updateTooltip() {
 
 	raycaster.setFromCamera( pointer, camera );
 
-	const hits = raycaster.intersectObject( annotationsPoints );
+	const hits = raycaster.intersectObject( driver.annotationPoints );
 	if ( hits.length > 0 ) {
 
 		const { properties } = hits[ 0 ];

@@ -9,10 +9,31 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 	/**
 	 * Returns true when all slots are allocated.
-	 * @returns {boolean}  */
+	 * @type {boolean}
+	 **/
 	get isFull() {
 
 		return this._freeList.length === 0 && this._nextIndex >= this._capacity;
+
+	}
+
+	/**
+	 * Returns the total number of icons that can be added to the atlas.
+	 * @type {number}
+	 **/
+	get capacity() {
+
+		return this._capacity;
+
+	}
+
+	/**
+	 * Returns the number of icons currently used.
+	 * @type {number}
+	 **/
+	get count() {
+
+		return this._slots.size;
 
 	}
 
@@ -27,6 +48,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		this.generateMipmaps = false;
 
 		this.slotSize = 0;
+		this._columns = - 1;
+		this._capacity = - 1;
 
 		// key -> slot index
 		this._slots = new Map();
@@ -88,18 +111,18 @@ export class GlyphAtlasTexture extends CanvasTexture {
 	 * @param {string} key
 	 * @returns {{ x: number, y: number, w: number, h: number } | null}
 	 */
-	getUV( key ) {
+	getUV( key, target = {} ) {
 
+		target = {};
 		const slot = this.get( key );
 		if ( slot === null ) return null;
 
-		const { width, height } = this.image;
-		return {
-			x: slot.x / width,
-			y: ( height - slot.y ) / height,
-			w: this.slotSize / width,
-			h: this.slotSize / height,
-		};
+		const { width, height, slotSize } = this.image;
+		target.x = slot.x / width;
+		target.y = ( height - slot.y ) / height;
+		target.w = slotSize / width;
+		target.h = slotSize / height;
+		return target;
 
 	}
 
@@ -358,6 +381,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 		}
 
+		this.dispose();
+
 		this.image = canvas;
 		this.ctx = ctx;
 		this.slotSize = slotSize;
@@ -421,6 +446,8 @@ export class GlyphAtlasTexture extends CanvasTexture {
 		ctx.beginPath();
 		ctx.rect( slot.x, slot.y, slot.w, slot.h );
 		ctx.clip();
+
+		ctx.clearRect( slot.x, slot.y, slot.w, slot.h );
 		callback( ctx, slot.x, slot.y, slot.w, slot.h );
 		ctx.restore();
 
