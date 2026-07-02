@@ -22,6 +22,9 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		super();
 
+		// display text for this path
+		this.text = '';
+
 		// the range of the tile this line is associated with
 		this.range = null;
 

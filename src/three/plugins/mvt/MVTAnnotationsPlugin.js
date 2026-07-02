@@ -303,21 +303,23 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
-			// recompute the dynamic display filter for every annotation before placement
+			// Recompute driver-derived state on every parsed annotation before placement
 			for ( const { annotations } of this.vectorTileInfo.values() ) {
 
 				for ( const ann of annotations ) {
 
-					ann.enabled = this.driver.isAnnotationEnabled( ann.properties, ann instanceof LineAnnotation ? 2 : 1 );
+					if ( ann instanceof LineAnnotation ) {
+
+						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 2 );
+						ann.text = this.driver.getText( ann.properties );
+
+					} else {
+
+						ann.enabled = this.driver.isAnnotationEnabled( ann.properties, 1 );
+
+					}
 
 				}
-
-			}
-
-			for ( const anchor of anchorManager.getAnchors() ) {
-
-				anchor.enabled = this.driver.isAnnotationEnabled( anchor.properties, 2 );
-				anchor.text = this.driver.getText( anchor.properties );
 
 			}
 
