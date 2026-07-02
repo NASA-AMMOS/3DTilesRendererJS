@@ -64,7 +64,7 @@ class PMTilesContentCache extends MVTContentCache {
 
 				if ( signal ) {
 
-					signal.aborted.throwIfAborted();
+					signal.throwIfAborted();
 
 				}
 
