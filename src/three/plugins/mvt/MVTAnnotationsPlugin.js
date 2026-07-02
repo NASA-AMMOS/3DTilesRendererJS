@@ -1,5 +1,5 @@
 /** @import { Camera, Scene } from 'three' */
-import { Matrix4 } from 'three';
+import { Group, Matrix4 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
@@ -46,16 +46,100 @@ function collectMeshes( object ) {
  */
 
 /**
+ * Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
+ * the methods to customize which features become annotations, their placement priority, per-character
+ * sizing, the displayed text, and how visibility changes are rendered.
+ */
+export class MVTAnnotationsDriver {
+
+	constructor() {
+
+		/**
+		 * Render group for the driver's own three.js objects. The plugin mounts it under
+		 * `tiles.group` on `init` and removes it on `dispose`; add any objects the driver draws to it.
+		 * @type {Group}
+		 */
+		this.group = new Group();
+
+	}
+
+	/**
+	 * Whether an MVT feature should be included as an annotation.
+	 * @param {string} layer - The MVT layer name the feature belongs to.
+	 * @param {Object} properties - The feature's property map.
+	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
+	 * @returns {boolean} True to include the feature as an annotation.
+	 */
+	filterAnnotation( layer, properties, type ) {
+
+		return false;
+
+	}
+
+	/**
+	 * Relative placement priority between two annotations, following the `Array.prototype.sort`
+	 * contract. Lower values sort first, are placed first, and win collisions.
+	 * @param {Object} a - The first annotation.
+	 * @param {Object} b - The second annotation.
+	 * @returns {number} Negative if `a` precedes `b`, positive if it follows, `0` if equal.
+	 */
+	sortAnnotations( a, b ) {
+
+		const rankA = a.properties[ 'rank' ] ?? 1e10;
+		const rankB = b.properties[ 'rank' ] ?? 1e10;
+		return rankA - rankB;
+
+	}
+
+	/**
+	 * Advance width of a single character, in pixels, used to space glyphs along text labels.
+	 * @param {string} char - The character to measure.
+	 * @returns {number} The advance width in pixels.
+	 */
+	measureChar( char ) {
+
+		return 1;
+
+	}
+
+	/**
+	 * The string a line / road annotation should display for the given feature.
+	 * @param {Object} properties - The feature's property map.
+	 * @returns {string} The label text, or an empty string to render nothing.
+	 */
+	getText( properties ) {
+
+		return properties.name ?? '';
+
+	}
+
+	/**
+	 * Called each frame with the annotations whose visibility changed, for the caller to render.
+	 * @param {Set} added - Annotations that became visible this frame.
+	 * @param {Set} removed - Annotations that became hidden this frame.
+	 * @returns {void}
+	 */
+	onAnnotationsUpdate( added, removed ) {}
+
+	/**
+	 * Releases any resources the driver created (geometries, materials, textures, etc.). Called by
+	 * the plugin from its own `dispose`.
+	 * @returns {void}
+	 */
+	dispose() {}
+
+}
+
+/**
  * Plugin that extracts point features from an MVT overlay and manages their screen-space
  * occupation, preventing label crowding via a hierarchical lock system and raycasted depth
- * placement. Rendering is left entirely to the caller via `onAnnotationsUpdate`.
+ * placement. Rendering is left entirely to the caller via the driver's `onAnnotationsUpdate`.
  * @param {Object} options
  * @param {Object} options.overlay - The `PMTilesOverlay` (or compatible overlay) whose tile
  * content is parsed for point features.
  * @param {Camera} [options.camera=null] - Initial camera. Can be updated with `setCamera()`.
- * @param {Scene} [options.scene=null] - Three.js scene reference (stored for caller use).
- * @param {Function} [options.measureChar] - Takes a character nd returns a per-character
- * advance width used for text label spacing.
+ * @param {MVTAnnotationsDriver} [options.driver] - Supplies the annotation callbacks: feature
+ * filtering, placement priority, per-character sizing, and render updates.
  */
 export class MVTAnnotationsPlugin {
 
@@ -73,26 +157,19 @@ export class MVTAnnotationsPlugin {
 
 		const {
 			overlay,
-			sortCallback = ( a, b ) => {
-
-				const rankA = a.properties[ 'rank' ] ?? 1e10;
-				const rankB = b.properties[ 'rank' ] ?? 1e10;
-				return rankA - rankB;
-
-			},
-			filterAnnotation = () => false,
-			onAnnotationsUpdate = () => {},
-			measureChar = () => 1,
 			camera = null,
+			driver = new MVTAnnotationsDriver(),
 		} = options;
 
 		// user settings
 		this.overlay = overlay;
 		this.camera = camera;
-		this.sortCallback = sortCallback;
-		this.filterAnnotation = filterAnnotation;
-		this.onAnnotationsUpdate = onAnnotationsUpdate;
-		this.measureChar = measureChar;
+		this.driver = driver;
+
+		// stable bound callbacks handed to sub-objects that invoke them ( preserves driver `this` )
+		this._measureChar = char => this.driver.measureChar( char );
+		this._filterAnnotation = ( layer, properties, type ) => this.driver.filterAnnotation( layer, properties, type );
+		this._getText = properties => this.driver.getText( properties );
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -116,6 +193,10 @@ export class MVTAnnotationsPlugin {
 
 		// init
 		this.tiles = tiles;
+
+		// mount the driver's render group under the tile group
+		tiles.group.add( this.driver.group );
+		this.driver.group.updateMatrixWorld();
 
 		const {
 			overlay,
@@ -161,7 +242,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			const sort = this.sortCallback( a, b );
+			const sort = this.driver.sortAnnotations( a, b );
 			if ( sort !== 0 ) {
 
 				// user sort
@@ -242,7 +323,8 @@ export class MVTAnnotationsPlugin {
 			anchorManager.update();
 			anchorManager.added.forEach( item => {
 
-				item.measureChar = this.measureChar;
+				item.measureChar = this._measureChar;
+				item.getText = this._getText;
 				occupancy.register( item );
 
 			} );
@@ -260,7 +342,7 @@ export class MVTAnnotationsPlugin {
 			// occupancy
 			occupancy.camera = camera;
 			occupancy.update();
-			this.onAnnotationsUpdate( occupancy.added, occupancy.removed );
+			this.driver.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
 
@@ -288,7 +370,7 @@ export class MVTAnnotationsPlugin {
 
 			const {
 				contentCache,
-				filterAnnotation,
+				_filterAnnotation,
 				vectorTileInfo,
 				settlingManager,
 				anchorManager,
@@ -310,8 +392,8 @@ export class MVTAnnotationsPlugin {
 
 				// parse the icon annotations
 				const annotations = [];
-				parsePointAnnotations( vectorTile, x, y, level, tiling, filterAnnotation, annotations );
-				parseLineAnnotations( vectorTile, x, y, level, tiling, filterAnnotation, annotations );
+				parsePointAnnotations( vectorTile, x, y, level, tiling, _filterAnnotation, annotations );
+				parseLineAnnotations( vectorTile, x, y, level, tiling, _filterAnnotation, annotations );
 				vectorTileInfo.set( key, { annotations } );
 
 				for ( const ann of annotations ) {
@@ -390,6 +472,10 @@ export class MVTAnnotationsPlugin {
 		const { debug, tiles, hierarchy, tileLoadState } = this;
 		debug.occupancy.dispose();
 		debug.paths.dispose();
+
+		// unmount and dispose the driver's render group
+		tiles.group.remove( this.driver.group );
+		this.driver.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );

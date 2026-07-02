@@ -21,7 +21,7 @@ export class CharacterPoints extends GlyphPoints {
 
 		// CSS font used to rasterize glyphs, sized to fit the atlas slot
 		const fontSize = Math.round( glyphSize * 0.7 );
-		this._font = font ?? `400 ${ fontSize }px Arial`;
+		this._font = font ?? `400 ${ fontSize }px sans-serif`;
 
 		// canvas context for measuring advance widths, normalized to em units ( width / fontSize )
 		this._advanceCache = new Map();
