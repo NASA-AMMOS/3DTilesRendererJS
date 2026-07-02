@@ -182,7 +182,6 @@ export class MVTAnnotationsPlugin {
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
 		this._filterAnnotation = ( layer, properties, type ) => this.driver.filterAnnotation( layer, properties, type );
-		this._getText = properties => this.driver.getText( properties );
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -318,6 +317,7 @@ export class MVTAnnotationsPlugin {
 			for ( const anchor of anchorManager.getAnchors() ) {
 
 				anchor.enabled = this.driver.isAnnotationEnabled( anchor.properties, 2 );
+				anchor.text = this.driver.getText( anchor.properties );
 
 			}
 
@@ -354,7 +354,6 @@ export class MVTAnnotationsPlugin {
 			anchorManager.added.forEach( item => {
 
 				item.measureChar = this._measureChar;
-				item.getText = this._getText;
 				occupancy.register( item );
 
 			} );

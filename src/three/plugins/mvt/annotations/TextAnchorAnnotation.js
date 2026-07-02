@@ -43,13 +43,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	set properties( value ) {}
 
-	// display text, resolved live from the plugin-assigned getText each time it's read
-	get text() {
-
-		return this.getText( this.properties );
-
-	}
-
 	constructor( id ) {
 
 		super();
@@ -70,8 +63,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// per-character advance width provider (pixels)
 		this.measureChar = () => 1;
 
-		// display text provider, assigned by the plugin from the driver's getText
-		this.getText = () => '';
+		// display text, recomputed each frame by the plugin from the driver's getText
+		this.text = '';
 
 		// total advance width of the label ( screen px ) and per-character footprint radius,
 		// recomputed each layout ( individual advances come from the cached measureChar )
