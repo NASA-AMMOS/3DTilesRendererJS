@@ -49,7 +49,7 @@ export class MVTGlyphMaterial extends PointsMaterial {
 		// owns the glyph atlas ( unless one is provided ); the cell size is kept in sync with it
 		// and pushed to the uniforms after compile
 		this._glyphCellSize = new Vector2();
-		this._glyphAtlas = new GlyphAtlasTexture();
+		this._glyphAtlas = new MVTGlyphAtlasTexture();
 		this._uniforms = null;
 
 		this.onBeforeCompile = ( shader ) => {

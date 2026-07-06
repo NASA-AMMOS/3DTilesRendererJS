@@ -1,6 +1,6 @@
-import { GlyphAtlasTexture, GlyphSlot } from '3d-tiles-renderer/plugins';
+import { MVTGlyphAtlasTexture, GlyphSlot } from '3d-tiles-renderer/plugins';
 
-export class FontAtlasTexture extends GlyphAtlasTexture {
+export class FontAtlasTexture extends MVTGlyphAtlasTexture {
 
 	font: string;
 	color: string;

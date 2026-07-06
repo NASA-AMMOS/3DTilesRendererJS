@@ -1,4 +1,4 @@
-import { GlyphMaterial } from './GlyphMaterial.js';
+import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 import { MVTGlyphs } from './MVTGlyphs.js';
 
 export class MVTIconGlyphs extends MVTGlyphs {
@@ -13,7 +13,7 @@ export class MVTIconGlyphs extends MVTGlyphs {
 			slotCount = 64,
 		} = options;
 
-		super( new GlyphMaterial() );
+		super( new MVTGlyphMaterial() );
 
 		this.getKind = getKind;
 		this.fallback = fallback;

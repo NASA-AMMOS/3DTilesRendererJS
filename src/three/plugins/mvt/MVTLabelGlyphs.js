@@ -1,4 +1,4 @@
-import { GlyphMaterial } from './GlyphMaterial.js';
+import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 import { MVTGlyphs } from './MVTGlyphs.js';
 
 export class MVTLabelGlyphs extends MVTGlyphs {
@@ -15,7 +15,7 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 			strokeWidth = 0,
 		} = options;
 
-		super( new GlyphMaterial( { size } ) );
+		super( new MVTGlyphMaterial( { size } ) );
 
 		// CSS font used to rasterize glyphs, sized to fit the atlas slot
 		const fontSize = Math.round( glyphSize * 0.7 );
