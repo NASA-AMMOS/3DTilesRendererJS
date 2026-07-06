@@ -184,8 +184,8 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 		const dpr = window.devicePixelRatio;
 
 		// a single filled circle glyph, used for every point annotation
-		const points = new IconGlyphs( { getKind: () => 'point' } );
-		points.glyphAtlas.drawChar( 'point', '●', {
+		const icons = new IconGlyphs( { fallback: 'default' } );
+		icons.glyphAtlas.drawChar( 'default', '●', {
 			fillStyle: 'white',
 			strokeStyle: 'black',
 			strokeWidth: 3 * dpr,
@@ -193,15 +193,15 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 		} );
 
 		// white Arial road labels with a black outline
-		const characters = new LabelGlyphs( {
+		const labels = new LabelGlyphs( {
 			fontFamily: 'Arial',
 			strokeStyle: 'black',
 			strokeWidth: 3 * dpr,
 		} );
 
-		this.group.add( points, characters );
-		this.points = points;
-		this.characters = characters;
+		this.group.add( icons, labels );
+		this.icons = icons;
+		this.labels = labels;
 
 	}
 
@@ -214,7 +214,7 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
 	measureChar( char ) {
 
-		return this.characters.measureChar( char );
+		return this.labels.measureChar( char );
 
 	}
 
@@ -222,15 +222,15 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
 		const a = splitAnnotations( added );
 		const r = splitAnnotations( removed );
-		this.points.update( a.points, r.points );
-		this.characters.update( a.text, r.text );
+		this.icons.update( a.icons, r.icons );
+		this.labels.update( a.text, r.text );
 
 	}
 
 	dispose() {
 
-		this.points.dispose();
-		this.characters.dispose();
+		this.icons.dispose();
+		this.labels.dispose();
 
 	}
 
