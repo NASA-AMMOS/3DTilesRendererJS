@@ -1,5 +1,5 @@
 import { PointsMaterial, Vector2 } from 'three';
-import { GlyphAtlasTexture } from '3d-tiles-renderer/plugins';
+import { GlyphAtlasTexture } from './GlyphAtlasTexture.js';
 
 export class GlyphMaterial extends PointsMaterial {
 

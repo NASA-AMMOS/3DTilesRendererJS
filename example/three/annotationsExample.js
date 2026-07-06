@@ -12,6 +12,8 @@ import {
 	PMTilesOverlay,
 	MVTAnnotationsPlugin,
 	MVTAnnotationsDriver,
+	AnnotationPoints,
+	CharacterPoints,
 	UpdateOnChangePlugin,
 } from '3d-tiles-renderer/plugins';
 import { LoadRegionPlugin } from '3d-tiles-renderer/three/plugins';
@@ -25,8 +27,6 @@ import {
 } from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { AnnotationPoints } from './src/plugins/mvt/AnnotationPoints.js';
-import { CharacterPoints } from './src/plugins/mvt/CharacterPoints.js';
 import { MeshBVHPlugin } from './src/plugins/MeshBVHPlugin.js';
 
 // CDN source for the icons

@@ -13,6 +13,7 @@ export class CharacterPoints extends GlyphPoints {
 			glyphSize = 16 * window.devicePixelRatio,
 			slotCount = 64,
 			font = null,
+			fontFamily = 'sans-serif',
 			strokeStyle = 'black',
 			strokeWidth = 0,
 		} = options;
@@ -21,7 +22,7 @@ export class CharacterPoints extends GlyphPoints {
 
 		// CSS font used to rasterize glyphs, sized to fit the atlas slot
 		const fontSize = Math.round( glyphSize * 0.7 );
-		this._font = font ?? `400 ${ fontSize }px sans-serif`;
+		this._font = font ?? `400 ${ fontSize }px ${ fontFamily }`;
 
 		// advance-width cache, keyed per character
 		this._advanceCache = new Map();
