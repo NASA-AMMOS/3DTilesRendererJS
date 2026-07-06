@@ -1,24 +1,45 @@
-/** @import { MVTGlyphAtlasTexture } from './MVTGlyphAtlasTexture.js' */
-/** @import { MVTGlyphMaterial } from './MVTGlyphMaterial.js' */
-import { BufferAttribute, BufferGeometry, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
+/** @import { MVTGlyphAtlasTexture } from './MVTGlyphAtlasTexture.js'; */
+import { BufferAttribute, BufferGeometry, GreaterDepth, Group, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
+import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
 const _uvTarget = {};
 
 // scratch reused across raycasts
-const _viewport = /* @__PURE__ */ new Vector4();
 const _point4 = /* @__PURE__ */ new Vector4();
 const _ssOrigin = /* @__PURE__ */ new Vector4();
 const _ssRay = /* @__PURE__ */ new Vector2();
 const _ssPoint = /* @__PURE__ */ new Vector2();
 const _worldPoint = /* @__PURE__ */ new Vector3();
 
+const DRAW_MODE = /* @__PURE__ */ Object.freeze( {
+	// depth tested, hidden behind terrain
+	OBSCURED: 0,
+
+	// render hidden portions as partially transparent
+	DRAW_THROUGH: 1,
+
+	// draw full opaque on top of everything
+	OVERLAY: 2,
+} );
+
 /**
- * Base `Points` object that renders a batch of glyphs from a shared `MVTGlyphAtlasTexture`, fading
- * each item in and out.
- * @extends Points
+ * Base object that renders a batch of glyphs from a shared `MVTGlyphAtlasTexture`, fading each item
+ * in and out. Manages the geometry and two child draws sharing it: an opaque pass and a transparent
+ * "obscured" pass, combined per `drawMode`.
+ * @extends Group
  */
-export class MVTGlyphs extends Points {
+export class MVTGlyphs extends Group {
+
+	/**
+	 * Draw modes for `drawMode`: `OBSCURED`, `DRAW_THROUGH`, and `OVERLAY`.
+	 * @type {{ OBSCURED: string, DRAW_THROUGH: string, OVERLAY: string }}
+	 */
+	static get DrawMode() {
+
+		return DRAW_MODE;
+
+	}
 
 	/**
 	 * Glyph size in pixels.
@@ -26,38 +47,55 @@ export class MVTGlyphs extends Points {
 	 */
 	get size() {
 
-		return this.material.size;
+		return this._opaque.material.size;
 
 	}
 
 	set size( v ) {
 
-		this.material.size = v;
+		this._opaque.material.size = v;
+		this._obscured.material.size = v;
 
 	}
 
 	/**
-	 * The glyph atlas this object samples from.
+	 * The texture atlas used for rendering glyphs.
 	 * @type {MVTGlyphAtlasTexture}
 	 */
 	get glyphAtlas() {
 
-		return this.material.glyphAtlas;
+		return this._opaque.material.glyphAtlas;
 
 	}
 
 	/**
-	 * @param {MVTGlyphMaterial} material - Material used to draw the glyphs.
+	 * How glyphs interact with the depth buffer; one of `MVTGlyphs.DrawMode`.
+	 * @type {string}
 	 */
+	get drawMode() {
+
+		return this._drawMode;
+
+	}
+
+	set drawMode( mode ) {
+
+		this._drawMode = mode;
+		this._applyDrawMode();
+
+	}
+
+	get geometry() {
+
+		return this._opaque.geometry;
+
+	}
+
 	constructor( material ) {
 
-		super( new BufferGeometry(), material );
+		super();
 
-		this.renderOrder = 1000;
 		this.frustumCulled = false;
-
-		// viewport size in pixels, refreshed each frame in onBeforeRender for screen-space raycasting
-		this.resolution = new Vector2();
 
 		/**
 		 * Seconds a glyph takes to fade in.
@@ -71,23 +109,56 @@ export class MVTGlyphs extends Points {
 		 */
 		this.fadeOutDuration = 0.3;
 
+		/**
+		 * Opacity of the ghosted, obscured glyphs in the `DRAW_THROUGH` draw mode.
+		 * @type {number}
+		 */
+		this.obscuredOpacity = 0.5;
+
 		// Map<itemId, { item, fade: 0..1, state: 'in' | 'visible' | 'out' }> keyed by stable id,
 		// plus an insertion-ordered list of the same entries for stable geometry layout
 		this._entryMap = new Map();
 		this._orderedEntries = [];
 		this._lastUpdateTime = - 1;
 
+		// create children for draw through
+		const geometry = new BufferGeometry();
+		const opaque = new Points( geometry, new MVTGlyphMaterial() );
+		opaque.frustumCulled = false;
+		opaque.renderOrder = 1000;
+		opaque.onAfterRender = ( renderer, scene, camera ) => {
+
+			this._recenter( camera );
+
+		};
+
+		const obscured = new Points( geometry, new MVTGlyphMaterial() );
+		obscured.frustumCulled = false;
+		obscured.material.glyphAtlas = opaque.material.glyphAtlas;
+		obscured.material.depthTest = true;
+		obscured.material.depthFunc = GreaterDepth;
+		obscured.renderOrder = 1001;
+
+		// add the children
+		this.add( obscured, opaque );
+
+		// store references, update draw mode
+		this._opaque = opaque;
+		this._obscured = obscured;
+		this.drawMode = DRAW_MODE.OVERLAY;
+
 	}
 
 	/**
-	 * Disposes the glyph atlas, geometry, and material.
+	 * Disposes the glyph atlas, geometry, and materials.
 	 * @returns {void}
 	 */
 	dispose() {
 
 		this.glyphAtlas.dispose();
 		this.geometry.dispose();
-		this.material.dispose();
+		this._opaque.material.dispose();
+		this._obscured.material.dispose();
 
 	}
 
@@ -173,21 +244,14 @@ export class MVTGlyphs extends Points {
 
 	}
 
-	onBeforeRender( renderer, scene, camera ) {
-
-		// use the active viewport (not getDrawingBufferSize) so raycasting matches the GPU's
-		// NDC→pixel mapping in sub-viewport scenarios
-		renderer.getViewport( _viewport );
-		this.resolution.set( _viewport.z, _viewport.w );
-
-	}
-
 	raycast( raycaster, intersects ) {
 
 		const camera = raycaster.camera;
 		if ( ! camera ) return;
 
-		const { geometry, material, matrixWorld, resolution } = this;
+		const { geometry, matrixWorld } = this;
+		const { material } = this._opaque;
+		const { resolution } = material;
 		const posAttr = geometry.getAttribute( 'position' );
 		if ( ! posAttr || posAttr.count === 0 ) return;
 
@@ -206,7 +270,7 @@ export class MVTGlyphs extends Points {
 
 		_mvMatrix.multiplyMatrices( camera.matrixWorldInverse, matrixWorld );
 
-		for ( let i = 0, l = this.geometry.drawRange.count; i < l; i ++ ) {
+		for ( let i = 0, l = geometry.drawRange.count; i < l; i ++ ) {
 
 			_point4.fromBufferAttribute( posAttr, i );
 			_point4.w = 1;
@@ -246,11 +310,47 @@ export class MVTGlyphs extends Points {
 
 		}
 
+		// end traversal
+		return false;
+
 	}
 
-	onAfterRender( renderer, scene, camera ) {
+	// configure the two child draws for the current draw mode
+	_applyDrawMode() {
 
-		// keep the root near the camera to avoid gpu jitter at globe scale
+		const { _opaque, _obscured, obscuredOpacity, _drawMode } = this;
+		switch ( _drawMode ) {
+
+			case DRAW_MODE.OVERLAY:
+				_opaque.visible = true;
+				_opaque.material.depthTest = false;
+
+				_obscured.visible = false;
+				break;
+
+			case DRAW_MODE.DRAW_THROUGH:
+				_opaque.visible = true;
+				_opaque.material.depthTest = true;
+
+				_obscured.visible = true;
+				_obscured.material.opacity = obscuredOpacity;
+				break;
+
+			case DRAW_MODE.OBSCURED:
+			default:
+				_opaque.visible = true;
+				_opaque.material.depthTest = true;
+
+				_obscured.visible = false;
+				break;
+
+		}
+
+	}
+
+	// keep the root near the camera to avoid gpu jitter at globe scale
+	_recenter( camera ) {
+
 		const { parent } = this;
 		if ( parent ) {
 

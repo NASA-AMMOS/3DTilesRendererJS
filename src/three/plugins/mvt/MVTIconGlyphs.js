@@ -1,4 +1,3 @@
-import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 import { MVTGlyphs } from './MVTGlyphs.js';
 
 /**
@@ -28,7 +27,7 @@ export class MVTIconGlyphs extends MVTGlyphs {
 			slotCount = 64,
 		} = options;
 
-		super( new MVTGlyphMaterial() );
+		super();
 
 		/**
 		 * Returns the atlas key for a given item, or null for none.

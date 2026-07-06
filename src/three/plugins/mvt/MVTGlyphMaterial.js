@@ -1,5 +1,7 @@
-import { PointsMaterial, Vector2 } from 'three';
+import { PointsMaterial, Vector2, Vector4 } from 'three';
 import { MVTGlyphAtlasTexture } from './MVTGlyphAtlasTexture.js';
+
+const _viewport = /* @__PURE__ */ new Vector4();
 
 /**
  * A `PointsMaterial` that draws each point sprite as a glyph from an `MVTGlyphAtlasTexture` with fading.
@@ -63,6 +65,7 @@ export class MVTGlyphMaterial extends PointsMaterial {
 		this.transparent = true;
 		this.depthTest = false;
 		this.depthWrite = false;
+		this.resolution = new Vector2();
 
 		// owns the glyph atlas ( unless one is provided ); the cell size is kept in sync with it
 		// and pushed to the uniforms after compile
@@ -103,6 +106,7 @@ export class MVTGlyphMaterial extends PointsMaterial {
 
 					uniform sampler2D glyphAtlas;
 					uniform vec2 glyphCellSize;
+					uniform float opacity;
 					varying vec2 vGlyphUV;
 					varying float vAlpha;
 					varying float vAngle;
@@ -125,7 +129,7 @@ export class MVTGlyphMaterial extends PointsMaterial {
 
 						}
 
-						diffuseColor.a *= vAlpha;
+						diffuseColor.a *= vAlpha * opacity;
 						gl_FragColor = diffuseColor;
 
 						#include <tonemapping_fragment>
@@ -142,9 +146,13 @@ export class MVTGlyphMaterial extends PointsMaterial {
 
 	}
 
-	onBeforeRender() {
+	onBeforeRender( renderer ) {
 
 		this._glyphAtlas.getSlotSize( this._glyphCellSize );
+
+		// viewport size in pixels, refreshed each frame in onBeforeRender for screen-space raycasting
+		renderer.getViewport( _viewport );
+		this.resolution.set( _viewport.z, _viewport.w );
 
 	}
 
