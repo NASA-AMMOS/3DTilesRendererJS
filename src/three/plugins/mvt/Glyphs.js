@@ -1,6 +1,15 @@
-import { BufferGeometry, Matrix4, Points } from 'three';
+import { BufferAttribute, BufferGeometry, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
 
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
+const _uvTarget = {};
+
+// scratch reused across raycasts
+const _viewport = /* @__PURE__ */ new Vector4();
+const _point4 = /* @__PURE__ */ new Vector4();
+const _ssOrigin = /* @__PURE__ */ new Vector4();
+const _ssRay = /* @__PURE__ */ new Vector2();
+const _ssPoint = /* @__PURE__ */ new Vector2();
+const _worldPoint = /* @__PURE__ */ new Vector3();
 
 export class Glyphs extends Points {
 
@@ -28,6 +37,9 @@ export class Glyphs extends Points {
 
 		this.renderOrder = 1000;
 		this.frustumCulled = false;
+
+		// viewport size in pixels, refreshed each frame in onBeforeRender for screen-space raycasting
+		this.resolution = new Vector2();
 
 		// fade settings
 		this.fadeInDuration = 0.3;
@@ -124,6 +136,81 @@ export class Glyphs extends Points {
 
 	}
 
+	onBeforeRender( renderer, scene, camera ) {
+
+		// use the active viewport (not getDrawingBufferSize) so raycasting matches the GPU's
+		// NDC→pixel mapping in sub-viewport scenarios
+		renderer.getViewport( _viewport );
+		this.resolution.set( _viewport.z, _viewport.w );
+
+	}
+
+	raycast( raycaster, intersects ) {
+
+		const camera = raycaster.camera;
+		if ( ! camera ) return;
+
+		const { geometry, material, matrixWorld, resolution } = this;
+		const posAttr = geometry.getAttribute( 'position' );
+		if ( ! posAttr || posAttr.count === 0 ) return;
+
+		const pointRadius = material.size / 2; // pixels
+		const near = - camera.near;
+
+		// Project a point 1 unit along the ray into screen space for 2D comparison.
+		// Using the same centered screen-space convention as LineSegments2
+		// (NDC * resolution/2, NOT NDC * resolution/2 + resolution/2).
+		raycaster.ray.at( 1, _ssOrigin );
+		_ssOrigin.w = 1;
+		_ssOrigin.applyMatrix4( camera.matrixWorldInverse );
+		_ssOrigin.applyMatrix4( camera.projectionMatrix );
+		_ssOrigin.multiplyScalar( 1 / _ssOrigin.w );
+		_ssRay.set( _ssOrigin.x * resolution.x / 2, _ssOrigin.y * resolution.y / 2 );
+
+		_mvMatrix.multiplyMatrices( camera.matrixWorldInverse, matrixWorld );
+
+		for ( let i = 0, l = this.geometry.drawRange.count; i < l; i ++ ) {
+
+			_point4.fromBufferAttribute( posAttr, i );
+			_point4.w = 1;
+
+			// camera space
+			_point4.applyMatrix4( _mvMatrix );
+
+			// skip if behind near plane
+			if ( _point4.z > near ) continue;
+
+			// clip → NDC
+			_point4.applyMatrix4( camera.projectionMatrix );
+			_point4.multiplyScalar( 1 / _point4.w );
+
+			// skip if outside depth clip bounds
+			if ( _point4.z < - 1 || _point4.z > 1 ) continue;
+
+			// centered screen space
+			_ssPoint.set( _point4.x * resolution.x / 2, _point4.y * resolution.y / 2 );
+
+			if ( _ssRay.distanceTo( _ssPoint ) > pointRadius ) continue;
+
+			// hit — record 3D world position and distance along ray
+			_worldPoint.fromBufferAttribute( posAttr, i ).applyMatrix4( matrixWorld );
+
+			const entry = this._orderedEntries[ i ];
+			intersects.push( {
+				distance: raycaster.ray.origin.distanceTo( _worldPoint ),
+				point: _worldPoint.clone(),
+				index: i,
+				face: null,
+				faceIndex: null,
+				object: this,
+				layer: entry?.item.layer ?? null,
+				properties: entry?.item.properties ?? null,
+			} );
+
+		}
+
+	}
+
 	onAfterRender( renderer, scene, camera ) {
 
 		// keep the root near the camera to avoid gpu jitter at globe scale
@@ -143,7 +230,69 @@ export class Glyphs extends Points {
 
 	}
 
-	// subclasses build their geometry from `this._orderedEntries` here
+	// subclasses build their geometry from here
 	_updateGeometry() {}
+
+	// resize the shared per-glyph attribute buffers to hold `count` glyphs if necessary and set the draw
+	// range
+	_resizeGeometry( count ) {
+
+		const { geometry } = this;
+		const posAttr = geometry.getAttribute( 'position' );
+		if ( ! posAttr || posAttr.count < count ) {
+
+			geometry.dispose();
+			geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( count * 3 ), 3 ) );
+			geometry.setAttribute( 'glyphUV', new BufferAttribute( new Float32Array( count * 2 ), 2 ) );
+			geometry.setAttribute( 'alpha', new BufferAttribute( new Float32Array( count ), 1 ) );
+			geometry.setAttribute( 'angle', new BufferAttribute( new Float32Array( count ), 1 ) );
+
+		}
+
+		geometry.setDrawRange( 0, count );
+
+	}
+
+	// write a single glyph's attributes; position is stored relative to this.position ( the
+	// camera-local origin ) and `key` looks up the atlas slot, or -1 when it isn't present
+	_writeGlyph( i, pos, key, fade, angle = 0 ) {
+
+		const { geometry, glyphAtlas } = this;
+		const origin = this.position;
+		const {
+			position: posAttr,
+			glyphUV: uvAttr,
+			alpha: alphaAttr,
+			angle: angleAttr,
+		} = geometry.attributes;
+
+		posAttr.setXYZ( i, pos.x - origin.x, pos.y - origin.y, pos.z - origin.z );
+
+		if ( key !== null && glyphAtlas.has( key ) ) {
+
+			const uv = glyphAtlas.getUV( key, _uvTarget );
+			uvAttr.setXY( i, uv.x, uv.y );
+
+		} else {
+
+			uvAttr.setXY( i, - 1, - 1 );
+
+		}
+
+		alphaAttr.setX( i, fade );
+		angleAttr.setX( i, angle );
+
+	}
+
+	// flag every per-glyph attribute for upload
+	_markNeedsUpdate() {
+
+		const { geometry } = this;
+		geometry.getAttribute( 'position' ).needsUpdate = true;
+		geometry.getAttribute( 'glyphUV' ).needsUpdate = true;
+		geometry.getAttribute( 'alpha' ).needsUpdate = true;
+		geometry.getAttribute( 'angle' ).needsUpdate = true;
+
+	}
 
 }

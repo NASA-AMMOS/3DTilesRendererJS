@@ -1,8 +1,5 @@
-import { BufferAttribute } from 'three';
 import { GlyphMaterial } from './GlyphMaterial.js';
 import { Glyphs } from './Glyphs.js';
-
-const _uvTarget = {};
 
 export class LabelGlyphs extends Glyphs {
 
@@ -103,7 +100,7 @@ export class LabelGlyphs extends Glyphs {
 
 	_updateGeometry() {
 
-		const { _orderedEntries, _needed, geometry, position, glyphAtlas } = this;
+		const { _orderedEntries, _needed, glyphAtlas } = this;
 
 		// collect the characters needed this frame from each items text, and the total glyph
 		// count
@@ -132,26 +129,7 @@ export class LabelGlyphs extends Glyphs {
 
 		}
 
-		// expand the geometry buffers if needed
-		let posAttr = geometry.getAttribute( 'position' );
-		let glyphUVAttr = geometry.getAttribute( 'glyphUV' );
-		let alphaAttr = geometry.getAttribute( 'alpha' );
-		let angleAttr = geometry.getAttribute( 'angle' );
-		if ( ! posAttr || posAttr.count < count ) {
-
-			geometry.dispose();
-			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
-			glyphUVAttr = new BufferAttribute( new Float32Array( count * 2 ), 2 );
-			alphaAttr = new BufferAttribute( new Float32Array( count ), 1 );
-			angleAttr = new BufferAttribute( new Float32Array( count ), 1 );
-			geometry.setAttribute( 'position', posAttr );
-			geometry.setAttribute( 'glyphUV', glyphUVAttr );
-			geometry.setAttribute( 'alpha', alphaAttr );
-			geometry.setAttribute( 'angle', angleAttr );
-
-		}
-
-		geometry.setDrawRange( 0, count );
+		this._resizeGeometry( count );
 
 		let i = 0;
 		for ( const entry of _orderedEntries ) {
@@ -163,32 +141,13 @@ export class LabelGlyphs extends Glyphs {
 			const text = anchor.text;
 			for ( let c = 0, l = positions.length; c < l; c ++ ) {
 
-				const p = positions[ c ];
-				posAttr.setXYZ( i, p.x - position.x, p.y - position.y, p.z - position.z );
-
-				const uv = glyphAtlas.getUV( text[ c ], _uvTarget );
-				if ( uv !== null ) {
-
-					glyphUVAttr.setXY( i, uv.x, uv.y );
-
-				} else {
-
-					glyphUVAttr.setXY( i, - 1, - 1 );
-
-				}
-
-				alphaAttr.setX( i, fade );
-				angleAttr.setX( i, angles[ c ] );
-				i ++;
+				this._writeGlyph( i ++, positions[ c ], text[ c ], fade, angles[ c ] );
 
 			}
 
 		}
 
-		posAttr.needsUpdate = true;
-		glyphUVAttr.needsUpdate = true;
-		alphaAttr.needsUpdate = true;
-		angleAttr.needsUpdate = true;
+		this._markNeedsUpdate();
 
 	}
 
