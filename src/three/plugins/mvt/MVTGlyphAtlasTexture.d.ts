@@ -20,7 +20,7 @@ export interface DrawSVGOptions {
 	iconScale?: number;
 }
 
-export class GlyphAtlasTexture extends CanvasTexture {
+export class MVTGlyphAtlasTexture extends CanvasTexture {
 
 	readonly slotSize: number;
 	readonly isFull: boolean;

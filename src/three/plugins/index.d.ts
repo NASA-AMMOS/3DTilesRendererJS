@@ -21,7 +21,11 @@ export * from './gltf/GLTFStructuralMetadataExtension.js';
 export * from './gltf/GLTFMeshFeaturesExtension.js';
 
 // mvt utilities
-export * from './mvt/GlyphAtlasTexture.js';
+export * from './mvt/MVTGlyphAtlasTexture.js';
+export * from './mvt/MVTGlyphMaterial.js';
+export * from './mvt/MVTGlyphs.js';
+export * from './mvt/MVTIconGlyphs.js';
+export * from './mvt/MVTLabelGlyphs.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';

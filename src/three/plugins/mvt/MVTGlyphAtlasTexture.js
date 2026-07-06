@@ -5,7 +5,7 @@ import { CanvasTexture, SRGBColorSpace, Vector2 } from 'three';
  * Slots are addressed by string key and can be drawn with text, images, or paths.
  * @extends CanvasTexture
  */
-export class GlyphAtlasTexture extends CanvasTexture {
+export class MVTGlyphAtlasTexture extends CanvasTexture {
 
 	/**
 	 * Returns true when all slots are allocated.
@@ -432,7 +432,7 @@ export class GlyphAtlasTexture extends CanvasTexture {
 
 			} else {
 
-				throw new Error( 'GlyphAtlasTexture: atlas is full. Call resize() to increase capacity.' );
+				throw new Error( 'MVTGlyphAtlasTexture: atlas is full. Call resize() to increase capacity.' );
 
 			}
 

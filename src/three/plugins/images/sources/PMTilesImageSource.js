@@ -186,7 +186,7 @@ export class PMTilesImageSource extends RegionImageSource {
 
 		const {
 			resolution = 512,
-			getStyle = () => null,
+			getStyle = null,
 		} = options;
 
 		this._resolution = resolution;

@@ -1473,6 +1473,24 @@ export class ImageOverlay {
 
 	}
 
+	lockTextureSafe( range ) {
+
+		// locks a texture without risk of throwing due to abort
+		const result = this.lockTexture( range );
+		if ( result instanceof Promise ) {
+
+			result.catch( err => {
+
+				if ( err.name !== 'AbortError' ) throw err;
+
+			} );
+
+		}
+
+		return result;
+
+	}
+
 	releaseTexture( range, level = null ) {
 
 	}
@@ -1839,24 +1857,6 @@ export class GeoJSONOverlay extends ImageOverlay {
 	lockTexture( range ) {
 
 		return this.imageSource.lock( ...range );
-
-	}
-
-	lockTextureSafe( range ) {
-
-		// locks a texture without risk of throwing due to abort
-		const result = this.lockTexture( range );
-		if ( result instanceof Promise ) {
-
-			result.catch( err => {
-
-				if ( err.name !== 'AbortError' ) throw err;
-
-			} );
-
-		}
-
-		return result;
 
 	}
 

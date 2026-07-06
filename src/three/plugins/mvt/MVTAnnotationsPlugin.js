@@ -11,6 +11,8 @@ import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overl
 import { parsePointAnnotations } from './annotations/PointAnnotation.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
+import { MVTIconGlyphs } from './MVTIconGlyphs.js';
+import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -143,6 +145,97 @@ export class MVTAnnotationsDriver {
 
 }
 
+// route occupancy annotations to the right renderer: text anchors expose `characterPositions`,
+// point annotations expose a `position`
+function splitAnnotations( set ) {
+
+	const points = [];
+	const text = [];
+	for ( const item of set ) {
+
+		if ( item.characterPositions !== undefined ) {
+
+			text.push( item );
+
+		} else {
+
+			points.push( item );
+
+		}
+
+	}
+
+	return { points, text };
+
+}
+
+/**
+ * Ready-to-use driver so `new MVTAnnotationsPlugin( { overlay } )` displays something without any
+ * setup: every point feature is drawn as a filled white circle and every named line as white,
+ * black-outlined Arial text. No feature filtering is applied. Supply a custom `MVTAnnotationsDriver`
+ * to the plugin to override this behavior.
+ */
+export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
+
+	constructor() {
+
+		super();
+
+		const dpr = window.devicePixelRatio;
+
+		// a single filled circle glyph, used for every point annotation
+		const icons = new MVTIconGlyphs( { fallback: 'default' } );
+		icons.glyphAtlas.drawChar( 'default', '●', {
+			fillStyle: 'white',
+			strokeStyle: 'black',
+			strokeWidth: 3 * dpr,
+			font: '30px sans-serif',
+		} );
+
+		// white Arial road labels with a black outline
+		const labels = new MVTLabelGlyphs( {
+			fontFamily: 'Arial',
+			strokeStyle: 'black',
+			strokeWidth: 3 * dpr,
+		} );
+
+		this.group.add( icons, labels );
+		this.icons = icons;
+		this.labels = labels;
+
+	}
+
+	// include every feature
+	filterAnnotation( layer, properties, type ) {
+
+		return true;
+
+	}
+
+	measureChar( char ) {
+
+		return this.labels.measureChar( char );
+
+	}
+
+	onAnnotationsUpdate( added, removed ) {
+
+		const a = splitAnnotations( added );
+		const r = splitAnnotations( removed );
+		this.icons.update( a.icons, r.icons );
+		this.labels.update( a.text, r.text );
+
+	}
+
+	dispose() {
+
+		this.icons.dispose();
+		this.labels.dispose();
+
+	}
+
+}
+
 /**
  * Plugin that extracts point features from an MVT overlay and manages their screen-space
  * occupation, preventing label crowding via a hierarchical lock system and raycasted depth
@@ -171,7 +264,7 @@ export class MVTAnnotationsPlugin {
 		const {
 			overlay,
 			camera = null,
-			driver = new MVTAnnotationsDriver(),
+			driver = new DefaultMVTAnnotationsDriver(),
 		} = options;
 
 		// user settings

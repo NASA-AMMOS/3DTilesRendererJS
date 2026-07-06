@@ -20,6 +20,27 @@ function importMVTDeps() {
 
 }
 
+// Protomaps "Light" theme — from protomaps/basemaps flavors.ts
+const DEFAULT_STYLES = {
+	earth: { 		fill: '#e2dfda', order: 0 },
+	water: { 		fill: '#80deea', order: 1 },
+	landcover: { 	fill: '#c4e7d2', order: 2 },
+	landuse: { 		fill: '#cfddd5', order: 3 },
+	natural: { 		fill: '#e2e0d7', order: 4 },
+	buildings: { 	fill: '#cccccc', order: 5 },
+	roads: { 		stroke: '#ebebeb', order: 6 },
+	transit: { 		stroke: '#a7b1b3', order: 7 },
+	boundaries: { 	stroke: '#adadad', order: 8 },
+	places: { 		fill: '#5c5c5c', order: 9 },
+	pois: { 		fill: '#1a8cbd', radius: 3, order: 10 },
+};
+
+const DEFAULT_GET_STYLE = ( layer, properties ) => {
+
+	return DEFAULT_STYLES[ layer ] ?? null;
+
+};
+
 // Fetches and caches parsed MVT tile content (vectorTile + tileBounds) keyed by (tx, ty, tl).
 export class MVTContentCache extends DataCache {
 
@@ -154,7 +175,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		const {
 			resolution = 512,
-			getStyle = () => null,
+			getStyle = null,
 			contentCache,
 			...rest
 		} = options;
@@ -272,18 +293,15 @@ export class MVTImageSource extends RegionImageSource {
 
 	_renderVectorTile( vectorTile ) {
 
-		const { _canvasRenderer, getStyle } = this;
+		const { _canvasRenderer } = this;
+		const getStyle = this.getStyle || DEFAULT_GET_STYLE;
 
 		// Sort layers by user-defined order, falling back to alphabetical.
 		const layerNames = [ ...Object.keys( vectorTile.layers ) ].sort( ( a, b ) => {
 
-			if ( getStyle ) {
-
-				const orderA = getStyle( a, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
-				const orderB = getStyle( b, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
-				if ( orderA !== orderB ) return orderA - orderB;
-
-			}
+			const orderA = getStyle( a, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
+			const orderB = getStyle( b, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
+			if ( orderA !== orderB ) return orderA - orderB;
 
 			return a.localeCompare( b );
 

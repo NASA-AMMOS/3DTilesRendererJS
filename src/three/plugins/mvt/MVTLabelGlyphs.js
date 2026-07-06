@@ -1,11 +1,24 @@
-import { BufferAttribute } from 'three';
-import { GlyphMaterial } from './GlyphMaterial.js';
-import { GlyphPoints } from './GlyphPoints.js';
+import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
+import { MVTGlyphs } from './MVTGlyphs.js';
 
-const _uvTarget = {};
+/**
+ * Renders text labels one glyph per character, laid out along each annotation's path. Characters are
+ * rasterized into the atlas on demand, so a label's text may change at any time.
+ * @extends MVTGlyphs
+ */
+export class MVTLabelGlyphs extends MVTGlyphs {
 
-export class CharacterPoints extends GlyphPoints {
-
+	/**
+	 * @param {Object} [options]
+	 * @param {number} [options.size=16] - Glyph size in pixels.
+	 * @param {number} [options.glyphSize] - Atlas slot size in pixels (defaults to `16 * devicePixelRatio`).
+	 * @param {number} [options.slotCount=64] - Initial atlas slot capacity ( grows as needed ).
+	 * @param {string|null} [options.font=null] - Explicit CSS font string; overrides `fontFamily`.
+	 * @param {string} [options.fontFamily='sans-serif'] - Font family used to build the CSS font when
+	 * `font` isn't given.
+	 * @param {string} [options.strokeStyle='black'] - Outline color drawn under each glyph.
+	 * @param {number} [options.strokeWidth=0] - Outline width in atlas pixels ( 0 disables the outline ).
+	 */
 	constructor( options = {} ) {
 
 		const {
@@ -13,15 +26,16 @@ export class CharacterPoints extends GlyphPoints {
 			glyphSize = 16 * window.devicePixelRatio,
 			slotCount = 64,
 			font = null,
+			fontFamily = 'sans-serif',
 			strokeStyle = 'black',
 			strokeWidth = 0,
 		} = options;
 
-		super( new GlyphMaterial( { size } ) );
+		super( new MVTGlyphMaterial( { size } ) );
 
 		// CSS font used to rasterize glyphs, sized to fit the atlas slot
 		const fontSize = Math.round( glyphSize * 0.7 );
-		this._font = font ?? `400 ${ fontSize }px sans-serif`;
+		this._font = font ?? `400 ${ fontSize }px ${ fontFamily }`;
 
 		// advance-width cache, keyed per character
 		this._advanceCache = new Map();
@@ -40,7 +54,11 @@ export class CharacterPoints extends GlyphPoints {
 
 	}
 
-	// advance width of `char` in em units ( fraction of the font size ), cached per character
+	/**
+	 * Advance width of `char` in the label's size units, cached per character.
+	 * @param {string} char - The character to measure.
+	 * @returns {number} The advance width.
+	 */
 	measureChar( char ) {
 
 		const { _advanceCache, material, glyphAtlas, _font } = this;
@@ -102,7 +120,7 @@ export class CharacterPoints extends GlyphPoints {
 
 	_updateGeometry() {
 
-		const { _orderedEntries, _needed, geometry, position, glyphAtlas } = this;
+		const { _orderedEntries, _needed, glyphAtlas } = this;
 
 		// collect the characters needed this frame from each items text, and the total glyph
 		// count
@@ -131,26 +149,7 @@ export class CharacterPoints extends GlyphPoints {
 
 		}
 
-		// expand the geometry buffers if needed
-		let posAttr = geometry.getAttribute( 'position' );
-		let glyphUVAttr = geometry.getAttribute( 'glyphUV' );
-		let alphaAttr = geometry.getAttribute( 'alpha' );
-		let angleAttr = geometry.getAttribute( 'angle' );
-		if ( ! posAttr || posAttr.count < count ) {
-
-			geometry.dispose();
-			posAttr = new BufferAttribute( new Float32Array( count * 3 ), 3 );
-			glyphUVAttr = new BufferAttribute( new Float32Array( count * 2 ), 2 );
-			alphaAttr = new BufferAttribute( new Float32Array( count ), 1 );
-			angleAttr = new BufferAttribute( new Float32Array( count ), 1 );
-			geometry.setAttribute( 'position', posAttr );
-			geometry.setAttribute( 'glyphUV', glyphUVAttr );
-			geometry.setAttribute( 'alpha', alphaAttr );
-			geometry.setAttribute( 'angle', angleAttr );
-
-		}
-
-		geometry.setDrawRange( 0, count );
+		this._resizeGeometry( count );
 
 		let i = 0;
 		for ( const entry of _orderedEntries ) {
@@ -162,32 +161,13 @@ export class CharacterPoints extends GlyphPoints {
 			const text = anchor.text;
 			for ( let c = 0, l = positions.length; c < l; c ++ ) {
 
-				const p = positions[ c ];
-				posAttr.setXYZ( i, p.x - position.x, p.y - position.y, p.z - position.z );
-
-				const uv = glyphAtlas.getUV( text[ c ], _uvTarget );
-				if ( uv !== null ) {
-
-					glyphUVAttr.setXY( i, uv.x, uv.y );
-
-				} else {
-
-					glyphUVAttr.setXY( i, - 1, - 1 );
-
-				}
-
-				alphaAttr.setX( i, fade );
-				angleAttr.setX( i, angles[ c ] );
-				i ++;
+				this._writeGlyph( i ++, positions[ c ], text[ c ], fade, angles[ c ] );
 
 			}
 
 		}
 
-		posAttr.needsUpdate = true;
-		glyphUVAttr.needsUpdate = true;
-		alphaAttr.needsUpdate = true;
-		angleAttr.needsUpdate = true;
+		this._markNeedsUpdate();
 
 	}
 

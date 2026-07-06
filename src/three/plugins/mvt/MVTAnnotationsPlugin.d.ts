@@ -1,24 +1,25 @@
-import { Camera, Vector3 } from 'three';
+import { Camera, Group } from 'three';
+import { MVTIconGlyphs } from './MVTIconGlyphs.js';
+import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
 
-export type GetAnnotationCallback = ( layerName: string, properties: Record<string, unknown> ) => boolean;
+export class MVTAnnotationsDriver {
 
-export type SortAnnotationCallback = ( a: PointAnnotationItem, b: PointAnnotationItem ) => number;
+	group: Group;
 
-export type AnnotationsUpdateCallback = ( added: Set<PointAnnotationItem>, removed: Set<PointAnnotationItem> ) => void;
-
-export class AnnotationItem {
-
-	layer: string;
-	properties: Record<string, unknown> | null;
+	filterAnnotation( layer: string, properties: Record<string, unknown>, type: number ): boolean;
+	sortAnnotations( a: object, b: object ): number;
+	measureChar( char: string ): number;
+	getText( properties: Record<string, unknown> ): string;
+	isAnnotationEnabled( properties: Record<string, unknown>, type: number ): boolean;
+	onAnnotationsUpdate( added: Set<object>, removed: Set<object> ): void;
+	dispose(): void;
 
 }
 
-export class PointAnnotationItem extends AnnotationItem {
+export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
-	position: Vector3;
-	lat: number;
-	lon: number;
-	radius: number;
+	icons: MVTIconGlyphs;
+	labels: MVTLabelGlyphs;
 
 }
 
@@ -26,10 +27,7 @@ export interface MVTAnnotationsPluginOptions {
 
 	overlay: object;
 	camera?: Camera | null;
-	sortCallback?: SortAnnotationCallback;
-	filterAnnotation?: GetAnnotationCallback | null;
-	onAnnotationsUpdate?: AnnotationsUpdateCallback;
-	displayOccupancyGrid?: boolean;
+	driver?: MVTAnnotationsDriver;
 
 }
 
@@ -40,13 +38,13 @@ export class MVTAnnotationsPlugin {
 
 	overlay: object;
 	camera: Camera | null;
+	driver: MVTAnnotationsDriver;
 
-	filterAnnotation: GetAnnotationCallback | null;
-	onAnnotationsUpdate: AnnotationsUpdateCallback;
-
-	displayOccupancyGrid: boolean;
-	maxSettleTimeMs: number;
+	readonly contentCache: object;
 
 	constructor( options: MVTAnnotationsPluginOptions );
+
+	init( tiles: object ): Promise<void>;
+	dispose(): void;
 
 }
