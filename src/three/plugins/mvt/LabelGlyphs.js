@@ -1,10 +1,10 @@
 import { BufferAttribute } from 'three';
 import { GlyphMaterial } from './GlyphMaterial.js';
-import { GlyphPoints } from './GlyphPoints.js';
+import { Glyphs } from './Glyphs.js';
 
 const _uvTarget = {};
 
-export class CharacterPoints extends GlyphPoints {
+export class LabelGlyphs extends Glyphs {
 
 	constructor( options = {} ) {
 

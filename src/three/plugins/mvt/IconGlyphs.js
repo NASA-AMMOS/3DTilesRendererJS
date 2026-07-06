@@ -1,6 +1,6 @@
 import { BufferAttribute, Matrix4, Vector2, Vector3, Vector4 } from 'three';
 import { GlyphMaterial } from './GlyphMaterial.js';
-import { GlyphPoints } from './GlyphPoints.js';
+import { Glyphs } from './Glyphs.js';
 
 const _viewport = /* @__PURE__ */ new Vector4();
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
@@ -10,7 +10,7 @@ const _ssRay = /* @__PURE__ */ new Vector2();
 const _ssPoint = /* @__PURE__ */ new Vector2();
 const _worldPoint = /* @__PURE__ */ new Vector3();
 
-export class AnnotationPoints extends GlyphPoints {
+export class IconGlyphs extends Glyphs {
 
 	constructor( options = {} ) {
 

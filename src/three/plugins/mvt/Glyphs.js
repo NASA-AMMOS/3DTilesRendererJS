@@ -2,7 +2,7 @@ import { BufferGeometry, Matrix4, Points } from 'three';
 
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
 
-export class GlyphPoints extends Points {
+export class Glyphs extends Points {
 
 	get size() {
 

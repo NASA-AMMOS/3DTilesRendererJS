@@ -12,8 +12,8 @@ import {
 	PMTilesOverlay,
 	MVTAnnotationsPlugin,
 	MVTAnnotationsDriver,
-	AnnotationPoints,
-	CharacterPoints,
+	IconGlyphs,
+	LabelGlyphs,
 	UpdateOnChangePlugin,
 } from '3d-tiles-renderer/plugins';
 import { LoadRegionPlugin } from '3d-tiles-renderer/three/plugins';
@@ -142,7 +142,7 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		const dpr = renderer.getPixelRatio();
 
 		// icons for point annotations
-		const annotationPoints = new AnnotationPoints( {
+		const annotationPoints = new IconGlyphs( {
 			getKind: ( layer, properties ) => {
 
 				return KIND_TO_ICON[ properties.kind ] || 'point';
@@ -176,7 +176,7 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		);
 
 		// glyphs for text ( road ) annotations
-		const characterPoints = new CharacterPoints( {
+		const characterPoints = new LabelGlyphs( {
 			strokeStyle: '#3f3e4c',
 			strokeWidth: 3 * dpr,
 		} );
