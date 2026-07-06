@@ -13,7 +13,7 @@ export class MVTGlyphs extends Points {
 	constructor( material: MVTGlyphMaterial );
 
 	dispose(): void;
-	update( added: Array<object>, removed: Array<object> ): void;
+	update( added: Iterable<object>, removed: Iterable<object> ): void;
 	raycast( raycaster: Raycaster, intersects: object[] ): void;
 
 }

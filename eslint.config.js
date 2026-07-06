@@ -131,6 +131,7 @@ export default [
 			'jsdoc/no-undefined-types': [ 'error', {
 				definedTypes: [
 					'ArrayBufferView',
+					'Iterable',
 					'RequestInit',
 					'TypedArray',
 					'TypedArrayConstructor',
