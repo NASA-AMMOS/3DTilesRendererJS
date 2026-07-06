@@ -1,8 +1,24 @@
 import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 import { MVTGlyphs } from './MVTGlyphs.js';
 
+/**
+ * Renders text labels one glyph per character, laid out along each annotation's path. Characters are
+ * rasterized into the atlas on demand, so a label's text may change at any time.
+ * @extends MVTGlyphs
+ */
 export class MVTLabelGlyphs extends MVTGlyphs {
 
+	/**
+	 * @param {Object} [options]
+	 * @param {number} [options.size=16] - Glyph size in pixels.
+	 * @param {number} [options.glyphSize] - Atlas slot size in pixels (defaults to `16 * devicePixelRatio`).
+	 * @param {number} [options.slotCount=64] - Initial atlas slot capacity ( grows as needed ).
+	 * @param {string|null} [options.font=null] - Explicit CSS font string; overrides `fontFamily`.
+	 * @param {string} [options.fontFamily='sans-serif'] - Font family used to build the CSS font when
+	 * `font` isn't given.
+	 * @param {string} [options.strokeStyle='black'] - Outline color drawn under each glyph.
+	 * @param {number} [options.strokeWidth=0] - Outline width in atlas pixels ( 0 disables the outline ).
+	 */
 	constructor( options = {} ) {
 
 		const {
@@ -38,7 +54,11 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 
 	}
 
-	// advance width of `char` in em units ( fraction of the font size ), cached per character
+	/**
+	 * Advance width of `char` in the label's size units, cached per character.
+	 * @param {string} char - The character to measure.
+	 * @returns {number} The advance width.
+	 */
 	measureChar( char ) {
 
 		const { _advanceCache, material, glyphAtlas, _font } = this;

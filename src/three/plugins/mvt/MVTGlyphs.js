@@ -1,3 +1,5 @@
+/** @import { MVTGlyphAtlasTexture } from './MVTGlyphAtlasTexture.js' */
+/** @import { MVTGlyphMaterial } from './MVTGlyphMaterial.js' */
 import { BufferAttribute, BufferGeometry, Matrix4, Points, Vector2, Vector3, Vector4 } from 'three';
 
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
@@ -11,8 +13,17 @@ const _ssRay = /* @__PURE__ */ new Vector2();
 const _ssPoint = /* @__PURE__ */ new Vector2();
 const _worldPoint = /* @__PURE__ */ new Vector3();
 
+/**
+ * Base `Points` object that renders a batch of glyphs from a shared `MVTGlyphAtlasTexture`, fading
+ * each item in and out.
+ * @extends Points
+ */
 export class MVTGlyphs extends Points {
 
+	/**
+	 * Glyph size in pixels.
+	 * @type {number}
+	 */
 	get size() {
 
 		return this.material.size;
@@ -25,12 +36,19 @@ export class MVTGlyphs extends Points {
 
 	}
 
+	/**
+	 * The glyph atlas this object samples from.
+	 * @type {MVTGlyphAtlasTexture}
+	 */
 	get glyphAtlas() {
 
 		return this.material.glyphAtlas;
 
 	}
 
+	/**
+	 * @param {MVTGlyphMaterial} material - Material used to draw the glyphs.
+	 */
 	constructor( material ) {
 
 		super( new BufferGeometry(), material );
@@ -41,8 +59,16 @@ export class MVTGlyphs extends Points {
 		// viewport size in pixels, refreshed each frame in onBeforeRender for screen-space raycasting
 		this.resolution = new Vector2();
 
-		// fade settings
+		/**
+		 * Seconds a glyph takes to fade in.
+		 * @type {number}
+		 */
 		this.fadeInDuration = 0.3;
+
+		/**
+		 * Seconds a glyph takes to fade out.
+		 * @type {number}
+		 */
 		this.fadeOutDuration = 0.3;
 
 		// Map<itemId, { item, fade: 0..1, state: 'in' | 'visible' | 'out' }> keyed by stable id,
@@ -53,6 +79,10 @@ export class MVTGlyphs extends Points {
 
 	}
 
+	/**
+	 * Disposes the glyph atlas, geometry, and material.
+	 * @returns {void}
+	 */
 	dispose() {
 
 		this.glyphAtlas.dispose();
@@ -61,7 +91,14 @@ export class MVTGlyphs extends Points {
 
 	}
 
-	// callback for adding and remove items from the set of glyphs
+	/**
+	 * Updates the rendered glyphs from a frame's visibility changes and advances the fades. Call
+	 * once per frame.
+	 * @private
+	 * @param {Iterable<Object>} added - Items that became visible, each with a stable `id`.
+	 * @param {Iterable<Object>} removed - Items that became hidden.
+	 * @returns {void}
+	 */
 	update( added, removed ) {
 
 		const now = performance.now() / 1000;
@@ -284,7 +321,7 @@ export class MVTGlyphs extends Points {
 
 	}
 
-	// flag every per-glyph attribute for upload
+	// flag the per-glyph attributes for upload
 	_markNeedsUpdate() {
 
 		const { geometry } = this;

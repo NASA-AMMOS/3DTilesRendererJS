@@ -1,8 +1,17 @@
 import { PointsMaterial, Vector2 } from 'three';
 import { MVTGlyphAtlasTexture } from './MVTGlyphAtlasTexture.js';
 
+/**
+ * A `PointsMaterial` that draws each point sprite as a glyph from an `MVTGlyphAtlasTexture` with fading.
+ * @private
+ * @extends PointsMaterial
+ */
 export class MVTGlyphMaterial extends PointsMaterial {
 
+	/**
+	 * The glyph atlas sampled by this material.
+	 * @type {MVTGlyphAtlasTexture}
+	 */
 	get glyphAtlas() {
 
 		return this._glyphAtlas;
@@ -26,12 +35,21 @@ export class MVTGlyphMaterial extends PointsMaterial {
 
 	}
 
+	/**
+	 * A single atlas slot's size in UV units.
+	 * @type {Vector2}
+	 */
 	get glyphCellSize() {
 
 		return this._glyphCellSize;
 
 	}
 
+	/**
+	 * @param {Object} [parameters] - `PointsMaterial` parameters, plus the overrides below.
+	 * @param {number} [parameters.size=25] - Point size in pixels.
+	 * @param {boolean} [parameters.sizeAttenuation=false] - Whether point size shrinks with distance.
+	 */
 	constructor( parameters = {} ) {
 
 		const {
