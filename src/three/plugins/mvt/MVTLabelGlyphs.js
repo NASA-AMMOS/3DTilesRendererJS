@@ -1,7 +1,7 @@
 import { GlyphMaterial } from './GlyphMaterial.js';
-import { Glyphs } from './Glyphs.js';
+import { MVTGlyphs } from './MVTGlyphs.js';
 
-export class LabelGlyphs extends Glyphs {
+export class MVTLabelGlyphs extends MVTGlyphs {
 
 	constructor( options = {} ) {
 

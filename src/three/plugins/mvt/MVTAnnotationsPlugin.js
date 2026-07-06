@@ -11,8 +11,8 @@ import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overl
 import { parsePointAnnotations } from './annotations/PointAnnotation.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
-import { IconGlyphs } from './IconGlyphs.js';
-import { LabelGlyphs } from './LabelGlyphs.js';
+import { MVTIconGlyphs } from './MVTIconGlyphs.js';
+import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -184,7 +184,7 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 		const dpr = window.devicePixelRatio;
 
 		// a single filled circle glyph, used for every point annotation
-		const icons = new IconGlyphs( { fallback: 'default' } );
+		const icons = new MVTIconGlyphs( { fallback: 'default' } );
 		icons.glyphAtlas.drawChar( 'default', '●', {
 			fillStyle: 'white',
 			strokeStyle: 'black',
@@ -193,7 +193,7 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 		} );
 
 		// white Arial road labels with a black outline
-		const labels = new LabelGlyphs( {
+		const labels = new MVTLabelGlyphs( {
 			fontFamily: 'Arial',
 			strokeStyle: 'black',
 			strokeWidth: 3 * dpr,

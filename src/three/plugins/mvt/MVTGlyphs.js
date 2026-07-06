@@ -11,7 +11,7 @@ const _ssRay = /* @__PURE__ */ new Vector2();
 const _ssPoint = /* @__PURE__ */ new Vector2();
 const _worldPoint = /* @__PURE__ */ new Vector3();
 
-export class Glyphs extends Points {
+export class MVTGlyphs extends Points {
 
 	get size() {
 

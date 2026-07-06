@@ -1,7 +1,7 @@
 import { PointsMaterial, Vector2 } from 'three';
-import { GlyphAtlasTexture } from './GlyphAtlasTexture.js';
+import { MVTGlyphAtlasTexture } from './MVTGlyphAtlasTexture.js';
 
-export class GlyphMaterial extends PointsMaterial {
+export class MVTGlyphMaterial extends PointsMaterial {
 
 	get glyphAtlas() {
 

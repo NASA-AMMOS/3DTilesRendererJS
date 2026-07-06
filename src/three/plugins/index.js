@@ -30,9 +30,9 @@ export * from './gltf/metadata/classes/StructuralMetadata.js';
 // mvt utilities
 export * from './mvt/GlyphAtlasTexture.js';
 export * from './mvt/GlyphMaterial.js';
-export * from './mvt/Glyphs.js';
-export * from './mvt/IconGlyphs.js';
-export * from './mvt/LabelGlyphs.js';
+export * from './mvt/MVTGlyphs.js';
+export * from './mvt/MVTIconGlyphs.js';
+export * from './mvt/MVTLabelGlyphs.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';

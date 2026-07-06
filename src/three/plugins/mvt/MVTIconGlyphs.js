@@ -1,7 +1,7 @@
 import { GlyphMaterial } from './GlyphMaterial.js';
-import { Glyphs } from './Glyphs.js';
+import { MVTGlyphs } from './MVTGlyphs.js';
 
-export class IconGlyphs extends Glyphs {
+export class MVTIconGlyphs extends MVTGlyphs {
 
 	constructor( options = {} ) {
 
