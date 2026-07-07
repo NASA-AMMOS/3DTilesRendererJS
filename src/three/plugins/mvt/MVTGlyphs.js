@@ -246,6 +246,7 @@ export class MVTGlyphs extends Group {
 
 		}
 
+		this._recenter();
 		this._updateGeometry();
 
 	}
@@ -358,6 +359,7 @@ export class MVTGlyphs extends Group {
 	// keep the root near the camera to avoid gpu jitter at globe scale
 	_recenter() {
 
+		const { parent, _lastCamera } = this;
 		if ( ! _lastCamera ) {
 
 			this.position.set( 0, 0, 0 );
@@ -365,7 +367,6 @@ export class MVTGlyphs extends Group {
 
 		}
 
-		const { parent, _lastCamera } = this;
 		if ( parent ) {
 
 			_mvMatrix.copy( parent.matrixWorld ).invert();
