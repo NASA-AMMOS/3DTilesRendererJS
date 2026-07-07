@@ -252,7 +252,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			_vec.lerpVectors( p0, p1, segAlpha );
 
 			// off-screen in depth, or colliding with an already-placed annotation
-			if ( ! force && ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, _charRadius ) ) ) {
+			if ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, _charRadius ) ) {
 
 				this.valid = false;
 				if ( ! force ) break;
