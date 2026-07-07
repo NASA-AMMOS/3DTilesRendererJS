@@ -28,7 +28,7 @@ const DRAW_MODE = /* @__PURE__ */ Object.freeze( {
 /**
  * Base object that renders a batch of glyphs from a shared `MVTGlyphAtlasTexture`, fading each item
  * in and out. Manages the geometry and two child draws sharing it: an opaque pass and a transparent
- * "obscured" pass, combined per `drawMode`.
+ * "draw through" pass, combined per `drawMode`.
  * @extends Group
  */
 export class MVTGlyphs extends Group {
@@ -56,7 +56,7 @@ export class MVTGlyphs extends Group {
 	set size( v ) {
 
 		this._opaque.material.size = v;
-		this._obscured.material.size = v;
+		this._drawThrough.material.size = v;
 
 	}
 
@@ -112,10 +112,10 @@ export class MVTGlyphs extends Group {
 		this.fadeOutDuration = 0.3;
 
 		/**
-		 * Opacity of the ghosted, obscured glyphs in the `DRAW_THROUGH` draw mode.
+		 * Opacity of the ghosted, drawThrough glyphs in the `DRAW_THROUGH` draw mode.
 		 * @type {number}
 		 */
-		this.obscuredOpacity = 0.5;
+		this.drawThroughOpacity = 0.5;
 
 		// Map<itemId, { item, fade: 0..1, state: 'in' | 'visible' | 'out' }> keyed by stable id,
 		// plus an insertion-ordered list of the same entries for stable geometry layout
@@ -128,25 +128,23 @@ export class MVTGlyphs extends Group {
 		const opaque = new Points( geometry, new MVTGlyphMaterial() );
 		opaque.frustumCulled = false;
 		opaque.renderOrder = 1000;
-		opaque.onAfterRender = ( renderer, scene, camera ) => {
+
+		const drawThrough = new Points( geometry, new MVTGlyphMaterial() );
+		drawThrough.frustumCulled = false;
+		drawThrough.material.glyphAtlas = opaque.material.glyphAtlas;
+		drawThrough.renderOrder = 1001;
+		drawThrough.onAfterRender = ( renderer, scene, camera ) => {
 
 			this._recenter( camera );
 
 		};
 
-		const obscured = new Points( geometry, new MVTGlyphMaterial() );
-		obscured.frustumCulled = false;
-		obscured.material.glyphAtlas = opaque.material.glyphAtlas;
-		obscured.material.depthTest = true;
-		obscured.material.depthFunc = GreaterDepth;
-		obscured.renderOrder = 1001;
-
 		// add the children
-		this.add( obscured, opaque );
+		this.add( drawThrough, opaque );
 
 		// store references, update draw mode
 		this._opaque = opaque;
-		this._obscured = obscured;
+		this._drawThrough = drawThrough;
 		this.drawMode = DRAW_MODE.OVERLAY;
 
 	}
@@ -160,7 +158,7 @@ export class MVTGlyphs extends Group {
 		this.glyphAtlas.dispose();
 		this.geometry.dispose();
 		this._opaque.material.dispose();
-		this._obscured.material.dispose();
+		this._drawThrough.material.dispose();
 
 	}
 
@@ -320,22 +318,23 @@ export class MVTGlyphs extends Group {
 	// configure the two child draws for the current draw mode
 	_applyDrawMode() {
 
-		const { _opaque, _obscured, obscuredOpacity, _drawMode } = this;
+		const { _opaque, _drawThrough, drawThroughOpacity, _drawMode } = this;
 		switch ( _drawMode ) {
 
 			case DRAW_MODE.OVERLAY:
 				_opaque.visible = true;
 				_opaque.material.depthTest = false;
 
-				_obscured.visible = false;
+				_drawThrough.visible = false;
 				break;
 
 			case DRAW_MODE.DRAW_THROUGH:
 				_opaque.visible = true;
 				_opaque.material.depthTest = true;
 
-				_obscured.visible = true;
-				_obscured.material.opacity = obscuredOpacity;
+				_drawThrough.visible = true;
+				_drawThrough.material.opacity = drawThroughOpacity;
+				_drawThrough.material.depthFunc = GreaterDepth;
 				break;
 
 			case DRAW_MODE.OBSCURED:
@@ -343,7 +342,7 @@ export class MVTGlyphs extends Group {
 				_opaque.visible = true;
 				_opaque.material.depthTest = true;
 
-				_obscured.visible = false;
+				_drawThrough.visible = false;
 				break;
 
 		}
