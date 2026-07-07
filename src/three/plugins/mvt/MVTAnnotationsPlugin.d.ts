@@ -11,7 +11,8 @@ export class MVTAnnotationsDriver {
 	measureChar( char: string ): number;
 	getText( properties: Record<string, unknown> ): string;
 	isAnnotationEnabled( layer: string, properties: Record<string, unknown>, type: number ): boolean;
-	onAnnotationsUpdate( added: Set<object>, removed: Set<object> ): void;
+	onPointsUpdate( added: object[], removed: object[] ): void;
+	onLabelsUpdate( added: object[], removed: object[] ): void;
 	dispose(): void;
 
 }

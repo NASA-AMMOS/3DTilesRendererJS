@@ -11,6 +11,7 @@ import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overl
 import { parsePointAnnotations } from './annotations/PointAnnotation.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
+import { TextAnchorAnnotation } from './annotations/TextAnchorAnnotation.js';
 import { MVTIconGlyphs } from './MVTIconGlyphs.js';
 import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
 
@@ -39,12 +40,6 @@ function collectMeshes( object ) {
  * @param {string} layerName - The MVT layer name the feature belongs to.
  * @param {Object} properties - The feature's property map.
  * @returns {boolean} Return true to include this feature as an annotation.
- */
-
-/**
- * @callback AnnotationsUpdateCallback
- * @param {Set} added - `PointAnnotationItem` instances that became visible this frame.
- * @param {Set} removed - `PointAnnotationItem` instances that became hidden this frame.
  */
 
 /**
@@ -146,12 +141,22 @@ export class MVTAnnotationsDriver {
 	}
 
 	/**
-	 * Called each frame with the annotations whose visibility changed, for the caller to render.
-	 * @param {Set} added - Annotations that became visible this frame.
-	 * @param {Set} removed - Annotations that became hidden this frame.
+	 * Called each frame with the point ( PoI ) annotations whose visibility changed, for the caller
+	 * to render.
+	 * @param {Object[]} added - Point annotations that became visible this frame.
+	 * @param {Object[]} removed - Point annotations that became hidden this frame.
 	 * @returns {void}
 	 */
-	onAnnotationsUpdate( added, removed ) {}
+	onPointsUpdate( added, removed ) {}
+
+	/**
+	 * Called each frame with the line / label annotations whose visibility changed, for the caller
+	 * to render.
+	 * @param {Object[]} added - Label annotations that became visible this frame.
+	 * @param {Object[]} removed - Label annotations that became hidden this frame.
+	 * @returns {void}
+	 */
+	onLabelsUpdate( added, removed ) {}
 
 	/**
 	 * Releases any resources the driver created (geometries, materials, textures, etc.). Called by
@@ -162,17 +167,16 @@ export class MVTAnnotationsDriver {
 
 }
 
-// route occupancy annotations to the right renderer: text anchors expose `characterPositions`,
-// point annotations expose a `position`
+// split a mixed set of occupancy annotations into point ( PoI ) and label ( text anchor ) lists
 function splitAnnotations( set ) {
 
 	const points = [];
-	const text = [];
+	const labels = [];
 	for ( const item of set ) {
 
-		if ( item.characterPositions !== undefined ) {
+		if ( item instanceof TextAnchorAnnotation ) {
 
-			text.push( item );
+			labels.push( item );
 
 		} else {
 
@@ -182,7 +186,7 @@ function splitAnnotations( set ) {
 
 	}
 
-	return { points, text };
+	return { points, labels };
 
 }
 
@@ -237,12 +241,15 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
 	}
 
-	onAnnotationsUpdate( added, removed ) {
+	onPointsUpdate( added, removed ) {
 
-		const a = splitAnnotations( added );
-		const r = splitAnnotations( removed );
-		this.icons.update( a.icons, r.icons );
-		this.labels.update( a.text, r.text );
+		this.icons.update( added, removed );
+
+	}
+
+	onLabelsUpdate( added, removed ) {
+
+		this.labels.update( added, removed );
 
 	}
 
@@ -258,7 +265,8 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 /**
  * Plugin that extracts point features from an MVT overlay and manages their screen-space
  * occupation, preventing label crowding via a hierarchical lock system and raycasted depth
- * placement. Rendering is left entirely to the caller via the driver's `onAnnotationsUpdate`.
+ * placement. Rendering is left entirely to the caller via the driver's `onPointsUpdate` /
+ * `onLabelsUpdate`.
  * @param {Object} options
  * @param {Object} options.overlay - The `PMTilesOverlay` (or compatible overlay) whose tile
  * content is parsed for point features.
@@ -496,8 +504,11 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-			// notify the drivers of the updates
-			this.driver.onAnnotationsUpdate( occupancy.added, occupancy.removed );
+			// split the visibility changes by kind and notify the driver's renderers
+			const added = splitAnnotations( occupancy.added );
+			const removed = splitAnnotations( occupancy.removed );
+			this.driver.onPointsUpdate( added.points, removed.points );
+			this.driver.onLabelsUpdate( added.labels, removed.labels );
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
 
