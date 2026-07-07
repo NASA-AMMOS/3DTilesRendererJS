@@ -558,6 +558,7 @@ export class MVTAnnotationsPlugin {
 
 						settlingManager.register( ann );
 						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
+						ann.text = driver.getText( ann.properties );
 
 					} else {
 

@@ -122,12 +122,18 @@ export class MVTGlyphs extends Group {
 		this._entryMap = new Map();
 		this._orderedEntries = [];
 		this._lastUpdateTime = - 1;
+		this._lastCamera = null;
 
 		// create children for draw through
 		const geometry = new BufferGeometry();
 		const opaque = new Points( geometry, new MVTGlyphMaterial() );
 		opaque.frustumCulled = false;
 		opaque.renderOrder = 1000;
+		opaque.onAfterRender = ( renderer, scene, camera ) => {
+
+			this._lastCamera = camera;
+
+		};
 
 		const drawThrough = new Points( geometry, new MVTGlyphMaterial() );
 		drawThrough.frustumCulled = false;
@@ -135,7 +141,7 @@ export class MVTGlyphs extends Group {
 		drawThrough.renderOrder = 1001;
 		drawThrough.onAfterRender = ( renderer, scene, camera ) => {
 
-			this._recenter( camera );
+			this._lastCamera = camera;
 
 		};
 
@@ -350,9 +356,16 @@ export class MVTGlyphs extends Group {
 	}
 
 	// keep the root near the camera to avoid gpu jitter at globe scale
-	_recenter( camera ) {
+	_recenter() {
 
-		const { parent } = this;
+		if ( ! _lastCamera ) {
+
+			this.position.set( 0, 0, 0 );
+			this.updateMatrixWorld( true );
+
+		}
+
+		const { parent, _lastCamera } = this;
 		if ( parent ) {
 
 			_mvMatrix.copy( parent.matrixWorld ).invert();
@@ -363,7 +376,7 @@ export class MVTGlyphs extends Group {
 
 		}
 
-		this.position.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _mvMatrix );
+		this.position.setFromMatrixPosition( _lastCamera.matrixWorld ).applyMatrix4( _mvMatrix );
 		this.updateMatrixWorld( true );
 
 	}
