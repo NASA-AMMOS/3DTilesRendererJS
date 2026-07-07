@@ -32,8 +32,11 @@ const DRAW_MODE = /* @__PURE__ */ Object.freeze( {
 export class MVTGlyphs extends Group {
 
 	/**
-	 * Draw modes for `drawMode`: `OBSCURED`, `DRAW_THROUGH`, and `OVERLAY`.
-	 * @type {{ OBSCURED: string, DRAW_THROUGH: string, OVERLAY: string }}
+	 * Draw modes for `drawMode`:
+	 * - `OBSCURED` – depth-tested, so glyphs are hidden where behind terrain.
+	 * - `DRAW_THROUGH` – visible parts drawn opaque, parts behind terrain ghosted on top.
+	 * - `OVERLAY` – always drawn on top of everything.
+	 * @type {{ OBSCURED: number, DRAW_THROUGH: number, OVERLAY: number }}
 	 */
 	static get DrawMode() {
 
@@ -70,7 +73,7 @@ export class MVTGlyphs extends Group {
 
 	/**
 	 * How glyphs interact with the depth buffer; one of `MVTGlyphs.DrawMode`.
-	 * @type {string}
+	 * @type {number}
 	 */
 	get drawMode() {
 

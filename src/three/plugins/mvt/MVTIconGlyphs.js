@@ -1,6 +1,13 @@
 import { MVTGlyphs } from './MVTGlyphs.js';
 
 /**
+ * @callback MVTGetKindCallback
+ * @param {string} layer - The MVT layer the feature belongs to.
+ * @param {Object} properties - The feature's property map.
+ * @returns {string|null} The atlas key to draw, or null to use `fallback`.
+ */
+
+/**
  * Renders one icon glyph per point annotation. Each item's atlas key comes from `getKind`, or
  * `fallback` when that key isn't in the atlas.
  * @extends MVTGlyphs
@@ -9,8 +16,7 @@ export class MVTIconGlyphs extends MVTGlyphs {
 
 	/**
 	 * @param {Object} [options]
-	 * @param {( layer: string, properties: Object ) => ( string | null )} [options.getKind] - Returns
-	 * the atlas key for an item, or null.
+	 * @param {MVTGetKindCallback} [options.getKind] - Chooses the atlas key to draw for each point.
 	 * @param {string|null} [options.fallback=null] - Atlas key drawn when `getKind`'s result is
 	 * missing from the atlas; null draws nothing.
 	 * @param {number} [options.size=18] - Glyph size in pixels.
@@ -30,8 +36,8 @@ export class MVTIconGlyphs extends MVTGlyphs {
 		super();
 
 		/**
-		 * Returns the atlas key for a given item, or null for none.
-		 * @type {( layer: string, properties: Object ) => ( string | null )}
+		 * Chooses the atlas key to draw for each point.
+		 * @type {MVTGetKindCallback}
 		 */
 		this.getKind = getKind;
 
