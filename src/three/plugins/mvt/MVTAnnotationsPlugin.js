@@ -54,6 +54,21 @@ function collectMeshes( object ) {
  */
 export class MVTAnnotationsDriver {
 
+	/**
+	 * Set to "true" when the filters or settings have changed to trigger an
+	 * update to the annotations in the plugin.
+	 * @type {boolean}
+	 */
+	set needsUpdate( v ) {
+
+		if ( v ) {
+
+			this.version ++;
+
+		}
+
+	}
+
 	constructor() {
 
 		/**
@@ -62,6 +77,8 @@ export class MVTAnnotationsDriver {
 		 * @type {Group}
 		 */
 		this.group = new Group();
+
+		this.version = 0;
 
 	}
 
@@ -277,6 +294,7 @@ export class MVTAnnotationsPlugin {
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
 		this._filterAnnotation = ( layer, properties, type ) => this.driver.filterAnnotation( layer, properties, type );
+		this._driverVersion = - 1;
 
 		// hierarchy for managing tile loading and visibility
 		this.hierarchy = new MVTHierarchy();
@@ -399,18 +417,24 @@ export class MVTAnnotationsPlugin {
 		this._onUpdateAfter = () => {
 
 			const { driver, camera } = this;
+			const annotationsNeedUpdate = driver.version !== this._driverVersion;
+			this._driverVersion = driver.version;
 
-			// Recalculate the field state per annotation
-			for ( const annotation of pointManager.points ) {
+			if ( annotationsNeedUpdate ) {
 
-				annotation.enabled = driver.isAnnotationEnabled( annotation.layer, annotation.properties, 1 );
+				// Recalculate the field state per annotation
+				for ( const annotation of pointManager.points ) {
 
-			}
+					annotation.enabled = driver.isAnnotationEnabled( annotation.layer, annotation.properties, 1 );
 
-			for ( const line of anchorManager.lines ) {
+				}
 
-				line.enabled = driver.isAnnotationEnabled( line.layer, line.properties, 2 );
-				line.text = driver.getText( line.properties );
+				for ( const line of anchorManager.lines ) {
+
+					line.enabled = driver.isAnnotationEnabled( line.layer, line.properties, 2 );
+					line.text = driver.getText( line.properties );
+
+				}
 
 			}
 
@@ -463,6 +487,16 @@ export class MVTAnnotationsPlugin {
 			// occupancy
 			occupancy.camera = camera;
 			occupancy.update();
+
+			// when the driver's filters changed, force the animations to completion so the change is
+			// applied at once rather than delayed
+			if ( annotationsNeedUpdate ) {
+
+				occupancy.finishAnimations();
+
+			}
+
+			// notify the drivers of the updates
 			this.driver.onAnnotationsUpdate( occupancy.added, occupancy.removed );
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {

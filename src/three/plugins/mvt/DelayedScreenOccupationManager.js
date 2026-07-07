@@ -221,4 +221,33 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	// Immediately complete every pending show / hide timer so a change takes effect immediately. Flushed items
+	// are merged into `added` / `removed` and intended to be called right after update() so the caller reads
+	// the combined result.
+	finishAnimations() {
+
+		const { _showTimers, _hideTimers, visible, added, removed } = this;
+		const currTime = performance.now();
+
+		for ( const item of _showTimers.keys() ) {
+
+			visible.add( item );
+			added.add( item );
+			item.visibleTime = currTime;
+
+		}
+
+		_showTimers.clear();
+
+		for ( const item of _hideTimers.keys() ) {
+
+			visible.delete( item );
+			removed.add( item );
+
+		}
+
+		_hideTimers.clear();
+
+	}
+
 }
