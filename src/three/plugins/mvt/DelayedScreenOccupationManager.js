@@ -180,6 +180,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				visible.add( item );
 				added.add( item );
 				item.visibleTime = currTime;
+				item.displayed = true;
 
 			} else {
 
@@ -193,11 +194,13 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		for ( const [ item, elapsed ] of _hideTimers ) {
 
 			const next = elapsed + dt;
-			if ( next >= hideDelay || ! item.valid ) {
+			if ( next >= hideDelay ) {
 
 				_hideTimers.delete( item );
 				visible.delete( item );
 				removed.add( item );
+				item.displayed = false;
+				item.onHidden();
 
 			} else {
 
@@ -242,6 +245,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			visible.add( item );
 			added.add( item );
 			item.visibleTime = currTime;
+			item.displayed = true;
 
 		}
 
@@ -251,6 +255,8 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 			visible.delete( item );
 			removed.add( item );
+			item.displayed = false;
+			item.onHidden();
 
 		}
 

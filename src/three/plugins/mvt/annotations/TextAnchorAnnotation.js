@@ -17,13 +17,13 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	get lat() {
 
-		return this.getActiveReference().lat;
+		return this.getActiveSlot().lat;
 
 	}
 
 	get lon() {
 
-		return this.getActiveReference().lon;
+		return this.getActiveSlot().lon;
 
 	}
 
@@ -69,6 +69,11 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		this.referencePaths = [];
 		this._activeReference = null;
+
+		// transient slot { i0, i1, alpha, lat, lon } the anchor is snapped to on the active line
+		// while it drifts across an LoD swap, overriding its associated anchor slot. Cleared when
+		// the label is fully hidden ( see onHidden ) so it re-derives evenly-spaced on reappearance
+		this._snapped = null;
 
 		// local position & angle per character
 		this.characterPositions = [];
@@ -152,7 +157,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	_getTextDirection() {
 
 		const { _totalWidth } = this;
-		const { line, i0, i1, alpha } = this.getActiveReference();
+		const { line } = this.getActiveReference();
+		const { i0, i1, alpha } = this.getActiveSlot();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 
@@ -202,7 +208,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	_layoutCharacters( handle, outputIndices, outputAlphas, force = false ) {
 
 		const { text, _totalWidth, _charRadius } = this;
-		const { line, i0, i1, alpha } = this.getActiveReference();
+		const { line } = this.getActiveReference();
+		const { i0, i1, alpha } = this.getActiveSlot();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 		const flip = this._getTextDirection();
@@ -352,7 +359,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	getPosition( pos ) {
 
-		const { i0, i1, alpha, line } = this.getActiveReference();
+		const { line } = this.getActiveReference();
+		const { i0, i1, alpha } = this.getActiveSlot();
 		return pos.lerpVectors( line.positions[ i0 ], line.positions[ i1 ], alpha );
 
 	}
@@ -364,18 +372,38 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
+	// the slot ( i0 / i1 / alpha, lat / lon ) the anchor currently occupies on the active line: the
+	// snapped override while it drifts across an LoD swap, otherwise its associated anchor slot
+	getActiveSlot() {
+
+		return this._snapped ?? this._activeReference;
+
+	}
+
 	updateActiveReference() {
 
 		const { referencePaths, _activeReference } = this;
+
+		// pick the active reference. The highest-LoD path is the desired "target"; until it settles
+		// we hold the current LoD rather than hopping through intermediate LoDs as they settle, which
+		// would snap the label around every frame
+		let result;
 		const target = referencePaths[ 0 ] ?? null;
 		if ( target?.line.ready ) {
 
-			this._activeReference = target;
-			return target;
+			// desired path settled: switch to it
+			result = target;
+
+		} else if ( _activeReference && _activeReference.line.ready && referencePaths.includes( _activeReference ) ) {
+
+			// desired path not settled yet: stay on the current LoD
+			result = _activeReference;
 
 		} else {
 
-			let result = target;
+			// no settled current path ( first appearance or the current LoD was unloaded ): take the
+			// best settled path, falling back to the highest-LoD reference
+			result = null;
 			for ( const entry of referencePaths ) {
 
 				if ( entry.line.ready ) {
@@ -387,19 +415,97 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
-			result = result ?? _activeReference;
-
-			if ( _activeReference && _activeReference.line.ready && _activeReference.line.lodLevel > result.line.lodLevel ) {
-
-				result = _activeReference;
-
-			}
-
-			this._activeReference = result;
-			return result;
+			result = result ?? target ?? _activeReference;
 
 		}
 
+		// when the active line changes under a displayed label, snap it onto the new line at the
+		// nearest point so it stays coherent across the LoD swap instead of jumping to the new line's
+		// associated anchor. Hidden labels just adopt the associated slot and re-derive on their next
+		// appearance, keeping anchor spacing even
+		if ( result && _activeReference && result.line !== _activeReference.line ) {
+
+			if ( this.displayed ) {
+
+				const slot = this._snapped ?? _activeReference;
+				this._snapped = this._snapToLine( result.line, slot.lat, slot.lon );
+
+			} else {
+
+				this._snapped = null;
+
+			}
+
+		}
+
+		this._activeReference = result;
+		return result;
+
+	}
+
+	// find the nearest point on the given line ( in cartographic lat / lon ) to the supplied
+	// position, returning a slot { i0, i1, alpha, lat, lon } used to keep a displayed label coherent
+	// when the active LoD swaps. Returns null for degenerate paths so the caller falls back to the
+	// associated slot
+	_snapToLine( line, lat, lon ) {
+
+		const { lat: lats, lon: lons } = line;
+		if ( lats.length < 2 ) {
+
+			return null;
+
+		}
+
+		let bestDist = Infinity;
+		let bestI0 = 0;
+		let bestI1 = 1;
+		let bestAlpha = 0;
+		let bestLat = lats[ 0 ];
+		let bestLon = lons[ 0 ];
+		for ( let i = 0, l = lats.length - 1; i < l; i ++ ) {
+
+			const lat0 = lats[ i ];
+			const lon0 = lons[ i ];
+			const dLat = lats[ i + 1 ] - lat0;
+			const dLon = lons[ i + 1 ] - lon0;
+
+			// project the point onto the segment, clamped to its ends
+			const lenSq = dLat * dLat + dLon * dLon;
+			const t = lenSq > 0 ? MathUtils.clamp( ( ( lat - lat0 ) * dLat + ( lon - lon0 ) * dLon ) / lenSq, 0, 1 ) : 0;
+
+			const projLat = lat0 + dLat * t;
+			const projLon = lon0 + dLon * t;
+			const eLat = lat - projLat;
+			const eLon = lon - projLon;
+			const dist = eLat * eLat + eLon * eLon;
+			if ( dist < bestDist ) {
+
+				bestDist = dist;
+				bestI0 = i;
+				bestI1 = i + 1;
+				bestAlpha = t;
+				bestLat = projLat;
+				bestLon = projLon;
+
+			}
+
+		}
+
+		return {
+			i0: bestI0,
+			i1: bestI1,
+			alpha: bestAlpha,
+			lat: bestLat,
+			lon: bestLon,
+		};
+
+	}
+
+	// clear the transient snapped slot once the label is fully hidden so it re-derives from its
+	// evenly-spaced associated anchor on reappearance
+	onHidden() {
+
+		this._snapped = null;
 
 	}
 
