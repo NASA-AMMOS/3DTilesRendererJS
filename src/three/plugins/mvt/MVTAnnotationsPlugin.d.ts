@@ -10,7 +10,7 @@ export class MVTAnnotationsDriver {
 	sortAnnotations( a: object, b: object ): number;
 	measureChar( char: string ): number;
 	getText( properties: Record<string, unknown> ): string;
-	isAnnotationEnabled( properties: Record<string, unknown>, type: number ): boolean;
+	isAnnotationEnabled( layer: string, properties: Record<string, unknown>, type: number ): boolean;
 	onAnnotationsUpdate( added: Set<object>, removed: Set<object> ): void;
 	dispose(): void;
 
