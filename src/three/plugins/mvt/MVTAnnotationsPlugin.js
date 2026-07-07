@@ -525,6 +525,7 @@ export class MVTAnnotationsPlugin {
 
 			const {
 				contentCache,
+				driver,
 				_filterAnnotation,
 				vectorTileInfo,
 				settlingManager,
@@ -556,10 +557,12 @@ export class MVTAnnotationsPlugin {
 					if ( ann instanceof LineAnnotation ) {
 
 						settlingManager.register( ann );
+						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
 
 					} else {
 
 						pointManager.add( ann );
+						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 1 );
 
 					}
 
