@@ -193,7 +193,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		for ( const [ item, elapsed ] of _hideTimers ) {
 
 			const next = elapsed + dt;
-			if ( next >= hideDelay ) {
+			if ( next >= hideDelay || ! item.valid ) {
 
 				_hideTimers.delete( item );
 				visible.delete( item );
@@ -204,6 +204,14 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				_hideTimers.set( item, next );
 
 			}
+
+		}
+
+		// keep items that are still lingering laid out at the current view so they don't freeze
+		// or squish while the timer runs.
+		for ( const item of _hideTimers.keys() ) {
+
+			this.manager.refreshLayout( item );
 
 		}
 
