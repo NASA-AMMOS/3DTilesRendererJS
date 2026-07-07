@@ -4,20 +4,37 @@ const _ndcMatrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _cameraLocalPos = /* @__PURE__ */ new Vector3();
 
+// a non-marking handle for laying out items without claiming occupancy
+const _dummyHandle = {
+	test: () => false,
+	mark: () => false,
+};
+
 export class OccupancyAnnotation {
 
 	constructor() {
 
-		this.enabled = true;
 		this.id = '';
 		this.layer = '';
 		this.properties = null;
-		this.ready = false;
 		this.lodLevel = 0;
+
+		// whether the annotation is enabled and ready to be displayed
+		this.enabled = true;
+
+		// whether the annotation is in a valid state. Used to decide whether annotations should
+		// be hidden quickly
+		this.valid = true;
+
+		// whether the annotation is settled and ready to be displayed
+		this.ready = false;
+
+		// screen pos used for sorting
+		this.screenPos = new Vector3();
+
 		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
 		this.visible = false;
-		this.screenPos = new Vector3();
 
 	}
 
@@ -25,7 +42,7 @@ export class OccupancyAnnotation {
 
 	}
 
-	evaluate( handle ) {
+	evaluate( handle, force ) {
 
 		return false;
 
@@ -268,6 +285,23 @@ export class ScreenOccupationManager extends EventDispatcher {
 			this.dispatchEvent( { type: 'change', added, removed: prevVisible } );
 
 		}
+
+	}
+
+	// re-layout a single item at the current view without claiming occupancy, so an item that has
+	// lost placement (eg a label fading out) keeps its layout current instead of freezing.
+	// Forces placement past the usual fit checks - must be called right after update() so the scratch
+	// is fresh.
+	refreshLayout( item ) {
+
+		if ( this.camera === null ) {
+
+			return;
+
+		}
+
+		item.updateTransform( _ndcMatrix, this.resolution, _cameraLocalPos );
+		item.evaluate( _dummyHandle, true );
 
 	}
 

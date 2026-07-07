@@ -1064,6 +1064,16 @@ the methods to customize which features become annotations, their placement prio
 sizing, the displayed text, and how visibility changes are rendered.
 
 
+### .needsUpdate
+
+```js
+needsUpdate: boolean
+```
+
+Set to "true" when the filters or settings have changed to trigger an
+update to the annotations in the plugin.
+
+
 ### .group
 
 ```js
@@ -1364,7 +1374,7 @@ _extends `Group`_
 
 Base object that renders a batch of glyphs from a shared `MVTGlyphAtlasTexture`, fading each item
 in and out. Manages the geometry and two child draws sharing it: an opaque pass and a transparent
-"obscured" pass, combined per `drawMode`.
+"draw through" pass, combined per `drawMode`.
 
 
 ### .DrawMode
@@ -1421,13 +1431,13 @@ fadeOutDuration: number
 Seconds a glyph takes to fade out.
 
 
-### .obscuredOpacity
+### .drawThroughOpacity
 
 ```js
-obscuredOpacity: number
+drawThroughOpacity: number
 ```
 
-Opacity of the ghosted, obscured glyphs in the `DRAW_THROUGH` draw mode.
+Opacity of the ghosted, drawThrough glyphs in the `DRAW_THROUGH` draw mode.
 
 
 ### .dispose

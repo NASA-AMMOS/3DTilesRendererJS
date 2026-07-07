@@ -193,7 +193,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		for ( const [ item, elapsed ] of _hideTimers ) {
 
 			const next = elapsed + dt;
-			if ( next >= hideDelay ) {
+			if ( next >= hideDelay || ! item.valid ) {
 
 				_hideTimers.delete( item );
 				visible.delete( item );
@@ -204,6 +204,14 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				_hideTimers.set( item, next );
 
 			}
+
+		}
+
+		// keep items that are still lingering laid out at the current view so they don't freeze
+		// or squish while the timer runs.
+		for ( const item of _hideTimers.keys() ) {
+
+			this.manager.refreshLayout( item );
 
 		}
 
@@ -218,6 +226,35 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			this.dispatchEvent( { type: 'change', added, removed } );
 
 		}
+
+	}
+
+	// Immediately complete every pending show / hide timer so a change takes effect immediately. Flushed items
+	// are merged into `added` / `removed` and intended to be called right after update() so the caller reads
+	// the combined result.
+	finishAnimations() {
+
+		const { _showTimers, _hideTimers, visible, added, removed } = this;
+		const currTime = performance.now();
+
+		for ( const item of _showTimers.keys() ) {
+
+			visible.add( item );
+			added.add( item );
+			item.visibleTime = currTime;
+
+		}
+
+		_showTimers.clear();
+
+		for ( const item of _hideTimers.keys() ) {
+
+			visible.delete( item );
+			removed.add( item );
+
+		}
+
+		_hideTimers.clear();
 
 	}
 

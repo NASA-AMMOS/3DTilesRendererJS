@@ -85,7 +85,9 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	}
 
 	// overrides
-	evaluate( handle ) {
+	// "force" places the characters at the current projection even when they don't fit,
+	// used to keep a fading-out label laid out (see ScreenOccupationManager.refreshLayout)
+	evaluate( handle, force = false ) {
 
 		const { text } = this;
 		if ( ! text ) {
@@ -117,7 +119,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		_segAlphas.length = text.length;
 
 		// lay out and test every character; bail if it can't fit or the baseline curves too sharply
-		if ( ! this._layoutCharacters( handle, _segIndices, _segAlphas ) ) {
+		this._layoutCharacters( handle, _segIndices, _segAlphas, force );
+		if ( ! this.valid && ! force ) {
 
 			return false;
 
@@ -196,13 +199,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// index / alpha into the module scratch. returns the reading-direction flip on success, or
 	// null if the label can't be placed.
 	// TODO: also reject foreshortened paths (tiny screen-space segments)
-	_layoutCharacters( handle, outputIndices, outputAlphas ) {
+	_layoutCharacters( handle, outputIndices, outputAlphas, force = false ) {
 
 		const { text, _totalWidth, _charRadius } = this;
 		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 		const flip = this._getTextDirection();
+		this.valid = true;
 
 		const pointCount = screenPositions.length;
 		const totalLength = cumulativeLen[ cumulativeLen.length - 1 ];
@@ -223,10 +227,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			// absolute target position relative to the line
 			const target = anchorOffset + charCenter;
 
-			// the path is too short on screen to hold the whole string
+			// the path is too short on screen to hold the whole string (forced layout extrapolates
+			// past the ends instead of bailing)
 			if ( target < 0 || target > totalLength ) {
 
-				return false;
+				this.valid = false;
+				if ( ! force ) break;
 
 			}
 
@@ -248,7 +254,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			// off-screen in depth, or colliding with an already-placed annotation
 			if ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, _charRadius ) ) {
 
-				return false;
+				this.valid = false;
+				if ( ! force ) break;
 
 			}
 
@@ -261,7 +268,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 				totalTurn += Math.abs( delta );
 				if ( totalTurn > MAX_LABEL_ANGLE ) {
 
-					return false;
+					this.valid = false;
+					if ( ! force ) break;
 
 				}
 
@@ -274,7 +282,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		}
 
-		return true;
+		return this.valid;
 
 	}
 
