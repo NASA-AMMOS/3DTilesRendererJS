@@ -12,6 +12,7 @@ import {
 	PMTilesOverlay,
 	MVTAnnotationsPlugin,
 	MVTAnnotationsDriver,
+	MVTGlyphs,
 	MVTIconGlyphs,
 	MVTLabelGlyphs,
 	UpdateOnChangePlugin,
@@ -370,6 +371,7 @@ function init() {
 	gui.add( params, 'language', LANGUAGES ).onChange( v => {
 
 		driver.language = v;
+		driver.needsUpdate = true;
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
@@ -382,12 +384,14 @@ function init() {
 	gui.add( params, 'displayIcons' ).onChange( v => {
 
 		driver.displayIcons = v;
+		driver.needsUpdate = true;
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
 	gui.add( params, 'displayPaths' ).onChange( v => {
 
 		driver.displayPaths = v;
+		driver.needsUpdate = true;
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
