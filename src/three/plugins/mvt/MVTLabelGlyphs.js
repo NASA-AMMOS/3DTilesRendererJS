@@ -1,4 +1,3 @@
-import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 import { MVTGlyphs } from './MVTGlyphs.js';
 
 /**
@@ -31,7 +30,7 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 			strokeWidth = 0,
 		} = options;
 
-		super( new MVTGlyphMaterial( { size } ) );
+		super();
 
 		// CSS font used to rasterize glyphs, sized to fit the atlas slot
 		const fontSize = Math.round( glyphSize * 0.7 );
@@ -51,6 +50,7 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 		this._needed = new Set();
 
 		this.glyphAtlas.resize( slotCount, glyphSize );
+		this.size = size;
 
 	}
 
@@ -61,10 +61,10 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 	 */
 	measureChar( char ) {
 
-		const { _advanceCache, material, glyphAtlas, _font } = this;
+		const { _advanceCache, glyphAtlas, _font } = this;
 		if ( ! _advanceCache.has( char ) ) {
 
-			const multiplier = material.size / glyphAtlas.slotSize;
+			const multiplier = this.size / glyphAtlas.slotSize;
 			const info = glyphAtlas.measureChar( char, _font );
 			const advance = info.width + 2;
 

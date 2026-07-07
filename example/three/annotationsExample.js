@@ -108,6 +108,7 @@ const LANGUAGES = [ 'default', 'en', 'ja', 'ko' ];
 const params = {
 
 	language: 'default',
+	drawMode: MVTGlyphs.DrawMode.OVERLAY,
 	displayIcons: true,
 	displayPaths: true,
 
@@ -297,6 +298,8 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new MeshBVHPlugin() );
 	driver = new ExampleAnnotationsDriver();
 	driver.language = params.language;
+	driver.annotationPoints.drawMode = params.drawMode;
+	driver.characterPoints.drawMode = params.drawMode;
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
@@ -368,6 +371,12 @@ function init() {
 
 		driver.language = v;
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+	gui.add( params, 'drawMode', MVTIconGlyphs.DrawMode ).onChange( v => {
+
+		driver.annotationPoints.drawMode = v;
+		driver.characterPoints.drawMode = v;
 
 	} );
 	gui.add( params, 'displayIcons' ).onChange( v => {

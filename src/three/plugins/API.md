@@ -909,197 +909,6 @@ extension and attaches a `StructuralMetadata` instance to `scene.userData.struct
 constructor( parser: Object )
 ```
 
-## GlyphAtlasTexture
-
-_extends `CanvasTexture`_
-
-A canvas texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
-Slots are addressed by string key and can be drawn with text, images, or paths.
-
-
-### .isFull
-
-```js
-isFull: boolean
-```
-
-Returns true when all slots are allocated.
-
-
-### .capacity
-
-```js
-capacity: number
-```
-
-Returns the total number of icons that can be added to the atlas.
-
-
-### .count
-
-```js
-count: number
-```
-
-Returns the number of icons currently used.
-
-
-### .constructor
-
-```js
-constructor( slotCount = 32: number, slotSize = 64: number )
-```
-
-### .has
-
-```js
-has( key: string ): boolean
-```
-
-Returns true if key has an allocated slot.
-
-
-### .get
-
-```js
-get( key: string ): Object | null
-```
-
-Returns the slot bounds `{ x, y, w, h }` for key, or null if not allocated.
-
-
-### .getSlotSize
-
-```js
-getSlotSize( target: Vector2 ): Vector2
-```
-
-Returns the UV bounds of a slot for key in GPU texture space (flipY applied),
-or null if not allocated.
-
-
-### .getUV
-
-```js
-getUV( key: string ): Object | null
-```
-
-Returns the UV bounds of the slot for key in GPU texture space (flipY applied),
-or null if not allocated. x/y is the top-left corner; w/h is the slot size in UV units.
-
-
-### .drawChar
-
-```js
-drawChar(
-	key: string,
-	char: string,
-	{
-		// CSS font string (e.g. `'bold 48px sans-serif'`).
-		font = '': string,
-
-		// CSS fill color.
-		color = 'white': string,
-
-		// CSS stroke color drawn under the fill, or null to skip the
-		// stroke.
-		strokeStyle = null: string | null,
-
-		// Stroke width in atlas pixels.
-		strokeWidth = 1: number,
-	}
-): Object
-```
-
-Renders a single character in the slot, centered on its text metrics bounding box.
-
-
-### .drawImage
-
-```js
-drawImage(
-	key: string,
-	image: HTMLImageElement | HTMLCanvasElement | ImageBitmap
-): Object
-```
-
-Draws a `CanvasImageSource` into the slot, scaled to fit.
-
-
-### .drawPath
-
-```js
-drawPath(
-	key: string,
-	path2D: Path2D,
-	{
-		// CSS fill color, or null to skip fill.
-		fillStyle = null: string | null,
-
-		// CSS stroke color, or null to skip stroke.
-		strokeStyle = null: string | null,
-
-		// Stroke width in pixels.
-		lineWidth = 1: number,
-	}
-): Object
-```
-
-Renders a `Path2D` into the slot. Path coordinates are slot-local (origin at top-left).
-
-
-### .drawSVG
-
-```js
-drawSVG(
-	key: string,
-	svgText: string,
-	{
-		// CSS fill color, or null to skip fill.
-		fillStyle = 'white': string | null,
-
-		// CSS stroke color, or null to skip stroke.
-		strokeStyle = null: string | null,
-
-		// Stroke width in SVG user units before scaling.
-		strokeWidth = 1: number,
-
-		// Fraction of the slot size the icon occupies (0–1).
-		iconScale = 1: number,
-	}
-): Object
-```
-
-Parses an SVG string and renders its paths into a slot, scaled to fit.
-
-
-### .release
-
-```js
-release( key: string ): void
-```
-
-Frees the slot for key, returning it to the pool for reuse.
-
-
-### .resize
-
-```js
-resize( slotCount: number, slotSize: number ): void
-```
-
-Resizes the atlas, copying existing slot content to their new positions.
-
-
-### .clear
-
-```js
-clear(): void
-```
-
-Clears all slots and resets the atlas to empty.
-
-
 ## ImageOverlayPlugin
 
 Plugin that composites one or more tiled image overlays onto 3D tile geometry by
@@ -1302,6 +1111,16 @@ getText( properties: Object ): string
 The string a line / road annotation should display for the given feature.
 
 
+### .isAnnotationEnabled
+
+```js
+isAnnotationEnabled( properties: Object, type: number ): boolean
+```
+
+Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
+decides what is parsed once.
+
+
 ### .onAnnotationsUpdate
 
 ```js
@@ -1347,6 +1166,380 @@ constructor(
 	}
 )
 ```
+
+## MVTGlyphAtlasTexture
+
+_extends `CanvasTexture`_
+
+A canvas texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
+Slots are addressed by string key and can be drawn with text, images, or paths.
+
+
+### .isFull
+
+```js
+isFull: boolean
+```
+
+Returns true when all slots are allocated.
+
+
+### .capacity
+
+```js
+capacity: number
+```
+
+Returns the total number of icons that can be added to the atlas.
+
+
+### .count
+
+```js
+count: number
+```
+
+Returns the number of icons currently used.
+
+
+### .constructor
+
+```js
+constructor( slotCount = 32: number, slotSize = 64: number )
+```
+
+### .has
+
+```js
+has( key: string ): boolean
+```
+
+Returns true if key has an allocated slot.
+
+
+### .get
+
+```js
+get( key: string ): Object | null
+```
+
+Returns the slot bounds `{ x, y, w, h }` for key, or null if not allocated.
+
+
+### .getSlotSize
+
+```js
+getSlotSize( target: Vector2 ): Vector2
+```
+
+Returns the UV bounds of a slot for key in GPU texture space (flipY applied),
+or null if not allocated.
+
+
+### .getUV
+
+```js
+getUV( key: string ): Object | null
+```
+
+Returns the UV bounds of the slot for key in GPU texture space (flipY applied),
+or null if not allocated. x/y is the top-left corner; w/h is the slot size in UV units.
+
+
+### .drawChar
+
+```js
+drawChar(
+	key: string,
+	char: string,
+	{
+		// CSS font string (e.g. `'bold 48px sans-serif'`).
+		font = '': string,
+
+		// CSS fill color.
+		color = 'white': string,
+
+		// CSS stroke color drawn under the fill, or null to skip the
+		// stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in atlas pixels.
+		strokeWidth = 1: number,
+	}
+): Object
+```
+
+Renders a single character in the slot, centered on its text metrics bounding box.
+
+
+### .drawImage
+
+```js
+drawImage(
+	key: string,
+	image: HTMLImageElement | HTMLCanvasElement | ImageBitmap
+): Object
+```
+
+Draws a `CanvasImageSource` into the slot, scaled to fit.
+
+
+### .drawPath
+
+```js
+drawPath(
+	key: string,
+	path2D: Path2D,
+	{
+		// CSS fill color, or null to skip fill.
+		fillStyle = null: string | null,
+
+		// CSS stroke color, or null to skip stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in pixels.
+		lineWidth = 1: number,
+	}
+): Object
+```
+
+Renders a `Path2D` into the slot. Path coordinates are slot-local (origin at top-left).
+
+
+### .drawSVG
+
+```js
+drawSVG(
+	key: string,
+	svgText: string,
+	{
+		// CSS fill color, or null to skip fill.
+		fillStyle = 'white': string | null,
+
+		// CSS stroke color, or null to skip stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in SVG user units before scaling.
+		strokeWidth = 1: number,
+
+		// Fraction of the slot size the icon occupies (0–1).
+		iconScale = 1: number,
+	}
+): Object
+```
+
+Parses an SVG string and renders its paths into a slot, scaled to fit.
+
+
+### .release
+
+```js
+release( key: string ): void
+```
+
+Frees the slot for key, returning it to the pool for reuse.
+
+
+### .resize
+
+```js
+resize( slotCount: number, slotSize: number ): void
+```
+
+Resizes the atlas, copying existing slot content to their new positions.
+
+
+### .clear
+
+```js
+clear(): void
+```
+
+Clears all slots and resets the atlas to empty.
+
+
+## MVTGlyphs
+
+_extends `Group`_
+
+Base object that renders a batch of glyphs from a shared `MVTGlyphAtlasTexture`, fading each item
+in and out. Manages the geometry and two child draws sharing it: an opaque pass and a transparent
+"obscured" pass, combined per `drawMode`.
+
+
+### .DrawMode
+
+```js
+DrawMode: MVTDrawModeEnum
+```
+
+The draw modes assignable to `drawMode`.
+
+
+### .size
+
+```js
+size: number
+```
+
+Glyph size in pixels.
+
+
+### .glyphAtlas
+
+```js
+glyphAtlas: MVTGlyphAtlasTexture
+```
+
+The texture atlas used for rendering glyphs.
+
+
+### .drawMode
+
+```js
+drawMode: number
+```
+
+How glyphs interact with the depth buffer; one of `MVTGlyphs.DrawMode`.
+
+
+### .fadeInDuration
+
+```js
+fadeInDuration: number
+```
+
+Seconds a glyph takes to fade in.
+
+
+### .fadeOutDuration
+
+```js
+fadeOutDuration: number
+```
+
+Seconds a glyph takes to fade out.
+
+
+### .obscuredOpacity
+
+```js
+obscuredOpacity: number
+```
+
+Opacity of the ghosted, obscured glyphs in the `DRAW_THROUGH` draw mode.
+
+
+### .dispose
+
+```js
+dispose(): void
+```
+
+Disposes the glyph atlas, geometry, and materials.
+
+
+## MVTIconGlyphs
+
+_extends [`MVTGlyphs`](#mvtglyphs)_
+
+Renders one icon glyph per point annotation. Each item's atlas key comes from `getKind`, or
+`fallback` when that key isn't in the atlas.
+
+
+### .getKind
+
+```js
+getKind: ( layer: string, properties: Object ) => string | null
+```
+
+Chooses the atlas key to draw for each point.
+
+
+### .fallback
+
+```js
+fallback: string | null
+```
+
+Atlas key used when `getKind`'s result isn't present in the atlas ( null draws nothing ).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Chooses the atlas key to draw for each point.
+		getKind?: (
+			layer: string,
+			properties: Object
+		) => string | null,
+
+		// Atlas key drawn when `getKind`'s result is missing from the
+		// atlas; null draws nothing.
+		fallback = null: string | null,
+
+		// Glyph size in pixels.
+		size = 18: number,
+
+		// Atlas slot size in pixels (defaults to `18 *
+		// devicePixelRatio`).
+		glyphSize?: number,
+
+		// Initial atlas slot capacity.
+		slotCount = 64: number,
+	}
+)
+```
+
+## MVTLabelGlyphs
+
+_extends [`MVTGlyphs`](#mvtglyphs)_
+
+Renders text labels one glyph per character, laid out along each annotation's path. Characters are
+rasterized into the atlas on demand, so a label's text may change at any time.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Glyph size in pixels.
+		size = 16: number,
+
+		// Atlas slot size in pixels (defaults to `16 *
+		// devicePixelRatio`).
+		glyphSize?: number,
+
+		// Initial atlas slot capacity ( grows as needed ).
+		slotCount = 64: number,
+
+		// Explicit CSS font string; overrides `fontFamily`.
+		font = null: string | null,
+
+		// Font family used to build the CSS font when `font` isn't
+		// given.
+		fontFamily = 'sans-serif': string,
+
+		// Outline color drawn under each glyph.
+		strokeStyle = 'black': string,
+
+		// Outline width in atlas pixels ( 0 disables the outline ).
+		strokeWidth = 0: number,
+	}
+)
+```
+
+### .measureChar
+
+```js
+measureChar( char: string ): number
+```
+
+Advance width of `char` in the label's size units, cached per character.
+
 
 ## QuantizedMeshPlugin
 
@@ -1819,6 +2012,33 @@ nullFeatureId: number | null
 ```js
 texture?: Object
 ```
+
+## MVTDrawModeEnum
+
+
+### .OBSCURED
+
+```js
+OBSCURED: number
+```
+
+Depth-tested, so glyphs are hidden where behind terrain.
+
+### .DRAW_THROUGH
+
+```js
+DRAW_THROUGH: number
+```
+
+Visible parts drawn opaque, parts behind terrain ghosted on top.
+
+### .OVERLAY
+
+```js
+OVERLAY: number
+```
+
+Always drawn on top of everything.
 
 ## VectorTileStyle
 

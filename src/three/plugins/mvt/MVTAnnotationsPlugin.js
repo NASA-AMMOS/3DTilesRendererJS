@@ -171,9 +171,11 @@ function splitAnnotations( set ) {
 
 /**
  * Ready-to-use driver so `new MVTAnnotationsPlugin( { overlay } )` displays something without any
- * setup: every point feature is drawn as a filled white circle and every named line as white,
+ * setup. Every point feature is drawn as a filled white circle and every named line as white,
  * black-outlined Arial text. No feature filtering is applied. Supply a custom `MVTAnnotationsDriver`
  * to the plugin to override this behavior.
+ * @private
+ * @extends MVTAnnotationsDriver
  */
 export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
