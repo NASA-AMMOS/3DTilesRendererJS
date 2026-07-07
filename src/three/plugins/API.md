@@ -1370,13 +1370,10 @@ in and out. Manages the geometry and two child draws sharing it: an opaque pass 
 ### .DrawMode
 
 ```js
-DrawMode: Object
+DrawMode: MVTDrawModeEnum
 ```
 
-Draw modes for `drawMode`:
-- `OBSCURED` – depth-tested, so glyphs are hidden where behind terrain.
-- `DRAW_THROUGH` – visible parts drawn opaque, parts behind terrain ghosted on top.
-- `OVERLAY` – always drawn on top of everything.
+The draw modes assignable to `drawMode`.
 
 
 ### .size
@@ -2015,6 +2012,33 @@ nullFeatureId: number | null
 ```js
 texture?: Object
 ```
+
+## MVTDrawModeEnum
+
+
+### .OBSCURED
+
+```js
+OBSCURED: number
+```
+
+Depth-tested, so glyphs are hidden where behind terrain.
+
+### .DRAW_THROUGH
+
+```js
+DRAW_THROUGH: number
+```
+
+Visible parts drawn opaque, parts behind terrain ghosted on top.
+
+### .OVERLAY
+
+```js
+OVERLAY: number
+```
+
+Always drawn on top of everything.
 
 ## VectorTileStyle
 

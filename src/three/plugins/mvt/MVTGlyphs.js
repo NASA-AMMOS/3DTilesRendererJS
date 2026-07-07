@@ -12,14 +12,16 @@ const _ssRay = /* @__PURE__ */ new Vector2();
 const _ssPoint = /* @__PURE__ */ new Vector2();
 const _worldPoint = /* @__PURE__ */ new Vector3();
 
+/**
+ * @typedef {Object} MVTDrawModeEnum
+ * @property {number} OBSCURED - Depth-tested, so glyphs are hidden where behind terrain.
+ * @property {number} DRAW_THROUGH - Visible parts drawn opaque, parts behind terrain ghosted on top.
+ * @property {number} OVERLAY - Always drawn on top of everything.
+ */
+
 const DRAW_MODE = /* @__PURE__ */ Object.freeze( {
-	// depth tested, hidden behind terrain
 	OBSCURED: 0,
-
-	// render hidden portions as partially transparent
 	DRAW_THROUGH: 1,
-
-	// draw full opaque on top of everything
 	OVERLAY: 2,
 } );
 
@@ -32,11 +34,8 @@ const DRAW_MODE = /* @__PURE__ */ Object.freeze( {
 export class MVTGlyphs extends Group {
 
 	/**
-	 * Draw modes for `drawMode`:
-	 * - `OBSCURED` – depth-tested, so glyphs are hidden where behind terrain.
-	 * - `DRAW_THROUGH` – visible parts drawn opaque, parts behind terrain ghosted on top.
-	 * - `OVERLAY` – always drawn on top of everything.
-	 * @type {{ OBSCURED: number, DRAW_THROUGH: number, OVERLAY: number }}
+	 * The draw modes assignable to `drawMode`.
+	 * @type {MVTDrawModeEnum}
 	 */
 	static get DrawMode() {
 
