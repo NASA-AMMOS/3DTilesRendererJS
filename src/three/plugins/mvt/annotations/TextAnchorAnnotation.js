@@ -81,6 +81,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// while it drifts across an LoD swap, overriding its associated anchor slot. Cleared on the
 		// next appearance (see onShown) so it re-derives evenly-spaced, surviving the fade-out first
 		this._snapped = null;
+		this._flippedTextDir = false;
 
 		// local position & angle per character
 		this.characterPositions = [];
@@ -124,8 +125,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		const maxCharWidth = this.measureChar( 'M' );
-		this._updateTotalWidth();
-		this._charRadius = Math.sqrt( maxCharWidth ** 2 ) / 2;
+		this._charRadius = maxCharWidth / 2;
+		this._flippedTextDir = this._getTextDirection();
 
 		_segIndices.length = text.length;
 		_segAlphas.length = text.length;
@@ -217,7 +218,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
-		const flip = this._getTextDirection();
+		const flip = this._flippedTextDir;
 		this.valid = true;
 
 		const pointCount = screenPositions.length;
@@ -313,7 +314,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const { line } = this.getActiveReference();
 		const { screenPositions, positions } = line;
 
-		const flip = this._getTextDirection();
+		const flip = this._flippedTextDir;
 		const length = text.length;
 
 		while ( characterPositions.length < length ) {
