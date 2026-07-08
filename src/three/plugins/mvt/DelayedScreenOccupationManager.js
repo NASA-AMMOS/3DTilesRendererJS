@@ -181,6 +181,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				added.add( item );
 				item.visibleTime = currTime;
 				item.displayed = true;
+				item.onShown();
 
 			} else {
 
@@ -200,7 +201,6 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				visible.delete( item );
 				removed.add( item );
 				item.displayed = false;
-				item.onHidden();
 
 			} else {
 
@@ -246,6 +246,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			added.add( item );
 			item.visibleTime = currTime;
 			item.displayed = true;
+			item.onShown();
 
 		}
 
@@ -256,7 +257,6 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			visible.delete( item );
 			removed.add( item );
 			item.displayed = false;
-			item.onHidden();
 
 		}
 

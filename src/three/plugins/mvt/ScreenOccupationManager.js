@@ -52,9 +52,9 @@ export class OccupancyAnnotation {
 
 	}
 
-	// called by the delayed manager once the item is fully hidden, letting subclasses drop any
-	// transient display state
-	onHidden() {
+	// called by the delayed manager when the item first becomes displayed, letting subclasses reset
+	// any per-appearance state
+	onShown() {
 
 	}
 

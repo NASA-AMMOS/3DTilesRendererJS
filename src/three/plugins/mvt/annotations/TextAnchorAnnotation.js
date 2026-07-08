@@ -1,7 +1,7 @@
 import { Vector2, Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
-// reject labels whose projected baseline curves tighter than this radius ( screen px ) at any
+// reject labels whose projected baseline curves tighter than this radius in screen px at any
 // glyph, since sharply curving text becomes hard to read
 const MIN_LABEL_RADIUS = 40;
 
@@ -77,8 +77,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		this._activeReference = null;
 
 		// transient slot { i0, i1, alpha, lat, lon } the anchor is snapped to on the active line
-		// while it drifts across an LoD swap, overriding its associated anchor slot. Cleared when
-		// the label is fully hidden ( see onHidden ) so it re-derives evenly-spaced on reappearance
+		// while it drifts across an LoD swap, overriding its associated anchor slot. Cleared on the
+		// next appearance (see onShown) so it re-derives evenly-spaced, surviving the fade-out first
 		this._snapped = null;
 
 		// local position & angle per character
@@ -498,9 +498,10 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	// clear the transient snapped slot once the label is fully hidden so it re-derives from its
-	// evenly-spaced associated anchor on reappearance
-	onHidden() {
+	// clear the transient snapped slot when a fresh display begins so the label re-derives
+	// from its evenly-spaced associated anchor. Deferred to the next appearance (rather than at
+	// hide) so the snap survives the glyph fade-out and doesn't reflow the fading label.
+	onShown() {
 
 		this._snapped = null;
 
