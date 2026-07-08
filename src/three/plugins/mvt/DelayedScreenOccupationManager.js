@@ -194,7 +194,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 		for ( const [ item, elapsed ] of _hideTimers ) {
 
 			const next = elapsed + dt;
-			if ( next >= hideDelay ) {
+			if ( next >= hideDelay || ! item.valid ) {
 
 				_hideTimers.delete( item );
 				visible.delete( item );
