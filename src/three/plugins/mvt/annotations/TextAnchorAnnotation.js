@@ -125,8 +125,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		}
 
-		const maxCharWidth = this.measureChar( 'M' );
-		this._charRadius = maxCharWidth / 2;
 		this._flippedTextDir = this._getTextDirection();
 
 		_segIndices.length = text.length;
@@ -162,6 +160,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		this._totalWidth = total;
+		this._charRadius = this.measureChar( 'M' ) / 2;
 
 	}
 
