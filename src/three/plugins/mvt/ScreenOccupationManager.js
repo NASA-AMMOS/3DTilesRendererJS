@@ -78,6 +78,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		// grid dimensions in cells, computed once per update and reused by _cellRange
 		this._totalResolution = new Vector2();
+		this._lastMatrix = new Matrix4();
 
 		// buffer outside the screen
 		this.buffer = 0.15;
@@ -91,6 +92,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// prevents duplicate items during simultaneous LoD tile swaps
 		this._itemSet = new Set();
 		this._itemsNeedsUpdate = false;
+		this.needsUpdate = false;
 
 		this._id = - 1;
 		this.handle = {
@@ -202,6 +204,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 			sortCallback,
 			buffer,
 			items,
+			_lastMatrix,
 		} = this;
 
 		// compute NDC matrix and camera local position
@@ -222,6 +225,16 @@ export class ScreenOccupationManager extends EventDispatcher {
 			cameraLocalPos = _cameraLocalPos;
 
 		}
+
+		// early out if the camera hasn't changed
+		if ( this._lastMatrix.equals( ndcMatrix ) && ! this.needsUpdate ) {
+
+			return;
+
+		}
+
+		_lastMatrix.copy( ndcMatrix );
+		this.needsUpdate = false;
 
 		this.syncItems();
 
@@ -319,6 +332,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		this._itemSet.add( item );
 		this._itemsNeedsUpdate = true;
+		this.needsUpdate = true;
 
 	}
 
@@ -326,6 +340,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		this._itemSet.delete( item );
 		this._itemsNeedsUpdate = true;
+		this.needsUpdate = true;
 
 	}
 

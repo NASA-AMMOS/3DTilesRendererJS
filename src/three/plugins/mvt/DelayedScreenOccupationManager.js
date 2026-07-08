@@ -78,6 +78,18 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get needsUpdate() {
+
+		return this.manager.needsUpdate;
+
+	}
+
+	set needsUpdate( v ) {
+
+		this.manager.needsUpdate = v;
+
+	}
+
 	constructor() {
 
 		super();

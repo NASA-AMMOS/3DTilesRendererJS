@@ -24,6 +24,9 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		// display text for this path
 		this.text = '';
+		this.characterWidths = [];
+		this.characterRadius = 0;
+		this.totalTextWidth = 0;
 
 		// the range of the tile this line is associated with
 		this.range = null;
@@ -122,6 +125,24 @@ export class LineAnnotation extends OccupancyAnnotation {
 	}
 
 	//
+
+	updateCharacterWidthCache( measureChar ) {
+
+		const { text, characterWidths } = this;
+		characterWidths.length = text.length;
+		let total = 0;
+		for ( let i = 0, l = text.length; i < l; i ++ ) {
+
+			const width = measureChar( text[ i ] );
+			characterWidths[ i ] = width;
+			total += width;
+
+		}
+
+		this.totalTextWidth = total;
+		this.characterRadius = measureChar( 'M' ) / 2;
+
+	}
 
 	// whether a lat / lon falls within the same tile as this line
 	hasCoverage( lat, lon ) {

@@ -424,7 +424,7 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
-			const { driver, camera } = this;
+			const { driver, camera, _measureChar } = this;
 			const annotationsNeedUpdate = driver.version !== this._driverVersion;
 			this._driverVersion = driver.version;
 
@@ -441,10 +441,12 @@ export class MVTAnnotationsPlugin {
 
 					line.enabled = driver.isAnnotationEnabled( line.layer, line.properties, 2 );
 					line.text = driver.getText( line.properties );
+					line.updateCharacterWidthCache( _measureChar );
 
 				}
 
 				settlingManager.needsUpdate = true;
+				occupancy.needsUpdate = true;
 
 			}
 
@@ -479,7 +481,6 @@ export class MVTAnnotationsPlugin {
 			anchorManager.update();
 			anchorManager.added.forEach( item => {
 
-				item.measureChar = this._measureChar;
 				occupancy.register( item );
 
 			} );
@@ -489,6 +490,10 @@ export class MVTAnnotationsPlugin {
 
 			} );
 			anchorManager.reset();
+
+			// mark the occupancy manager as needing an update if there is settling work to
+			// be done.
+			occupancy.needsUpdate = occupancy.needsUpdate || settlingManager.hasPendingWork;
 
 			// raycasters
 			settlingManager.camera = camera;
@@ -539,11 +544,12 @@ export class MVTAnnotationsPlugin {
 			const {
 				contentCache,
 				driver,
-				_filterAnnotation,
 				vectorTileInfo,
 				settlingManager,
 				anchorManager,
 				pointManager,
+				_filterAnnotation,
+				_measureChar,
 			} = this;
 
 			const key = `${ x }_${ y }_${ level }`;
@@ -572,6 +578,7 @@ export class MVTAnnotationsPlugin {
 						settlingManager.register( ann );
 						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
 						ann.text = driver.getText( ann.properties );
+						ann.updateCharacterWidthCache( _measureChar );
 
 					} else {
 
