@@ -36,10 +36,6 @@ export class OccupancyAnnotation {
 		this.visibleTime = Infinity;
 		this.visible = false;
 
-		// whether the item is currently displayed on screen, including while fading out. Driven by
-		// the delayed occupation manager's show / hide lifecycle
-		this.displayed = false;
-
 	}
 
 	updateTransform( matrix, resolution, cameraPosition ) {
@@ -52,9 +48,13 @@ export class OccupancyAnnotation {
 
 	}
 
-	// called by the delayed manager when the item first becomes displayed, letting subclasses reset
-	// any per-appearance state
+	// called by the delayed manager when the item first becomes displayed or hidden, letting
+	// subclasses reset any per-appearance state. Driven by the delayed manager
 	onShown() {
+
+	}
+
+	onHidden() {
 
 	}
 

@@ -73,6 +73,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// TODO: consider removing the deduping from the screen occupation manager
 		this.id = `${ id }_${ annotationIndex ++ }`;
 
+		this.displayed = false;
 		this.referencePaths = [];
 		this._activeReference = null;
 
@@ -385,12 +386,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	updateActiveReference() {
 
-		if ( ! this.displayed ) {
-
-			this._snapped = null;
-
-		}
-
 		const { referencePaths, _activeReference, displayed } = this;
 
 		// pick the active line reference. The highest-LoD path is the desired "target" but until it settles
@@ -503,7 +498,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// hide) so the snap survives the glyph fade-out and doesn't reflow the fading label.
 	onShown() {
 
+		this.displayed = true;
 		this._snapped = null;
+
+	}
+
+	onHidden() {
+
+		this.displayed = false;
 
 	}
 
