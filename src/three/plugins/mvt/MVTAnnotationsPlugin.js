@@ -444,6 +444,12 @@ export class MVTAnnotationsPlugin {
 
 				}
 
+				for ( const anchor of anchorManager.anchors ) {
+
+					anchor.updateCharacterWidthCache();
+
+				}
+
 				settlingManager.needsUpdate = true;
 				occupancy.needsUpdate = true;
 
@@ -481,6 +487,7 @@ export class MVTAnnotationsPlugin {
 			anchorManager.added.forEach( item => {
 
 				item.measureChar = this._measureChar;
+				item.updateCharacterWidthCache();
 				occupancy.register( item );
 
 			} );

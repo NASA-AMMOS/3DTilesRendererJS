@@ -86,6 +86,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// local position & angle per character
 		this.characterPositions = [];
 		this.characterAngles = [];
+		this.characterWidths = [];
 
 		// per-character advance width provider (pixels)
 		this.measureChar = () => 1;
@@ -145,15 +146,18 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	// sum the label's per-character advance widths ( screen px ) into `_totalWidth`; the individual
-	// widths come straight from the cached measureChar during layout
-	_updateTotalWidth() {
+	// update the list of character widths and total width of the label
+	// TODO: move to the line class
+	updateCharacterWidthCache() {
 
-		const { text } = this;
+		const { text, characterWidths } = this;
+		characterWidths.length = text.length;
 		let total = 0;
-		for ( let k = 0, l = text.length; k < l; k ++ ) {
+		for ( let i = 0, l = text.length; i < l; i ++ ) {
 
-			total += this.measureChar( text[ k ] );
+			const width = this.measureChar( text[ i ] );
+			characterWidths[ i ] = width;
+			total += width;
 
 		}
 
@@ -209,12 +213,12 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	// march the characters out from the anchor in both directions, centered, measuring and testing
 	// each one so a string that doesn't fit leaves no marks behind. records per-character segment
-	// index / alpha into the module scratch. returns the reading-direction flip on success, or
-	// null if the label can't be placed.
+	// index / alpha into the module scratch. Sets the "valid" field indicating whether the current
+	// characters can be displayed or not.
 	// TODO: also reject foreshortened paths (tiny screen-space segments)
 	_layoutCharacters( handle, outputIndices, outputAlphas, force = false ) {
 
-		const { text, _totalWidth, _charRadius } = this;
+		const { text, _totalWidth, _charRadius, characterWidths } = this;
 		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
@@ -231,7 +235,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			// place each character's center along the arc by its advance, centered on the anchor
 			const slot = flip ? length - 1 - i : i;
-			const advance = this.measureChar( text[ slot ] );
+			const advance = characterWidths[ slot ];
 			const charCenter = charCursor + advance * 0.5 - _totalWidth * 0.5;
 			charCursor += advance;
 
@@ -301,8 +305,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			outputAlphas[ slot ] = segAlpha;
 
 		}
-
-		return this.valid;
 
 	}
 
