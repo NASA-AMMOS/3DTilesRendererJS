@@ -3,10 +3,11 @@ import { LineAnnotation } from './annotations/LineAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
 
-// minimum distance ( tiles.group local space, ~meters ) a re-cast sample must move before it is
-// committed, so incidental terrain refinement doesn't jitter an already-settled path and reflow
-// its label. Scaled by LoD in _settleItem: the value applies at the base level and doubles for each
-// level coarser / halves for each level finer, matching the drop in real-world sample spacing
+// minimum distance in tiles.group local space a re-cast sample must move before it is committed,
+// so incidental terrain refinement doesn't jitter an already-settled path. The threshold is scaled
+// by LoD assuming 16 levels.
+// TODO: this strategy could probably be adjusted to not rely on a fixed LoD maximum or such a large
+// base value (~65,000m).
 const SETTLE_POSITION_THRESHOLD = 1;
 const SETTLE_THRESHOLD_BASE_LEVEL = 16;
 
@@ -369,8 +370,8 @@ export class SettlingManager {
 
 	*_settleItem( item ) {
 
-		// commit threshold scales with the item's LoD, so coarser paths ( larger real-world sample
-		// spacing ) tolerate larger re-drapes before they update
+		// commit threshold scales with the item's LoD, so coarser paths tolerate larger
+		// changes before they update
 		const threshold = SETTLE_POSITION_THRESHOLD * 2 ** ( SETTLE_THRESHOLD_BASE_LEVEL - item.lodLevel );
 
 		// TODO: add "settling" logic on the classes themselves?
