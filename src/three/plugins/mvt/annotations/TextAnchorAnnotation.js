@@ -17,13 +17,13 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	get lat() {
 
-		return this.getActiveSlot().lat;
+		return this.getActiveReference().lat;
 
 	}
 
 	get lon() {
 
-		return this.getActiveSlot().lon;
+		return this.getActiveReference().lon;
 
 	}
 
@@ -157,8 +157,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	_getTextDirection() {
 
 		const { _totalWidth } = this;
-		const { line } = this.getActiveReference();
-		const { i0, i1, alpha } = this.getActiveSlot();
+		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 
@@ -208,8 +207,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	_layoutCharacters( handle, outputIndices, outputAlphas, force = false ) {
 
 		const { text, _totalWidth, _charRadius } = this;
-		const { line } = this.getActiveReference();
-		const { i0, i1, alpha } = this.getActiveSlot();
+		const { line, i0, i1, alpha } = this.getActiveReference();
 		const { cumulativeLen, screenPositions } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 		const flip = this._getTextDirection();
@@ -359,22 +357,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	getPosition( pos ) {
 
-		const { line } = this.getActiveReference();
-		const { i0, i1, alpha } = this.getActiveSlot();
+		const { line, i0, i1, alpha } = this.getActiveReference();
 		return pos.lerpVectors( line.positions[ i0 ], line.positions[ i1 ], alpha );
 
 	}
 
-	// the highest-LoD entry whose path is settled, used for placement
+	// the highest-LoD entry whose path is settled, used for placement - return the "snapped" or
+	// active line reference
 	getActiveReference() {
-
-		return this._activeReference;
-
-	}
-
-	// the slot ( i0 / i1 / alpha, lat / lon ) the anchor currently occupies on the active line: the
-	// snapped override while it drifts across an LoD swap, otherwise its associated anchor slot
-	getActiveSlot() {
 
 		return this._snapped ?? this._activeReference;
 
@@ -382,56 +372,48 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	updateActiveReference() {
 
-		const { referencePaths, _activeReference } = this;
+		if ( ! this.displayed ) {
 
-		// pick the active reference. The highest-LoD path is the desired "target"; until it settles
-		// we hold the current LoD rather than hopping through intermediate LoDs as they settle, which
-		// would snap the label around every frame
+			this._snapped = null;
+
+		}
+
+		const { referencePaths, _activeReference, displayed } = this;
+
+		// pick the active line reference. The highest-LoD path is the desired "target" but until it settles
+		// we hold the current LoD rather than hopping through intermediate LoDs as they settle.
 		let result;
 		const target = referencePaths[ 0 ] ?? null;
-		if ( target?.line.ready ) {
+		if ( target && target.line.ready ) {
 
-			// desired path settled: switch to it
+			// desired path settled
 			result = target;
 
-		} else if ( _activeReference && _activeReference.line.ready && referencePaths.includes( _activeReference ) ) {
+		} else if ( _activeReference && _activeReference.line.ready && ( referencePaths.includes( _activeReference ) || this.displayed ) ) {
 
 			// desired path not settled yet: stay on the current LoD
 			result = _activeReference;
 
 		} else {
 
-			// no settled current path ( first appearance or the current LoD was unloaded ): take the
-			// best settled path, falling back to the highest-LoD reference
-			result = null;
-			for ( const entry of referencePaths ) {
-
-				if ( entry.line.ready ) {
-
-					result = entry;
-					break;
-
-				}
-
-			}
-
-			result = result ?? target ?? _activeReference;
+			result = target ?? _activeReference;
 
 		}
 
 		// when the active line changes under a displayed label, snap it onto the new line at the
 		// nearest point so it stays coherent across the LoD swap instead of jumping to the new line's
-		// associated anchor. Hidden labels just adopt the associated slot and re-derive on their next
-		// appearance, keeping anchor spacing even
-		if ( result && _activeReference && result.line !== _activeReference.line ) {
+		// associated anchor.
+		if ( result && _activeReference && result !== _activeReference ) {
 
-			if ( this.displayed ) {
+			if ( displayed ) {
 
-				const slot = this._snapped ?? _activeReference;
-				this._snapped = this._snapToLine( result.line, slot.lat, slot.lon );
+				// only snap if it's visible
+				const { lat, lon } = this._snapped ?? _activeReference;
+				this._snapped = this._snapToLine( result.line, lat, lon );
 
 			} else {
 
+				// otherwise remove the snapped reference
 				this._snapped = null;
 
 			}
@@ -443,10 +425,9 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	// find the nearest point on the given line ( in cartographic lat / lon ) to the supplied
-	// position, returning a slot { i0, i1, alpha, lat, lon } used to keep a displayed label coherent
-	// when the active LoD swaps. Returns null for degenerate paths so the caller falls back to the
-	// associated slot
+	// find the nearest point on the given line in cartographic lat / lon  to the supplied
+	// position, returning a line-reference used to keep a displayed label coherent
+	// when the active LoD swaps.
 	_snapToLine( line, lat, lon ) {
 
 		const { lat: lats, lon: lons } = line;
@@ -475,6 +456,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			const projLat = lat0 + dLat * t;
 			const projLon = lon0 + dLon * t;
+
+			// calculate the distance
 			const eLat = lat - projLat;
 			const eLon = lon - projLon;
 			const dist = eLat * eLat + eLon * eLon;
@@ -492,6 +475,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		return {
+			line,
 			i0: bestI0,
 			i1: bestI1,
 			alpha: bestAlpha,
