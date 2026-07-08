@@ -230,36 +230,15 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 
 	}
 
-	onAnnotationsUpdate( added, removed ) {
+	onPointsUpdate( added, removed ) {
 
-		const a = splitAnnotations( added );
-		const r = splitAnnotations( removed );
-		this.annotationPoints.update( a.points, r.points );
-		this.characterPoints.update( a.text, r.text );
+		this.annotationPoints.update( added, removed );
 
-		// route occupancy annotations to the right renderer: point annotations expose a `position`,
-		// text-anchor annotations expose `characterPositions`
-		function splitAnnotations( set ) {
+	}
 
-			const points = [];
-			const text = [];
-			for ( const item of set ) {
+	onLabelsUpdate( added, removed ) {
 
-				if ( item.characterPositions !== undefined ) {
-
-					text.push( item );
-
-				} else {
-
-					points.push( item );
-
-				}
-
-			}
-
-			return { points, text };
-
-		}
+		this.characterPoints.update( added, removed );
 
 	}
 

@@ -86,15 +86,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// local position & angle per character
 		this.characterPositions = [];
 		this.characterAngles = [];
-		this.characterWidths = [];
-
-		// per-character advance width provider (pixels)
-		this.measureChar = () => 1;
-
-		// total advance width of the label ( screen px ) and per-character footprint radius,
-		// recomputed each layout ( individual advances come from the cached measureChar )
-		this._totalWidth = 0;
-		this._charRadius = 1;
 
 	}
 
@@ -144,36 +135,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	// update the list of character widths and total width of the label
-	// TODO: move to the line class
-	updateCharacterWidthCache() {
-
-		const { text, characterWidths } = this;
-		characterWidths.length = text.length;
-		let total = 0;
-		for ( let i = 0, l = text.length; i < l; i ++ ) {
-
-			const width = this.measureChar( text[ i ] );
-			characterWidths[ i ] = width;
-			total += width;
-
-		}
-
-		this._totalWidth = total;
-		this._charRadius = this.measureChar( 'M' ) / 2;
-
-	}
-
 	// determine the reading direction based on the positioning of the end points
 	_getTextDirection() {
 
-		const { _totalWidth } = this;
 		const { line, i0, i1, alpha } = this.getActiveReference();
-		const { cumulativeLen, screenPositions } = line;
+		const { cumulativeLen, screenPositions, totalTextWidth } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 
 		// the label is centered on the anchor, so its ends sit half a total-width to each side
-		const halfWidth = _totalWidth * 0.5;
+		const halfWidth = totalTextWidth * 0.5;
 		const startOffset = anchorOffset - halfWidth;
 		const endOffset = anchorOffset + halfWidth;
 
@@ -217,9 +187,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// TODO: also reject foreshortened paths (tiny screen-space segments)
 	_layoutCharacters( handle, outputIndices, outputAlphas, force = false ) {
 
-		const { text, _totalWidth, _charRadius, characterWidths } = this;
 		const { line, i0, i1, alpha } = this.getActiveReference();
-		const { cumulativeLen, screenPositions } = line;
+		const { cumulativeLen, screenPositions, totalTextWidth, characterWidths, characterRadius, text } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 		const flip = this._flippedTextDir;
 		this.valid = true;
@@ -235,7 +204,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			// place each character's center along the arc by its advance, centered on the anchor
 			const slot = flip ? length - 1 - i : i;
 			const advance = characterWidths[ slot ];
-			const charCenter = charCursor + advance * 0.5 - _totalWidth * 0.5;
+			const charCenter = charCursor + advance * 0.5 - totalTextWidth * 0.5;
 			charCursor += advance;
 
 			// absolute target position relative to the line
@@ -266,7 +235,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			_vec.lerpVectors( p0, p1, segAlpha );
 
 			// off-screen in depth, or colliding with an already-placed annotation
-			if ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, _charRadius ) ) {
+			if ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, characterRadius ) ) {
 
 				this.valid = false;
 				if ( ! force ) break;
@@ -311,7 +280,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// angle per character, applying the reading-direction flip
 	_placeCharacters( handle, segIndices, segAlphas ) {
 
-		const { characterPositions, characterAngles, text, _charRadius } = this;
+		const { characterPositions, characterAngles, text, characterRadius } = this;
 		const { line } = this.getActiveReference();
 		const { screenPositions, positions } = line;
 
@@ -336,7 +305,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			const p0 = screenPositions[ index ];
 			const p1 = screenPositions[ index + 1 ];
-			handle.mark( p0.x + ( p1.x - p0.x ) * segAlpha, p0.y + ( p1.y - p0.y ) * segAlpha, _charRadius );
+			handle.mark( p0.x + ( p1.x - p0.x ) * segAlpha, p0.y + ( p1.y - p0.y ) * segAlpha, characterRadius );
 
 			characterPositions[ i ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
 

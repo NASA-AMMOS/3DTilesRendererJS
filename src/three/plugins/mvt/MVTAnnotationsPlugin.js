@@ -424,7 +424,7 @@ export class MVTAnnotationsPlugin {
 
 		this._onUpdateAfter = () => {
 
-			const { driver, camera } = this;
+			const { driver, camera, _measureChar } = this;
 			const annotationsNeedUpdate = driver.version !== this._driverVersion;
 			this._driverVersion = driver.version;
 
@@ -441,12 +441,7 @@ export class MVTAnnotationsPlugin {
 
 					line.enabled = driver.isAnnotationEnabled( line.layer, line.properties, 2 );
 					line.text = driver.getText( line.properties );
-
-				}
-
-				for ( const anchor of anchorManager.anchors ) {
-
-					anchor.updateCharacterWidthCache();
+					line.updateCharacterWidthCache( _measureChar );
 
 				}
 
@@ -486,8 +481,6 @@ export class MVTAnnotationsPlugin {
 			anchorManager.update();
 			anchorManager.added.forEach( item => {
 
-				item.measureChar = this._measureChar;
-				item.updateCharacterWidthCache();
 				occupancy.register( item );
 
 			} );
@@ -551,11 +544,12 @@ export class MVTAnnotationsPlugin {
 			const {
 				contentCache,
 				driver,
-				_filterAnnotation,
 				vectorTileInfo,
 				settlingManager,
 				anchorManager,
 				pointManager,
+				_filterAnnotation,
+				_measureChar,
 			} = this;
 
 			const key = `${ x }_${ y }_${ level }`;
@@ -584,6 +578,7 @@ export class MVTAnnotationsPlugin {
 						settlingManager.register( ann );
 						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
 						ann.text = driver.getText( ann.properties );
+						ann.updateCharacterWidthCache( _measureChar );
 
 					} else {
 
