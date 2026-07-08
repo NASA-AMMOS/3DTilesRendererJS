@@ -1,14 +1,20 @@
-import { Vector3, MathUtils } from 'three';
+import { Vector2, Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
-// reject labels whose projected baseline turns more than this in total ( radians ), since
-// sharply curving text becomes hard to read
-const MAX_LABEL_ANGLE = Math.PI / 2;
+// reject labels whose projected baseline curves tighter than this radius ( screen px ) at any
+// glyph, since sharply curving text becomes hard to read
+const MIN_LABEL_RADIUS = 40;
 
-// scratch reused across evaluate() calls ( synchronous, single pass )
 const _segIndices = [];
 const _segAlphas = [];
 const _vec = /* @__PURE__ */ new Vector3();
+
+// trailing two glyph screen positions and edge vectors, reused for the three-point curvature estimate
+const _prevPos = /* @__PURE__ */ new Vector2();
+const _prevPrevPos = /* @__PURE__ */ new Vector2();
+const _ab = /* @__PURE__ */ new Vector2();
+const _ac = /* @__PURE__ */ new Vector2();
+const _bc = /* @__PURE__ */ new Vector2();
 
 // A text anchor that lays on a give line and stores references to path from different LoDs,
 // choosing the best one to "snap" to.
@@ -219,8 +225,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		let seg = 0;
 		let charCursor = 0;
-		let prevAngle = 0;
-		let totalTurn = 0;
 		for ( let i = 0; i < length; i ++ ) {
 
 			// place each character's center along the arc by its advance, centered on the anchor
@@ -264,14 +268,22 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
-			// accumulate the absolute turn between consecutive character tangents and reject
-			// paths that curve too sharply across the label to stay readable
-			const angle = Math.atan2( p1.y - p0.y, p1.x - p0.x );
-			if ( i > 0 ) {
+			// estimate local curvature from the last three glyph positions using Menger curvature / circumradius
+			// and reject the label if the baseline bends too tightly
+			if ( i >= 2 ) {
 
-				const delta = Math.atan2( Math.sin( angle - prevAngle ), Math.cos( angle - prevAngle ) );
-				totalTurn += Math.abs( delta );
-				if ( totalTurn > MAX_LABEL_ANGLE ) {
+				// get the segments
+				_ab.subVectors( _prevPos, _prevPrevPos );
+				_ac.subVectors( _vec, _prevPrevPos );
+				_bc.subVectors( _vec, _prevPos );
+
+				// curvature = 2 * area / ( |AB| * |BC| * |CA| ) = 1 / circumradius
+				const area = Math.abs( _ab.cross( _ac ) );
+				const denom = _ab.length() * _bc.length() * _ac.length();
+				const curvature = denom > 0 ? 2 * area / denom : 0;
+
+				// reject when the baseline curves tighter than the minimum readable radius
+				if ( curvature > 1 / MIN_LABEL_RADIUS ) {
 
 					this.valid = false;
 					if ( ! force ) break;
@@ -280,7 +292,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
-			prevAngle = angle;
+			_prevPrevPos.copy( _prevPos );
+			_prevPos.copy( _vec );
 
 			outputIndices[ slot ] = seg;
 			outputAlphas[ slot ] = segAlpha;
