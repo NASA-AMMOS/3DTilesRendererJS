@@ -1,14 +1,20 @@
-import { Vector3, MathUtils } from 'three';
+import { Vector2, Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
-// reject labels whose projected baseline turns more than this in total ( radians ), since
-// sharply curving text becomes hard to read
-const MAX_LABEL_ANGLE = Math.PI / 2;
+// reject labels whose projected baseline curves tighter than this radius in screen px at any
+// glyph, since sharply curving text becomes hard to read
+const MIN_LABEL_RADIUS = 40;
 
-// scratch reused across evaluate() calls ( synchronous, single pass )
 const _segIndices = [];
 const _segAlphas = [];
 const _vec = /* @__PURE__ */ new Vector3();
+
+// trailing two glyph screen positions and edge vectors, reused for the three-point curvature estimate
+const _prevPos = /* @__PURE__ */ new Vector2();
+const _prevPrevPos = /* @__PURE__ */ new Vector2();
+const _ab = /* @__PURE__ */ new Vector2();
+const _ac = /* @__PURE__ */ new Vector2();
+const _bc = /* @__PURE__ */ new Vector2();
 
 // A text anchor that lays on a give line and stores references to path from different LoDs,
 // choosing the best one to "snap" to.
@@ -67,8 +73,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// TODO: consider removing the deduping from the screen occupation manager
 		this.id = `${ id }_${ annotationIndex ++ }`;
 
+		this.displayed = false;
 		this.referencePaths = [];
 		this._activeReference = null;
+
+		// transient slot { i0, i1, alpha, lat, lon } the anchor is snapped to on the active line
+		// while it drifts across an LoD swap, overriding its associated anchor slot. Cleared on the
+		// next appearance (see onShown) so it re-derives evenly-spaced, surviving the fade-out first
+		this._snapped = null;
 
 		// local position & angle per character
 		this.characterPositions = [];
@@ -214,8 +226,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		let seg = 0;
 		let charCursor = 0;
-		let prevAngle = 0;
-		let totalTurn = 0;
 		for ( let i = 0; i < length; i ++ ) {
 
 			// place each character's center along the arc by its advance, centered on the anchor
@@ -259,14 +269,22 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
-			// accumulate the absolute turn between consecutive character tangents and reject
-			// paths that curve too sharply across the label to stay readable
-			const angle = Math.atan2( p1.y - p0.y, p1.x - p0.x );
-			if ( i > 0 ) {
+			// estimate local curvature from the last three glyph positions using Menger curvature / circumradius
+			// and reject the label if the baseline bends too tightly
+			if ( i >= 2 ) {
 
-				const delta = Math.atan2( Math.sin( angle - prevAngle ), Math.cos( angle - prevAngle ) );
-				totalTurn += Math.abs( delta );
-				if ( totalTurn > MAX_LABEL_ANGLE ) {
+				// get the segments
+				_ab.subVectors( _prevPos, _prevPrevPos );
+				_ac.subVectors( _vec, _prevPrevPos );
+				_bc.subVectors( _vec, _prevPos );
+
+				// curvature = 2 * area / ( |AB| * |BC| * |CA| ) = 1 / circumradius
+				const area = Math.abs( _ab.cross( _ac ) );
+				const denom = _ab.length() * _bc.length() * _ac.length();
+				const curvature = denom > 0 ? 2 * area / denom : 0;
+
+				// reject when the baseline curves tighter than the minimum readable radius
+				if ( curvature > 1 / MIN_LABEL_RADIUS ) {
 
 					this.valid = false;
 					if ( ! force ) break;
@@ -275,7 +293,8 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
-			prevAngle = angle;
+			_prevPrevPos.copy( _prevPos );
+			_prevPos.copy( _vec );
 
 			outputIndices[ slot ] = seg;
 			outputAlphas[ slot ] = segAlpha;
@@ -352,54 +371,141 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	getPosition( pos ) {
 
-		const { i0, i1, alpha, line } = this.getActiveReference();
+		const { line, i0, i1, alpha } = this.getActiveReference();
 		return pos.lerpVectors( line.positions[ i0 ], line.positions[ i1 ], alpha );
 
 	}
 
-	// the highest-LoD entry whose path is settled, used for placement
+	// the highest-LoD entry whose path is settled, used for placement - return the "snapped" or
+	// active line reference
 	getActiveReference() {
 
-		return this._activeReference;
+		return this._snapped ?? this._activeReference;
 
 	}
 
 	updateActiveReference() {
 
-		const { referencePaths, _activeReference } = this;
-		const target = referencePaths[ 0 ] ?? null;
-		if ( target?.line.ready ) {
+		const { referencePaths, _activeReference, displayed } = this;
 
-			this._activeReference = target;
-			return target;
+		// pick the active line reference. The highest-LoD path is the desired "target" but until it settles
+		// we hold the current LoD rather than hopping through intermediate LoDs as they settle.
+		let result;
+		const target = referencePaths[ 0 ] ?? null;
+		if ( target && target.line.ready ) {
+
+			// desired path settled
+			result = target;
+
+		} else if ( _activeReference && _activeReference.line.ready && ( referencePaths.includes( _activeReference ) || this.displayed ) ) {
+
+			// desired path not settled yet: stay on the current LoD
+			result = _activeReference;
 
 		} else {
 
-			let result = target;
-			for ( const entry of referencePaths ) {
-
-				if ( entry.line.ready ) {
-
-					result = entry;
-					break;
-
-				}
-
-			}
-
-			result = result ?? _activeReference;
-
-			if ( _activeReference && _activeReference.line.ready && _activeReference.line.lodLevel > result.line.lodLevel ) {
-
-				result = _activeReference;
-
-			}
-
-			this._activeReference = result;
-			return result;
+			result = target ?? _activeReference;
 
 		}
 
+		// when the active line changes under a displayed label, snap it onto the new line at the
+		// nearest point so it stays coherent across the LoD swap instead of jumping to the new line's
+		// associated anchor.
+		if ( result && _activeReference && result !== _activeReference ) {
+
+			if ( displayed ) {
+
+				// only snap if it's visible
+				const { lat, lon } = this._snapped ?? _activeReference;
+				this._snapped = this._snapToLine( result.line, lat, lon );
+
+			} else {
+
+				// otherwise remove the snapped reference
+				this._snapped = null;
+
+			}
+
+		}
+
+		this._activeReference = result;
+		return result;
+
+	}
+
+	// find the nearest point on the given line in cartographic lat / lon  to the supplied
+	// position, returning a line-reference used to keep a displayed label coherent
+	// when the active LoD swaps.
+	_snapToLine( line, lat, lon ) {
+
+		const { lat: lats, lon: lons } = line;
+		if ( lats.length < 2 ) {
+
+			return null;
+
+		}
+
+		let bestDist = Infinity;
+		let bestI0 = 0;
+		let bestI1 = 1;
+		let bestAlpha = 0;
+		let bestLat = lats[ 0 ];
+		let bestLon = lons[ 0 ];
+		for ( let i = 0, l = lats.length - 1; i < l; i ++ ) {
+
+			const lat0 = lats[ i ];
+			const lon0 = lons[ i ];
+			const dLat = lats[ i + 1 ] - lat0;
+			const dLon = lons[ i + 1 ] - lon0;
+
+			// project the point onto the segment, clamped to its ends
+			const lenSq = dLat * dLat + dLon * dLon;
+			const t = lenSq > 0 ? MathUtils.clamp( ( ( lat - lat0 ) * dLat + ( lon - lon0 ) * dLon ) / lenSq, 0, 1 ) : 0;
+
+			const projLat = lat0 + dLat * t;
+			const projLon = lon0 + dLon * t;
+
+			// calculate the distance
+			const eLat = lat - projLat;
+			const eLon = lon - projLon;
+			const dist = eLat * eLat + eLon * eLon;
+			if ( dist < bestDist ) {
+
+				bestDist = dist;
+				bestI0 = i;
+				bestI1 = i + 1;
+				bestAlpha = t;
+				bestLat = projLat;
+				bestLon = projLon;
+
+			}
+
+		}
+
+		return {
+			line,
+			i0: bestI0,
+			i1: bestI1,
+			alpha: bestAlpha,
+			lat: bestLat,
+			lon: bestLon,
+		};
+
+	}
+
+	// clear the transient snapped slot when a fresh display begins so the label re-derives
+	// from its evenly-spaced associated anchor. Deferred to the next appearance (rather than at
+	// hide) so the snap survives the glyph fade-out and doesn't reflow the fading label.
+	onShown() {
+
+		this.displayed = true;
+		this._snapped = null;
+
+	}
+
+	onHidden() {
+
+		this.displayed = false;
 
 	}
 

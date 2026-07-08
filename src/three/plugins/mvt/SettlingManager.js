@@ -1,8 +1,18 @@
-import { Frustum, Matrix4, Raycaster } from 'three';
+import { Frustum, Matrix4, Raycaster, Vector3 } from 'three';
 import { LineAnnotation } from './annotations/LineAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
+
+// minimum distance in tiles.group local space a re-cast sample must move before it is committed,
+// so incidental terrain refinement doesn't jitter an already-settled path. The threshold is scaled
+// by LoD assuming 16 levels.
+// TODO: this strategy could probably be adjusted to not rely on a fixed LoD maximum or such a large
+// base value (~65,000m).
+const SETTLE_POSITION_THRESHOLD = 1;
+const SETTLE_THRESHOLD_BASE_LEVEL = 16;
+
 const _raycaster = /* @__PURE__ */ new Raycaster();
+const _hit = /* @__PURE__ */ new Vector3();
 
 // check if the given raycaster intersects the provided frustum shape
 function rayIntersectsFrustum( raycaster, frustum ) {
@@ -167,7 +177,7 @@ export class SettlingManager {
 
 	}
 
-	_settleSample( lat, lon, target ) {
+	_settleSample( lat, lon, target, threshold ) {
 
 		// cast a ray to snap a single cartographic sample onto the surface
 		const { tiles } = this;
@@ -181,14 +191,22 @@ export class SettlingManager {
 		const hits = _raycaster.intersectObject( tiles.group );
 		if ( hits.length > 0 ) {
 
-			target
+			_hit
 				.copy( hits[ 0 ].point )
 				.applyMatrix4( tiles.group.matrixWorldInverse );
 
 		} else {
 
 			// TODO: we are still seeing some points slip through tile gaps - should we hide them in this case?
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, target );
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _hit );
+
+		}
+
+		// only commit the new sample if it moved past the threshold ( the initial settle always
+		// commits since target starts at the origin ), so minor re-drapes leave the path unchanged
+		if ( _hit.distanceTo( target ) > threshold ) {
+
+			target.copy( _hit );
 
 		}
 
@@ -352,6 +370,10 @@ export class SettlingManager {
 
 	*_settleItem( item ) {
 
+		// commit threshold scales with the item's LoD, so coarser paths tolerate larger
+		// changes before they update
+		const threshold = SETTLE_POSITION_THRESHOLD * 2 ** ( SETTLE_THRESHOLD_BASE_LEVEL - item.lodLevel );
+
 		// TODO: add "settling" logic on the classes themselves?
 		if ( item instanceof LineAnnotation ) {
 
@@ -362,7 +384,7 @@ export class SettlingManager {
 
 				// TODO: this could request multiple hits and choose the one with a roughly vertical normal and
 				// adjusts the line in the least vertical way
-				this._settleSample( lat[ i ], lon[ i ], positions[ i ] );
+				this._settleSample( lat[ i ], lon[ i ], positions[ i ], threshold );
 
 				if ( this._deadlineExpired() ) {
 
@@ -387,7 +409,7 @@ export class SettlingManager {
 		} else {
 
 			// settle the point onto the surface
-			this._settleSample( item.lat, item.lon, item.position );
+			this._settleSample( item.lat, item.lon, item.position, threshold );
 
 		}
 

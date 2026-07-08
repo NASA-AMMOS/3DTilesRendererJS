@@ -48,6 +48,16 @@ export class OccupancyAnnotation {
 
 	}
 
+	// called by the delayed manager when the item first becomes displayed or hidden, letting
+	// subclasses reset any per-appearance state. Driven by the delayed manager
+	onShown() {
+
+	}
+
+	onHidden() {
+
+	}
+
 }
 
 export class ScreenOccupationManager extends EventDispatcher {

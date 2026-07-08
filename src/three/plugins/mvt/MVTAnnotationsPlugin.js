@@ -444,6 +444,8 @@ export class MVTAnnotationsPlugin {
 
 				}
 
+				settlingManager.needsUpdate = true;
+
 			}
 
 			// sync camera and localToWorld matrix into occupancy grid
