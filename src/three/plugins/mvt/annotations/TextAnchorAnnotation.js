@@ -280,9 +280,9 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	// angle per character, applying the reading-direction flip
 	_placeCharacters( handle, segIndices, segAlphas ) {
 
-		const { characterPositions, characterAngles, text, characterRadius } = this;
+		const { characterPositions, characterAngles, text, } = this;
 		const { line } = this.getActiveReference();
-		const { screenPositions, positions } = line;
+		const { screenPositions, positions, characterRadius } = line;
 
 		const flip = this._flippedTextDir;
 		const length = text.length;
