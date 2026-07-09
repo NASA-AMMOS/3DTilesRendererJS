@@ -1,9 +1,5 @@
 import { EventDispatcher, Matrix4, Vector2, Vector3 } from 'three';
 
-const _ndcMatrix = /* @__PURE__ */ new Matrix4();
-const _invMatrix = /* @__PURE__ */ new Matrix4();
-const _cameraLocalPos = /* @__PURE__ */ new Vector3();
-
 // a non-marking handle for laying out items without claiming occupancy
 const _dummyHandle = {
 	test: () => false,
@@ -96,6 +92,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// grid dimensions in cells, computed once per update and reused by _cellRange
 		this._totalResolution = new Vector2();
 		this._lastMatrix = new Matrix4();
+
+		// scratch camera vectors used for generator iteration
+		this._ndcMatrix = new Matrix4();
+		this._invMatrix = new Matrix4();
+		this._cameraLocalPos = new Vector3();
+
 
 		// buffer outside the screen
 		this.buffer = 0.15;
@@ -253,6 +255,23 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	updateCameraTransform() {
+
+		const { camera, matrix, _ndcMatrix, _invMatrix, _cameraLocalPos } = this;
+
+		// compute the NDC matrix and camera local position, captured once per pass so a pass
+		// that spans multiple frames stays self-consistent
+		_ndcMatrix
+			.copy( matrix )
+			.premultiply( camera.matrixWorldInverse )
+			.premultiply( camera.projectionMatrix );
+
+		_invMatrix.copy( matrix ).invert();
+		_cameraLocalPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrix );
+
+
+	}
+
 	*_updateGenerator() {
 
 		// runs forever: each pass transforms, sorts, and evaluates the full item list, yielding
@@ -262,8 +281,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 		while ( true ) {
 
 			const {
-				camera,
-				matrix,
 				resolution,
 				size,
 				added,
@@ -273,17 +290,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 				items,
 				_lastMatrix,
 				_itemSet,
+				_ndcMatrix,
+				_cameraLocalPos,
 			} = this;
 
-			// compute the NDC matrix and camera local position, captured once per pass so a pass
-			// that spans multiple frames stays self-consistent
-			_ndcMatrix
-				.copy( matrix )
-				.premultiply( camera.matrixWorldInverse )
-				.premultiply( camera.projectionMatrix );
-
-			_invMatrix.copy( matrix ).invert();
-			_cameraLocalPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrix );
+			// update the camera transform for the occupancy iteration
+			this.updateCameraTransform();
 
 			// wait until the camera has changed or an update has been requested
 			if ( _lastMatrix.equals( _ndcMatrix ) && ! this.needsUpdate ) {
@@ -338,6 +350,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 					yield;
 					this._resetDeadline();
+					this.updateCameraTransform();
 
 				}
 
@@ -350,6 +363,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 				yield;
 				this._resetDeadline();
+				this.updateCameraTransform();
 
 			}
 
@@ -384,6 +398,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 					yield;
 					this._resetDeadline();
+					this.updateCameraTransform();
 
 				}
 
@@ -411,13 +426,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 	// is fresh.
 	refreshLayout( item ) {
 
-		if ( this.camera === null ) {
-
-			return;
-
-		}
-
-		item.updateTransform( _ndcMatrix, this.resolution, _cameraLocalPos );
+		const { resolution, _ndcMatrix, _cameraLocalPos } = this;
+		item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
 		item.evaluate( _dummyHandle, true );
 
 	}

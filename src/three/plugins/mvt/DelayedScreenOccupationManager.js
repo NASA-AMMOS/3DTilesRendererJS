@@ -236,15 +236,10 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 		// keep items that are still lingering laid out at the current view so they don't freeze
 		// or squish while the timer runs.
-		for ( const item of _hideTimers.keys() ) {
-
-			this.manager.refreshLayout( item );
-
-		}
-
 		for ( const item of visible.values() ) {
 
 			item.visibleDuration = currTime - item.visibleTime;
+			this.manager.refreshLayout( item );
 
 		}
 
