@@ -69,7 +69,7 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 	 */
 	keys() {
 
-		this._slots.keys();
+		return this._slots.keys();
 
 	}
 

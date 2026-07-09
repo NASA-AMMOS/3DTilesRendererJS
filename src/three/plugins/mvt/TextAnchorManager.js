@@ -11,10 +11,6 @@ export class TextAnchorManager {
 		this._anchorsById = new Map();
 		this._linesById = new Map();
 
-		// ids whose lines were removed since the last update - only their anchors can have become
-		// empty, so update() checks just these instead of scanning every anchor each frame
-		this._dirtyIds = new Set();
-
 		// flat sets of every tracked line / anchor, maintained on add / delete for allocation-free
 		// iteration
 		this.lines = new Set();
@@ -31,16 +27,9 @@ export class TextAnchorManager {
 
 	update() {
 
-		// gather the removed items, checking only the ids whose lines were removed
-		const { _anchorsById, _dirtyIds, removed } = this;
-		_dirtyIds.forEach( id => {
-
-			const anchors = _anchorsById.get( id );
-			if ( ! anchors ) {
-
-				return;
-
-			}
+		// gather the removed items
+		const { _anchorsById, removed } = this;
+		_anchorsById.forEach( ( anchors, id ) => {
 
 			anchors.forEach( anchor => {
 
@@ -62,8 +51,6 @@ export class TextAnchorManager {
 			}
 
 		} );
-
-		_dirtyIds.clear();
 
 	}
 
@@ -232,9 +219,6 @@ export class TextAnchorManager {
 			anchor.removeLine( line );
 
 		} );
-
-		// these anchors may have lost their last line - check them on the next update
-		this._dirtyIds.add( id );
 
 	}
 
