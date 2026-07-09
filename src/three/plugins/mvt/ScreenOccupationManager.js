@@ -208,32 +208,22 @@ export class ScreenOccupationManager extends EventDispatcher {
 		} = this;
 
 		// compute NDC matrix and camera local position
-		let ndcMatrix = null;
-		let cameraLocalPos = null;
+		_ndcMatrix
+			.copy( matrix )
+			.premultiply( camera.matrixWorldInverse )
+			.premultiply( camera.projectionMatrix );
 
-		// if there is no camera then items are considered non visible
-		if ( camera !== null ) {
-
-			_ndcMatrix
-				.copy( matrix )
-				.premultiply( camera.matrixWorldInverse )
-				.premultiply( camera.projectionMatrix );
-			ndcMatrix = _ndcMatrix;
-
-			_invMatrix.copy( matrix ).invert();
-			_cameraLocalPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrix );
-			cameraLocalPos = _cameraLocalPos;
-
-		}
+		_invMatrix.copy( matrix ).invert();
+		_cameraLocalPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrix );
 
 		// early out if the camera hasn't changed
-		if ( this._lastMatrix.equals( ndcMatrix ) && ! this.needsUpdate ) {
+		if ( _lastMatrix.equals( _ndcMatrix ) && ! this.needsUpdate ) {
 
 			return;
 
 		}
 
-		_lastMatrix.copy( ndcMatrix );
+		_lastMatrix.copy( _ndcMatrix );
 		this.needsUpdate = false;
 
 		this.syncItems();
@@ -263,16 +253,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 		}
 
 		// transform items to screen space
-		if ( ndcMatrix !== null ) {
+		for ( let i = 0, l = items.length; i < l; i ++ ) {
 
-			for ( let i = 0, l = items.length; i < l; i ++ ) {
+			const item = items[ i ];
+			if ( item.enabled ) {
 
-				const item = items[ i ];
-				if ( item.enabled ) {
-
-					item.updateTransform( ndcMatrix, resolution, cameraLocalPos );
-
-				}
+				item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
 
 			}
 
@@ -289,7 +275,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			// disabled items ( filtered out by the driver ) are skipped so they fall out of the
 			// visible set and fade out via the delayed manager, without being unregistered
-			if ( ndcMatrix !== null && item.enabled && item.evaluate( handle ) ) {
+			if ( item.enabled && item.evaluate( handle ) ) {
 
 				visible.add( item );
 				if ( ! prevVisible.has( item ) ) {
