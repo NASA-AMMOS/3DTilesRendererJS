@@ -237,7 +237,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
-	// run the in-flight pass ( or a fresh one if changes are pending ) to completion so the visible
+	// run the in-flight pass (or a fresh one if changes are pending) to completion so the visible
 	// sets and "change" event reflect the current state immediately
 	flush() {
 
