@@ -96,7 +96,7 @@ export class SettlingManager {
 		this.tiles = null;
 		this.occupancy = null;
 		this.camera = null;
-		this.maxSettleTimeMs = 5;
+		this.maxSettleTimeMs = 2;
 
 		// items awaiting resettling
 		this._queue = new Set();
@@ -260,7 +260,7 @@ export class SettlingManager {
 						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
 
 							intersectingFrustum.add( item );
-							break;
+							continue;
 
 						}
 

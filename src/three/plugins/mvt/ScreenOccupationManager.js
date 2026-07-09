@@ -267,7 +267,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
 
-				items[ i ].updateTransform( ndcMatrix, resolution, cameraLocalPos );
+				const item = items[ i ];
+				if ( item.enabled ) {
+
+					item.updateTransform( ndcMatrix, resolution, cameraLocalPos );
+
+				}
 
 			}
 
