@@ -1,5 +1,8 @@
 import { MVTGlyphs } from './MVTGlyphs.js';
 
+// Scratch set for storing which characters are needed by the current glyphs
+const _needed = new Set();
+
 /**
  * Renders text labels one glyph per character, laid out along each annotation's path. Characters are
  * rasterized into the atlas on demand, so a label's text may change at any time.
@@ -43,14 +46,18 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 		this._strokeStyle = strokeStyle;
 		this._strokeWidth = strokeWidth;
 
-		// characters currently rasterized in the atlas, plus a reused scratch set of the characters
-		// needed this frame. the atlas is reconciled against what's actually rendered ( not against
-		// add / remove events ), so it stays correct even when an annotation's text changes.
-		this._drawn = new Set();
-		this._needed = new Set();
-
 		this.glyphAtlas.resize( slotCount, glyphSize );
 		this.size = size;
+
+	}
+
+	/**
+	 * Resets the cached glyphs content. Used when changing fonts or styles.
+	 */
+	reset() {
+
+		this._advanceCache.clear();
+		this.glyphAtlas.clear();
 
 	}
 
@@ -80,11 +87,11 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 	// growing the atlas if every rasterized glyph is still in use )
 	_drawChar( char, needed ) {
 
-		const { glyphAtlas, _drawn } = this;
+		const { glyphAtlas } = this;
 		if ( glyphAtlas.capacity === glyphAtlas.count ) {
 
 			let toRemove = null;
-			for ( const c of _drawn ) {
+			for ( const c of glyphAtlas.keys() ) {
 
 				if ( ! needed.has( c ) ) {
 
@@ -98,7 +105,6 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 			if ( toRemove !== null ) {
 
 				glyphAtlas.release( toRemove );
-				_drawn.delete( toRemove );
 
 			} else {
 
@@ -114,16 +120,15 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 			strokeStyle: this._strokeStyle,
 			strokeWidth: this._strokeWidth,
 		} );
-		_drawn.add( char );
 
 	}
 
 	_updateGeometry() {
 
-		const { _orderedEntries, _needed, glyphAtlas } = this;
+		const { _orderedEntries, glyphAtlas } = this;
 
-		// collect the characters needed this frame from each items text, and the total glyph
-		// count
+		// collect the characters needed this frame from each items text, and
+		// the total glyph count
 		_needed.clear();
 		let count = 0;
 		for ( const entry of _orderedEntries ) {
@@ -168,6 +173,7 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 		}
 
 		this._markNeedsUpdate();
+		_needed.clear();
 
 	}
 

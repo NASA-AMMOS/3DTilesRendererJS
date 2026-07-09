@@ -57,9 +57,19 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 		this._nextIndex = 0;
 		this._capacity = 0;
 		this._columns = 0;
+		this._uvs = new Map();
 
 		this.resize( slotCount, slotSize );
 		this.colorSpace = SRGBColorSpace;
+
+	}
+
+	/**
+	 * Returns the keys associated with all glyphs.
+	 */
+	keys() {
+
+		this._slots.keys();
 
 	}
 
@@ -111,18 +121,11 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 	 * @param {string} key
 	 * @returns {{ x: number, y: number, w: number, h: number } | null}
 	 */
-	getUV( key, target = {} ) {
+	getUV( key ) {
 
-		target = {};
-		const slot = this.get( key );
-		if ( slot === null ) return null;
-
-		const { width, height, slotSize } = this.image;
-		target.x = slot.x / width;
-		target.y = ( height - slot.y ) / height;
-		target.w = slotSize / width;
-		target.h = slotSize / height;
-		return target;
+		const { _slots, _uvs } = this;
+		const index = _slots.get( key );
+		return _uvs.get( index );
 
 	}
 
@@ -410,9 +413,11 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 
 		const {
 			ctx,
+			image,
 			_freeList,
 			_capacity,
 			_slots,
+			_uvs,
 		} = this;
 
 		let index;
@@ -450,6 +455,14 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 		ctx.clearRect( slot.x, slot.y, slot.w, slot.h );
 		callback( ctx, slot.x, slot.y, slot.w, slot.h );
 		ctx.restore();
+
+		const { width, height, slotSize } = image;
+		_uvs.set( index, {
+			x: slot.x / width,
+			y: ( height - slot.y ) / height,
+			w: slotSize / width,
+			h: slotSize / height,
+		} );
 
 		this.needsUpdate = true;
 		return slot;
