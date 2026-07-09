@@ -48,9 +48,15 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get working() {
+
+		return this.manager.working;
+
+	}
+
 	get hasPendingWork() {
 
-		return this._showTimers.size > 0 || this._hideTimers.size > 0;
+		return this._showTimers.size > 0 || this._hideTimers.size > 0 || this.manager.hasPendingWork;
 
 	}
 
@@ -156,6 +162,13 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 	syncItems() {
 
 		this.manager.syncItems();
+
+	}
+
+	// complete any in-flight update pass on the underlying occupation manager immediately
+	flush() {
+
+		this.manager.flush();
 
 	}
 

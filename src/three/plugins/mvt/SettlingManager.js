@@ -96,7 +96,7 @@ export class SettlingManager {
 		this.tiles = null;
 		this.occupancy = null;
 		this.camera = null;
-		this.maxSettleTimeMs = 2;
+		this.maxSettleTimeMs = 1;
 
 		// items awaiting resettling
 		this._queue = new Set();

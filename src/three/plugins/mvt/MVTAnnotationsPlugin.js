@@ -503,10 +503,11 @@ export class MVTAnnotationsPlugin {
 			occupancy.camera = camera;
 			occupancy.update();
 
-			// when the driver's filters changed, force the animations to completion so the change is
-			// applied at once rather than delayed
+			// when the driver's filters changed, complete the sliced occupancy pass and force the
+			// animations to completion so the change is applied at once rather than delayed
 			if ( annotationsNeedUpdate ) {
 
+				occupancy.flush();
 				occupancy.finishAnimations();
 
 			}
