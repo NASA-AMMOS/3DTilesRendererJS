@@ -3,7 +3,6 @@ import { BufferAttribute, BufferGeometry, GreaterDepth, Group, Matrix4, Points, 
 import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 
 const _mvMatrix = /* @__PURE__ */ new Matrix4();
-const _uvTarget = {};
 
 // scratch reused across raycasts
 const _point4 = /* @__PURE__ */ new Vector4();
@@ -422,7 +421,7 @@ export class MVTGlyphs extends Group {
 
 		if ( key !== null && glyphAtlas.has( key ) ) {
 
-			const uv = glyphAtlas.getUV( key, _uvTarget );
+			const uv = glyphAtlas.getUV( key );
 			uvAttr.setXY( i, uv.x, uv.y );
 
 		} else {

@@ -33,6 +33,14 @@ export class OccupancyGridOverlay {
 
 		}
 
+		// skip redrawing while a sliced update pass is in flight - the occupancy cells are only
+		// partially marked until the pass completes, which reads as flashing
+		if ( occupancyManager.working ) {
+
+			return;
+
+		}
+
 		const { canvas } = this;
 		const { cells, size, resolution, buffer } = occupancyManager;
 		const dpr = window.devicePixelRatio;

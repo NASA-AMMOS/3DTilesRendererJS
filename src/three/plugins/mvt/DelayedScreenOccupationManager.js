@@ -48,9 +48,15 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get working() {
+
+		return this.manager.working;
+
+	}
+
 	get hasPendingWork() {
 
-		return this._showTimers.size > 0 || this._hideTimers.size > 0;
+		return this._showTimers.size > 0 || this._hideTimers.size > 0 || this.manager.hasPendingWork;
 
 	}
 
@@ -159,6 +165,13 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	// complete any in-flight update pass on the underlying occupation manager immediately
+	flush() {
+
+		this.manager.flush();
+
+	}
+
 	update() {
 
 		const now = performance.now() / 1000;
@@ -223,15 +236,10 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 		// keep items that are still lingering laid out at the current view so they don't freeze
 		// or squish while the timer runs.
-		for ( const item of _hideTimers.keys() ) {
-
-			this.manager.refreshLayout( item );
-
-		}
-
 		for ( const item of visible.values() ) {
 
 			item.visibleDuration = currTime - item.visibleTime;
+			this.manager.refreshLayout( item );
 
 		}
 

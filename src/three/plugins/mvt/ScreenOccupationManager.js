@@ -1,9 +1,5 @@
 import { EventDispatcher, Matrix4, Vector2, Vector3 } from 'three';
 
-const _ndcMatrix = /* @__PURE__ */ new Matrix4();
-const _invMatrix = /* @__PURE__ */ new Matrix4();
-const _cameraLocalPos = /* @__PURE__ */ new Vector3();
-
 // a non-marking handle for laying out items without claiming occupancy
 const _dummyHandle = {
 	test: () => false,
@@ -62,6 +58,12 @@ export class OccupancyAnnotation {
 
 export class ScreenOccupationManager extends EventDispatcher {
 
+	get hasPendingWork() {
+
+		return this.working || this.needsUpdate;
+
+	}
+
 	constructor() {
 
 		super();
@@ -69,6 +71,17 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// camera and local-to-world matrix
 		this.camera = null;
 		this.matrix = new Matrix4();
+
+		// time budget per frame for the sliced update pass
+		this.maxUpdateTimeMs = 0.5;
+
+		// forever-running update pass, sliced by the per-frame deadline
+		this._task = null;
+		this._deadline = 0;
+
+		// whether an update pass is currently in flight, meaning the visible sets and occupancy cells
+		// are partially updated
+		this.working = false;
 
 		// TODO: do we use DPR here? Or
 		// occupancy cells
@@ -79,6 +92,12 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// grid dimensions in cells, computed once per update and reused by _cellRange
 		this._totalResolution = new Vector2();
 		this._lastMatrix = new Matrix4();
+
+		// scratch camera vectors used for generator iteration
+		this._ndcMatrix = new Matrix4();
+		this._invMatrix = new Matrix4();
+		this._cameraLocalPos = new Vector3();
+
 
 		// buffer outside the screen
 		this.buffer = 0.15;
@@ -192,120 +211,210 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	// deadline
+	_deadlineExpired() {
+
+		return performance.now() >= this._deadline;
+
+	}
+
+	_resetDeadline() {
+
+		this._deadline = performance.now() + this.maxUpdateTimeMs;
+
+	}
+
 	update() {
 
-		const {
-			camera,
-			matrix,
-			resolution,
-			size,
-			added,
-			handle,
-			sortCallback,
-			buffer,
-			items,
-			_lastMatrix,
-		} = this;
+		// tick the forever-running update task, giving it a fresh time budget
+		if ( this._task === null ) {
 
-		// compute NDC matrix and camera local position
-		let ndcMatrix = null;
-		let cameraLocalPos = null;
-
-		// if there is no camera then items are considered non visible
-		if ( camera !== null ) {
-
-			_ndcMatrix
-				.copy( matrix )
-				.premultiply( camera.matrixWorldInverse )
-				.premultiply( camera.projectionMatrix );
-			ndcMatrix = _ndcMatrix;
-
-			_invMatrix.copy( matrix ).invert();
-			_cameraLocalPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrix );
-			cameraLocalPos = _cameraLocalPos;
+			this._task = this._updateGenerator();
 
 		}
 
-		// early out if the camera hasn't changed
-		if ( this._lastMatrix.equals( ndcMatrix ) && ! this.needsUpdate ) {
+		this._task.next();
 
-			return;
+	}
 
-		}
+	// run the in-flight pass (or a fresh one if changes are pending) to completion so the visible
+	// sets and "change" event reflect the current state immediately
+	flush() {
 
-		_lastMatrix.copy( ndcMatrix );
-		this.needsUpdate = false;
+		if ( this._task === null ) {
 
-		this.syncItems();
-
-		// swap visible and prevVisible — prevVisible now holds last frame's result
-		[ this.visible, this.prevVisible ] = [ this.prevVisible, this.visible ];
-
-		const { visible, prevVisible } = this;
-		visible.clear();
-		added.clear();
-
-		// resize the occupation cells to cover the extended viewport
-		this._totalResolution.copy( resolution )
-			.multiplyScalar( 1 + 2 * buffer )
-			.multiplyScalar( 1 / size )
-			.ceil();
-
-		const { width, height } = this._totalResolution;
-		if ( this.cells.length !== width * height ) {
-
-			this.cells = new Uint8Array( width * height );
-
-		} else {
-
-			this.cells.fill( 0 );
+			this._task = this._updateGenerator();
 
 		}
 
-		// transform items to screen space
-		if ( ndcMatrix !== null ) {
+		do {
 
-			for ( let i = 0, l = items.length; i < l; i ++ ) {
+			this._task.next();
 
-				items[ i ].updateTransform( ndcMatrix, resolution, cameraLocalPos );
+		} while ( this.working );
+
+	}
+
+	updateCameraTransform() {
+
+		const { camera, matrix, _ndcMatrix, _invMatrix, _cameraLocalPos } = this;
+
+		// compute the NDC matrix and camera local position, captured once per pass so a pass
+		// that spans multiple frames stays self-consistent
+		_ndcMatrix
+			.copy( matrix )
+			.premultiply( camera.matrixWorldInverse )
+			.premultiply( camera.projectionMatrix );
+
+		_invMatrix.copy( matrix ).invert();
+		_cameraLocalPos.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrix );
+
+
+	}
+
+	*_updateGenerator() {
+
+		// runs forever: each pass transforms, sorts, and evaluates the full item list, yielding
+		// whenever the per-frame budget is spent and resuming on the next update
+		this._resetDeadline();
+
+		while ( true ) {
+
+			const {
+				resolution,
+				size,
+				added,
+				handle,
+				sortCallback,
+				buffer,
+				items,
+				_lastMatrix,
+				_itemSet,
+				_ndcMatrix,
+				_cameraLocalPos,
+			} = this;
+
+			// update the camera transform for the occupancy iteration
+			this.updateCameraTransform();
+
+			// wait until the camera has changed or an update has been requested
+			if ( _lastMatrix.equals( _ndcMatrix ) && ! this.needsUpdate ) {
+
+				yield;
+				this._resetDeadline();
+				continue;
 
 			}
 
-		}
+			_lastMatrix.copy( _ndcMatrix );
+			this.needsUpdate = false;
+			this.working = true;
 
-		// sort the items
-		items.sort( sortCallback );
+			this.syncItems();
 
-		// evaluate occupancy into the fresh visible set
-		for ( let i = 0, l = items.length; i < l; i ++ ) {
+			// swap visible and prevVisible — prevVisible now holds the last pass' result
+			[ this.visible, this.prevVisible ] = [ this.prevVisible, this.visible ];
 
-			const item = items[ i ];
-			this._id = i + 1;
+			const { visible, prevVisible } = this;
+			visible.clear();
+			added.clear();
 
-			// disabled items ( filtered out by the driver ) are skipped so they fall out of the
-			// visible set and fade out via the delayed manager, without being unregistered
-			if ( ndcMatrix !== null && item.enabled && item.evaluate( handle ) ) {
+			// resize the occupation cells to cover the extended viewport
+			this._totalResolution.copy( resolution )
+				.multiplyScalar( 1 + 2 * buffer )
+				.multiplyScalar( 1 / size )
+				.ceil();
 
-				visible.add( item );
-				if ( ! prevVisible.has( item ) ) {
+			const { width, height } = this._totalResolution;
+			if ( this.cells.length !== width * height ) {
 
-					item.visible = true;
-					added.add( item );
+				this.cells = new Uint8Array( width * height );
 
-				} else {
+			} else {
 
-					item.visible = false;
-					prevVisible.delete( item );
+				this.cells.fill( 0 );
+
+			}
+
+			// transform items to screen space
+			for ( let i = 0, l = items.length; i < l; i ++ ) {
+
+				const item = items[ i ];
+				if ( item.enabled ) {
+
+					item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
+
+				}
+
+				if ( this._deadlineExpired() ) {
+
+					yield;
+					this._resetDeadline();
+					this.updateCameraTransform();
 
 				}
 
 			}
 
-		}
+			// sort the items ( atomic - a single sort can't be sliced )
+			items.sort( sortCallback );
 
-		if ( added.size > 0 || prevVisible.size > 0 ) {
+			if ( this._deadlineExpired() ) {
 
-			this.dispatchEvent( { type: 'change', added, removed: prevVisible } );
+				yield;
+				this._resetDeadline();
+				this.updateCameraTransform();
+
+			}
+
+			// evaluate occupancy into the fresh visible set
+			for ( let i = 0, l = items.length; i < l; i ++ ) {
+
+				const item = items[ i ];
+				this._id = i + 1;
+
+				// disabled items ( filtered out by the driver ) are skipped so they fall out of the
+				// visible set and fade out via the delayed manager, without being unregistered.
+				// Items unregistered while the pass was in flight are skipped so they aren't
+				// dispatched as visible.
+				if ( item.enabled && _itemSet.has( item ) && item.evaluate( handle ) ) {
+
+					visible.add( item );
+					if ( ! prevVisible.has( item ) ) {
+
+						item.visible = true;
+						added.add( item );
+
+					} else {
+
+						item.visible = false;
+						prevVisible.delete( item );
+
+					}
+
+				}
+
+				if ( this._deadlineExpired() ) {
+
+					yield;
+					this._resetDeadline();
+					this.updateCameraTransform();
+
+				}
+
+			}
+
+			this.working = false;
+
+			if ( added.size > 0 || prevVisible.size > 0 ) {
+
+				this.dispatchEvent( { type: 'change', added, removed: prevVisible } );
+
+			}
+
+			// always yield at the end of a pass so an unchanged view can't busy-spin
+			yield;
+			this._resetDeadline();
 
 		}
 
@@ -317,13 +426,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 	// is fresh.
 	refreshLayout( item ) {
 
-		if ( this.camera === null ) {
-
-			return;
-
-		}
-
-		item.updateTransform( _ndcMatrix, this.resolution, _cameraLocalPos );
+		const { resolution, _ndcMatrix, _cameraLocalPos } = this;
+		item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
 		item.evaluate( _dummyHandle, true );
 
 	}
