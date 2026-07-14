@@ -5,6 +5,16 @@ import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 // glyph, since sharply curving text becomes hard to read
 const MIN_LABEL_RADIUS = 40;
 
+// reject labels whose baseline turns more than this at a single segment joint. Catches
+// the sharp kinks in the curve.
+const MAX_KINK_ANGLE = Math.PI / 2;
+const MAX_KINK_COS = Math.cos( MAX_KINK_ANGLE );
+
+// If characters are laid out on a zigzagging path then they can wind up closer than their character
+// advance with implies they should be. If the characters are closer than this ratio of their advances
+// then reject the label.
+const MIN_CHAR_SPACING_RATIO = 0.8;
+
 const _segIndices = [];
 const _segAlphas = [];
 const _vec = /* @__PURE__ */ new Vector3();
@@ -12,6 +22,8 @@ const _vec = /* @__PURE__ */ new Vector3();
 // trailing two glyph screen positions and edge vectors, reused for the three-point curvature estimate
 const _prevPos = /* @__PURE__ */ new Vector2();
 const _prevPrevPos = /* @__PURE__ */ new Vector2();
+const _dir = /* @__PURE__ */ new Vector2();
+const _prevDir = /* @__PURE__ */ new Vector2();
 const _ab = /* @__PURE__ */ new Vector2();
 const _ac = /* @__PURE__ */ new Vector2();
 const _bc = /* @__PURE__ */ new Vector2();
@@ -199,6 +211,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 		let seg = 0;
 		let charCursor = 0;
+		let prevAdvance = 0;
 		for ( let i = 0; i < length; i ++ ) {
 
 			// place each character's center along the arc by its advance, centered on the anchor
@@ -242,6 +255,23 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			}
 
+			// check if the cursor hasn't moved enough from the old position and reject otherwise. this can
+			// be rejected in cases where the path is zigzagging especially at shallow angles.
+			if ( i > 0 ) {
+
+				const dx = _vec.x - _prevPos.x;
+				const dy = _vec.y - _prevPos.y;
+				const disToCharSq = dx * dx + dy * dy;
+				const minSpacing = ( advance + prevAdvance ) * 0.5 * MIN_CHAR_SPACING_RATIO;
+				if ( disToCharSq < minSpacing * minSpacing ) {
+
+					this.valid = false;
+					if ( ! force ) break;
+
+				}
+
+			}
+
 			// estimate local curvature from the last three glyph positions using Menger curvature / circumradius
 			// and reject the label if the baseline bends too tightly
 			if ( i >= 2 ) {
@@ -265,6 +295,24 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 				}
 
 			}
+
+			// reject sharp kinks: the turn between this character's segment direction and the
+			// previous character's must stay under MAX_KINK_ANGLE.
+			_dir.subVectors( p1, p0 ).normalize();
+			if ( i > 0 ) {
+
+				const cosTurn = _dir.dot( _prevDir );
+				if ( cosTurn < MAX_KINK_COS ) {
+
+					this.valid = false;
+					if ( ! force ) break;
+
+				}
+
+			}
+
+			_prevDir.copy( _dir );
+			prevAdvance = advance;
 
 			_prevPrevPos.copy( _prevPos );
 			_prevPos.copy( _vec );
@@ -309,7 +357,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 			characterPositions[ i ].lerpVectors( positions[ index ], positions[ index + 1 ], segAlpha );
 
-			// baseline angle from the segment direction ( screen space, y down ), pointing in the
+			// baseline angle from the segment direction (screen space, y down), pointing in the
 			// reading direction so glyphs stay upright after a flip
 			const dx = ( p1.x - p0.x ) * ( flip ? - 1 : 1 );
 			const dy = ( p1.y - p0.y ) * ( flip ? - 1 : 1 );

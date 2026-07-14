@@ -124,6 +124,8 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				_hideTimers.delete( item );
 				if ( ! visible.has( item ) ) {
 
+					// the display period begins as soon as the show timer starts
+					item.onShown();
 					_showTimers.set( item, 0 );
 
 				}
@@ -133,8 +135,12 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			// mark timers to hidden
 			for ( const item of removed ) {
 
-				_showTimers.delete( item );
-				if ( visible.has( item ) ) {
+				// a deleted show timer means the item was never displayed
+				if ( _showTimers.delete( item ) ) {
+
+					item.onHidden();
+
+				} else if ( visible.has( item ) ) {
 
 					_hideTimers.set( item, 0 );
 
@@ -205,7 +211,6 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				visible.add( item );
 				added.add( item );
 				item.visibleTime = currTime;
-				item.onShown();
 
 			} else {
 
@@ -264,7 +269,6 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			visible.add( item );
 			added.add( item );
 			item.visibleTime = currTime;
-			item.onShown();
 
 		}
 
