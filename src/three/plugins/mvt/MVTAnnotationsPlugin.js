@@ -662,9 +662,10 @@ export class MVTAnnotationsPlugin {
 		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 
-		tileLoadState.forEach( ( info, tile ) => {
+		// visible tiles are the ones currently marked in the hierarchy
+		tileLoadState.forEach( ( range, tile ) => {
 
-			if ( info.active ) {
+			if ( tiles.visibleTiles.has( tile ) ) {
 
 				this._markVectorTile( tile, false );
 
@@ -692,10 +693,7 @@ export class MVTAnnotationsPlugin {
 		const { range } = getMeshesCartographicRange( meshes, tiles.ellipsoid, _matrix, overlay.projection );
 
 		// TODO: why not process here?
-		this.tileLoadState.set( tile, {
-			range,
-			active: false,
-		} );
+		this.tileLoadState.set( tile, range );
 
 	}
 
@@ -703,13 +701,8 @@ export class MVTAnnotationsPlugin {
 
 	_markVectorTile( tile, state ) {
 
-		const { tileLoadState } = this;
-		const info = tileLoadState.get( tile );
-
-		// TODO: is this "active" state needed? It should be trackable via visibility but it seems to be
-		// causing some issues.
-		info.active = state;
-		this._forEachTileInBounds( info.range, ( x, y, l ) => {
+		const range = this.tileLoadState.get( tile );
+		this._forEachTileInBounds( range, ( x, y, l ) => {
 
 			this.hierarchy.setTargetState( x, y, l, state );
 
