@@ -111,27 +111,27 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
-	hasContent( range ) {
+	hasContent( range, level = this.calculateLevel( range ) ) {
 
-		return this.imageSource.hasContent( ...range, this.calculateLevel( range ) );
-
-	}
-
-	getTexture( range ) {
-
-		return this.imageSource.get( ...range, this.calculateLevel( range ) );
+		return this.imageSource.hasContent( ...range, level );
 
 	}
 
-	lockTexture( range ) {
+	getTexture( range, level = this.calculateLevel( range ) ) {
 
-		return this.imageSource.lock( ...range, this.calculateLevel( range ) );
+		return this.imageSource.get( ...range, level );
 
 	}
 
-	releaseTexture( range ) {
+	lockTexture( range, level = this.calculateLevel( range ) ) {
 
-		this.imageSource.release( ...range, this.calculateLevel( range ) );
+		return this.imageSource.lock( ...range, level );
+
+	}
+
+	releaseTexture( range, level = this.calculateLevel( range ) ) {
+
+		this.imageSource.release( ...range, level );
 
 	}
 
