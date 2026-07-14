@@ -1183,11 +1183,13 @@ constructor(
 
 		// Supplies the annotation callbacks: feature filtering,
 		// placement priority, per-character sizing, and render
-		// updates.
+		// updates. Cannot be changed once initialized.
 		driver?: MVTAnnotationsDriver,
 
 		// Target resolution used when selecting the vector tile level
-		// to load. Lower values load coarser tiles with fewer
+		// to load. This is equivalent to "resolution" value in
+		// ImageOverlayPlugin used to drive loaded levels of detail for
+		// the overlays. Lower values load coarser tiles with fewer
 		// annotations, independently of the shared overlay's own
 		// resolution. Set to null to use the overlay resolution.
 		// Cannot be changed once initialized.

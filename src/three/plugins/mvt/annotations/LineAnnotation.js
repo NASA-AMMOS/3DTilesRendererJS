@@ -139,8 +139,10 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		}
 
+		// compute the radius as the full width of M to add some
+		// margin around the labels
 		this.totalTextWidth = total;
-		this.characterRadius = measureChar( 'M' ) / 2;
+		this.characterRadius = measureChar( 'M' );
 
 	}
 
