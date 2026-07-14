@@ -29,6 +29,7 @@ export interface MVTAnnotationsPluginOptions {
 	overlay: object;
 	camera?: Camera | null;
 	driver?: MVTAnnotationsDriver;
+	resolution?: number | null;
 
 }
 
@@ -40,6 +41,7 @@ export class MVTAnnotationsPlugin {
 	overlay: object;
 	camera: Camera | null;
 	driver: MVTAnnotationsDriver;
+	resolution: number | null;
 
 	readonly contentCache: object;
 
