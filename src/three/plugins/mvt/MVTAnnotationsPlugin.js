@@ -273,46 +273,16 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
  * @param {Camera} [options.camera=null] - Initial camera. Can be updated with `setCamera()`.
  * @param {MVTAnnotationsDriver} [options.driver] - Supplies the annotation callbacks: feature
  * filtering, placement priority, per-character sizing, and render updates.
- * @param {number|null} [options.resolution=null] - Target resolution used when selecting the
+ * @param {number|null} [options.resolution=50] - Target resolution used when selecting the
  * vector tile level to load. Lower values load coarser tiles with fewer annotations, independently
- * of the shared overlay's own resolution. Defaults to the overlay resolution when null.
+ * of the shared overlay's own resolution. Set to null to use the overlay resolution. Cannot be
+ * changed once initialized.
  */
 export class MVTAnnotationsPlugin {
 
 	get contentCache() {
 
 		return this.overlay.imageSource._contentCache;
-
-	}
-
-	get resolution() {
-
-		return this._resolution;
-
-	}
-
-	set resolution( v ) {
-
-		if ( v !== this._resolution ) {
-
-			const { tiles } = this;
-			tiles.visibleTiles.forEach( tile => {
-
-				this._markVectorTile( tile, false );
-
-			} );
-
-			this._resolution = v;
-
-			tiles.visibleTiles.forEach( tile => {
-
-				this._markVectorTile( tile, true );
-
-			} );
-
-		}
-
-
 
 	}
 
@@ -326,14 +296,14 @@ export class MVTAnnotationsPlugin {
 			overlay,
 			camera = null,
 			driver = new DefaultMVTAnnotationsDriver(),
-			resolution = null,
+			resolution = 50,
 		} = options;
 
 		// user settings
 		this.overlay = overlay;
 		this.camera = camera;
 		this.driver = driver;
-		this._resolution = resolution;
+		this.resolution = resolution;
 
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );

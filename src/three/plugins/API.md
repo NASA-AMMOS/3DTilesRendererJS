@@ -1131,13 +1131,24 @@ Whether a parsed annotation should currently be displayed. Unlike `filterAnnotat
 decides what is parsed once.
 
 
-### .onAnnotationsUpdate
+### .onPointsUpdate
 
 ```js
-onAnnotationsUpdate( added: Set, removed: Set ): void
+onPointsUpdate( added: Array<Object>, removed: Array<Object> ): void
 ```
 
-Called each frame with the annotations whose visibility changed, for the caller to render.
+Called each frame with the point ( PoI ) annotations whose visibility changed, for the caller
+to render.
+
+
+### .onLabelsUpdate
+
+```js
+onLabelsUpdate( added: Array<Object>, removed: Array<Object> ): void
+```
+
+Called each frame with the line / label annotations whose visibility changed, for the caller
+to render.
 
 
 ### .dispose
@@ -1154,7 +1165,8 @@ the plugin from its own `dispose`.
 
 Plugin that extracts point features from an MVT overlay and manages their screen-space
 occupation, preventing label crowding via a hierarchical lock system and raycasted depth
-placement. Rendering is left entirely to the caller via the driver's `onAnnotationsUpdate`.
+placement. Rendering is left entirely to the caller via the driver's `onPointsUpdate` /
+`onLabelsUpdate`.
 
 
 ### .constructor
@@ -1173,6 +1185,13 @@ constructor(
 		// placement priority, per-character sizing, and render
 		// updates.
 		driver?: MVTAnnotationsDriver,
+
+		// Target resolution used when selecting the vector tile level
+		// to load. Lower values load coarser tiles with fewer
+		// annotations, independently of the shared overlay's own
+		// resolution. Set to null to use the overlay resolution.
+		// Cannot be changed once initialized.
+		resolution = 50: number | null,
 	}
 )
 ```
@@ -1217,6 +1236,15 @@ Returns the number of icons currently used.
 ```js
 constructor( slotCount = 32: number, slotSize = 64: number )
 ```
+
+### .keys
+
+```js
+keys(): void
+```
+
+Returns the keys associated with all glyphs.
+
 
 ### .has
 
@@ -1541,6 +1569,15 @@ constructor(
 	}
 )
 ```
+
+### .reset
+
+```js
+reset(): void
+```
+
+Resets the cached glyphs content. Used when changing fonts or styles.
+
 
 ### .measureChar
 

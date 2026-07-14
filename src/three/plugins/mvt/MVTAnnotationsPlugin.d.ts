@@ -29,7 +29,7 @@ export interface MVTAnnotationsPluginOptions {
 	overlay: object;
 	camera?: Camera | null;
 	driver?: MVTAnnotationsDriver;
-	resolution?: number | null;
+	resolution?: number;
 
 }
 
