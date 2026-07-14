@@ -285,6 +285,37 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	get resolution() {
+
+		return this._resolution;
+
+	}
+
+	set resolution( v ) {
+
+		if ( v !== this._resolution ) {
+
+			const { tiles } = this;
+			tiles.visibleTiles.forEach( tile => {
+
+				this._markVectorTile( tile, false );
+
+			} );
+
+			this._resolution = v;
+
+			tiles.visibleTiles.forEach( tile => {
+
+				this._markVectorTile( tile, true );
+
+			} );
+
+		}
+
+
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -302,7 +333,7 @@ export class MVTAnnotationsPlugin {
 		this.overlay = overlay;
 		this.camera = camera;
 		this.driver = driver;
-		this.resolution = resolution;
+		this._resolution = resolution;
 
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
