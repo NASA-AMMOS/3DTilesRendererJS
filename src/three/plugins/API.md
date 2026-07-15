@@ -1061,7 +1061,10 @@ Disposes all textures used by this instance.
 
 Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
 the methods to customize which features become annotations, their placement priority, per-character
-sizing, the displayed text, and how visibility changes are rendered.
+sizing, the displayed text, and how visibility changes are rendered. By default all points of interest
+are rendered as circles and labels are rendered as white text with a black outline. Custom implementations
+can be used for more sophisticated text rendering, variable font weights based on properties, and custom
+icons.
 
 
 ### .needsUpdate
@@ -1106,7 +1109,7 @@ contract. Lower values sort first, are placed first, and win collisions.
 ### .measureChar
 
 ```js
-measureChar( char: string ): number
+measureChar( char: string, layer: layer, properties: Object ): number
 ```
 
 Advance width of a single character, in pixels, used to space glyphs along text labels.
@@ -1131,13 +1134,24 @@ Whether a parsed annotation should currently be displayed. Unlike `filterAnnotat
 decides what is parsed once.
 
 
-### .onAnnotationsUpdate
+### .onPointsUpdate
 
 ```js
-onAnnotationsUpdate( added: Set, removed: Set ): void
+onPointsUpdate( added: Array<Object>, removed: Array<Object> ): void
 ```
 
-Called each frame with the annotations whose visibility changed, for the caller to render.
+Called each frame with the point ( PoI ) annotations whose visibility changed, for the caller
+to render.
+
+
+### .onLabelsUpdate
+
+```js
+onLabelsUpdate( added: Array<Object>, removed: Array<Object> ): void
+```
+
+Called each frame with the line / label annotations whose visibility changed, for the caller
+to render.
 
 
 ### .dispose
@@ -1154,7 +1168,8 @@ the plugin from its own `dispose`.
 
 Plugin that extracts point features from an MVT overlay and manages their screen-space
 occupation, preventing label crowding via a hierarchical lock system and raycasted depth
-placement. Rendering is left entirely to the caller via the driver's `onAnnotationsUpdate`.
+placement. Rendering is left entirely to the caller via the driver's `onPointsUpdate` /
+`onLabelsUpdate`.
 
 
 ### .constructor
@@ -1171,8 +1186,17 @@ constructor(
 
 		// Supplies the annotation callbacks: feature filtering,
 		// placement priority, per-character sizing, and render
-		// updates.
+		// updates. Cannot be changed once initialized.
 		driver?: MVTAnnotationsDriver,
+
+		// Target resolution used when selecting the vector tile level
+		// to load. This is equivalent to "resolution" value in
+		// ImageOverlayPlugin used to drive loaded levels of detail for
+		// the overlays. Lower values load coarser tiles with fewer
+		// annotations, independently of the shared overlay's own
+		// resolution. Set to null to use the overlay resolution.
+		// Cannot be changed once initialized.
+		resolution = 50: number | null,
 	}
 )
 ```
@@ -1217,6 +1241,15 @@ Returns the number of icons currently used.
 ```js
 constructor( slotCount = 32: number, slotSize = 64: number )
 ```
+
+### .keys
+
+```js
+keys(): void
+```
+
+Returns the keys associated with all glyphs.
+
 
 ### .has
 
@@ -1280,6 +1313,16 @@ drawChar(
 ```
 
 Renders a single character in the slot, centered on its text metrics bounding box.
+
+
+### .measureChar
+
+```js
+measureChar( char: string, font: string ): TextMetrics
+```
+
+Function that returns a text metrics object for the given character rendered with
+the provided set of styles.
 
 
 ### .drawImage
@@ -1541,6 +1584,15 @@ constructor(
 	}
 )
 ```
+
+### .reset
+
+```js
+reset(): void
+```
+
+Resets the cached glyphs content. Used when changing fonts or styles.
+
 
 ### .measureChar
 

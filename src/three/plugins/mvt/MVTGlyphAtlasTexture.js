@@ -180,6 +180,13 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 
 	}
 
+	/**
+	 * Function that returns a text metrics object for the given character rendered with
+	 * the provided set of styles.
+	 * @param {string} char
+	 * @param {string} font
+	 * @returns {TextMetrics}
+	 */
 	measureChar( char, font ) {
 
 		const { ctx } = this;

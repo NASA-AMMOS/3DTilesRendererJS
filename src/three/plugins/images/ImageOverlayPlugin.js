@@ -1600,14 +1600,21 @@ export class TiledImageOverlay extends ImageOverlay {
 	}
 
 	// Texture acquisition API implementations
-	calculateLevel( range ) {
+	calculateLevel( range, resolution = null ) {
 
 		const [ minX, minY, maxX, maxY ] = range;
 		const w = maxX - minX;
 		const h = maxY - minY;
 
+		// callers can provide their own target resolution to select a different level than the
+		// one used for drawing the overlay textures
+		if ( resolution === null ) {
+
+			resolution = this.regionImageSource.resolution;
+
+		}
+
 		let level = 0;
-		const resolution = this.regionImageSource.resolution;
 		const maxLevel = this.tiling.maxLevel;
 		for ( ; level < maxLevel; level ++ ) {
 

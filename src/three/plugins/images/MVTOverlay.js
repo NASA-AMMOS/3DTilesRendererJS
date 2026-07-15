@@ -54,6 +54,12 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
+	get resolution() {
+
+		return this.imageSource.resolution;
+
+	}
+
 	constructor( options = {} ) {
 
 		super( options );
@@ -72,12 +78,14 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
-	calculateLevel( range ) {
+	// the MVTOverlay provides an optional resolution argument so that
+	// MVTAnnotationsPlugin can adjust it to prevent large amounts of
+	// annotations from loading.
+	calculateLevel( range, resolution = this.resolution ) {
 
 		const [ minX, minY, maxX, maxY ] = range;
 		const w = maxX - minX;
 		const h = maxY - minY;
-		const resolution = this.imageSource.resolution;
 		const maxLevel = this.tiling.maxLevel;
 
 		let level = 0;
@@ -103,27 +111,27 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
-	hasContent( range ) {
+	hasContent( range, level = this.calculateLevel( range ) ) {
 
-		return this.imageSource.hasContent( ...range, this.calculateLevel( range ) );
-
-	}
-
-	getTexture( range ) {
-
-		return this.imageSource.get( ...range, this.calculateLevel( range ) );
+		return this.imageSource.hasContent( ...range, level );
 
 	}
 
-	lockTexture( range ) {
+	getTexture( range, level = this.calculateLevel( range ) ) {
 
-		return this.imageSource.lock( ...range, this.calculateLevel( range ) );
+		return this.imageSource.get( ...range, level );
 
 	}
 
-	releaseTexture( range ) {
+	lockTexture( range, level = this.calculateLevel( range ) ) {
 
-		this.imageSource.release( ...range, this.calculateLevel( range ) );
+		return this.imageSource.lock( ...range, level );
+
+	}
+
+	releaseTexture( range, level = this.calculateLevel( range ) ) {
+
+		this.imageSource.release( ...range, level );
 
 	}
 

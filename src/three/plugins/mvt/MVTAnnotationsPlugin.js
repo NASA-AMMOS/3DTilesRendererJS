@@ -45,7 +45,10 @@ function collectMeshes( object ) {
 /**
  * Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
  * the methods to customize which features become annotations, their placement priority, per-character
- * sizing, the displayed text, and how visibility changes are rendered.
+ * sizing, the displayed text, and how visibility changes are rendered. By default all points of interest
+ * are rendered as circles and labels are rendered as white text with a black outline. Custom implementations
+ * can be used for more sophisticated text rendering, variable font weights based on properties, and custom
+ * icons.
  */
 export class MVTAnnotationsDriver {
 
@@ -108,9 +111,11 @@ export class MVTAnnotationsDriver {
 	/**
 	 * Advance width of a single character, in pixels, used to space glyphs along text labels.
 	 * @param {string} char - The character to measure.
+	 * @param {layer} layer - The layer associated with the text.
+	 * @param {Object} properties - The properties associated with the text.
 	 * @returns {number} The advance width in pixels.
 	 */
-	measureChar( char ) {
+	measureChar( char, layer, properties ) {
 
 		return 1;
 
@@ -235,7 +240,7 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
 	}
 
-	measureChar( char ) {
+	measureChar( char, layer, properties ) {
 
 		return this.labels.measureChar( char );
 
@@ -272,7 +277,13 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
  * content is parsed for point features.
  * @param {Camera} [options.camera=null] - Initial camera. Can be updated with `setCamera()`.
  * @param {MVTAnnotationsDriver} [options.driver] - Supplies the annotation callbacks: feature
- * filtering, placement priority, per-character sizing, and render updates.
+ * filtering, placement priority, per-character sizing, and render updates. Cannot be changed
+ * once initialized.
+ * @param {number|null} [options.resolution=50] - Target resolution used when selecting the
+ * vector tile level to load. This is equivalent to "resolution" value in ImageOverlayPlugin
+ * used to drive loaded levels of detail for the overlays. Lower values load coarser tiles with
+ * fewer annotations, independently of the shared overlay's own resolution. Set to null to use
+ * the overlay resolution. Cannot be changed once initialized.
  */
 export class MVTAnnotationsPlugin {
 
@@ -292,12 +303,14 @@ export class MVTAnnotationsPlugin {
 			overlay,
 			camera = null,
 			driver = new DefaultMVTAnnotationsDriver(),
+			resolution = 50,
 		} = options;
 
 		// user settings
 		this.overlay = overlay;
 		this.camera = camera;
 		this.driver = driver;
+		this.resolution = resolution;
 
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
@@ -662,9 +675,10 @@ export class MVTAnnotationsPlugin {
 		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 
-		tileLoadState.forEach( ( info, tile ) => {
+		// visible tiles are the ones currently marked in the hierarchy
+		tileLoadState.forEach( ( range, tile ) => {
 
-			if ( info.active ) {
+			if ( tiles.visibleTiles.has( tile ) ) {
 
 				this._markVectorTile( tile, false );
 
@@ -692,10 +706,7 @@ export class MVTAnnotationsPlugin {
 		const { range } = getMeshesCartographicRange( meshes, tiles.ellipsoid, _matrix, overlay.projection );
 
 		// TODO: why not process here?
-		this.tileLoadState.set( tile, {
-			range,
-			active: false,
-		} );
+		this.tileLoadState.set( tile, range );
 
 	}
 
@@ -703,13 +714,8 @@ export class MVTAnnotationsPlugin {
 
 	_markVectorTile( tile, state ) {
 
-		const { tileLoadState } = this;
-		const info = tileLoadState.get( tile );
-
-		// TODO: is this "active" state needed? It should be trackable via visibility but it seems to be
-		// causing some issues.
-		info.active = state;
-		this._forEachTileInBounds( info.range, ( x, y, l ) => {
+		const range = this.tileLoadState.get( tile );
+		this._forEachTileInBounds( range, ( x, y, l ) => {
 
 			this.hierarchy.setTargetState( x, y, l, state );
 
@@ -720,9 +726,9 @@ export class MVTAnnotationsPlugin {
 	_forEachTileInBounds( range, callback ) {
 
 		// iterate over every mvt tile in the overlay
-		const { overlay } = this;
+		const { overlay, resolution } = this;
 		const { tiling } = overlay;
-		const level = overlay.calculateLevel( range );
+		const level = overlay.calculateLevel( range, resolution );
 
 		if ( ! overlay.isReady ) {
 

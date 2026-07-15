@@ -17,7 +17,7 @@ import {
 	MVTLabelGlyphs,
 	UpdateOnChangePlugin,
 } from '3d-tiles-renderer/plugins';
-import { LoadRegionPlugin } from '3d-tiles-renderer/three/plugins';
+import { LoadRegionPlugin } from '3d-tiles-renderer/plugins';
 import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
 import {
 	Scene,
@@ -254,20 +254,9 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 init();
 animate();
 
-function reinstantiateTiles() {
+function initTiles() {
 
-	if ( tiles ) {
-
-		scene.remove( tiles.group );
-		tiles.dispose();
-		tiles = null;
-
-	}
-
-	const overlay = new PMTilesOverlay( {
-		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
-	} );
-
+	// instantiate the tiles renderer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
@@ -276,34 +265,49 @@ function reinstantiateTiles() {
 	} ) );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new MeshBVHPlugin() );
+
+	//
+
+	// Create the overlay referencing the data to load for annotations
+	// Note: The source coop link can be very slow to load so it's recommended to load the data locally
+	// or host it on a faster server.
+	const overlay = new PMTilesOverlay( {
+		// url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+	} );
+
+	// create the driver for rendering labels, icons
 	driver = new ExampleAnnotationsDriver();
-	driver.language = params.language;
-	driver.annotationPoints.drawMode = params.drawMode;
-	driver.characterPoints.drawMode = params.drawMode;
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
 		driver,
 	} ) );
 
+	//
+
 	// use the camera cartographic region plugin to prevent particularly low-lod
 	// tiles from loading beneath the camera, causing navigation issues.
-	const cameraRegion = new CameraCartographicRegion( {
-		camera,
-		radius: 1500,
-		errorTarget: 5000,
-	} );
-
 	tiles.registerPlugin( new LoadRegionPlugin( {
-		regions: [ cameraRegion ],
+		regions: [
+			new CameraCartographicRegion( {
+				camera,
+				radius: 1500,
+				errorTarget: 5000,
+			} ),
+		],
 	} ) );
 
+	//
+
+	// initialize
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
 
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
+	// controls
 	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 
 }
@@ -328,7 +332,7 @@ function init() {
 	controls.flightSpeed = 0.25;
 	controls.maxAltitude = Math.PI / 2;
 
-	reinstantiateTiles();
+	initTiles();
 
 	// Zaragoza, Spain
 	tiles.group.updateMatrixWorld();
@@ -340,6 +344,7 @@ function init() {
 	camera.matrixWorld.premultiply( tiles.group.matrixWorld );
 	camera.matrixWorld.decompose( camera.position, camera.quaternion, camera.scale );
 
+	// resize
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize );
 	renderer.domElement.addEventListener( 'pointermove', onPointerMove );
@@ -396,6 +401,7 @@ function init() {
 
 function onPointerMove( e ) {
 
+	// pointer for highlighting tooltips
 	const rect = renderer.domElement.getBoundingClientRect();
 	pointer.x = ( ( e.clientX - rect.left ) / rect.width ) * 2 - 1;
 	pointer.y = - ( ( e.clientY - rect.top ) / rect.height ) * 2 + 1;
@@ -408,16 +414,32 @@ function onPointerMove( e ) {
 
 function updateTooltip() {
 
+	// run raycast, update tooltip display
 	raycaster.setFromCamera( pointer, camera );
 
 	const hits = raycaster.intersectObject( driver.annotationPoints );
 	if ( hits.length > 0 ) {
 
+		// display the name of the hovered icon
 		const { properties } = hits[ 0 ];
 		if ( properties ) {
 
-			tooltip.textContent = properties.name || properties[ 'name:en' ] || `${ properties.kind.replace( '_', ' ' ) } (unnamed)`;
+			// get the name based on the properties and language
+			let text;
+			if ( params.language === 'default' ) {
+
+				text = properties.name;
+
+			} else {
+
+				text = properties[ `name:${ params.language }` ] || properties.name;
+
+			}
+
+			tooltip.textContent = text || `${ properties.kind.replace( '_', ' ' ) } (unnamed)`;
 			tooltip.style.display = 'block';
+
+			// position
 			const x = Math.min( Math.max( lastClientX - tooltip.offsetWidth / 2, 4 ), window.innerWidth - tooltip.offsetWidth - 4 );
 			const y = Math.max( lastClientY - tooltip.offsetHeight - 10, 4 );
 			tooltip.style.left = x + 'px';
