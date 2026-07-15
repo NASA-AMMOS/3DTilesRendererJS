@@ -108,9 +108,11 @@ export class MVTAnnotationsDriver {
 	/**
 	 * Advance width of a single character, in pixels, used to space glyphs along text labels.
 	 * @param {string} char - The character to measure.
+	 * @param {layer} layer - The layer associated with the text.
+	 * @param {Object} properties - The properties associated with the text.
 	 * @returns {number} The advance width in pixels.
 	 */
-	measureChar( char ) {
+	measureChar( char, layer, properties ) {
 
 		return 1;
 
@@ -194,7 +196,8 @@ function splitAnnotations( set ) {
  * Ready-to-use driver so `new MVTAnnotationsPlugin( { overlay } )` displays something without any
  * setup. Every point feature is drawn as a filled white circle and every named line as white,
  * black-outlined Arial text. No feature filtering is applied. Supply a custom `MVTAnnotationsDriver`
- * to the plugin to override this behavior.
+ * to the plugin to override this behavior. Custom implementations can be used for more sophisticated
+ * text rendering, custom we
  * @private
  * @extends MVTAnnotationsDriver
  */
@@ -235,7 +238,7 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
 	}
 
-	measureChar( char ) {
+	measureChar( char, layer, properties ) {
 
 		return this.labels.measureChar( char );
 

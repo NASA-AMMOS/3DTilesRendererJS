@@ -128,12 +128,12 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 	updateCharacterWidthCache( measureChar ) {
 
-		const { text, characterWidths } = this;
+		const { text, characterWidths, properties, layer } = this;
 		characterWidths.length = text.length;
 		let total = 0;
 		for ( let i = 0, l = text.length; i < l; i ++ ) {
 
-			const width = measureChar( text[ i ] );
+			const width = measureChar( text[ i ], layer, properties );
 			characterWidths[ i ] = width;
 			total += width;
 
@@ -142,7 +142,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 		// compute the radius as the full width of M to add some
 		// margin around the labels
 		this.totalTextWidth = total;
-		this.characterRadius = measureChar( 'M' );
+		this.characterRadius = measureChar( 'M', layer, properties );
 
 	}
 

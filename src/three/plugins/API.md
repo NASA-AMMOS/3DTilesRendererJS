@@ -1106,7 +1106,7 @@ contract. Lower values sort first, are placed first, and win collisions.
 ### .measureChar
 
 ```js
-measureChar( char: string ): number
+measureChar( char: string, layer: layer, properties: Object ): number
 ```
 
 Advance width of a single character, in pixels, used to space glyphs along text labels.
@@ -1310,6 +1310,16 @@ drawChar(
 ```
 
 Renders a single character in the slot, centered on its text metrics bounding box.
+
+
+### .measureChar
+
+```js
+measureChar( char: string, font: string ): TextMetrics
+```
+
+Function that returns a text metrics object for the given character rendered with
+the provided set of styles.
 
 
 ### .drawImage
