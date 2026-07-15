@@ -326,18 +326,18 @@ export const unifiedPriorityCallback = ( a, b ) => {
  */
 
 // Default shared caches and queues
-const DEFAULT_LRU_CACHE = new LRUCache();
+export const DEFAULT_LRU_CACHE = new LRUCache();
 DEFAULT_LRU_CACHE.unloadPriorityCallback = lruPriorityCallback;
 
 export const DEFAULT_DOWNLOAD_QUEUE = new PriorityQueue();
 DEFAULT_DOWNLOAD_QUEUE.maxJobs = 25;
 DEFAULT_DOWNLOAD_QUEUE.priorityCallback = unifiedPriorityCallback;
 
-const DEFAULT_PARSE_QUEUE = new PriorityQueue();
+export const DEFAULT_PARSE_QUEUE = new PriorityQueue();
 DEFAULT_PARSE_QUEUE.maxJobs = 5;
 DEFAULT_PARSE_QUEUE.priorityCallback = unifiedPriorityCallback;
 
-const DEFAULT_NODE_QUEUE = new PriorityQueue();
+export const DEFAULT_NODE_QUEUE = new PriorityQueue();
 DEFAULT_NODE_QUEUE.maxJobs = 25;
 DEFAULT_NODE_QUEUE.priorityCallback = ( a, b ) => {
 
