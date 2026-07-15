@@ -3,6 +3,11 @@ import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { Tile } from './Tile.js';
 import { Tileset } from './Tileset.js';
 
+export const DEFAULT_LRU_CACHE : LRUCache;
+export const DEFAULT_DOWNLOAD_QUEUE : PriorityQueue;
+export const DEFAULT_PARSE_QUEUE : PriorityQueue;
+export const DEFAULT_NODE_QUEUE : PriorityQueue;
+
 // Events dispatched by TilesRendererBase, available across all renderer implementations.
 export interface TilesRendererBaseEventMap<TScene = unknown> {
 	'needs-update': {};
