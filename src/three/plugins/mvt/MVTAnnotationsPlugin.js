@@ -45,7 +45,10 @@ function collectMeshes( object ) {
 /**
  * Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
  * the methods to customize which features become annotations, their placement priority, per-character
- * sizing, the displayed text, and how visibility changes are rendered.
+ * sizing, the displayed text, and how visibility changes are rendered. By default all points of interest
+ * are rendered as circles and labels are rendered as white text with a black outline. Custom implementations
+ * can be used for more sophisticated text rendering, variable font weights based on properties, and custom
+ * icons.
  */
 export class MVTAnnotationsDriver {
 
@@ -196,8 +199,7 @@ function splitAnnotations( set ) {
  * Ready-to-use driver so `new MVTAnnotationsPlugin( { overlay } )` displays something without any
  * setup. Every point feature is drawn as a filled white circle and every named line as white,
  * black-outlined Arial text. No feature filtering is applied. Supply a custom `MVTAnnotationsDriver`
- * to the plugin to override this behavior. Custom implementations can be used for more sophisticated
- * text rendering, custom we
+ * to the plugin to override this behavior.
  * @private
  * @extends MVTAnnotationsDriver
  */

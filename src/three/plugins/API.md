@@ -1061,7 +1061,10 @@ Disposes all textures used by this instance.
 
 Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
 the methods to customize which features become annotations, their placement priority, per-character
-sizing, the displayed text, and how visibility changes are rendered.
+sizing, the displayed text, and how visibility changes are rendered. By default all points of interest
+are rendered as circles and labels are rendered as white text with a black outline. Custom implementations
+can be used for more sophisticated text rendering, variable font weights based on properties, and custom
+icons.
 
 
 ### .needsUpdate
