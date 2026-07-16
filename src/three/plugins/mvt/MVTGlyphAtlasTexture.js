@@ -398,6 +398,14 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 		this.slotSize = slotSize;
 		this._columns = columns;
 		this._capacity = slotCount;
+
+		// regenerate the cached uvs against the new layout
+		for ( const index of this._slots.values() ) {
+
+			this._updateUV( index );
+
+		}
+
 		this.needsUpdate = true;
 
 	}
@@ -420,11 +428,9 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 
 		const {
 			ctx,
-			image,
 			_freeList,
 			_capacity,
 			_slots,
-			_uvs,
 		} = this;
 
 		let index;
@@ -463,13 +469,7 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 		callback( ctx, slot.x, slot.y, slot.w, slot.h );
 		ctx.restore();
 
-		const { width, height, slotSize } = image;
-		_uvs.set( index, {
-			x: slot.x / width,
-			y: ( height - slot.y ) / height,
-			w: slotSize / width,
-			h: slotSize / height,
-		} );
+		this._updateUV( index );
 
 		this.needsUpdate = true;
 		return slot;
@@ -486,6 +486,21 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 			w: slotSize,
 			h: slotSize,
 		};
+
+	}
+
+	// computes and caches the uv bounds for the given slot index based on the current layout
+	_updateUV( index ) {
+
+		const { slotSize, image, _uvs } = this;
+		const { width, height } = image;
+		const slot = this._indexToSlot( index );
+		_uvs.set( index, {
+			x: slot.x / width,
+			y: ( height - slot.y ) / height,
+			w: slotSize / width,
+			h: slotSize / height,
+		} );
 
 	}
 
