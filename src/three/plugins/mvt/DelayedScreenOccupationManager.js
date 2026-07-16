@@ -178,14 +178,14 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
-	update() {
+	update( ...args ) {
 
 		const now = performance.now() / 1000;
 		const dt = this._lastUpdateTime < 0 ? 0 : Math.min( now - this._lastUpdateTime, 0.1 );
 		this._lastUpdateTime = now;
 
 		// fires 'changed' synchronously, populating the timers
-		this.manager.update();
+		this.manager.update( ...args );
 
 		const {
 			_showTimers,

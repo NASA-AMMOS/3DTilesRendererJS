@@ -540,6 +540,15 @@ export class MVTAnnotationsPlugin {
 			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
+				requestIdleCallback( deadline => {
+
+					settlingManager.update( deadline.timeRemaining() * 0.9 );
+
+					// TODO: we need a way to make "occupancy.update" resilient to the calls between frames
+					// rather than calling the internal manager explicitly
+					occupancy.manager.update( deadline.timeRemaining() * 0.9 );
+
+				} );
 
 			}
 
