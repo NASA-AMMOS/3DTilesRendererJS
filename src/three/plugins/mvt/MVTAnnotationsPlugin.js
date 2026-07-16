@@ -537,9 +537,21 @@ export class MVTAnnotationsPlugin {
 
 			}
 
+			// clear the set of "added" and "removed" annotations once consumed since the following
+			// "idle callback" run may fill it further so we have to clear explicitly.
+			occupancy.reset();
+
+			// if there's more work required the fire that we need to run during a subsequent frame and
+			// try to run during an idle callback.
 			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
+				requestIdleCallback( deadline => {
+
+					settlingManager.update( deadline.timeRemaining() * 0.9 );
+					occupancy.update( deadline.timeRemaining() * 0.9 );
+
+				} );
 
 			}
 

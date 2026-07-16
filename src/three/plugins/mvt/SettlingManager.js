@@ -124,7 +124,9 @@ export class SettlingManager {
 
 	}
 
-	update() {
+	update( ms = this.maxSettleTimeMs ) {
+
+		this.setDeadline( ms );
 
 		// rebuild requeues everything that is still registered
 		if ( this.needsUpdate ) {
@@ -138,7 +140,7 @@ export class SettlingManager {
 
 		}
 
-		// tick the forever-running settling task, giving it a fresh time budget
+		// tick the forever-running settling task
 		if ( this._task === null ) {
 
 			this._task = this._settleGenerator();
@@ -149,16 +151,16 @@ export class SettlingManager {
 
 	}
 
-	// deadline
-	_deadlineExpired() {
+	// set the deadline the settling task runs until, this many ms from now
+	setDeadline( ms = this.maxSettleTimeMs ) {
 
-		return performance.now() >= this._deadline;
+		this._deadline = performance.now() + ms;
 
 	}
 
-	_resetDeadline() {
+	_deadlineExpired() {
 
-		this._deadline = performance.now() + this.maxSettleTimeMs;
+		return performance.now() >= this._deadline;
 
 	}
 
@@ -222,8 +224,6 @@ export class SettlingManager {
 		const intersectingFrustum = new Set();
 		const settlingBins = [[], [], [], []];
 
-		this._resetDeadline();
-
 		while ( true ) {
 
 			const { _queue, _items, tiles, camera, occupancy } = this;
@@ -280,7 +280,6 @@ export class SettlingManager {
 					if ( this._deadlineExpired() ) {
 
 						yield;
-						this._resetDeadline();
 
 					}
 
@@ -312,7 +311,6 @@ export class SettlingManager {
 				if ( this._deadlineExpired() ) {
 
 					yield;
-					this._resetDeadline();
 
 				}
 
@@ -348,7 +346,6 @@ export class SettlingManager {
 					if ( this._deadlineExpired() ) {
 
 						yield;
-						this._resetDeadline();
 
 					}
 
@@ -362,7 +359,6 @@ export class SettlingManager {
 
 			// always yield at the end of a pass so an empty queue can't busy-spin
 			yield;
-			this._resetDeadline();
 
 		}
 
@@ -389,7 +385,6 @@ export class SettlingManager {
 				if ( this._deadlineExpired() ) {
 
 					yield;
-					this._resetDeadline();
 
 					// bail if the item was unregistered while paused
 					if ( ! _items.has( item ) ) {

@@ -75,7 +75,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 		// time budget per frame for the sliced update pass
 		this.maxUpdateTimeMs = 0.5;
 
-		// forever-running update pass, sliced by the per-frame deadline
+		// forever-running update pass, sliced by the per-tick deadline
 		this._task = null;
 		this._deadline = 0;
 
@@ -218,15 +218,18 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 	}
 
-	_resetDeadline() {
+	// set the deadline the update task runs until, this many ms from now
+	setDeadline( ms = this.maxUpdateTimeMs ) {
 
-		this._deadline = performance.now() + this.maxUpdateTimeMs;
+		this._deadline = performance.now() + ms;
 
 	}
 
-	update() {
+	update( ms = this.maxUpdateTimeMs ) {
 
-		// tick the forever-running update task, giving it a fresh time budget
+		this.setDeadline( ms );
+
+		// tick the forever-running update task
 		if ( this._task === null ) {
 
 			this._task = this._updateGenerator();
@@ -240,6 +243,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 	// run the in-flight pass (or a fresh one if changes are pending) to completion so the visible
 	// sets and "change" event reflect the current state immediately
 	flush() {
+
+		// no budget so the pass runs to completion in a single tick
+		this.setDeadline( Infinity );
 
 		if ( this._task === null ) {
 
@@ -276,8 +282,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 		// runs forever: each pass transforms, sorts, and evaluates the full item list, yielding
 		// whenever the per-frame budget is spent and resuming on the next update
-		this._resetDeadline();
-
 		while ( true ) {
 
 			const {
@@ -301,7 +305,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 			if ( _lastMatrix.equals( _ndcMatrix ) && ! this.needsUpdate ) {
 
 				yield;
-				this._resetDeadline();
 				continue;
 
 			}
@@ -349,7 +352,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 				if ( this._deadlineExpired() ) {
 
 					yield;
-					this._resetDeadline();
 					this.updateCameraTransform();
 
 				}
@@ -362,7 +364,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 			if ( this._deadlineExpired() ) {
 
 				yield;
-				this._resetDeadline();
 				this.updateCameraTransform();
 
 			}
@@ -397,7 +398,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 				if ( this._deadlineExpired() ) {
 
 					yield;
-					this._resetDeadline();
 					this.updateCameraTransform();
 
 				}
@@ -414,7 +414,6 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			// always yield at the end of a pass so an unchanged view can't busy-spin
 			yield;
-			this._resetDeadline();
 
 		}
 
