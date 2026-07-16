@@ -197,10 +197,8 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			hideDelay,
 		} = this;
 
-		added.clear();
-		removed.clear();
-
-		// increment the timers for added items
+		// added / removed accumulate until reset() is called so multiple calls to "update" do not
+		// break the caller behavior
 		const currTime = performance.now();
 		for ( const [ item, elapsed ] of _showTimers ) {
 
@@ -210,6 +208,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				_showTimers.delete( item );
 				visible.add( item );
 				added.add( item );
+				removed.delete( item );
 				item.visibleTime = currTime;
 
 			} else {
@@ -229,6 +228,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				_hideTimers.delete( item );
 				visible.delete( item );
 				removed.add( item );
+				added.delete( item );
 				item.onHidden();
 
 			} else {
@@ -268,6 +268,7 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 			visible.add( item );
 			added.add( item );
+			removed.delete( item );
 			item.visibleTime = currTime;
 
 		}
@@ -278,11 +279,21 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 			visible.delete( item );
 			removed.add( item );
+			added.delete( item );
 			item.onHidden();
 
 		}
 
 		_hideTimers.clear();
+
+	}
+
+	// clear the accumulated added / removed deltas. Call once per consume cycle after the caller
+	// has read them, so ticks between frames can keep accumulating into the same sets.
+	reset() {
+
+		this.added.clear();
+		this.removed.clear();
 
 	}
 
