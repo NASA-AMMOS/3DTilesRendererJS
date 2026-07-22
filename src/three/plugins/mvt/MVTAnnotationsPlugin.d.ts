@@ -1,10 +1,13 @@
-import { Camera, Group } from 'three';
+import { Camera, Group, Ray, Vector3 } from 'three';
 import { MVTIconGlyphs } from './MVTIconGlyphs.js';
 import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
+
+export type MVTRaycastCallback = ( ray: Ray, lat: number, lon: number, target: Vector3 ) => boolean;
 
 export class MVTAnnotationsDriver {
 
 	group: Group;
+	performSettleRaycast: MVTRaycastCallback | null;
 
 	filterAnnotation( layer: string, properties: Record<string, unknown>, type: number ): boolean;
 	sortAnnotations( a: object, b: object ): number;

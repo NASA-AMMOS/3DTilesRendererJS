@@ -1,4 +1,4 @@
-/** @import { Camera, Scene } from 'three' */
+/** @import { Camera, Scene, Ray, Vector3 } from 'three' */
 import { Group, Matrix4 } from 'three';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
@@ -43,6 +43,16 @@ function collectMeshes( object ) {
  */
 
 /**
+ * @callback MVTRaycastCallback
+ * @param {Ray} ray - The ray to cast, in world space.
+ * @param {number} lat - Latitude of the sample, in radians.
+ * @param {number} lon - Longitude of the sample, in radians.
+ * @param {Vector3} target - Vector to write the resolved world-space hit point into.
+ * @returns {boolean} True if a hit point was written to `target` and false to fall back to the default
+ * ellipsoid-surface placement.
+ */
+
+/**
  * Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
  * the methods to customize which features become annotations, their placement priority, per-character
  * sizing, the displayed text, and how visibility changes are rendered. By default all points of interest
@@ -75,6 +85,14 @@ export class MVTAnnotationsDriver {
 		 * @type {Group}
 		 */
 		this.group = new Group();
+
+		/**
+		 * Optional callback overriding the default surface raycast used when settling annotations
+		 * onto the tile geometry, letting the caller analyze the hits and return a better point.
+		 * Leave null to use the plugin's default raycasting.
+		 * @type {MVTRaycastCallback|null}
+		 */
+		this.performSettleRaycast = null;
 
 		this.version = 0;
 
@@ -510,6 +528,7 @@ export class MVTAnnotationsPlugin {
 
 			// raycasters
 			settlingManager.camera = camera;
+			settlingManager.performSettleRaycast = driver.performSettleRaycast;
 			settlingManager.update();
 
 			// occupancy

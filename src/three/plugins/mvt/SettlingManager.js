@@ -98,6 +98,10 @@ export class SettlingManager {
 		this.camera = null;
 		this.maxSettleTimeMs = 1;
 
+		// custom settling callback ( ray, lat, lon, target ) => boolean overriding the default raycast.
+		// When null the default raycast against the tile group is used.
+		this.performSettleRaycast = null;
+
 		// items awaiting resettling
 		this._queue = new Set();
 		this._items = new Set();
@@ -182,7 +186,7 @@ export class SettlingManager {
 	_settleSample( lat, lon, target, threshold ) {
 
 		// cast a ray to snap a single cartographic sample onto the surface
-		const { tiles } = this;
+		const { tiles, performSettleRaycast } = this;
 		const { origin, direction } = _raycaster.ray;
 
 		// build the local ray and transform to world space for raycasting
@@ -190,12 +194,27 @@ export class SettlingManager {
 		origin.applyMatrix4( tiles.group.matrixWorld );
 		direction.transformDirection( tiles.group.matrixWorld );
 
-		const hits = _raycaster.intersectObject( tiles.group );
-		if ( hits.length > 0 ) {
+		let hit = false;
+		if ( performSettleRaycast !== null ) {
 
-			_hit
-				.copy( hits[ 0 ].point )
-				.applyMatrix4( tiles.group.matrixWorldInverse );
+			hit = performSettleRaycast( _raycaster.ray, lat, lon, _hit );
+
+		} else {
+
+			const hits = _raycaster.intersectObject( tiles.group );
+			if ( hits.length > 0 ) {
+
+				_hit.copy( hits[ 0 ].point );
+				hit = true;
+
+			}
+
+		}
+
+		if ( hit ) {
+
+
+			_hit.applyMatrix4( tiles.group.matrixWorldInverse );
 
 		} else {
 
