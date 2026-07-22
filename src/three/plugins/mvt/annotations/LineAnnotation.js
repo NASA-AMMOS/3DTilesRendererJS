@@ -1,6 +1,10 @@
 import { MathUtils, Vector3, Vector2, Matrix4 } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
+// real-world spacing between road-label anchors, in meters. Converted to an angular spacing using
+// the body's radius so anchor density tracks real-world length on any ellipsoid.
+const ANCHOR_SPACING_METERS = 500000;
+
 // Share path annotation used for text anchors
 export class LineAnnotation extends OccupancyAnnotation {
 
@@ -270,12 +274,13 @@ function subsamplePath( points, spacing ) {
 }
 
 // parse the vector tile geometry into line annotations
-export function parseLineAnnotations( vectorTile, x, y, level, tiling, filter, target = [] ) {
+export function parseLineAnnotations( vectorTile, x, y, level, tiling, ellipsoid, filter, target = [] ) {
 
-	// TODO: this needs to scale based on LoD rather than a fixed - this is hackily-scaled below
-	// anchor spacing in radians. Density  tracks real-world length, independent of the tile's
-	// zoom / size
-	const anchorSpacing = 500000 / 6378137;
+	// anchor spacing in radians, derived from the fixed real-world distance and the body's radius so
+	// density tracks real-world length independent of the ellipsoid.
+	// TODO: this needs to scale based on LoD rather than a fixed value - it is hackily scaled by the
+	// tile width below
+	const anchorSpacing = ANCHOR_SPACING_METERS / ellipsoid.radius.x;
 	const subsampleFraction = 1 / 64;
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;

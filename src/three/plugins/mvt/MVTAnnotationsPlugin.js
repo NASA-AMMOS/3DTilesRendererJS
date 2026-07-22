@@ -613,7 +613,7 @@ export class MVTAnnotationsPlugin {
 				// parse the icon annotations
 				const annotations = [];
 				parsePointAnnotations( vectorTile, x, y, level, tiling, _filterAnnotation, annotations );
-				parseLineAnnotations( vectorTile, x, y, level, tiling, _filterAnnotation, annotations );
+				parseLineAnnotations( vectorTile, x, y, level, tiling, tiles.ellipsoid, _filterAnnotation, annotations );
 				vectorTileInfo.set( key, { annotations } );
 
 				for ( const ann of annotations ) {
