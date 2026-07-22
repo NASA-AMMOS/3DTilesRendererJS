@@ -187,6 +187,42 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		this.annotationPoints = annotationPoints;
 		this.characterPoints = characterPoints;
 
+		this.settleRaycaster = new Raycaster();
+
+		// prefer the nearest hit on a visible tile so oversized offscreen coverage tiles don't win,
+		// otherwise take the nearest hit.
+		// TODO: this LoD-aware pick likely belongs in the renderer/plugin.
+		this.performSettleRaycast = ( ray, lat, lon, target ) => {
+
+			const { settleRaycaster } = this;
+			settleRaycaster.ray.copy( ray );
+			settleRaycaster.far = 2 * 1e8;
+			settleRaycaster.firstHitOnly = false;
+
+			const hits = settleRaycaster.intersectObject( tiles.group, true );
+			for ( let i = 0, l = hits.length; i < l; i ++ ) {
+
+				const tile = hits[ i ].object.userData.tile;
+				if ( ! tile || tiles.visibleTiles.has( tile ) ) {
+
+					target.copy( hits[ i ].point );
+					return true;
+
+				}
+
+			}
+
+			if ( hits.length > 0 ) {
+
+				target.copy( hits[ 0 ].point );
+				return true;
+
+			}
+
+			return false;
+
+		};
+
 	}
 
 	filterAnnotation( layer, properties, type ) {
