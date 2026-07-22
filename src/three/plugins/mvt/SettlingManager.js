@@ -82,6 +82,31 @@ function rayIntersectsFrustum( raycaster, frustum ) {
 
 }
 
+// Choose the hit belonging to the highest-LoD tile with the smallest geometric error — using the "userData.tile" back-reference
+// the renderer stamps on tile meshes. Oversized active coverage tiles otherwise win over the fine geometry beneath them when picking
+// by distance alone. Hits arrive sorted near -> far, so a strict "<" keeps the nearest hit on ties.
+function pickFinestHit( hits ) {
+
+	let best = null;
+	let bestError = Infinity;
+	for ( let i = 0, l = hits.length; i < l; i ++ ) {
+
+		const hit = hits[ i ];
+		const tile = hit.object.userData.tile;
+		const error = tile ? tile.geometricError : - Infinity;
+		if ( error < bestError ) {
+
+			bestError = error;
+			best = hit;
+
+		}
+
+	}
+
+	return best;
+
+}
+
 // Takes a set of line or point annotations and "settles" them onto the tile set.
 export class SettlingManager {
 
@@ -201,10 +226,13 @@ export class SettlingManager {
 
 		} else {
 
-			const hits = _raycaster.intersectObject( tiles.group );
-			if ( hits.length > 0 ) {
+			// gather every hit so we can drape onto the highest-LoD surface rather than whichever
+			// active tile the ray happens to strike first
+			_raycaster.firstHitOnly = false;
+			const best = pickFinestHit( _raycaster.intersectObject( tiles.group ) );
+			if ( best !== null ) {
 
-				_hit.copy( hits[ 0 ].point );
+				_hit.copy( best.point );
 				hit = true;
 
 			}
