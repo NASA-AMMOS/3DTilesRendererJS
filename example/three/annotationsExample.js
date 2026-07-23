@@ -190,8 +190,8 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		this.settleRaycaster = new Raycaster();
 
 		// prefer the nearest hit on a visible tile so oversized offscreen coverage tiles don't win,
-		// otherwise take the nearest hit.
-		// TODO: this LoD-aware pick likely belongs in the renderer/plugin.
+		// otherwise take the nearest hit. This is to avoid cases where high LoD tiles are "active"
+		// and overlap low LoD tiles, resulting in incorrect offsets.
 		this.performSettleRaycast = ( ray, lat, lon, target ) => {
 
 			const { settleRaycaster } = this;
