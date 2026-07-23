@@ -45,6 +45,10 @@ function updateFrustumCulled( object, toInitialValue ) {
  * Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
  * camera management, three.js scene integration, and GPU-accelerated tile loading.
  * Add `tiles.group` to your scene and call `tiles.update()` each frame.
+ *
+ * Every object in a loaded tile's scene is stamped with a `userData.tile` back-reference to
+ * its owning tile, so a raycast hit, click target, or debug inspector can resolve the tile
+ * directly from any intersected object without walking the hierarchy or consulting the renderer.
  * @extends TilesRendererBase
  */
 export class TilesRenderer extends TilesRendererBase {
@@ -788,10 +792,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 
-		// frustum culling
+		// record the initial frustum-culled state and stamp the owning tile onto every object so
+		// raycast hits, click handling, and debug tooling can resolve back to the tile
 		scene.traverse( c => {
 
 			c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
+			c.userData.tile = tile;
 
 		} );
 		updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
