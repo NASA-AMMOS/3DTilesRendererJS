@@ -5,9 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.5.1] - Unreleased
+### Added
+- Add a "tile" reference to tile mesh `userData` field.
+- MVTAnnotationsDriver: add an optional "settle raycast" function
+
 ### Fixed
 - MVTGlyphAtlastTexture: Fixed a case where glyph uvs woudl be incorrect after resizing, resulting in garbled text labels.
 - MVTAnnotationsPlugin: Run settling and screen occupancy updates in an idle callback if there is remaining work.
+- MVTAnnotations: Remove hard coded earth constants used during line parsing
 
 ## [0.5.0] - 2026.07.15
 ### Added
