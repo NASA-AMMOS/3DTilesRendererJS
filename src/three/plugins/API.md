@@ -1087,6 +1087,17 @@ Render group for the driver's own three.js objects. The plugin mounts it under
 `tiles.group` on `init` and removes it on `dispose`; add any objects the driver draws to it.
 
 
+### .performSettleRaycast
+
+```js
+performSettleRaycast: ( ray: Ray, lat: number, lon: number, target: Vector3 ) => boolean | null
+```
+
+Optional callback overriding the default surface raycast used when settling annotations
+onto the tile geometry, letting the caller analyze the hits and return a better point.
+Leave null to use the plugin's default raycasting.
+
+
 ### .filterAnnotation
 
 ```js

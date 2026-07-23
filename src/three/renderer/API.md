@@ -922,6 +922,10 @@ Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
 camera management, three.js scene integration, and GPU-accelerated tile loading.
 Add `tiles.group` to your scene and call `tiles.update()` each frame.
 
+Every object in a loaded tile's scene is stamped with a `userData.tile` back-reference to
+its owning tile, so a raycast hit, click target, or debug inspector can resolve the tile
+directly from any intersected object without walking the hierarchy or consulting the renderer.
+
 
 ### .autoDisableRendererCulling
 
