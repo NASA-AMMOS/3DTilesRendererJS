@@ -943,52 +943,53 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileActive( tile, active ) {
 
-		const scene = tile.engineData.scene;
-		const group = this.group;
+		super.setTileActive( tile, active );
 
+		const scene = tile.engineData.scene;
 		if ( scene ) {
 
-			// update matrices for the tile scene
-			scene.traverse( c => {
+			// an active scene is parented to the group so its world matrix resolves for raycasting.
+			// When it isn't a visible child ( see setTileVisible ) the parent pointer alone carries the
+			// transform while keeping it out of the render traversal. A tile is never visible while
+			// inactive, so an inactive scene is always fully detached.
+			if ( active ) {
 
-				c.updateMatrix();
-				c.matrixWorld.copy( c.matrix );
-				if ( c.parent ) {
+				scene.parent = this.group;
+				scene.updateMatrixWorld( true );
 
-					c.matrixWorld.premultiply( c.parent.matrixWorld );
+			} else {
 
-				} else {
+				scene.parent = null;
 
-					c.matrixWorld.premultiply( group.matrixWorld );
-
-				}
-
-			} );
+			}
 
 		}
-
-		super.setTileActive( tile, active );
 
 	}
 
 	setTileVisible( tile, visible ) {
 
 		const scene = tile.engineData.scene;
-		const group = this.group;
+		const { activeTiles, group } = this;
 
-		if ( visible ) {
+		if ( scene ) {
 
-			if ( scene ) {
+			if ( visible ) {
 
 				group.add( scene );
 
-			}
-
-		} else {
-
-			if ( scene ) {
+			} else {
 
 				group.remove( scene );
+
+				// group.remove clears the parent, but the tile may still be active, and an active scene
+				// must keep the group as a parent (without being a child) so its world matrix still
+				// resolves for raycasting. A tile is never visible while inactive.
+				if ( activeTiles.has( tile ) ) {
+
+					scene.parent = group;
+
+				}
 
 			}
 

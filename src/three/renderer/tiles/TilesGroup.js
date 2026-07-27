@@ -79,30 +79,15 @@ export class TilesGroup extends Group {
 
 				}
 
-				// update the active tile scenes so they are up to date, as well. We iterate over all
-				// children above because plugins etc may add other objects.
+				// active-but-hidden tile scenes are parented to this group but not added as children,
+				// so the loop above doesn't reach them so update their world matrices explicitly
 				const { tilesRenderer } = this;
 				const { activeTiles, visibleTiles } = tilesRenderer;
 				activeTiles.forEach( tile => {
 
 					if ( ! visibleTiles.has( tile ) ) {
 
-						const { scene } = tile.engineData;
-						scene.traverse( c => {
-
-							c.updateMatrix();
-							c.matrixWorld.copy( c.matrix );
-							if ( c.parent ) {
-
-								c.matrixWorld.premultiply( c.parent.matrixWorld );
-
-							} else {
-
-								c.matrixWorld.premultiply( this.matrixWorld );
-
-							}
-
-						} );
+						tile.engineData.scene.updateMatrixWorld( true );
 
 					}
 
