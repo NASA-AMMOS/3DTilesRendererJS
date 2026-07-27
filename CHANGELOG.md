@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTGlyphAtlastTexture: Fixed a case where glyph uvs woudl be incorrect after resizing, resulting in garbled text labels.
 - MVTAnnotationsPlugin: Run settling and screen occupancy updates in an idle callback if there is remaining work.
 - MVTAnnotations: Remove hard coded earth constants used during line parsing
+- TilesRenderer: "active" tiles now have the parent explicitly assigned to the tiles renderer group without being added as children to ensure the tile mesh world matrices account for it.
 
 ## [0.5.0] - 2026.07.15
 ### Added
