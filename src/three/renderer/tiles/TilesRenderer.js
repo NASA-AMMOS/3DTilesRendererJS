@@ -948,10 +948,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const scene = tile.engineData.scene;
 		if ( scene ) {
 
-			// an active scene is parented to the group so its world matrix resolves for raycasting.
-			// When it isn't a visible child ( see setTileVisible ) the parent pointer alone carries the
-			// transform while keeping it out of the render traversal. A tile is never visible while
-			// inactive, so an inactive scene is always fully detached.
+			// an active scene is parented to the group so its world matrix is included for raycasting
+			// or other spatial queries while active. A tile is never visible while inactive, so an
+			// inactive scene is always fully detached.
 			if ( active ) {
 
 				scene.parent = this.group;
