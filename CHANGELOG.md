@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add a "tile" reference to tile mesh `userData` field.
 - MVTAnnotationsDriver: add an optional "settle raycast" function
+- Exports for default queues, caches.
 
 ### Fixed
 - MVTGlyphAtlastTexture: Fixed a case where glyph uvs woudl be incorrect after resizing, resulting in garbled text labels.
