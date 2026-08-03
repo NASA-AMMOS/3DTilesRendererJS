@@ -297,7 +297,7 @@ function initTiles() {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
-		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
+		dracoLoader: new DRACOLoader(),
 	} ) );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new MeshBVHPlugin() );
