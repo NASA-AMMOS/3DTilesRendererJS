@@ -1,6 +1,9 @@
 import {
 	GlobeControls,
 	TilesRenderer,
+	DEFAULT_LRU_CACHE,
+	DEFAULT_DOWNLOAD_QUEUE,
+	DEFAULT_PARSE_QUEUE,
 } from '3d-tiles-renderer';
 import {
 	TilesFadePlugin,
@@ -8,7 +11,6 @@ import {
 	GLTFExtensionsPlugin,
 	ImageOverlayPlugin,
 	CesiumIonOverlay,
-	DebugTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -16,7 +18,6 @@ import {
 	PerspectiveCamera,
 	AmbientLight,
 	DirectionalLight,
-	Sphere,
 } from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
@@ -24,11 +25,10 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer, camera;
 let terrainTiles, plateauTiles, imageryOverlay;
-let cameraInitialized = false;
 
 const params = {
-	errorTarget: 16,
-	displayBoxBounds: false,
+	plateauErrorTarget: 16,
+	terrainErrorTarget: 8,
 };
 
 init();
@@ -44,9 +44,10 @@ function init() {
 	// scene
 	scene = new Scene();
 
-	// camera
+	// camera — start looking over central Tokyo near the National Stadium
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 1150000, 3920000, 4980000 );
+	camera.position.set( - 3957450.494952031, 3698523.192570713, - 3355060.6457956354 );
+	camera.rotation.set( 2.5561957056275357, - 0.4480838659317401, 2.5617717302505945 );
 
 	// lights
 	const ambientLight = new AmbientLight( 0xffffff, 0.25 );
@@ -80,10 +81,9 @@ function init() {
 		.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' )
 		.detectSupport( renderer );
 
-	window.TILES = plateauTiles = new TilesRenderer();
+	plateauTiles = new TilesRenderer();
 	plateauTiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2602291', autoRefreshToken: true } ) );
 	plateauTiles.registerPlugin( new TilesFadePlugin() );
-	plateauTiles.registerPlugin( new DebugTilesPlugin() );
 	plateauTiles.registerPlugin( new GLTFExtensionsPlugin( {
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' ),
 		ktxLoader: ktx2Loader,
@@ -92,18 +92,16 @@ function init() {
 	scene.add( plateauTiles.group );
 
 	// raise the byte cache so tiles aren't evicted too aggressively while panning the city
-	for ( const tiles of [ terrainTiles, plateauTiles ] ) {
+	DEFAULT_LRU_CACHE.minBytesSize = 5e8;
+	DEFAULT_LRU_CACHE.maxBytesSize = 1e9;
 
-		tiles.lruCache.minBytesSize = 1e9;
-		tiles.lruCache.maxBytesSize = 2e9;
-
-	}
+	// raise the concurrent download / parse limits so tiles stream in faster. These queues are shared
+	// across all tiles renderers, so setting them once covers both the terrain and PLATEAU renderers.
+	DEFAULT_DOWNLOAD_QUEUE.maxJobs = 50;
+	DEFAULT_PARSE_QUEUE.maxJobs = 10;
 
 	// both datasets share the ellipsoid frame; drive the controls from the terrain
 	controls.setEllipsoid( terrainTiles.ellipsoid, terrainTiles.group );
-
-	// frame the camera on the PLATEAU data once its root tileset is available
-	plateauTiles.addEventListener( 'load-root-tileset', frameCameraOnPlateau );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
@@ -111,36 +109,8 @@ function init() {
 	// GUI
 	const gui = new GUI();
 	gui.width = 300;
-	gui.add( params, 'errorTarget', 1, 30, 1 );
-	gui.add( params, 'displayBoxBounds' ).name( 'PLATEAU box bounds' );
-
-}
-
-function frameCameraOnPlateau() {
-
-	if ( cameraInitialized ) {
-
-		return;
-
-	}
-
-	const sphere = new Sphere();
-	if ( ! plateauTiles.getBoundingSphere( sphere ) ) {
-
-		return;
-
-	}
-
-	cameraInitialized = true;
-
-	// move the bounding sphere into world space and position the camera above it
-	plateauTiles.group.updateMatrixWorld();
-	sphere.applyMatrix4( plateauTiles.group.matrixWorld );
-
-	const { center, radius } = sphere;
-	const up = center.clone().normalize();
-	camera.position.copy( center ).addScaledVector( up, radius * 2 );
-	camera.lookAt( center );
+	gui.add( params, 'plateauErrorTarget', 1, 30, 1 ).name( 'PLATEAU error' );
+	gui.add( params, 'terrainErrorTarget', 1, 40, 1 ).name( 'terrain error' );
 
 }
 
@@ -163,12 +133,12 @@ function animate() {
 	controls.update();
 	camera.updateMatrixWorld();
 
-	plateauTiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = params.displayBoxBounds;
+	terrainTiles.errorTarget = params.terrainErrorTarget;
+	plateauTiles.errorTarget = params.plateauErrorTarget;
 
 	// update both tile sets against the shared camera
 	for ( const tiles of [ terrainTiles, plateauTiles ] ) {
 
-		tiles.errorTarget = params.errorTarget;
 		tiles.setResolutionFromRenderer( camera, renderer );
 		tiles.setCamera( camera );
 		tiles.update();
