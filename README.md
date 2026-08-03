@@ -51,6 +51,7 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 | [Cesium Ion Mars](https://nasa-ammos.github.io/3DTilesRendererJS/three/ionLunar.html?mars) | Mars surface tiles |
 | [Google Photorealistic](https://nasa-ammos.github.io/3DTilesRendererJS/three/googleMapsAerial.html) | Google Photorealistic Tiles |
 | [Google Globe](https://nasa-ammos.github.io/3DTilesRendererJS/three/googleMapsExample.html) | Google Globe Tiles |
+| [PLATEAU](https://nasa-ammos.github.io/3DTilesRendererJS/three/plateau.html) | PLATEAU city data over Cesium World Terrain |
 | **Customization** | |
 | [Custom Material](https://nasa-ammos.github.io/3DTilesRendererJS/three/customMaterial.html) | Using a custom material |
 | [Offscreen Shadows](https://nasa-ammos.github.io/3DTilesRendererJS/three/offscreenShadows.html) | Shadows from offscreen tiles |
