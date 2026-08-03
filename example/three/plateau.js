@@ -61,7 +61,7 @@ function init() {
 	controls.enableDamping = true;
 
 	terrainTiles = new TilesRenderer();
-	terrainTiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '1', autoRefreshToken: true } ) );
+	terrainTiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2767062', autoRefreshToken: true } ) );
 	terrainTiles.registerPlugin( new TilesFadePlugin() );
 	terrainTiles.registerPlugin( new ImageOverlayPlugin( {
 		renderer,
