@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTAnnotationsPlugin: Run settling and screen occupancy updates in an idle callback if there is remaining work.
 - MVTAnnotations: Remove hard coded earth constants used during line parsing
 - TilesRenderer: "active" tiles now have the parent explicitly assigned to the tiles renderer group without being added as children to ensure the tile mesh world matrices account for it.
+- Traversal: Filter additive tile children using the parents geometric error to avoid loading and rendering too many children.
+
+### Changed
+- TilesRenderer: Added "toJSON" to tile instances to avoid cyclic references during serilization.
 
 ## [0.5.0] - 2026.07.15
 ### Added
