@@ -31,6 +31,8 @@ const tempVector2 = /* @__PURE__ */ new Vector2();
 const X_AXIS = /* @__PURE__ */ new Vector3( 1, 0, 0 );
 const Y_AXIS = /* @__PURE__ */ new Vector3( 0, 1, 0 );
 
+const tileToJSON = () => null;
+
 function updateFrustumCulled( object, toInitialValue ) {
 
 	object.traverse( c => {
@@ -633,6 +635,9 @@ export class TilesRenderer extends TilesRendererBase {
 		tile.engineData.geometry = null;
 		tile.engineData.materials = null;
 		tile.engineData.textures = null;
+
+		// Set "toJSON" to return "null" to avoid cyclic references
+		tile.toJSON = tileToJSON;
 
 	}
 
