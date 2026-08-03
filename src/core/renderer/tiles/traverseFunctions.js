@@ -254,6 +254,21 @@ function markUsedTiles( tile, renderer ) {
 
 	}
 
+	// skip a child of an additive tile if the parent already meets the error target in the child's
+	// region. This is an optimization included in cesium, though not referenced or implied by the
+	// specification.
+	const parent = tile.parent;
+	if (
+		parent &&
+		parent.refine === 'ADD' &&
+		tile.geometricError > 0 &&
+		tile.traversal.error * ( parent.geometricError / tile.geometricError ) <= renderer.errorTarget
+	) {
+
+		return;
+
+	}
+
 	if ( ! canTraverse( tile, renderer ) ) {
 
 		markUsed( tile );
@@ -400,7 +415,9 @@ function markVisibleTiles( tile, renderer ) {
 	// When loading parent tiles as fallbacks: if children aren't content-ready yet, mark this tile
 	// as a leaf so it is displayed as a placeholder while children load (mirrors legacy behavior).
 	// allChildrenLoaded was computed bottom-up in markUsedSetLeaves so it can be checked before recursing.
-	if ( renderer.loadAncestors && ! tile.traversal.allChildrenLoaded && ! canUnconditionallyRefine( tile ) ) {
+	// This placeholder behavior is REPLACE-only: an ADD tile is displayed alongside its children, so it
+	// must not stop here as a leaf — its children still need to be traversed and displayed.
+	if ( tile.refine === 'REPLACE' && renderer.loadAncestors && ! tile.traversal.allChildrenLoaded && ! canUnconditionallyRefine( tile ) ) {
 
 		tile.traversal.isLeaf = true;
 
@@ -454,8 +471,10 @@ function markVisibleTiles( tile, renderer ) {
 	tile.traversal.allChildrenReady = allChildrenReady;
 
 	// If we find that the subsequent children are not ready such that this tile gap can be filled then
-	// mark all lower tiles as non active and prepare this one to be displayed if possible
-	if ( ! allChildrenReady && tile.traversal.wasSetActive && isChildReady( tile ) ) {
+	// mark all lower tiles as non active and prepare this one to be displayed if possible. This
+	// "stand in for the children until they're ready" fallback is REPLACE-only: an ADD tile is always
+	// displayed alongside its children, so it must never kick them.
+	if ( tile.refine === 'REPLACE' && ! allChildrenReady && tile.traversal.wasSetActive && isChildReady( tile ) ) {
 
 		tile.traversal.active = true;
 		kickActiveChildren( tile, renderer );
