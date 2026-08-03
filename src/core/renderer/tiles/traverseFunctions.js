@@ -254,6 +254,21 @@ function markUsedTiles( tile, renderer ) {
 
 	}
 
+	// skip a child of an additive tile if the parent already meets the error target in the child's
+	// region. This is an optimization included in cesium, though not referenced or implied by the
+	// specification.
+	const parent = tile.parent;
+	if (
+		parent &&
+		parent.refine === 'ADD' &&
+		tile.geometricError > 0 &&
+		tile.traversal.error * ( parent.geometricError / tile.geometricError ) <= renderer.errorTarget
+	) {
+
+		return;
+
+	}
+
 	if ( ! canTraverse( tile, renderer ) ) {
 
 		markUsed( tile );
