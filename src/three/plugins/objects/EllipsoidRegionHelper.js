@@ -6,6 +6,7 @@ const _norm2 = /* @__PURE__ */ new Vector3();
 const _pos = /* @__PURE__ */ new Vector3();
 const _vec1 = /* @__PURE__ */ new Vector3();
 const _vec2 = /* @__PURE__ */ new Vector3();
+const _zAxis = /* @__PURE__ */ new Vector3( 0, 0, 1 );
 
 // Converts a geometry with a given set of groups rendering a smaller set of
 // geometry into a new one with only the relevant triangles.
@@ -45,7 +46,7 @@ function toGroupGeometry( geometry ) {
 
 }
 
-function getRegionGeometry( ellipsoidRegion, { computeNormals = false } = {} ) {
+function getRegionGeometry( ellipsoidRegion, segments = 32 ) {
 
 	// retrieve the relevant fields
 	const {
@@ -55,63 +56,60 @@ function getRegionGeometry( ellipsoidRegion, { computeNormals = false } = {} ) {
 	} = ellipsoidRegion;
 
 	// get the attributes
-	const geometry = new BoxGeometry( 1, 1, 1, 32, 32 );
+	const geometry = new BoxGeometry( 1, 1, 1, segments, segments );
 	const { normal, position } = geometry.attributes;
 
-	// clone the position buffer so we can reference it for normal calculations later
-	const refPosition = position.clone();
-
-	// perturb the position buffer into an ellipsoid region
+	// The box positions map linearly onto the region, and the box's axis-aligned face normals identify
+	// which face each vertex is on. That lets us perturb the position AND derive the surface normal
+	// analytically in a single pass — far cheaper than "computeVertexNormals" running over every triangle.
 	for ( let i = 0, l = position.count; i < l; i ++ ) {
 
+		// the box position maps to a cartographic coordinate; the z sign selects the inner / outer shell
 		_pos.fromBufferAttribute( position, i );
-
 		const lat = MathUtils.mapLinear( _pos.x, - 0.5, 0.5, latStart, latEnd );
 		const lon = MathUtils.mapLinear( _pos.y, - 0.5, 0.5, lonStart, lonEnd );
+		const outer = _pos.z < 0;
 
-		let height = heightStart;
-		ellipsoidRegion.getCartographicToNormal( lat, lon, _norm );
-		if ( _pos.z < 0 ) {
-
-			height = heightEnd;
-
-		}
-
-		ellipsoidRegion.getCartographicToPosition( lat, lon, height, _pos );
-		position.setXYZ( i, ..._pos );
-
-	}
-
-	if ( computeNormals ) {
-
-		// compute the vertex normals so we can get the edge normals
-		geometry.computeVertexNormals();
-
-	}
-
-	// compute the top and bottom cap normals
-	for ( let i = 0, l = refPosition.count; i < l; i ++ ) {
-
-		_pos.fromBufferAttribute( refPosition, i );
-
-		const lat = MathUtils.mapLinear( _pos.x, - 0.5, 0.5, latStart, latEnd );
-		const lon = MathUtils.mapLinear( _pos.y, - 0.5, 0.5, lonStart, lonEnd );
-
+		// the box face normal tells us whether this vertex is on a cap or a side wall
 		_norm.fromBufferAttribute( normal, i );
+
+		// perturb onto the region surface
+		ellipsoidRegion.getCartographicToPosition( lat, lon, outer ? heightEnd : heightStart, _pos );
+		position.setXYZ( i, _pos.x, _pos.y, _pos.z );
+
+		// analytic surface normal
 		ellipsoidRegion.getCartographicToNormal( lat, lon, _norm2 );
+		if ( _norm.z !== 0 ) {
 
-		// exclude the sides so we get sharp corners
-		if ( Math.abs( _norm.dot( _norm2 ) ) > 0.1 ) {
+			// cap: the ellipsoid surface normal, flipped for the inner shell
+			_norm2.multiplyScalar( outer ? 1 : - 1 );
 
-			if ( _pos.z > 0 ) {
+		} else {
 
-				_norm2.multiplyScalar( - 1 );
+			// side wall: derive the local east tangent ( east = pole x up )
+			_vec1.crossVectors( _zAxis, _norm2 );
+			if ( _vec1.lengthSq() < 1e-12 ) {
+
+				_vec1.set( 1, 0, 0 );
 
 			}
 
-			normal.setXYZ( i, ..._norm2 );
+			_vec1.normalize();
+			if ( _norm.x !== 0 ) {
+
+				// constant-latitude wall faces north / south ( north = up x east )
+				_norm2.crossVectors( _norm2, _vec1 ).normalize().multiplyScalar( Math.sign( _norm.x ) );
+
+			} else {
+
+				// constant-longitude wall faces east / west
+				_norm2.copy( _vec1 ).multiplyScalar( Math.sign( _norm.y ) );
+
+			}
 
 		}
+
+		normal.setXYZ( i, _norm2.x, _norm2.y, _norm2.z );
 
 	}
 
@@ -219,7 +217,7 @@ export class EllipsoidRegionHelper extends Mesh {
 		this.geometry.dispose();
 
 		// retrieve the relevant fields
-		const geometry = getRegionGeometry( this.ellipsoidRegion, { computeNormals: true } );
+		const geometry = getRegionGeometry( this.ellipsoidRegion );
 		const { lonStart, lonEnd } = this;
 
 		// exclude the side tris if the region wraps around
