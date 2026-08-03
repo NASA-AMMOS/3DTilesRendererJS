@@ -30,7 +30,7 @@ import { MathUtils, Vector3 } from 'three';
 import { TilesLoadingBar } from './components/TilesLoadingBar.jsx';
 import { CameraViewTransition } from './components/CameraViewTransition.jsx';
 
-const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
+const dracoLoader = new DRACOLoader();
 const vec1 = new Vector3();
 const vec2 = new Vector3();
 

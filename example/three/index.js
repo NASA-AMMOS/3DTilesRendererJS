@@ -90,21 +90,12 @@ function reinstantiateTiles() {
 
 	}
 
-	// Note the DRACO compression files need to be supplied via an explicit source.
-	// We use unpkg here but in practice should be provided by the application.
-	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
-
-	const ktx2loader = new KTX2Loader();
-	ktx2loader.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' );
-	ktx2loader.detectSupport( renderer );
-
 	tiles = new TilesRenderer( url );
 	tiles.registerPlugin( new ImplicitTilingPlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		rtc: true,
-		dracoLoader: dracoLoader,
-		ktxLoader: ktx2loader,
+		dracoLoader: new DRACOLoader(),
+		ktxLoader: new KTX2Loader(),
 	} ) );
 
 	tiles.fetchOptions.mode = 'cors';

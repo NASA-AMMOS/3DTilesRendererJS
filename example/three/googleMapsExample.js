@@ -71,9 +71,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new UnloadTilesPlugin() );
 	tiles.registerPlugin( new TopoLinesPlugin( { projection: 'ellipsoid' } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
-		// Note the DRACO compression files need to be supplied via an explicit source.
-		// We use unpkg here but in practice should be provided by the application.
-		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
+		dracoLoader: new DRACOLoader(),
 	} ) );
 
 	// use the camera cartographic region plugin to prevent particularly low-lod

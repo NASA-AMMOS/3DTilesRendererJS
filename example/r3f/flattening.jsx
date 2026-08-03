@@ -10,7 +10,7 @@ import {
 	MathUtils,
 } from 'three';
 
-const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
+const dracoLoader = new DRACOLoader();
 
 const LAT = 35.3606 * MathUtils.DEG2RAD;
 const LON = 138.7274 * MathUtils.DEG2RAD;

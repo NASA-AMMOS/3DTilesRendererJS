@@ -33,9 +33,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
-		// Note the DRACO compression files need to be supplied via an explicit source.
-		// We use unpkg here but in practice should be provided by the application.
-		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
+		dracoLoader: new DRACOLoader(),
 	} ) );
 	reorientPlugin = new ReorientationPlugin( { lat: 35.6586 * MathUtils.DEG2RAD, lon: 139.7454 * MathUtils.DEG2RAD } );
 	tiles.registerPlugin( reorientPlugin );
