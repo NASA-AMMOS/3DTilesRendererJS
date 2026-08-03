@@ -60,8 +60,7 @@ function getRegionGeometry( ellipsoidRegion, segments = 32 ) {
 	const { normal, position } = geometry.attributes;
 
 	// The box positions map linearly onto the region, and the box's axis-aligned face normals identify
-	// which face each vertex is on. That lets us perturb the position AND derive the surface normal
-	// analytically in a single pass — far cheaper than "computeVertexNormals" running over every triangle.
+	// which face each vertex is on
 	for ( let i = 0, l = position.count; i < l; i ++ ) {
 
 		// the box position maps to a cartographic coordinate; the z sign selects the inner / outer shell
@@ -81,12 +80,12 @@ function getRegionGeometry( ellipsoidRegion, segments = 32 ) {
 		ellipsoidRegion.getCartographicToNormal( lat, lon, _norm2 );
 		if ( _norm.z !== 0 ) {
 
-			// cap: the ellipsoid surface normal, flipped for the inner shell
+			// caps
 			_norm2.multiplyScalar( outer ? 1 : - 1 );
 
 		} else {
 
-			// side wall: derive the local east tangent ( east = pole x up )
+			// side walls
 			_vec1.crossVectors( _zAxis, _norm2 );
 			if ( _vec1.lengthSq() < 1e-12 ) {
 
@@ -97,7 +96,7 @@ function getRegionGeometry( ellipsoidRegion, segments = 32 ) {
 			_vec1.normalize();
 			if ( _norm.x !== 0 ) {
 
-				// constant-latitude wall faces north / south ( north = up x east )
+				// constant-latitude wall faces north / south
 				_norm2.crossVectors( _norm2, _vec1 ).normalize().multiplyScalar( Math.sign( _norm.x ) );
 
 			} else {
