@@ -30,7 +30,7 @@ let terrainTiles, plateauTiles;
 
 const params = {
 	plateauErrorTarget: 16,
-	terrainErrorTarget: 8,
+	terrainErrorTarget: 2,
 };
 
 init();
