@@ -149,6 +149,28 @@ function animate() {
 
 	}
 
+	updateCredits();
+
 	renderer.render( scene, camera );
+
+}
+
+function updateCredits() {
+
+	const credits = new Set();
+	const attrs = [ ...plateauTiles.getAttributions(), ...terrainTiles.getAttributions() ];
+	for ( const { value } of attrs ) {
+
+		if ( ! /<img/.test( value ) ) {
+
+			credits.add( value );
+
+		}
+
+	}
+
+	const html = Array.from( credits ).join( '<br>' );
+	const el = document.getElementById( 'credits' );
+	el.innerHTML = html;
 
 }

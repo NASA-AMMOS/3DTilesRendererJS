@@ -61,6 +61,10 @@ canvas {
 	padding-right: 25px;
 }
 
+#credits a {
+	color: #fff;
+}
+
 #logos {
 	margin-top: auto;
 	flex-grow: 0;
