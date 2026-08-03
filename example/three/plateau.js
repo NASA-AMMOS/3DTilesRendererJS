@@ -1,6 +1,7 @@
 import {
 	GlobeControls,
 	TilesRenderer,
+	CAMERA_FRAME,
 	DEFAULT_LRU_CACHE,
 	DEFAULT_DOWNLOAD_QUEUE,
 	DEFAULT_PARSE_QUEUE,
@@ -18,6 +19,7 @@ import {
 	PerspectiveCamera,
 	AmbientLight,
 	DirectionalLight,
+	MathUtils,
 } from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
@@ -44,10 +46,8 @@ function init() {
 	// scene
 	scene = new Scene();
 
-	// camera — start looking over central Tokyo near the National Stadium
+	// camera
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( - 3957450.494952031, 3698523.192570713, - 3355060.6457956354 );
-	camera.rotation.set( 2.5561957056275357, - 0.4480838659317401, 2.5617717302505945 );
 
 	// lights
 	const ambientLight = new AmbientLight( 0xffffff, 0.25 );
@@ -94,6 +94,18 @@ function init() {
 
 	// both datasets share the ellipsoid frame; drive the controls from the terrain
 	controls.setEllipsoid( terrainTiles.ellipsoid, terrainTiles.group );
+
+	// position the camera over central Tokyo near the National Stadium, from lat / lon / height and
+	// azimuth / elevation in the tileset's ellipsoid frame, then move it into world space
+	terrainTiles.group.updateMatrixWorld();
+	terrainTiles.ellipsoid.getObjectFrame(
+		35.66588 * MathUtils.DEG2RAD, 139.70928 * MathUtils.DEG2RAD, 664,
+		0.3211, - 0.382, 0,
+		camera.matrixWorld, CAMERA_FRAME,
+	);
+	camera.matrixWorld
+		.premultiply( terrainTiles.group.matrixWorld )
+		.decompose( camera.position, camera.quaternion, camera.scale );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
