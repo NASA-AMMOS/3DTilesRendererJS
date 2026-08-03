@@ -24,7 +24,7 @@ import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer, camera;
-let terrainTiles, plateauTiles, imageryOverlay;
+let terrainTiles, plateauTiles;
 
 const params = {
 	plateauErrorTarget: 16,
@@ -60,33 +60,25 @@ function init() {
 	controls = new GlobeControls( scene, camera, renderer.domElement, null );
 	controls.enableDamping = true;
 
-	// terrain: Cesium World Terrain draped with Bing Maps Aerial surface imagery
-	imageryOverlay = new CesiumIonOverlay( {
-		assetId: '2',
-		apiToken: import.meta.env.VITE_ION_KEY,
-	} );
-
 	terrainTiles = new TilesRenderer();
 	terrainTiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '1', autoRefreshToken: true } ) );
 	terrainTiles.registerPlugin( new TilesFadePlugin() );
 	terrainTiles.registerPlugin( new ImageOverlayPlugin( {
 		renderer,
-		overlays: [ imageryOverlay ],
+		overlays: [ new CesiumIonOverlay( {
+			assetId: '2',
+			apiToken: import.meta.env.VITE_ION_KEY,
+		} ) ],
 	} ) );
 	terrainTiles.group.rotation.x = - Math.PI / 2;
 	scene.add( terrainTiles.group );
-
-	// PLATEAU city buildings — glTF content with DRACO geometry and KTX2 textures
-	const ktx2Loader = new KTX2Loader()
-		.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' )
-		.detectSupport( renderer );
 
 	plateauTiles = new TilesRenderer();
 	plateauTiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2602291', autoRefreshToken: true } ) );
 	plateauTiles.registerPlugin( new TilesFadePlugin() );
 	plateauTiles.registerPlugin( new GLTFExtensionsPlugin( {
-		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' ),
-		ktxLoader: ktx2Loader,
+		dracoLoader: new DRACOLoader(),
+		ktxLoader: new KTX2Loader().detectSupport( renderer ),
 	} ) );
 	plateauTiles.group.rotation.x = - Math.PI / 2;
 	scene.add( plateauTiles.group );
