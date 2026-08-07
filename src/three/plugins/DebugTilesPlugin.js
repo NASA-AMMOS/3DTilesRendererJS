@@ -250,6 +250,7 @@ export class DebugTilesPlugin {
 			maxDebugError: - 1,
 			customColorCallback: null,
 			unlit: false,
+			wireframe: false,
 			enabled: true,
 			...options,
 		};
