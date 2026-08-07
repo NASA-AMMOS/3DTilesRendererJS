@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: "active" tiles now have the parent explicitly assigned to the tiles renderer group without being added as children to ensure the tile mesh world matrices account for it.
 - Traversal: Filter additive tile children using the parents geometric error to avoid loading and rendering too many children.
 - EXT_structural_metadata plugin: Fix case where buffers were not decompressed before being read.
+- DebugTilesPlugin: Initialize wireframe with a correct default.
 
 ### Changed
 - TilesRenderer: Added "toJSON" to tile instances to avoid cyclic references during serilization.
@@ -108,7 +109,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
-- QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
+- QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete.
 - ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
 - BatchedMesh: Fix instances not being released when "discardOriginalContent" is true.
 
