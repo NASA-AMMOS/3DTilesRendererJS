@@ -41,19 +41,19 @@ function getRelevantBuffers( parser, propertyTables = [] ) {
 			const { values, arrayOffsets, stringOffsets } = properties[ key ];
 			if ( result[ values ] === null ) {
 
-				result[ values ] = parser.loadBufferView( values );
+				result[ values ] = parser.getDependency( 'bufferView', values );
 
 			}
 
 			if ( result[ arrayOffsets ] === null ) {
 
-				result[ arrayOffsets ] = parser.loadBufferView( arrayOffsets );
+				result[ arrayOffsets ] = parser.getDependency( 'bufferView', arrayOffsets );
 
 			}
 
 			if ( result[ stringOffsets ] === null ) {
 
-				result[ stringOffsets ] = parser.loadBufferView( stringOffsets );
+				result[ stringOffsets ] = parser.getDependency( 'bufferView', stringOffsets );
 
 			}
 
