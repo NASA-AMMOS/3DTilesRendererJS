@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.5.1] - Unreleased
+## [0.5.1] - 2026.08.07
 ### Added
 - Add a "tile" reference to tile mesh `userData` field.
 - MVTAnnotationsDriver: add an optional "settle raycast" function
@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTAnnotations: Remove hard coded earth constants used during line parsing
 - TilesRenderer: "active" tiles now have the parent explicitly assigned to the tiles renderer group without being added as children to ensure the tile mesh world matrices account for it.
 - Traversal: Filter additive tile children using the parents geometric error to avoid loading and rendering too many children.
+- EXT_structural_metadata plugin: Fix case where buffers were not decompressed before being read.
 
 ### Changed
 - TilesRenderer: Added "toJSON" to tile instances to avoid cyclic references during serilization.
