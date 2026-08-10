@@ -678,11 +678,10 @@ export class GlobeControls extends EnvironmentControls {
 			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.2, distanceAlpha * deltaAlpha ) );
 
 			const scale = this.zoomDelta;
-			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
-			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			const scaleFactor = Math.pow( 0.95, - zoomSpeed * scale * 0.05 );
 
 			const maxScaleFactor = minZoom / camera.zoom;
-			const clampedScaleFactor = Math.max( scaleFactor * zoomSpeed, Math.min( maxScaleFactor, 1 ) );
+			const clampedScaleFactor = Math.max( scaleFactor, Math.min( maxScaleFactor, 1 ) );
 
 			camera.zoom = Math.min( maxZoom, camera.zoom * clampedScaleFactor );
 			camera.updateProjectionMatrix();
