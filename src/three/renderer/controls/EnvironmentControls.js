@@ -1283,8 +1283,8 @@ export class EnvironmentControls extends EventDispatcher {
 			_mouseBefore.unproject( camera );
 
 			// zoom the camera
-			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) * zoomSpeed );
-			let scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			let scaleFactor = Math.pow( 0.95, - zoomSpeed * scale * 0.05 );
+
 			if ( scaleFactor > 1 ) {
 
 				if ( maxZoom < camera.zoom * scaleFactor ) {
