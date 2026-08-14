@@ -95,7 +95,15 @@ export class GeoJSONImageSource extends RegionImageSource {
 		// TODO: we may want to include the LoD or resolution or something here, as well, since that will
 		// impact the size of the points, etc.
 
-		const boundsDeg = [ minX, minY, maxX, maxY ].map( v => v * Math.RAD2DEG );
+		// the range is given in normalized projection space, so it has to be unprojected before it
+		// can be compared against the content bounds
+		const { projection } = this;
+		const boundsDeg = [
+			projection.convertNormalizedToLongitude( minX ) * MathUtils.RAD2DEG,
+			projection.convertNormalizedToLatitude( minY ) * MathUtils.RAD2DEG,
+			projection.convertNormalizedToLongitude( maxX ) * MathUtils.RAD2DEG,
+			projection.convertNormalizedToLatitude( maxY ) * MathUtils.RAD2DEG,
+		];
 		return this._boundsIntersectBounds( boundsDeg, this.contentBounds );
 
 	}
