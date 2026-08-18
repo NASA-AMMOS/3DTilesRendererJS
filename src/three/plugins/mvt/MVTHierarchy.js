@@ -44,6 +44,10 @@ class MVTTile {
 		// state pass to keep timers and loads alive while an ancestor target loads
 		this.forced = false;
 
+		// ref count of callers that want this tile's content loaded ahead of it being displayed.
+		// Prefetched tiles load and stay resident but never display on their own.
+		this.prefetch = 0;
+
 		this._key = null;
 		this._index = null;
 
@@ -179,8 +183,9 @@ export class MVTHierarchy extends EventDispatcher {
 					tile.hideTimer = 0;
 
 					// Release the content lock; reset synchronously so the tile is in a clean
-					// state before any async callbacks can observe it
-					if ( tile.loadingState !== UNLOADED ) {
+					// state before any async callbacks can observe it. Prefetched tiles keep
+					// their content so it is ready when the tile is displayed again.
+					if ( tile.loadingState !== UNLOADED && tile.prefetch === 0 ) {
 
 						scope.contentCache.release( tile.x, tile.y, tile.level );
 						tile.loadingState = UNLOADED;
@@ -194,8 +199,18 @@ export class MVTHierarchy extends EventDispatcher {
 			// Active after show delay; stays active through the hide delay so visible tiles don't flash
 			const isTargetTile = ( targeted ? tile.showTimer === TIMER_DURATION : tile.showTimer > 0 ) || forcedTarget;
 
-			// Kick off load once the show timer commits to this tile
-			if ( isTargetTile && tile.loadingState === UNLOADED ) {
+			// A tile held only by prefetch runs no timers, so once the last caller lets go there is
+			// nothing to wind down and the content is released here instead
+			if ( ! targeted && ! forcedTarget && tile.prefetch === 0 && tile.showTimer === 0 && tile.loadingState !== UNLOADED ) {
+
+				scope.contentCache.release( tile.x, tile.y, tile.level );
+				tile.loadingState = UNLOADED;
+
+			}
+
+			// Kick off load once the show timer commits to this tile, or immediately when the tile
+			// is prefetched so the content is ready before it is ever displayed
+			if ( ( isTargetTile || tile.prefetch > 0 ) && tile.loadingState === UNLOADED ) {
 
 				tile.loadingState = LOADING;
 
@@ -352,7 +367,7 @@ export class MVTHierarchy extends EventDispatcher {
 			}
 
 			// showTimer > 0 keeps tiles with in-flight loads from being pruned mid-hysteresis
-			let tileRequired = tile.visible || targeted || tile.showTimer > 0;
+			let tileRequired = tile.visible || targeted || tile.showTimer > 0 || tile.prefetch > 0;
 			let childrenNeedCoverage = false;
 
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -468,6 +483,30 @@ export class MVTHierarchy extends EventDispatcher {
 			}
 
 			tile.target --;
+
+		}
+
+	}
+
+	// Marks a tile as wanted ahead of being displayed, so its content is loaded and held resident
+	// without it becoming visible on its own.
+	setPrefetchState( x, y, l, state ) {
+
+		if ( state ) {
+
+			const tile = this._ensureTile( x, y, l );
+			tile.prefetch ++;
+
+		} else {
+
+			const tile = this.cache[ getKey( x, y, l ) ];
+			if ( ! tile || tile.prefetch <= 0 ) {
+
+				throw new Error( 'MVTHierarchy: prefetch ref count went negative — mismatched calls.' );
+
+			}
+
+			tile.prefetch --;
 
 		}
 
