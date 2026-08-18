@@ -665,6 +665,7 @@ export class MVTAnnotationsPlugin {
 
 		this._onDisposeModel = ( { tile } ) => {
 
+			this._prefetchVectorTile( tile, false );
 			this.tileLoadState.delete( tile );
 
 		};
@@ -715,13 +716,23 @@ export class MVTAnnotationsPlugin {
 
 			}
 
+			this._prefetchVectorTile( tile, false );
+
 		} );
 
 	}
 
-	processTileModel( scene, tile ) {
+	async processTileModel( scene, tile ) {
 
 		const { tiles, overlay } = this;
+
+		// The overlay's projection is not installed until it initializes, and until then it reports
+		// a "none" projection that silently produces the wrong cartographic range here.
+		if ( ! overlay.isReady ) {
+
+			await overlay.whenReady();
+
+		}
 
 		// TODO: this currently only work with ellipsoidal projection
 		_matrix.identity();
@@ -739,9 +750,26 @@ export class MVTAnnotationsPlugin {
 		// TODO: why not process here?
 		this.tileLoadState.set( tile, range );
 
+		// start the vector tiles loading as soon as the geometry is available rather than waiting
+		// for the tile to be displayed, so the annotations are ready when it is
+		this._prefetchVectorTile( tile, true );
+
 	}
 
 	//
+
+	// Holds or releases the vector tiles covering the given geometry tile so their content is
+	// loaded before the tile is displayed.
+	_prefetchVectorTile( tile, state ) {
+
+		const range = this.tileLoadState.get( tile );
+		this._forEachTileInBounds( range, ( x, y, l ) => {
+
+			this.hierarchy.setPrefetchState( x, y, l, state );
+
+		} );
+
+	}
 
 	_markVectorTile( tile, state ) {
 
