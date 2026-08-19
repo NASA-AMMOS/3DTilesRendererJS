@@ -7,7 +7,9 @@ const HEIGHT_GRID = Symbol( 'HEIGHT_GRID' );
 // vertex grid resolution per tile; the raster is bilinear-sampled into it
 const MESH_SIZE = 128;
 
-// draws the image, decodes each pixel to meters, and returns a single-channel float DataTexture
+// draws the image, decodes each pixel to meters, and returns a single-channel float DataTexture.
+// The grid is padded with a one texel border, initialized by duplicating the edge texels, that is
+// filled from neighboring tiles as they load so seams sample identical values on both sides.
 function readImageData( image, canvas, decode ) {
 
 	const { width, height } = image;
@@ -20,18 +22,76 @@ function readImageData( image, canvas, decode ) {
 	const { data } = ctx.getImageData( 0, 0, width, height );
 	ctx.clearRect( 0, 0, width, height );
 
-	const elevations = new Float32Array( width * height );
-	for ( let i = 0, l = width * height; i < l; i ++ ) {
+	// decode into the interior of the padded grid
+	const pw = width + 2;
+	const ph = height + 2;
+	const elevations = new Float32Array( pw * ph );
+	for ( let y = 0; y < height; y ++ ) {
 
-		elevations[ i ] = decode( data[ i * 4 ], data[ i * 4 + 1 ], data[ i * 4 + 2 ] );
+		for ( let x = 0; x < width; x ++ ) {
+
+			const i = 4 * ( y * width + x );
+			elevations[ ( y + 1 ) * pw + x + 1 ] = decode( data[ i ], data[ i + 1 ], data[ i + 2 ] );
+
+		}
 
 	}
 
-	const texture = new DataTexture( elevations, width, height, RedFormat, FloatType );
+	// duplicate the edge texels into the border
+	for ( let x = 0; x < pw; x ++ ) {
+
+		const xi = MathUtils.clamp( x, 1, pw - 2 );
+		elevations[ x ] = elevations[ pw + xi ];
+		elevations[ ( ph - 1 ) * pw + x ] = elevations[ ( ph - 2 ) * pw + xi ];
+
+	}
+
+	for ( let y = 1; y < ph - 1; y ++ ) {
+
+		elevations[ y * pw ] = elevations[ y * pw + 1 ];
+		elevations[ y * pw + pw - 1 ] = elevations[ y * pw + pw - 2 ];
+
+	}
+
+	const texture = new DataTexture( elevations, pw, ph, RedFormat, FloatType );
 	texture.minFilter = LinearFilter;
 	texture.magFilter = LinearFilter;
 	texture.needsUpdate = true;
 	return texture;
+
+}
+
+// copies the edge texels of the "src" grid into the border texels of the "dst" grid that face the
+// neighbor at tile offset ( dx, dy ), where positive y steps north to match the grid row order
+function fillBorder( dst, src, dx, dy ) {
+
+	const { data, width, height } = dst.image;
+	const srcData = src.image.data;
+	const w = width - 2;
+	const h = height - 2;
+
+	const minX = dx === 1 ? width - 1 : dx === - 1 ? 0 : 1;
+	const maxX = dx === - 1 ? 0 : dx === 1 ? width - 1 : width - 2;
+	const minY = dy === 1 ? height - 1 : dy === - 1 ? 0 : 1;
+	const maxY = dy === - 1 ? 0 : dy === 1 ? height - 1 : height - 2;
+
+	for ( let y = minY; y <= maxY; y ++ ) {
+
+		for ( let x = minX; x <= maxX; x ++ ) {
+
+			data[ y * width + x ] = srcData[ ( y - dy * h ) * width + ( x - dx * w ) ];
+
+		}
+
+	}
+
+	dst.needsUpdate = true;
+
+}
+
+function getTileKey( tile ) {
+
+	return `${ tile[ TILE_LEVEL ] }_${ tile[ TILE_X ] }_${ tile[ TILE_Y ] }`;
 
 }
 
@@ -71,6 +131,7 @@ export class TerrainRGBMeshPlugin extends GeneratedSurfacePlugin {
 		this.heightScale = heightScale;
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxZoom } );
 		this._canvas = new OffscreenCanvas( 1, 1 );
+		this._tileMap = new Map();
 
 	}
 
@@ -104,20 +165,69 @@ export class TerrainRGBMeshPlugin extends GeneratedSurfacePlugin {
 
 		}
 
+		// retain the grid for sampling and stitch borders with any loaded neighbors, updating the
+		// neighbor meshes that received new edge data
 		tile[ HEIGHT_GRID ] = grid;
+		this._tileMap.set( getTileKey( tile ), tile );
+		this._stitchNeighbors( tile );
 
-		let res;
-		try {
+		return super.parseToMesh( buffer, tile, extension, url, abortSignal );
 
-			res = await super.parseToMesh( buffer, tile, extension, url, abortSignal );
+	}
 
-		} finally {
+	// exchanges edge texels with the loaded neighbor tiles at the same level so both sides of a seam
+	// sample identical values, and re-displaces the neighbor meshes that received new data
+	_stitchNeighbors( tile ) {
 
-			delete tile[ HEIGHT_GRID ];
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+		const grid = tile[ HEIGHT_GRID ];
+
+		// grid rows run south to north, so the tile y step is flipped when the tiling is
+		const { tileCountX } = this._tiling.getLevel( level );
+		const yDir = this._tiling.flipY ? - 1 : 1;
+
+		for ( let dx = - 1; dx <= 1; dx ++ ) {
+
+			for ( let dy = - 1; dy <= 1; dy ++ ) {
+
+				if ( dx === 0 && dy === 0 ) {
+
+					continue;
+
+				}
+
+				// wrap the neighbor x so seams close across the antimeridian
+				const nx = ( x + dx + tileCountX ) % tileCountX;
+				const ny = y + dy * yDir;
+				const neighbor = this._tileMap.get( `${ level }_${ nx }_${ ny }` );
+				if ( neighbor ) {
+
+					fillBorder( grid, neighbor[ HEIGHT_GRID ], dx, dy );
+					fillBorder( neighbor[ HEIGHT_GRID ], grid, - dx, - dy );
+					this._updateTileMesh( neighbor );
+
+				}
+
+			}
 
 		}
 
-		return res;
+	}
+
+	disposeTile( tile ) {
+
+		super.disposeTile( tile );
+
+		const grid = tile[ HEIGHT_GRID ];
+		if ( grid ) {
+
+			grid.dispose();
+			delete tile[ HEIGHT_GRID ];
+			this._tileMap.delete( getTileKey( tile ) );
+
+		}
 
 	}
 
@@ -130,7 +240,9 @@ export class TerrainRGBMeshPlugin extends GeneratedSurfacePlugin {
 
 	}
 
-	// bilinear sample of the decoded grid, ( u, v ) origin at the south-west corner
+	// bilinear sample of the decoded grid, ( u, v ) origin at the south-west corner. The grid texel
+	// centers are inset half a texel from the tile bounds, so samples at the edges interpolate into
+	// the border texels stitched from the neighboring tiles and both sides of a seam agree
 	getElevation( u, v, tile ) {
 
 		const grid = tile[ HEIGHT_GRID ];
@@ -141,12 +253,12 @@ export class TerrainRGBMeshPlugin extends GeneratedSurfacePlugin {
 		}
 
 		const { data, width, height } = grid.image;
-		const fx = MathUtils.clamp( u, 0, 1 ) * ( width - 1 );
-		const fy = MathUtils.clamp( v, 0, 1 ) * ( height - 1 );
+		const fx = MathUtils.clamp( u, 0, 1 ) * ( width - 2 ) + 0.5;
+		const fy = MathUtils.clamp( v, 0, 1 ) * ( height - 2 ) + 0.5;
 		const x0 = Math.floor( fx );
 		const y0 = Math.floor( fy );
-		const x1 = Math.min( x0 + 1, width - 1 );
-		const y1 = Math.min( y0 + 1, height - 1 );
+		const x1 = x0 + 1;
+		const y1 = y0 + 1;
 		const tx = fx - x0;
 		const ty = fy - y0;
 

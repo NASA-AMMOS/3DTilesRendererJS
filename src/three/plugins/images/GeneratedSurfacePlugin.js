@@ -281,10 +281,6 @@ export class GeneratedSurfacePlugin {
 
 	_createPlanarMesh( tile ) {
 
-		const tx = tile[ TILE_X ];
-		const ty = tile[ TILE_Y ];
-		const level = tile[ TILE_LEVEL ];
-
 		// the box z center stores the elevation range so the vertices carry the full elevation directly
 		const boundingBox = tile.boundingVolume.box;
 		let sx = 1, sy = 1, x = 0, y = 0;
@@ -296,16 +292,38 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		// new geometry with an extra ring of vertices around the edge to form the skirt
+		// new geometry with an extra ring of vertices around the edge to form the skirt. adjust the
+		// geometry transform itself rather than the mesh because it reduces the artifact errors when
+		// rendering.
 		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, true, _resolution );
-		const cols = lonVerts + 3;
-		const rows = latVerts + 3;
-
-		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
-		// when rendering.
 		const geometry = new PlaneGeometry( 2 * sx, 2 * sy, lonVerts + 2, latVerts + 2 );
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.set( x, y, 0 );
+
+		this._displacePlanarGeometry( tile, geometry );
+		return mesh;
+
+	}
+
+	// writes the displaced vertex positions and uvs for a tile into the given planar geometry
+	_displacePlanarGeometry( tile, geometry ) {
+
+		const tx = tile[ TILE_X ];
+		const ty = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+
+		const boundingBox = tile.boundingVolume.box;
+		let sx = 1, sy = 1;
+		if ( boundingBox ) {
+
+			sx = boundingBox[ 3 ];
+			sy = boundingBox[ 7 ];
+
+		}
+
+		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, true, _resolution );
+		const cols = lonVerts + 3;
+		const rows = latVerts + 3;
 
 		const uvRange = this._tiling.getTileContentUVBounds( tx, ty, level );
 		const { position, uv } = geometry.attributes;
@@ -347,11 +365,32 @@ export class GeneratedSurfacePlugin {
 		this._updateBoundingVolume( tile, minHeight, maxHeight );
 
 		geometry.computeVertexNormals();
-		return mesh;
+		geometry.computeBoundingSphere();
+		position.needsUpdate = true;
+		geometry.attributes.normal.needsUpdate = true;
+		uv.needsUpdate = true;
 
 	}
 
 	_createEllipsoidMesh( tile ) {
+
+		// new geometry with an extra ring of vertices around the edge to form the skirt, positioned
+		// at the tile bounding sphere center
+		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, false, _resolution );
+		const geometry = new PlaneGeometry( 1, 1, lonVerts + 2, latVerts + 2 );
+		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
+
+		tile.engineData.boundingVolume.getSphere( _sphere );
+		mesh.position.copy( _sphere.center );
+
+		this._displaceEllipsoidGeometry( tile, geometry, mesh.position );
+		return mesh;
+
+	}
+
+	// writes the displaced vertex positions, normals, and uvs for a tile into the given ellipsoid
+	// geometry, with vertices positioned relative to "center"
+	_displaceEllipsoidGeometry( tile, geometry, center ) {
 
 		const { tiles, endCaps, _tiling: tiling } = this;
 		const { projection } = tiling;
@@ -359,12 +398,10 @@ export class GeneratedSurfacePlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		// new geometry
 		const [ , south, , north ] = tile.boundingVolume.region;
 		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, false, _resolution );
 		const cols = lonVerts + 3;
 		const rows = latVerts + 3;
-		const geometry = new PlaneGeometry( 1, 1, lonVerts + 2, latVerts + 2 );
 
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
 		const uvRange = tiling.getTileContentUVBounds( x, y, level );
@@ -372,7 +409,6 @@ export class GeneratedSurfacePlugin {
 		// adjust the geometry to position it at the region
 		const { position, normal, uv } = geometry.attributes;
 		const vertCount = position.count;
-		tile.engineData.boundingVolume.getSphere( _sphere );
 		let minHeight = Infinity;
 		let maxHeight = - Infinity;
 		for ( let i = 0; i < vertCount; i ++ ) {
@@ -435,7 +471,7 @@ export class GeneratedSurfacePlugin {
 			const height = this.getElevation( uNorm, vNorm, tile );
 			if ( height < minHeight ) minHeight = height;
 			if ( height > maxHeight ) maxHeight = height;
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( _sphere.center );
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
 			if ( isSkirt ) {
@@ -457,9 +493,44 @@ export class GeneratedSurfacePlugin {
 
 		this._updateBoundingVolume( tile, minHeight, maxHeight );
 
-		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
-		mesh.position.copy( _sphere.center );
-		return mesh;
+		geometry.computeBoundingSphere();
+		position.needsUpdate = true;
+		normal.needsUpdate = true;
+		uv.needsUpdate = true;
+
+	}
+
+	// re-displaces a loaded tile's surface mesh in place after its elevation data has changed and
+	// notifies listeners so acceleration structures can be updated
+	_updateTileMesh( tile ) {
+
+		const scene = tile.engineData.scene;
+		if ( ! scene ) {
+
+			return;
+
+		}
+
+		const useEllipsoid = this._useEllipsoid();
+		scene.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				if ( useEllipsoid ) {
+
+					this._displaceEllipsoidGeometry( tile, c.geometry, c.position );
+
+				} else {
+
+					this._displacePlanarGeometry( tile, c.geometry );
+
+				}
+
+			}
+
+		} );
+
+		this.tiles.dispatchEvent( { type: 'model-updated', scene, tile } );
 
 	}
 
