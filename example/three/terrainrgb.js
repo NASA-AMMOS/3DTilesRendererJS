@@ -4,16 +4,35 @@ import {
 	PerspectiveCamera,
 } from 'three';
 import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
-import { DebugTilesPlugin, TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
+import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
 import { MeshBVHPlugin } from './src/plugins/MeshBVHPlugin.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-// Free, no-key Terrarium elevation tiles from the AWS terrain tiles dataset. Override with ?url=.
+// Free, no-key elevation tile sets. Override the tile url with ?url=.
+const PROVIDERS = {
+
+	// Terrarium tiles from the AWS terrain tiles dataset
+	'Terrarium (AWS)': {
+		plugin: TerrariumMeshPlugin,
+		url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+		maxZoom: 15,
+	},
+
+	// Terrain-RGB tiles of the open Mapterhorn dataset hosted by Re:Earth
+	'Terrain-RGB (Re:Earth)': {
+		plugin: TerrainRGBMeshPlugin,
+		url: 'https://terrain.reearth.land/mapterhorn-egm08/mapbox/elevation/{z}/{x}/{y}.png',
+		maxZoom: 14,
+	},
+
+};
+
 const params = new URLSearchParams( window.location.search );
-const TERRAIN_URL = params.get( 'url' ) ?? 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+const TERRAIN_URL = params.get( 'url' );
 
 const options = {
 	errorTarget: 2,
+	provider: 'Terrarium (AWS)',
 	wireframe: false,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
@@ -38,15 +57,52 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 	onWindowResize();
 
+	initTiles();
+
+	// GUI
+	const gui = new GUI();
+	gui.add( options, 'errorTarget', 1, 40, 1 );
+	gui.add( options, 'provider', Object.keys( PROVIDERS ) ).onChange( initTiles );
+	gui.add( options, 'displayBoxBounds' );
+	gui.add( options, 'displayRegionBounds' );
+	gui.add( options, 'wireframe' ).onChange( v => {
+
+		tiles.forEachLoadedModel( tileScene => tileScene.traverse( c => {
+
+			if ( c.material ) c.material.wireframe = v;
+
+		} ) );
+
+	} );
+	gui.open();
+
+}
+
+function initTiles() {
+
+	if ( tiles ) {
+
+		tiles.dispose();
+
+	}
+
+	if ( controls ) {
+
+		controls.dispose();
+
+	}
+
 	// satellite imagery draped over the generated terrain
 	const overlay = new XYZTilesOverlay( {
 		url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 	} );
 
 	// tiles: the plugin generates the elevation surface, so no tileset url is needed
+	const provider = PROVIDERS[ options.provider ];
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new TerrariumMeshPlugin( {
-		url: TERRAIN_URL,
+	tiles.registerPlugin( new provider.plugin( {
+		url: TERRAIN_URL ?? provider.url,
+		maxZoom: provider.maxZoom,
 		overlay,
 		applyOverlayTexture: true,
 	} ) );
@@ -79,22 +135,6 @@ function init() {
 	controls.minDistance = 150;
 	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 	controls.camera.quaternion.identity();
-
-	// GUI
-	const gui = new GUI();
-	gui.add( options, 'errorTarget', 1, 40, 1 );
-	gui.add( options, 'displayBoxBounds' );
-	gui.add( options, 'displayRegionBounds' );
-	gui.add( options, 'wireframe' ).onChange( v => {
-
-		tiles.forEachLoadedModel( tileScene => tileScene.traverse( c => {
-
-			if ( c.material ) c.material.wireframe = v;
-
-		} ) );
-
-	} );
-	gui.open();
 
 }
 
