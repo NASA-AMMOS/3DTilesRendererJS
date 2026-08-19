@@ -17,6 +17,7 @@ const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
+const _resolution = { lonVerts: 0, latVerts: 0 };
 
 /**
  * Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
@@ -322,10 +323,8 @@ export class GeneratedSurfacePlugin {
 		const y = tile[ TILE_Y ];
 
 		// new geometry
-		// default to a minimum number of vertices per degree on each axis
-		const [ west, south, east, north ] = tile.boundingVolume.region;
-		const latVerts = Math.max( MIN_LAT_VERTS, Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 ) );
-		const lonVerts = Math.max( MIN_LON_VERTS, Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 ) );
+		const [ , south, , north ] = tile.boundingVolume.region;
+		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, false, _resolution );
 		const cols = lonVerts + 3;
 		const rows = latVerts + 3;
 		const geometry = new PlaneGeometry( 1, 1, lonVerts + 2, latVerts + 2 );
@@ -394,7 +393,8 @@ export class GeneratedSurfacePlugin {
 			}
 
 			// get the position and normal
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
+			const height = this.getElevation( uNorm, vNorm, tile );
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( _sphere.center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
 			if ( isSkirt ) {
@@ -644,6 +644,34 @@ export class GeneratedSurfacePlugin {
 			}
 
 		}
+
+	}
+
+	// writes the interior vertex counts for a tile's surface grid onto "target"; override to match a
+	// raster's resolution
+	getSurfaceResolution( tile, planar, target ) {
+
+		if ( planar ) {
+
+			target.lonVerts = 1;
+			target.latVerts = 1;
+			return target;
+
+		} else {
+
+			const [ west, south, east, north ] = tile.boundingVolume.region;
+			target.latVerts = Math.max( MIN_LAT_VERTS, Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 ) );
+			target.lonVerts = Math.max( MIN_LON_VERTS, Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 ) );
+			return target;
+
+		}
+
+	}
+
+	// elevation in meters at a tile-local ( u, v ), origin south-west; override to displace vertices
+	getElevation( /* u, v, tile */ ) {
+
+		return 0;
 
 	}
 

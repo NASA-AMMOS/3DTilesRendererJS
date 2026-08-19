@@ -16,6 +16,7 @@ export * from './mvt/MVTAnnotationsPlugin.js';
 
 // other formats
 export * from './images/GeneratedSurfacePlugin.js';
+export * from './images/TerrainRGBMeshPlugin.js';
 export * from './images/MVTOverlay.js';
 
 // gltf extensions
