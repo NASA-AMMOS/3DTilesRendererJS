@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
 - GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
 - MVTAnnotationsPlugin: Adjust plugin to prefetch vector tile content.
+- EnvironmentControls, GlobeControls: Fix orthographic camera zoom jumping when zooming into different points when using touch.
 
 ## [0.5.1] - 2026.08.07
 ### Added
