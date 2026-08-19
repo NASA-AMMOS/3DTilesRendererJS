@@ -4,7 +4,7 @@ import {
 	PerspectiveCamera,
 } from 'three';
 import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
-import { TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
+import { DebugTilesPlugin, TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
 import { MeshBVHPlugin } from './src/plugins/MeshBVHPlugin.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
@@ -15,9 +15,11 @@ const TERRAIN_URL = params.get( 'url' ) ?? 'https://s3.amazonaws.com/elevation-t
 const options = {
 	errorTarget: 2,
 	wireframe: false,
+	displayBoxBounds: false,
+	displayRegionBounds: false,
 };
 
-let camera, controls, scene, renderer, tiles;
+let camera, controls, scene, renderer, tiles, debugPlugin;
 
 init();
 render();
@@ -51,6 +53,10 @@ function init() {
 
 	// accelerate raycasting against the dense terrain meshes
 	tiles.registerPlugin( new MeshBVHPlugin() );
+
+	// debug bounding volume display
+	debugPlugin = new DebugTilesPlugin();
+	tiles.registerPlugin( debugPlugin );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
@@ -77,6 +83,8 @@ function init() {
 	// GUI
 	const gui = new GUI();
 	gui.add( options, 'errorTarget', 1, 40, 1 );
+	gui.add( options, 'displayBoxBounds' );
+	gui.add( options, 'displayRegionBounds' );
 	gui.add( options, 'wireframe' ).onChange( v => {
 
 		tiles.forEachLoadedModel( tileScene => tileScene.traverse( c => {
@@ -113,6 +121,8 @@ function render() {
 	camera.updateMatrixWorld();
 
 	tiles.errorTarget = options.errorTarget;
+	debugPlugin.displayBoxBounds = options.displayBoxBounds;
+	debugPlugin.displayRegionBounds = options.displayRegionBounds;
 	tiles.setCamera( camera );
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.update();

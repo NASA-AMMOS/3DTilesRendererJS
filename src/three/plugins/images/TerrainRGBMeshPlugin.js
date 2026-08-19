@@ -1,4 +1,4 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, DataTexture, RedFormat, FloatType, LinearFilter } from 'three';
+import { MathUtils, DataTexture, RedFormat, FloatType, LinearFilter } from 'three';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { GeneratedSurfacePlugin, TILE_X, TILE_Y, TILE_LEVEL } from './GeneratedSurfacePlugin.js';
 
@@ -153,55 +153,6 @@ export class TerrainRGBMeshPlugin extends GeneratedSurfacePlugin {
 		const h0 = data[ y0 * width + x0 ] * ( 1 - tx ) + data[ y0 * width + x1 ] * tx;
 		const h1 = data[ y1 * width + x0 ] * ( 1 - tx ) + data[ y1 * width + x1 ] * tx;
 		return ( h0 * ( 1 - ty ) + h1 * ty ) * this.heightScale;
-
-	}
-
-	// planar shapes skip the base's per-vertex loop, so build the displaced grid here
-	_createPlanarMesh( tile ) {
-
-		const grid = tile[ HEIGHT_GRID ];
-		if ( ! grid ) {
-
-			return super._createPlanarMesh( tile );
-
-		}
-
-		const tx = tile[ TILE_X ];
-		const ty = tile[ TILE_Y ];
-		const level = tile[ TILE_LEVEL ];
-
-		const boundingBox = tile.boundingVolume.box;
-		let sx = 1, sy = 1, x = 0, y = 0, z = 0;
-		if ( boundingBox ) {
-
-			[ x, y, z ] = boundingBox;
-			sx = boundingBox[ 3 ];
-			sy = boundingBox[ 7 ];
-
-		}
-
-		const geometry = new PlaneGeometry( 2 * sx, 2 * sy, MESH_SIZE, MESH_SIZE );
-		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
-		mesh.position.set( x, y, z );
-
-		const uvRange = this._tiling.getTileContentUVBounds( tx, ty, level );
-		const { position, uv } = geometry.attributes;
-		for ( let i = 0; i < uv.count; i ++ ) {
-
-			const u = uv.getX( i );
-			const v = uv.getY( i );
-
-			position.setZ( i, this.getElevation( u, v, tile ) );
-			uv.setXY( i,
-				MathUtils.mapLinear( u, 0, 1, uvRange[ 0 ], uvRange[ 2 ] ),
-				MathUtils.mapLinear( v, 0, 1, uvRange[ 1 ], uvRange[ 3 ] ),
-			);
-
-		}
-
-		position.needsUpdate = true;
-		geometry.computeVertexNormals();
-		return mesh;
 
 	}
 

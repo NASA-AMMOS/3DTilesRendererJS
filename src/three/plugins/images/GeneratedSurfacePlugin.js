@@ -19,6 +19,9 @@ const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
 const _resolution = { lonVerts: 0, latVerts: 0 };
 
+// the raw terrain elevation range known for a tile, excluding any skirt depth
+const ELEVATION_RANGE = Symbol( 'ELEVATION_RANGE' );
+
 /**
  * Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
  * image overlay data.
@@ -282,34 +285,68 @@ export class GeneratedSurfacePlugin {
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
 
+		// the box z center stores the elevation range so the vertices carry the full elevation directly
 		const boundingBox = tile.boundingVolume.box;
-		let sx = 1, sy = 1, x = 0, y = 0, z = 0;
+		let sx = 1, sy = 1, x = 0, y = 0;
 		if ( boundingBox ) {
 
-			[ x, y, z ] = boundingBox;
+			[ x, y ] = boundingBox;
 			sx = boundingBox[ 3 ];
 			sy = boundingBox[ 7 ];
 
 		}
 
+		// new geometry with an extra ring of vertices around the edge to form the skirt
+		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, true, _resolution );
+		const cols = lonVerts + 3;
+		const rows = latVerts + 3;
+
 		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
 		// when rendering.
-		const geometry = new PlaneGeometry( 2 * sx, 2 * sy );
+		const geometry = new PlaneGeometry( 2 * sx, 2 * sy, lonVerts + 2, latVerts + 2 );
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
-		mesh.position.set( x, y, z );
+		mesh.position.set( x, y, 0 );
 
-		// adjust the uvs so only the relevant texture portion is visible
 		const uvRange = this._tiling.getTileContentUVBounds( tx, ty, level );
-		const { uv } = geometry.attributes;
-		for ( let i = 0; i < uv.count; i ++ ) {
+		const { position, uv } = geometry.attributes;
+		const vertCount = position.count;
+		let minHeight = Infinity;
+		let maxHeight = - Infinity;
+		for ( let i = 0; i < vertCount; i ++ ) {
 
+			// determine whether this vertex is part of the skirt or not
+			const col = i % cols;
+			const row = Math.floor( i / cols );
+			const isSkirt = col === 0 || col === cols - 1 || row === 0 || row === rows - 1;
+
+			const innerCol = Math.max( 1, Math.min( cols - 2, col ) );
+			const innerRow = Math.max( 1, Math.min( rows - 2, row ) );
+			const u = ( innerCol - 1 ) / lonVerts;
+			const v = 1 - ( innerRow - 1 ) / latVerts;
+
+			// displace the vertex, dropping the skirt ring by the skirt depth
+			const height = this.getElevation( u, v, tile );
+			if ( height < minHeight ) minHeight = height;
+			if ( height > maxHeight ) maxHeight = height;
+
+			position.setXYZ(
+				i,
+				MathUtils.mapLinear( u, 0, 1, - sx, sx ),
+				MathUtils.mapLinear( v, 0, 1, - sy, sy ),
+				isSkirt ? height - tile.geometricError : height,
+			);
+
+			// adjust the uvs so only the relevant texture portion is visible
 			uv.setXY( i,
-				MathUtils.mapLinear( uv.getX( i ), 0, 1, uvRange[ 0 ], uvRange[ 2 ] ),
-				MathUtils.mapLinear( uv.getY( i ), 0, 1, uvRange[ 1 ], uvRange[ 3 ] ),
+				MathUtils.mapLinear( u, 0, 1, uvRange[ 0 ], uvRange[ 2 ] ),
+				MathUtils.mapLinear( v, 0, 1, uvRange[ 1 ], uvRange[ 3 ] ),
 			);
 
 		}
 
+		this._updateBoundingVolume( tile, minHeight, maxHeight );
+
+		geometry.computeVertexNormals();
 		return mesh;
 
 	}
@@ -336,6 +373,8 @@ export class GeneratedSurfacePlugin {
 		const { position, normal, uv } = geometry.attributes;
 		const vertCount = position.count;
 		tile.engineData.boundingVolume.getSphere( _sphere );
+		let minHeight = Infinity;
+		let maxHeight = - Infinity;
 		for ( let i = 0; i < vertCount; i ++ ) {
 
 			// determine whether this vertex is part of the skirt or not
@@ -394,6 +433,8 @@ export class GeneratedSurfacePlugin {
 
 			// get the position and normal
 			const height = this.getElevation( uNorm, vNorm, tile );
+			if ( height < minHeight ) minHeight = height;
+			if ( height > maxHeight ) maxHeight = height;
 			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( _sphere.center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
@@ -414,9 +455,66 @@ export class GeneratedSurfacePlugin {
 
 		}
 
+		this._updateBoundingVolume( tile, minHeight, maxHeight );
+
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.copy( _sphere.center );
 		return mesh;
+
+	}
+
+	// writes a terrain elevation range onto a tile's bounding volume so the traversal reads the new
+	// bounds. the low bound is dropped by the tile's skirt depth so the hanging skirt stays enclosed.
+	// "inherited" ranges are ancestor estimates that never overwrite a tile's own measured range and
+	// cascade to any already-created descendants so their volumes are valid before they load
+	_updateBoundingVolume( tile, minHeight, maxHeight, inherited = false ) {
+
+		const range = tile[ ELEVATION_RANGE ];
+		if ( inherited && range && ! range.inherited ) {
+
+			return;
+
+		}
+
+		tile[ ELEVATION_RANGE ] = { min: minHeight, max: maxHeight, inherited };
+
+		const min = minHeight - tile.geometricError;
+		const max = maxHeight;
+
+		// the engine volume only exists once the tile has been preprocessed
+		const { boundingVolume, engineData } = tile;
+		if ( boundingVolume.region ) {
+
+			const region = boundingVolume.region;
+			region[ 4 ] = min;
+			region[ 5 ] = max;
+			if ( engineData ) {
+
+				engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
+
+			}
+
+		} else if ( boundingVolume.box ) {
+
+			// elevation runs along local Z: set the box center and half extent
+			const box = boundingVolume.box;
+			box[ 2 ] = ( min + max ) / 2;
+			box[ 11 ] = ( max - min ) / 2;
+			if ( engineData ) {
+
+				engineData.boundingVolume.setObbData( box, engineData.transform );
+
+			}
+
+		}
+
+		// pass the range down to descendants created before this tile's terrain loaded
+		const children = tile.children;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			this._updateBoundingVolume( children[ i ], minHeight, maxHeight, true );
+
+		}
 
 	}
 
@@ -629,6 +727,10 @@ export class GeneratedSurfacePlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
+		// a child starts out assuming the same elevation range as its immediate parent; it gets tightened
+		// once the child's own terrain is loaded and processed
+		const range = tile[ ELEVATION_RANGE ];
+
 		const { tileSplitX, tileSplitY } = this._tiling.getLevel( level );
 		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
 
@@ -636,6 +738,12 @@ export class GeneratedSurfacePlugin {
 
 				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
 				if ( child ) {
+
+					if ( range ) {
+
+						this._updateBoundingVolume( child, range.min, range.max, true );
+
+					}
 
 					tile.children.push( child );
 
