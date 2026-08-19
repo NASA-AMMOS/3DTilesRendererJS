@@ -1280,6 +1280,7 @@ export class EnvironmentControls extends EventDispatcher {
 			const zoomIntoPoint = this.zoomPointSet || this._updateZoomPoint();
 
 			// get the mouse position before zoom
+			adjustedPointerToCoords( _pointer, domElement, _mouseBefore );
 			_mouseBefore.unproject( camera );
 
 			// zoom the camera
