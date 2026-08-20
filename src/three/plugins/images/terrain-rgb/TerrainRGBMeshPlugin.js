@@ -7,7 +7,6 @@ import {
 	Sphere,
 } from 'three';
 import { XYZImageSource } from '../sources/XYZImageSource.js';
-import { TilingScheme } from '../utils/TilingScheme.js';
 import { getCartographicToMeterDerivative } from '../utils/getCartographicToMeterDerivative.js';
 import { SkirtedPlaneGeometry } from './SkirtedPlaneGeometry.js';
 import { GridCache } from './GridCache.js';
@@ -24,9 +23,11 @@ const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
 // the raw terrain elevation range known for a tile, excluding height scale and skirt depth
 const ELEVATION_RANGE = Symbol( 'ELEVATION_RANGE' );
 
-// mesh segments per tile. Each elevation texture is split into enough tile layers that the deepest
-// layer renders one mesh cell per texel.
+// mesh segments per tile
 const MESH_SIZE = 64;
+
+// number of tile tree levels sharing each fetched texture level
+const EXTRA_LEVELS = 2;
 
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
@@ -64,8 +65,7 @@ function sampleGrid( grid, tu, tv ) {
  * @param {ImageOverlay} [options.overlay=null] Overlay used to texture the tiles when
  *   `applyOverlayTexture` is enabled.
  * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.
- * @param {('ellipsoid'|'planar')} [options.shape='ellipsoid'] Surface shape.
- * @param {boolean} [options.endCaps=true] For ellipsoid mode, snap poles to ±90° lat.
+ * @param {boolean} [options.endCaps=true] Snap poles to ±90° lat.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
  */
 export class TerrainRGBMeshPlugin {
@@ -96,7 +96,6 @@ export class TerrainRGBMeshPlugin {
 			heightScale = 1,
 			overlay = null,
 			applyOverlayTexture = false,
-			shape = 'ellipsoid',
 			endCaps = true,
 			useRecommendedSettings = true,
 		} = options;
@@ -107,19 +106,29 @@ export class TerrainRGBMeshPlugin {
 
 		this.overlay = overlay;
 		this.applyOverlayTexture = applyOverlayTexture;
-		this.shape = shape;
 		this.endCaps = endCaps;
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.maxZoom = maxZoom;
 
+		// number of tile tree levels that share each fetched texture level. Textures are only
+		// fetched at levels that are multiples of this, and the levels in between inherit the
+		// ancestor texture as subviews.
+		this._extraLevels = EXTRA_LEVELS;
+
+		// extend the tree past the last fetched texture level so its subview layers exist, too
+		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
+
 		this._heightScale = heightScale;
-		this._source = new XYZImageSource( { url, tileDimension, levels: maxZoom + 1 } );
+		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
 
-		// number of tile layers each elevation texture is split into so the deepest layer renders
-		// one mesh cell per texel
-		this._extraLevels = Math.max( 0, Math.round( Math.log2( tileDimension / MESH_SIZE ) ) );
+	}
+
+	// the source tile holding the texture a tile at the given level reads a subview of
+	_getSourceLevel( level ) {
+
+		return this._extraLevels * Math.floor( level / this._extraLevels );
 
 	}
 
@@ -144,27 +153,14 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// generate a render tiling that extends past the source levels so each elevation texture is
-		// shared by multiple tile layers. Each render tile spans MESH_SIZE "pixels" so the derived
-		// geometric error matches the size of one mesh cell.
-		const sourceTiling = this._source.tiling;
-		const tiling = new TilingScheme();
-		tiling.flipY = sourceTiling.flipY;
-		tiling.setProjection( sourceTiling.projection );
-		tiling.setContentBounds( ...sourceTiling.projection.getBounds() );
-		tiling.generateLevels( this.maxZoom + 1 + this._extraLevels, sourceTiling.projection.tileCountX, sourceTiling.projection.tileCountY, {
-			tilePixelWidth: MESH_SIZE,
-			tilePixelHeight: MESH_SIZE,
-		} );
-
-		this._tiling = tiling;
+		this._tiling = this._source.tiling;
 		return this.getTileset();
 
 	}
 
 	async parseToMesh( buffer, tile, extension, url, abortSignal ) {
 
-		if ( extension !== 'generated_surface' ) {
+		if ( tile[ TILE_X ] === undefined ) {
 
 			return null;
 
@@ -175,7 +171,7 @@ export class TerrainRGBMeshPlugin {
 		const level = tile[ TILE_LEVEL ];
 
 		// find the source tile that this render tile reads a subview of
-		const sourceLevel = Math.max( 0, level - this._extraLevels );
+		const sourceLevel = this._getSourceLevel( level );
 		const scale = 2 ** ( level - sourceLevel );
 		const sx = Math.floor( x / scale );
 		const sy = Math.floor( y / scale );
@@ -213,7 +209,7 @@ export class TerrainRGBMeshPlugin {
 		this._updateBoundingVolume( tile, ...this._getSubviewRange( grid, tile[ SUBVIEW ] ) );
 
 		// build the displaced surface mesh
-		const mesh = this._useEllipsoid() ? this._createEllipsoidMesh( tile ) : this._createPlanarMesh( tile );
+		const mesh = this._createEllipsoidMesh( tile );
 		mesh.geometry.computeBoundingSphere();
 
 		// apply the overlay texture
@@ -335,13 +331,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// whether the plugin is loading as an ellipsoid or not
-	_useEllipsoid() {
-
-		return this._tiling.projection.isCartographic && this.shape === 'ellipsoid';
-
-	}
-
 	// normalized bounds of the render tile within its source tile
 	_getSubview( tile ) {
 
@@ -351,7 +340,7 @@ export class TerrainRGBMeshPlugin {
 		const [ sx, sy, sourceLevel ] = tile[ SOURCE_TILE ];
 
 		const renderBounds = this._tiling.getTileBounds( x, y, level, true );
-		const sourceBounds = this._source.tiling.getTileBounds( sx, sy, sourceLevel, true );
+		const sourceBounds = this._tiling.getTileBounds( sx, sy, sourceLevel, true );
 		const invW = 1 / ( sourceBounds[ 2 ] - sourceBounds[ 0 ] );
 		const invH = 1 / ( sourceBounds[ 3 ] - sourceBounds[ 1 ] );
 
@@ -439,28 +428,12 @@ export class TerrainRGBMeshPlugin {
 
 		// the engine volume only exists once the tile has been preprocessed
 		const { boundingVolume, engineData } = tile;
-		if ( boundingVolume.region ) {
+		const region = boundingVolume.region;
+		region[ 4 ] = min;
+		region[ 5 ] = max;
+		if ( engineData && engineData.boundingVolume ) {
 
-			const region = boundingVolume.region;
-			region[ 4 ] = min;
-			region[ 5 ] = max;
-			if ( engineData && engineData.boundingVolume ) {
-
-				engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
-
-			}
-
-		} else if ( boundingVolume.box ) {
-
-			// elevation runs along local Z: set the box center and half extent
-			const box = boundingVolume.box;
-			box[ 2 ] = ( min + max ) / 2;
-			box[ 11 ] = ( max - min ) / 2;
-			if ( engineData && engineData.boundingVolume ) {
-
-				engineData.boundingVolume.setObbData( box, engineData.transform );
-
-			}
+			engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
 
 		}
 
@@ -614,49 +587,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	_createPlanarMesh( tile ) {
-
-		const boundingBox = tile.boundingVolume.box;
-		let sx = 1, sy = 1, x = 0, y = 0;
-		if ( boundingBox ) {
-
-			[ x, y ] = boundingBox;
-			sx = boundingBox[ 3 ];
-			sy = boundingBox[ 7 ];
-
-		}
-
-		const grid = tile[ HEIGHT_GRID ];
-		const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, tile[ SUBVIEW ] );
-
-		const geometry = new SkirtedPlaneGeometry( 2 * sx, 2 * sy, MESH_SIZE, MESH_SIZE );
-		const mesh = new Mesh( geometry, new MeshLambertMaterial() );
-		mesh.position.set( x, y, 0 );
-
-		// displace the surface vertices
-		const { position, uv } = geometry.attributes;
-		const { surfaceVertexCount, skirtSourceIndices } = geometry;
-		for ( let i = 0; i < surfaceVertexCount; i ++ ) {
-
-			const tu = MathUtils.mapLinear( uv.getX( i ), 0, 1, tu0, tu1 );
-			const tv = MathUtils.mapLinear( uv.getY( i ), 0, 1, tv0, tv1 );
-			position.setZ( i, sampleGrid( grid, tu, tv ) * this._heightScale );
-
-		}
-
-		// drop the skirt vertices below their source vertices
-		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
-
-			const src = skirtSourceIndices[ i ];
-			position.setZ( surfaceVertexCount + i, position.getZ( src ) - tile.geometricError );
-
-		}
-
-		geometry.computeVertexNormals();
-		return mesh;
-
-	}
-
 	getTileset() {
 
 		const { tiles, _tiling: tiling } = this;
@@ -700,92 +630,50 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	getUrl( /* x, y, level */ ) {
+	// the content of every tile is the url of the texture it reads a subview of, so the levels
+	// between fetch levels inherit the ancestor texture url
+	getUrl( x, y, level ) {
 
-		return 'tile.generated_surface';
+		const sourceLevel = this._getSourceLevel( level );
+		const scale = 2 ** ( level - sourceLevel );
+		return this._source.getUrl( Math.floor( x / scale ), Math.floor( y / scale ), sourceLevel );
 
 	}
 
-	fetchData( url ) {
+	// all tile content is generated, and the textures are fetched through the shared grid cache
+	fetchData( /* url */ ) {
 
-		if ( /generated_surface/.test( url ) ) {
-
-			return new ArrayBuffer();
-
-		}
+		return new ArrayBuffer();
 
 	}
 
 	createBoundingVolume( x, y, level, regionHeight = 0 ) {
 
-		const { _tiling: tiling } = this;
+		const { _tiling: tiling, endCaps } = this;
 
 		const isRoot = level === - 1;
-		if ( this._useEllipsoid() ) {
+		let normalizedBounds;
+		let cartBounds;
+		if ( isRoot ) {
 
-			const { endCaps } = this;
-
-			let normalizedBounds;
-			let cartBounds;
-			if ( isRoot ) {
-
-				normalizedBounds = tiling.getContentBounds( true );
-				cartBounds = tiling.getContentBounds();
-
-			} else {
-
-				normalizedBounds = tiling.getTileBounds( x, y, level, true, true );
-				cartBounds = tiling.getTileBounds( x, y, level, false, true );
-
-			}
-
-			if ( endCaps ) {
-
-				if ( normalizedBounds[ 3 ] === 1 ) cartBounds[ 3 ] = Math.PI / 2;
-				if ( normalizedBounds[ 1 ] === 0 ) cartBounds[ 1 ] = - Math.PI / 2;
-
-			}
-
-			return { region: [ ...cartBounds, - regionHeight, 1 ] };
+			normalizedBounds = tiling.getContentBounds( true );
+			cartBounds = tiling.getContentBounds();
 
 		} else {
 
-			let normalizedBounds;
-			if ( isRoot ) {
-
-				normalizedBounds = tiling.getContentBounds( true );
-
-			} else {
-
-				normalizedBounds = tiling.getTileBounds( x, y, level, true );
-
-			}
-
-			// calculate the world space bounds position from the range
-			const [ minX, minY, maxX, maxY ] = normalizedBounds;
-			let extentsX = ( maxX - minX ) / 2;
-			let extentsY = ( maxY - minY ) / 2;
-			let centerX = minX + extentsX - 0.5;
-			let centerY = minY + extentsY - 0.5;
-
-			// scale the fields
-			centerX *= tiling.aspectRatio;
-			extentsX *= tiling.aspectRatio;
-
-			// return bounding box
-			return {
-				box: [
-					// center
-					centerX, centerY, 0,
-
-					// x, y, z half extents
-					extentsX, 0.0, 0.0,
-					0.0, extentsY, 0.0,
-					0.0, 0.0, 0.0,
-				],
-			};
+			normalizedBounds = tiling.getTileBounds( x, y, level, true, true );
+			cartBounds = tiling.getTileBounds( x, y, level, false, true );
 
 		}
+
+		if ( endCaps ) {
+
+			if ( normalizedBounds[ 3 ] === 1 ) cartBounds[ 3 ] = Math.PI / 2;
+			if ( normalizedBounds[ 1 ] === 0 ) cartBounds[ 1 ] = - Math.PI / 2;
+
+		}
+
+		return { region: [ ...cartBounds, - regionHeight, 1 ] };
 
 	}
 
@@ -799,46 +687,32 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		let geometricError;
-		const useRegions = this._useEllipsoid();
-		if ( useRegions ) {
+		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 
-			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
-			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
+		// one mesh cell width in uv space
+		const tileUWidth = ( maxU - minU ) / MESH_SIZE;
+		const tileVWidth = ( maxV - minV ) / MESH_SIZE;
 
-			// one pixel width in uv space
-			const tileUWidth = ( maxU - minU ) / tilePixelWidth;
-			const tileVWidth = ( maxV - minV ) / tilePixelHeight;
+		// calculate the region ranges
+		const [ /* west */, south, east, north ] = tiling.getTileBounds( x, y, level );
 
-			// calculate the region ranges
-			const [ /* west */, south, east, north ] = tiling.getTileBounds( x, y, level );
+		// calculate the changes in lat / lon at the given point
+		// find the most bowed point of the latitude range since the amount that latitude changes is
+		// dependent on the Y value of the image
+		const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
+		const midV = projection.convertLatitudeToNormalized( midLat );
+		const lonFactor = projection.getLongitudeDerivativeAtNormalized( minU );
+		const latFactor = projection.getLatitudeDerivativeAtNormalized( midV );
 
-			// calculate the changes in lat / lon at the given point
-			// find the most bowed point of the latitude range since the amount that latitude changes is
-			// dependent on the Y value of the image
-			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
-			const midV = projection.convertLatitudeToNormalized( midLat );
-			const lonFactor = projection.getLongitudeDerivativeAtNormalized( minU );
-			const latFactor = projection.getLatitudeDerivativeAtNormalized( midV );
-
-			// calculate the size of a pixel on the surface
-			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
-			geometricError = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
-
-		} else {
-
-			// Calculate geometric error: size of one pixel in world space.
-			// The tile contents span [0, 1] along Y and [0, aspectRatio] along X.
-			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
-
-		}
+		// calculate the size of a mesh cell on the surface
+		const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
+		const geometricError = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
 
 		// Generate the node
 		return {
 			refine: 'REPLACE',
 			geometricError,
-			boundingVolume: this.createBoundingVolume( x, y, level, useRegions ? geometricError : 0 ),
+			boundingVolume: this.createBoundingVolume( x, y, level, geometricError ),
 			content: {
 				uri: this.getUrl( x, y, level ),
 			},

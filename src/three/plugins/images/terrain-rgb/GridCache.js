@@ -116,7 +116,7 @@ export class GridCache extends DataCache {
 
 		const { plugin } = this;
 		const fetched = await plugin._source.fetchItem( [ x, y, level ], signal );
-		const grid = readImageData( fetched.image, this.canvas, ( r, g, b ) => plugin.decodeElevation( r, g, b ), 2 ** plugin._extraLevels );
+		const grid = readImageData( fetched.image, this.canvas, ( r, g, b ) => plugin.decodeElevation( r, g, b ), 2 ** ( plugin._extraLevels - 1 ) );
 		plugin._source.disposeItem( fetched );
 
 		this.stitchNeighbors( grid, x, y, level );
