@@ -30,9 +30,9 @@ const PROVIDERS = {
 };
 
 const options = {
-	errorTarget: 2,
+	errorTarget: 16,
 	provider: 'Terrarium (AWS)',
-	heightScale: 1,
+	heightScale: 2,
 	displayParentBounds: false,
 	displayBoxBounds: false,
 	displayRegionBounds: false,

@@ -4,9 +4,7 @@ import { DataCache } from '../utils/DataCache.js';
 // draws the image, decodes each pixel to meters, and returns a single-channel float DataTexture.
 // The grid is padded with a one texel border, initialized by duplicating the edge texels, that is
 // filled from neighboring tiles as they load so seams sample identical values on both sides.
-// The elevation range is tracked per block in a "blocks x blocks" grid during the decode so the sub
-// tiles reading subviews of the texture can derive tight bounding volumes without re-iterating.
-function readImageData( image, canvas, decode, blocks ) {
+function readImageData( image, canvas, decode ) {
 
 	const { width, height } = image;
 	canvas.width = width;
@@ -18,29 +16,16 @@ function readImageData( image, canvas, decode, blocks ) {
 	const { data } = ctx.getImageData( 0, 0, width, height );
 	ctx.clearRect( 0, 0, width, height );
 
-	// decode into the interior of the padded grid, tracking the per-block elevation range
+	// decode into the interior of the padded grid
 	const pw = width + 2;
 	const ph = height + 2;
 	const elevations = new Float32Array( pw * ph );
-	const blockRanges = new Float32Array( 2 * blocks * blocks );
-	for ( let i = 0, l = blocks * blocks; i < l; i ++ ) {
-
-		blockRanges[ 2 * i + 0 ] = Infinity;
-		blockRanges[ 2 * i + 1 ] = - Infinity;
-
-	}
-
 	for ( let y = 0; y < height; y ++ ) {
 
 		for ( let x = 0; x < width; x ++ ) {
 
 			const i = 4 * ( y * width + x );
-			const value = decode( data[ i ], data[ i + 1 ], data[ i + 2 ] );
-			elevations[ ( y + 1 ) * pw + x + 1 ] = value;
-
-			const bi = 2 * ( Math.floor( y * blocks / height ) * blocks + Math.floor( x * blocks / width ) );
-			if ( value < blockRanges[ bi + 0 ] ) blockRanges[ bi + 0 ] = value;
-			if ( value > blockRanges[ bi + 1 ] ) blockRanges[ bi + 1 ] = value;
+			elevations[ ( y + 1 ) * pw + x + 1 ] = decode( data[ i ], data[ i + 1 ], data[ i + 2 ] );
 
 		}
 
@@ -66,8 +51,6 @@ function readImageData( image, canvas, decode, blocks ) {
 	texture.minFilter = LinearFilter;
 	texture.magFilter = LinearFilter;
 	texture.needsUpdate = true;
-	texture.userData.blockRanges = blockRanges;
-	texture.userData.blocks = blocks;
 	return texture;
 
 }
@@ -116,7 +99,7 @@ export class GridCache extends DataCache {
 
 		const { plugin } = this;
 		const fetched = await plugin._source.fetchItem( [ x, y, level ], signal );
-		const grid = readImageData( fetched.image, this.canvas, ( r, g, b ) => plugin.decodeElevation( r, g, b ), 2 ** ( plugin._extraLevels - 1 ) );
+		const grid = readImageData( fetched.image, this.canvas, ( r, g, b ) => plugin.decodeElevation( r, g, b ) );
 		plugin._source.disposeItem( fetched );
 
 		this.stitchNeighbors( grid, x, y, level );

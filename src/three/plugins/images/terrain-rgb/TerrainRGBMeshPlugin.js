@@ -20,11 +20,12 @@ const SUBVIEW = Symbol( 'SUBVIEW' );
 const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
 const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
 
-// the raw terrain elevation range known for a tile, excluding height scale and skirt depth
-const ELEVATION_RANGE = Symbol( 'ELEVATION_RANGE' );
-
 // mesh segments per tile
-const MESH_SIZE = 64;
+const MESH_SIZE = 32;
+
+// fixed elevation range used to initialize every bounding region, encapsulating earth terrain
+const MIN_ELEVATION = - 500;
+const MAX_ELEVATION = 9000;
 
 // number of tile tree levels sharing each fetched texture level
 const EXTRA_LEVELS = 2;
@@ -61,7 +62,7 @@ function sampleGrid( grid, tu, tv ) {
  * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
  * @param {number} [options.tileDimension=512] Source tile pixel size.
  * @param {number} [options.maxZoom=15] Highest zoom level the source provides.
- * @param {number} [options.heightScale=1] Vertical exaggeration. Can be adjusted dynamically.
+ * @param {number} [options.heightScale=1] Vertical exaggeration.
  * @param {ImageOverlay} [options.overlay=null] Overlay used to texture the tiles when
  *   `applyOverlayTexture` is enabled.
  * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.
@@ -69,23 +70,6 @@ function sampleGrid( grid, tu, tv ) {
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
  */
 export class TerrainRGBMeshPlugin {
-
-	get heightScale() {
-
-		return this._heightScale;
-
-	}
-
-	set heightScale( value ) {
-
-		if ( value !== this._heightScale ) {
-
-			this._heightScale = value;
-			this._updateHeightScale();
-
-		}
-
-	}
 
 	constructor( options = {} ) {
 
@@ -118,7 +102,7 @@ export class TerrainRGBMeshPlugin {
 		// extend the tree past the last fetched texture level so its subview layers exist, too
 		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
 
-		this._heightScale = heightScale;
+		this.heightScale = heightScale;
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
@@ -205,9 +189,6 @@ export class TerrainRGBMeshPlugin {
 		tile[ SOURCE_TILE ] = [ sx, sy, sourceLevel ];
 		tile[ SUBVIEW ] = this._getSubview( tile );
 
-		// tighten the bounding volume to the subview's elevation range cached at decode
-		this._updateBoundingVolume( tile, ...this._getSubviewRange( grid, tile[ SUBVIEW ] ) );
-
 		// build the displaced surface mesh
 		const mesh = this._createEllipsoidMesh( tile );
 		mesh.geometry.computeBoundingSphere();
@@ -262,22 +243,11 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// assigned after the last await so a height scale change mid-parse cannot leave a stale
 		return mesh;
 
 	}
 
 	preprocessNode( tile ) {
-
-		// inherit the parent's elevation range once, before the traversal bounding volume is
-		// generated from the tile json. The tile's own range replaces it when its data loads.
-		const parent = tile.parent;
-		if ( ! tile[ ELEVATION_RANGE ] && parent && parent[ ELEVATION_RANGE ] ) {
-
-			const { min, max } = parent[ ELEVATION_RANGE ];
-			this._updateBoundingVolume( tile, min, max, true );
-
-		}
 
 		const tiling = this._tiling;
 		const maxLevel = tiling.maxLevel;
@@ -353,33 +323,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// elevation range over a subview, from the block ranges cached at decode
-	_getSubviewRange( grid, subview ) {
-
-		const { blockRanges, blocks } = grid.userData;
-		const x0 = MathUtils.clamp( Math.floor( subview[ 0 ] * blocks ), 0, blocks - 1 );
-		const x1 = MathUtils.clamp( Math.ceil( subview[ 2 ] * blocks ) - 1, 0, blocks - 1 );
-		const y0 = MathUtils.clamp( Math.floor( subview[ 1 ] * blocks ), 0, blocks - 1 );
-		const y1 = MathUtils.clamp( Math.ceil( subview[ 3 ] * blocks ) - 1, 0, blocks - 1 );
-
-		let minHeight = Infinity;
-		let maxHeight = - Infinity;
-		for ( let y = y0; y <= y1; y ++ ) {
-
-			for ( let x = x0; x <= x1; x ++ ) {
-
-				const i = 2 * ( y * blocks + x );
-				minHeight = Math.min( minHeight, blockRanges[ i + 0 ] );
-				maxHeight = Math.max( maxHeight, blockRanges[ i + 1 ] );
-
-			}
-
-		}
-
-		return [ minHeight, maxHeight ];
-
-	}
-
 	// texture coordinate range of a subview within the padded grid texture. The half texel inset
 	// means tile edges sample into the stitched border so both sides of a seam agree.
 	_getSubviewUVBounds( grid, subview ) {
@@ -408,75 +351,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// writes a raw elevation range onto a tile's bounding volume, applying the height scale, so the
-	// traversal reads the new bounds. The low bound is dropped by the skirt depth. "inherited" ranges
-	// are ancestor estimates that never overwrite a tile's own measured range.
-	_updateBoundingVolume( tile, minHeight, maxHeight, inherited = false ) {
-
-		const range = tile[ ELEVATION_RANGE ];
-		if ( inherited && range && ! range.inherited ) {
-
-			return;
-
-		}
-
-		tile[ ELEVATION_RANGE ] = { min: minHeight, max: maxHeight, inherited };
-
-		const scale = this._heightScale;
-		const min = Math.min( minHeight * scale, maxHeight * scale ) - tile.geometricError;
-		const max = Math.max( minHeight * scale, maxHeight * scale );
-
-		// the engine volume only exists once the tile has been preprocessed
-		const { boundingVolume, engineData } = tile;
-		const region = boundingVolume.region;
-		region[ 4 ] = min;
-		region[ 5 ] = max;
-		if ( engineData && engineData.boundingVolume ) {
-
-			engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
-
-		}
-
-	}
-
-	// update the displacement scale on all loaded materials and refresh every bounding volume from
-	// its stored raw elevation range. TODO: this could be done as-needed or as-traversed instead.
-	_updateHeightScale() {
-
-		const { tiles } = this;
-		if ( ! tiles ) {
-
-			return;
-
-		}
-
-		tiles.forEachLoadedModel( scene => {
-
-			scene.traverse( c => {
-
-				if ( c.isMesh ) {
-
-					c.material.displacementScale = this._heightScale;
-
-				}
-
-			} );
-
-		} );
-
-		tiles.traverse( tile => {
-
-			const range = tile[ ELEVATION_RANGE ];
-			if ( range ) {
-
-				this._updateBoundingVolume( tile, range.min, range.max, range.inherited );
-
-			}
-
-		}, null, false );
-
-	}
-
 	_createEllipsoidMesh( tile ) {
 
 		const { tiles, endCaps, _tiling: tiling } = this;
@@ -497,10 +371,12 @@ export class TerrainRGBMeshPlugin {
 		tile.engineData.boundingVolume.getSphere( _sphere );
 		mesh.position.copy( _sphere.center );
 
-		// position the surface vertices on the displaced ellipsoid surface
+		// position the surface vertices on the displaced ellipsoid surface, tracking the height range
 		const { position, normal, uv } = geometry.attributes;
 		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		const cols = MESH_SIZE + 1;
+		let minHeight = Infinity;
+		let maxHeight = - Infinity;
 		for ( let i = 0; i < surfaceVertexCount; i ++ ) {
 
 			const col = i % cols;
@@ -557,7 +433,9 @@ export class TerrainRGBMeshPlugin {
 			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
 
 			// get the position and normal
-			const height = sampleGrid( grid, MathUtils.mapLinear( u, 0, 1, tu0, tu1 ), MathUtils.mapLinear( v, 0, 1, tv0, tv1 ) ) * this._heightScale;
+			const height = sampleGrid( grid, MathUtils.mapLinear( u, 0, 1, tu0, tu1 ), MathUtils.mapLinear( v, 0, 1, tv0, tv1 ) ) * this.heightScale;
+			if ( height < minHeight ) minHeight = height;
+			if ( height > maxHeight ) maxHeight = height;
 			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( _sphere.center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
@@ -583,7 +461,20 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
+		this._updateBoundingVolume( tile, minHeight, maxHeight );
 		return mesh;
+
+	}
+
+	// Tightens the tile bounding region to the generated vertex heights, once, before the tile is
+	// rendered. The range is padded by the geometric error since it covers the expected deviation
+	// from the true surface, enclosing detail that finer levels can add as well as the skirts.
+	_updateBoundingVolume( tile, minHeight, maxHeight ) {
+
+		const region = tile.boundingVolume.region;
+		region[ 4 ] = minHeight - tile.geometricError;
+		region[ 5 ] = maxHeight + tile.geometricError;
+		tile.engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
 
 	}
 
@@ -673,7 +564,10 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		return { region: [ ...cartBounds, - regionHeight, 1 ] };
+		// a fixed elevation range covering all terrain, dropping the low bound by the skirt depth
+		const minHeight = MIN_ELEVATION * this.heightScale - regionHeight;
+		const maxHeight = MAX_ELEVATION * this.heightScale;
+		return { region: [ ...cartBounds, minHeight, maxHeight ] };
 
 	}
 
@@ -688,10 +582,12 @@ export class TerrainRGBMeshPlugin {
 		}
 
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
+		const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
 
-		// one mesh cell width in uv space
-		const tileUWidth = ( maxU - minU ) / MESH_SIZE;
-		const tileVWidth = ( maxV - minV ) / MESH_SIZE;
+		// one pixel width in uv space, so the error ladder halves per level and the inserted layers
+		// interpolate between the fetched texture levels
+		const tileUWidth = ( maxU - minU ) / tilePixelWidth;
+		const tileVWidth = ( maxV - minV ) / tilePixelHeight;
 
 		// calculate the region ranges
 		const [ /* west */, south, east, north ] = tiling.getTileBounds( x, y, level );
@@ -732,10 +628,6 @@ export class TerrainRGBMeshPlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		// a child starts out assuming the same elevation range as its immediate parent; it gets
-		// tightened once the child's own elevation data is available
-		const range = tile[ ELEVATION_RANGE ];
-
 		const { tileSplitX, tileSplitY } = this._tiling.getLevel( level );
 		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
 
@@ -743,12 +635,6 @@ export class TerrainRGBMeshPlugin {
 
 				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
 				if ( child ) {
-
-					if ( range ) {
-
-						this._updateBoundingVolume( child, range.min, range.max, true );
-
-					}
 
 					tile.children.push( child );
 

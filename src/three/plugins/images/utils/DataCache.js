@@ -191,11 +191,18 @@ export class DataCache {
 	releaseViaFullKey( key, force = false ) {
 
 		const { cache } = this;
-		if ( key in cache && cache[ key ].count > 0 ) {
+
+		// fully released items can still be in the cache awaiting deferred disposal, so accept them
+		// when forcing disposal
+		if ( key in cache && ( cache[ key ].count > 0 || force ) ) {
 
 			// decrement the lock
 			const info = cache[ key ];
-			info.count --;
+			if ( info.count > 0 ) {
+
+				info.count --;
+
+			}
 
 			// if the item is no longer being used
 			if ( info.count === 0 || force ) {
