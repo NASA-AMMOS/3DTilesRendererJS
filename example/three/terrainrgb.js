@@ -4,6 +4,8 @@ import {
 	PerspectiveCamera,
 	AmbientLight,
 	DirectionalLight,
+	Raycaster,
+	Vector3,
 } from 'three';
 import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
 import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
@@ -31,6 +33,7 @@ const options = {
 	errorTarget: 2,
 	provider: 'Terrarium (AWS)',
 	heightScale: 1,
+	displayParentBounds: false,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
 };
@@ -71,8 +74,10 @@ function init() {
 	gui.add( options, 'heightScale', 0, 10 ).onChange( v => {
 
 		terrainPlugin.heightScale = v;
+		keepCameraAboveTerrain();
 
 	} );
+	gui.add( options, 'displayParentBounds' );
 	gui.add( options, 'displayBoxBounds' );
 	gui.add( options, 'displayRegionBounds' );
 
@@ -111,6 +116,11 @@ function initTiles() {
 	} );
 	tiles.registerPlugin( terrainPlugin );
 
+	// The cache byte estimate counts every tile's displacement texture clone at full size even
+	// though the underlying texture upload is shared, so raise the byte budget to compensate.
+	tiles.lruCache.minBytesSize = 1e9;
+	tiles.lruCache.maxBytesSize = 1.5e9;
+
 	// debug bounding volume display
 	debugPlugin = new DebugTilesPlugin();
 	tiles.registerPlugin( debugPlugin );
@@ -125,6 +135,25 @@ function initTiles() {
 	controls.minDistance = 150;
 	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 	controls.camera.quaternion.identity();
+
+}
+
+// The terrain can rise above the camera when the exaggeration is increased, so raycast down from
+// far overhead and lift the camera back over the surface when it ends up underneath.
+function keepCameraAboveTerrain() {
+
+	const margin = 150;
+	const up = new Vector3().copy( camera.position ).normalize();
+	const raycaster = new Raycaster();
+	raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
+	raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
+
+	const hit = raycaster.intersectObject( tiles.group, true )[ 0 ];
+	if ( hit && hit.point.dot( up ) + margin > camera.position.dot( up ) ) {
+
+		camera.position.copy( hit.point ).addScaledVector( up, margin );
+
+	}
 
 }
 
@@ -151,6 +180,7 @@ function render() {
 	camera.updateMatrixWorld();
 
 	tiles.errorTarget = options.errorTarget;
+	debugPlugin.displayParentBounds = options.displayParentBounds;
 	debugPlugin.displayBoxBounds = options.displayBoxBounds;
 	debugPlugin.displayRegionBounds = options.displayRegionBounds;
 	tiles.setCamera( camera );

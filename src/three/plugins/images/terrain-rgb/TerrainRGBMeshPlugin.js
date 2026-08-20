@@ -1,22 +1,16 @@
-/** @import { ImageOverlay } from './ImageOverlayPlugin.js' */
+/** @import { ImageOverlay } from '../ImageOverlayPlugin.js' */
 import {
 	Mesh,
 	MeshLambertMaterial,
-	MeshBasicMaterial,
 	MathUtils,
 	Vector3,
 	Sphere,
-	BufferGeometry,
-	BufferAttribute,
-	DataTexture,
-	RedFormat,
-	FloatType,
-	LinearFilter,
 } from 'three';
-import { XYZImageSource } from './sources/XYZImageSource.js';
-import { DataCache } from './utils/DataCache.js';
-import { TilingScheme } from './utils/TilingScheme.js';
-import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
+import { XYZImageSource } from '../sources/XYZImageSource.js';
+import { TilingScheme } from '../utils/TilingScheme.js';
+import { getCartographicToMeterDerivative } from '../utils/getCartographicToMeterDerivative.js';
+import { SkirtedPlaneGeometry } from './SkirtedPlaneGeometry.js';
+import { GridCache } from './GridCache.js';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
@@ -37,224 +31,6 @@ const MESH_SIZE = 64;
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
-const _hits = [];
-
-// Plane geometry with a skirt around the perimeter. The surface vertices and triangles are laid out
-// first, matching PlaneGeometry, followed by the skirt vertices and triangles. Each skirt vertex
-// duplicates the perimeter surface vertex at "skirtSourceIndices[ i - surfaceVertexCount ]".
-class SkirtedPlaneGeometry extends BufferGeometry {
-
-	constructor( width = 1, height = 1, widthSegments = 1, heightSegments = 1 ) {
-
-		super();
-
-		const cols = widthSegments + 1;
-		const rows = heightSegments + 1;
-		const surfaceVertexCount = cols * rows;
-
-		// perimeter vertex loop, clockwise so the skirt triangles face outward
-		const perimeter = [];
-		for ( let x = 0; x < cols; x ++ ) {
-
-			perimeter.push( x );
-
-		}
-
-		for ( let y = 1; y < rows; y ++ ) {
-
-			perimeter.push( y * cols + cols - 1 );
-
-		}
-
-		for ( let x = cols - 2; x >= 0; x -- ) {
-
-			perimeter.push( ( rows - 1 ) * cols + x );
-
-		}
-
-		for ( let y = rows - 2; y >= 1; y -- ) {
-
-			perimeter.push( y * cols );
-
-		}
-
-		const skirtVertexCount = perimeter.length;
-		const vertexCount = surfaceVertexCount + skirtVertexCount;
-		const position = new Float32Array( 3 * vertexCount );
-		const normal = new Float32Array( 3 * vertexCount );
-		const uv = new Float32Array( 2 * vertexCount );
-
-		// flat surface vertices
-		for ( let row = 0; row < rows; row ++ ) {
-
-			for ( let col = 0; col < cols; col ++ ) {
-
-				const i = row * cols + col;
-				const u = col / widthSegments;
-				const v = 1 - row / heightSegments;
-				position[ 3 * i + 0 ] = ( u - 0.5 ) * width;
-				position[ 3 * i + 1 ] = ( v - 0.5 ) * height;
-				normal[ 3 * i + 2 ] = 1;
-				uv[ 2 * i + 0 ] = u;
-				uv[ 2 * i + 1 ] = v;
-
-			}
-
-		}
-
-		// skirt vertices copy their source vertex
-		for ( let i = 0; i < skirtVertexCount; i ++ ) {
-
-			const src = perimeter[ i ];
-			const dst = surfaceVertexCount + i;
-			position[ 3 * dst + 0 ] = position[ 3 * src + 0 ];
-			position[ 3 * dst + 1 ] = position[ 3 * src + 1 ];
-			position[ 3 * dst + 2 ] = position[ 3 * src + 2 ];
-			normal[ 3 * dst + 2 ] = 1;
-			uv[ 2 * dst + 0 ] = uv[ 2 * src + 0 ];
-			uv[ 2 * dst + 1 ] = uv[ 2 * src + 1 ];
-
-		}
-
-		// surface triangles
-		const index = new Uint32Array( 6 * widthSegments * heightSegments + 6 * skirtVertexCount );
-		let offset = 0;
-		for ( let y = 0; y < heightSegments; y ++ ) {
-
-			for ( let x = 0; x < widthSegments; x ++ ) {
-
-				const a = y * cols + x;
-				const b = ( y + 1 ) * cols + x;
-				const c = ( y + 1 ) * cols + x + 1;
-				const d = y * cols + x + 1;
-				index[ offset ++ ] = a;
-				index[ offset ++ ] = b;
-				index[ offset ++ ] = d;
-				index[ offset ++ ] = b;
-				index[ offset ++ ] = c;
-				index[ offset ++ ] = d;
-
-			}
-
-		}
-
-		// skirt triangles, one quad per perimeter edge
-		for ( let e = 0; e < skirtVertexCount; e ++ ) {
-
-			const ne = ( e + 1 ) % skirtVertexCount;
-			const a = perimeter[ e ];
-			const b = perimeter[ ne ];
-			const sa = surfaceVertexCount + e;
-			const sb = surfaceVertexCount + ne;
-			index[ offset ++ ] = a;
-			index[ offset ++ ] = b;
-			index[ offset ++ ] = sa;
-			index[ offset ++ ] = b;
-			index[ offset ++ ] = sb;
-			index[ offset ++ ] = sa;
-
-		}
-
-		this.setIndex( new BufferAttribute( index, 1 ) );
-		this.setAttribute( 'position', new BufferAttribute( position, 3 ) );
-		this.setAttribute( 'normal', new BufferAttribute( normal, 3 ) );
-		this.setAttribute( 'uv', new BufferAttribute( uv, 2 ) );
-
-		this.surfaceVertexCount = surfaceVertexCount;
-		this.skirtSourceIndices = new Uint32Array( perimeter );
-
-	}
-
-}
-
-// draws the image, decodes each pixel to meters, and returns a single-channel float DataTexture.
-// The grid is padded with a one texel border, initialized by duplicating the edge texels, that is
-// filled from neighboring tiles as they load so seams sample identical values on both sides.
-function readImageData( image, canvas, decode ) {
-
-	const { width, height } = image;
-	canvas.width = width;
-	canvas.height = height;
-
-	const ctx = canvas.getContext( '2d', { willReadFrequently: true } );
-	ctx.drawImage( image, 0, 0 );
-
-	const { data } = ctx.getImageData( 0, 0, width, height );
-	ctx.clearRect( 0, 0, width, height );
-
-	// decode into the interior of the padded grid, tracking the elevation range
-	const pw = width + 2;
-	const ph = height + 2;
-	const elevations = new Float32Array( pw * ph );
-	let minHeight = Infinity;
-	let maxHeight = - Infinity;
-	for ( let y = 0; y < height; y ++ ) {
-
-		for ( let x = 0; x < width; x ++ ) {
-
-			const i = 4 * ( y * width + x );
-			const value = decode( data[ i ], data[ i + 1 ], data[ i + 2 ] );
-			if ( value < minHeight ) minHeight = value;
-			if ( value > maxHeight ) maxHeight = value;
-			elevations[ ( y + 1 ) * pw + x + 1 ] = value;
-
-		}
-
-	}
-
-	// duplicate the edge texels into the border
-	for ( let x = 0; x < pw; x ++ ) {
-
-		const xi = MathUtils.clamp( x, 1, pw - 2 );
-		elevations[ x ] = elevations[ pw + xi ];
-		elevations[ ( ph - 1 ) * pw + x ] = elevations[ ( ph - 2 ) * pw + xi ];
-
-	}
-
-	for ( let y = 1; y < ph - 1; y ++ ) {
-
-		elevations[ y * pw ] = elevations[ y * pw + 1 ];
-		elevations[ y * pw + pw - 1 ] = elevations[ y * pw + pw - 2 ];
-
-	}
-
-	const texture = new DataTexture( elevations, pw, ph, RedFormat, FloatType );
-	texture.minFilter = LinearFilter;
-	texture.magFilter = LinearFilter;
-	texture.needsUpdate = true;
-	texture.userData.minHeight = minHeight;
-	texture.userData.maxHeight = maxHeight;
-	return texture;
-
-}
-
-// copies the edge texels of the "src" grid into the border texels of the "dst" grid that face the
-// neighbor at tile offset ( dx, dy ), where positive y steps north to match the grid row order
-function fillBorder( dst, src, dx, dy ) {
-
-	const { data, width, height } = dst.image;
-	const srcData = src.image.data;
-	const w = width - 2;
-	const h = height - 2;
-
-	const minX = dx === 1 ? width - 1 : dx === - 1 ? 0 : 1;
-	const maxX = dx === - 1 ? 0 : dx === 1 ? width - 1 : width - 2;
-	const minY = dy === 1 ? height - 1 : dy === - 1 ? 0 : 1;
-	const maxY = dy === - 1 ? 0 : dy === 1 ? height - 1 : height - 2;
-
-	for ( let y = minY; y <= maxY; y ++ ) {
-
-		for ( let x = minX; x <= maxX; x ++ ) {
-
-			data[ y * width + x ] = srcData[ ( y - dy * h ) * width + ( x - dx * w ) ];
-
-		}
-
-	}
-
-	dst.needsUpdate = true;
-
-}
 
 // bilinear sample of a padded grid at padded texture coordinates
 function sampleGrid( grid, tu, tv ) {
@@ -272,77 +48,6 @@ function sampleGrid( grid, tu, tv ) {
 	const h0 = data[ y0 * width + x0 ] * ( 1 - tx ) + data[ y0 * width + x1 ] * tx;
 	const h1 = data[ y1 * width + x0 ] * ( 1 - tx ) + data[ y1 * width + x1 ] * tx;
 	return h0 * ( 1 - ty ) + h1 * ty;
-
-}
-
-// ref counted cache of decoded elevation grids shared by the tiles reading subviews of each texture
-class GridCache extends DataCache {
-
-	constructor( plugin ) {
-
-		super();
-
-		this.plugin = plugin;
-
-	}
-
-	async fetchItem( [ x, y, level ], signal ) {
-
-		const { plugin } = this;
-		const fetched = await plugin._source.fetchItem( [ x, y, level ], signal );
-		const grid = readImageData( fetched.image, plugin._canvas, ( r, g, b ) => plugin.decodeElevation( r, g, b ) );
-		plugin._source.disposeItem( fetched );
-
-		this.stitchNeighbors( grid, x, y, level );
-		return grid;
-
-	}
-
-	disposeItem( grid ) {
-
-		if ( grid ) {
-
-			grid.dispose();
-
-		}
-
-	}
-
-	// exchanges edge texels with the loaded neighbor grids so both sides of a seam sample identical
-	// values. The meshes need no updates since displacement reads the textures directly.
-	stitchNeighbors( grid, x, y, level ) {
-
-		const tiling = this.plugin._source.tiling;
-		const { tileCountX } = tiling.getLevel( level );
-
-		// grid rows run south to north, so the tile y step is flipped when the tiling is
-		const yDir = tiling.flipY ? - 1 : 1;
-
-		for ( let dx = - 1; dx <= 1; dx ++ ) {
-
-			for ( let dy = - 1; dy <= 1; dy ++ ) {
-
-				if ( dx === 0 && dy === 0 ) {
-
-					continue;
-
-				}
-
-				// wrap the neighbor x so seams close across the antimeridian
-				const nx = ( x + dx + tileCountX ) % tileCountX;
-				const neighbor = this.get( nx, y + dy * yDir, level );
-				if ( neighbor && ! ( neighbor instanceof Promise ) ) {
-
-					fillBorder( grid, neighbor, dx, dy );
-					fillBorder( neighbor, grid, - dx, - dy );
-
-				}
-
-			}
-
-		}
-
-	}
 
 }
 
@@ -410,7 +115,6 @@ export class TerrainRGBMeshPlugin {
 		this._heightScale = heightScale;
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxZoom + 1 } );
 		this._gridCache = new GridCache( this );
-		this._canvas = new OffscreenCanvas( 1, 1 );
 		this._tiling = null;
 
 		// number of tile layers each elevation texture is split into so the deepest layer renders
@@ -505,17 +209,12 @@ export class TerrainRGBMeshPlugin {
 		tile[ SOURCE_TILE ] = [ sx, sy, sourceLevel ];
 		tile[ SUBVIEW ] = this._getSubview( tile );
 
-		// tighten the bounding volume to the texture's cached elevation range
-		this._updateBoundingVolume( tile, grid.userData.minHeight, grid.userData.maxHeight );
+		// tighten the bounding volume to the subview's elevation range cached at decode
+		this._updateBoundingVolume( tile, ...this._getSubviewRange( grid, tile[ SUBVIEW ] ) );
 
-		// build the smooth surface mesh and displacement material
+		// build the displaced surface mesh
 		const mesh = this._useEllipsoid() ? this._createEllipsoidMesh( tile ) : this._createPlanarMesh( tile );
-		mesh.material.displacementMap = this._createSubviewTexture( grid, tile[ SUBVIEW ] );
-		mesh.material.displacementScale = this._heightScale;
-
-		// the flat geometry bounds do not include displacement, so rely on the tile traversal culling
-		// TODO: manually inflate the geometry bounding volumes based on the elevation range instead
-		mesh.frustumCulled = false;
+		mesh.geometry.computeBoundingSphere();
 
 		// apply the overlay texture
 		const { overlay, applyOverlayTexture } = this;
@@ -567,66 +266,8 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
+		// assigned after the last await so a height scale change mid-parse cannot leave a stale
 		return mesh;
-
-	}
-
-	// raycast against a cpu-displaced copy of the tile geometry since the rendered vertices are
-	// displaced on the gpu. TODO: cache the displaced positions per tile and mark them dirty when
-	// the elevation data changes rather than regenerating them per raycast.
-	raycastTile( tile, scene, raycaster, intersects ) {
-
-		const grid = tile[ HEIGHT_GRID ];
-		const subview = tile[ SUBVIEW ];
-		if ( ! grid ) {
-
-			return false;
-
-		}
-
-		scene.traverse( c => {
-
-			if ( c.isMesh ) {
-
-				const raycastMesh = this._getRaycastMesh();
-				const basePosition = c.geometry.attributes.position;
-				const baseNormal = c.geometry.attributes.normal;
-				const baseUv = c.geometry.attributes.uv;
-				const position = raycastMesh.geometry.attributes.position;
-
-				// displace the vertices along the normals to match the gpu result
-				const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, subview );
-				for ( let i = 0, l = position.count; i < l; i ++ ) {
-
-					const tu = MathUtils.mapLinear( baseUv.getX( i ), 0, 1, tu0, tu1 );
-					const tv = MathUtils.mapLinear( baseUv.getY( i ), 0, 1, tv0, tv1 );
-					const height = sampleGrid( grid, tu, tv ) * this._heightScale;
-
-					_pos.fromBufferAttribute( basePosition, i );
-					_norm.fromBufferAttribute( baseNormal, i );
-					_pos.addScaledVector( _norm, height );
-					position.setXYZ( i, _pos.x, _pos.y, _pos.z );
-
-				}
-
-				raycastMesh.geometry.computeBoundingSphere();
-				raycastMesh.matrixWorld.copy( c.matrixWorld );
-
-				// remap the hits to the real mesh
-				_hits.length = 0;
-				raycastMesh.raycast( raycaster, _hits );
-				_hits.forEach( hit => {
-
-					hit.object = c;
-					intersects.push( hit );
-
-				} );
-
-			}
-
-		} );
-
-		return true;
 
 	}
 
@@ -720,6 +361,33 @@ export class TerrainRGBMeshPlugin {
 			( renderBounds[ 2 ] - sourceBounds[ 0 ] ) * invW,
 			( renderBounds[ 3 ] - sourceBounds[ 1 ] ) * invH,
 		];
+
+	}
+
+	// elevation range over a subview, from the block ranges cached at decode
+	_getSubviewRange( grid, subview ) {
+
+		const { blockRanges, blocks } = grid.userData;
+		const x0 = MathUtils.clamp( Math.floor( subview[ 0 ] * blocks ), 0, blocks - 1 );
+		const x1 = MathUtils.clamp( Math.ceil( subview[ 2 ] * blocks ) - 1, 0, blocks - 1 );
+		const y0 = MathUtils.clamp( Math.floor( subview[ 1 ] * blocks ), 0, blocks - 1 );
+		const y1 = MathUtils.clamp( Math.ceil( subview[ 3 ] * blocks ) - 1, 0, blocks - 1 );
+
+		let minHeight = Infinity;
+		let maxHeight = - Infinity;
+		for ( let y = y0; y <= y1; y ++ ) {
+
+			for ( let x = x0; x <= x1; x ++ ) {
+
+				const i = 2 * ( y * blocks + x );
+				minHeight = Math.min( minHeight, blockRanges[ i + 0 ] );
+				maxHeight = Math.max( maxHeight, blockRanges[ i + 1 ] );
+
+			}
+
+		}
+
+		return [ minHeight, maxHeight ];
 
 	}
 
@@ -836,21 +504,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// shared scratch mesh used to raycast displaced tile geometry
-	_getRaycastMesh() {
-
-		if ( ! this._raycastMesh ) {
-
-			const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
-			this._raycastMesh = new Mesh( geometry, new MeshBasicMaterial() );
-			this._raycastMesh.matrixAutoUpdate = false;
-
-		}
-
-		return this._raycastMesh;
-
-	}
-
 	_createEllipsoidMesh( tile ) {
 
 		const { tiles, endCaps, _tiling: tiling } = this;
@@ -862,13 +515,16 @@ export class TerrainRGBMeshPlugin {
 		const [ , south, , north ] = tile.boundingVolume.region;
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
 
+		const grid = tile[ HEIGHT_GRID ];
+		const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, tile[ SUBVIEW ] );
+
 		// new geometry positioned at the tile bounding sphere center
 		const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
 		const mesh = new Mesh( geometry, new MeshLambertMaterial() );
 		tile.engineData.boundingVolume.getSphere( _sphere );
 		mesh.position.copy( _sphere.center );
 
-		// position the surface vertices on the ellipsoid, leaving displacement to the material
+		// position the surface vertices on the displaced ellipsoid surface
 		const { position, normal, uv } = geometry.attributes;
 		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		const cols = MESH_SIZE + 1;
@@ -923,13 +579,14 @@ export class TerrainRGBMeshPlugin {
 
 			}
 
-			// get the position and normal
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
-			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
-
 			// derive UV from the final (potentially adjusted) lat/lon so the textures sample correctly
 			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
 			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
+
+			// get the position and normal
+			const height = sampleGrid( grid, MathUtils.mapLinear( u, 0, 1, tu0, tu1 ), MathUtils.mapLinear( v, 0, 1, tv0, tv1 ) ) * this._heightScale;
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( _sphere.center );
+			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
 			// update the geometry
 			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
@@ -938,8 +595,7 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// drop the skirt vertices from their source vertices along the surface normal so they stay
-		// below the edge after displacement
+		// drop the skirt vertices from their source vertices along the surface normal
 		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
 
 			const src = skirtSourceIndices[ i ];
@@ -970,19 +626,33 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
+		const grid = tile[ HEIGHT_GRID ];
+		const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, tile[ SUBVIEW ] );
+
 		const geometry = new SkirtedPlaneGeometry( 2 * sx, 2 * sy, MESH_SIZE, MESH_SIZE );
 		const mesh = new Mesh( geometry, new MeshLambertMaterial() );
 		mesh.position.set( x, y, 0 );
 
-		// drop the skirt vertices so they stay below the edge after displacement
-		const { position } = geometry.attributes;
+		// displace the surface vertices
+		const { position, uv } = geometry.attributes;
 		const { surfaceVertexCount, skirtSourceIndices } = geometry;
-		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
+		for ( let i = 0; i < surfaceVertexCount; i ++ ) {
 
-			position.setZ( surfaceVertexCount + i, - tile.geometricError );
+			const tu = MathUtils.mapLinear( uv.getX( i ), 0, 1, tu0, tu1 );
+			const tv = MathUtils.mapLinear( uv.getY( i ), 0, 1, tv0, tv1 );
+			position.setZ( i, sampleGrid( grid, tu, tv ) * this._heightScale );
 
 		}
 
+		// drop the skirt vertices below their source vertices
+		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
+
+			const src = skirtSourceIndices[ i ];
+			position.setZ( surfaceVertexCount + i, position.getZ( src ) - tile.geometricError );
+
+		}
+
+		geometry.computeVertexNormals();
 		return mesh;
 
 	}
@@ -1220,28 +890,6 @@ export class TerrainRGBMeshPlugin {
 	decodeElevation( r, g, b ) {
 
 		return - 10000 + ( r * 65536 + g * 256 + b ) * 0.1;
-
-	}
-
-}
-
-/**
- * {@link TerrainRGBMeshPlugin} for the Terrarium encoding.
- */
-export class TerrariumMeshPlugin extends TerrainRGBMeshPlugin {
-
-	constructor( options = {} ) {
-
-		// AWS Terrarium tiles are 256px
-		super( { tileDimension: 256, ...options } );
-
-		this.name = 'TERRARIUM_MESH_PLUGIN';
-
-	}
-
-	decodeElevation( r, g, b ) {
-
-		return ( r * 256 + g + b / 256 ) - 32768;
 
 	}
 
