@@ -36,24 +36,6 @@ export class MeshBVHPlugin {
 
 		};
 
-		this._onModelUpdated = ( { scene } ) => {
-
-			// vertices moved without a topology change, so refit the existing BVH bounds and
-			// recompute the object-level BVH on next raycast
-			scene.traverse( c => {
-
-				if ( c.isMesh && c.geometry.boundsTree ) {
-
-					c.geometry.boundsTree.refit();
-
-				}
-
-			} );
-
-			this.needsUpdate = true;
-
-		};
-
 		this._onDisposeModel = ( { scene } ) => {
 
 			scene.traverse( c => {
@@ -77,7 +59,6 @@ export class MeshBVHPlugin {
 
 		// registration
 		tiles.addEventListener( 'load-model', this._onLoadModel );
-		tiles.addEventListener( 'model-updated', this._onModelUpdated );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
@@ -118,7 +99,6 @@ export class MeshBVHPlugin {
 
 		// remove events
 		tiles.removeEventListener( 'load-model', this._onLoadModel );
-		tiles.removeEventListener( 'model-updated', this._onModelUpdated );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 

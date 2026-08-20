@@ -2,10 +2,11 @@ import {
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
+	AmbientLight,
+	DirectionalLight,
 } from 'three';
 import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
 import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
-import { MeshBVHPlugin } from './src/plugins/MeshBVHPlugin.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const PROVIDERS = {
@@ -29,11 +30,12 @@ const PROVIDERS = {
 const options = {
 	errorTarget: 2,
 	provider: 'Terrarium (AWS)',
+	heightScale: 1,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
 };
 
-let camera, controls, scene, renderer, tiles, debugPlugin;
+let camera, controls, scene, renderer, tiles, terrainPlugin, debugPlugin;
 
 init();
 render();
@@ -49,6 +51,14 @@ function init() {
 	scene = new Scene();
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 );
 
+	// lights for the displaced terrain material
+	const ambientLight = new AmbientLight( 0xffffff, 1.5 );
+	scene.add( ambientLight );
+
+	const directionalLight = new DirectionalLight( 0xffffff, 2 );
+	directionalLight.position.set( 1, 2, 3 );
+	scene.add( directionalLight );
+
 	window.addEventListener( 'resize', onWindowResize, false );
 	onWindowResize();
 
@@ -58,6 +68,11 @@ function init() {
 	const gui = new GUI();
 	gui.add( options, 'errorTarget', 1, 40, 1 );
 	gui.add( options, 'provider', Object.keys( PROVIDERS ) ).onChange( initTiles );
+	gui.add( options, 'heightScale', 0, 10 ).onChange( v => {
+
+		terrainPlugin.heightScale = v;
+
+	} );
 	gui.add( options, 'displayBoxBounds' );
 	gui.add( options, 'displayRegionBounds' );
 
@@ -87,15 +102,14 @@ function initTiles() {
 	// tiles: the plugin generates the elevation surface, so no tileset url is needed
 	const provider = PROVIDERS[ options.provider ];
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new provider.plugin( {
+	terrainPlugin = new provider.plugin( {
 		url: provider.url,
 		maxZoom: provider.maxZoom,
+		heightScale: options.heightScale,
 		overlay,
 		applyOverlayTexture: true,
-	} ) );
-
-	// accelerate raycasting against the dense terrain meshes
-	tiles.registerPlugin( new MeshBVHPlugin() );
+	} );
+	tiles.registerPlugin( terrainPlugin );
 
 	// debug bounding volume display
 	debugPlugin = new DebugTilesPlugin();
