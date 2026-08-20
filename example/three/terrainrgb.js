@@ -8,7 +8,6 @@ import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOv
 import { MeshBVHPlugin } from './src/plugins/MeshBVHPlugin.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-// Free, no-key elevation tile sets. Override the tile url with ?url=.
 const PROVIDERS = {
 
 	// Terrarium tiles from the AWS terrain tiles dataset
@@ -27,13 +26,9 @@ const PROVIDERS = {
 
 };
 
-const params = new URLSearchParams( window.location.search );
-const TERRAIN_URL = params.get( 'url' );
-
 const options = {
 	errorTarget: 2,
 	provider: 'Terrarium (AWS)',
-	wireframe: false,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
 };
@@ -65,15 +60,7 @@ function init() {
 	gui.add( options, 'provider', Object.keys( PROVIDERS ) ).onChange( initTiles );
 	gui.add( options, 'displayBoxBounds' );
 	gui.add( options, 'displayRegionBounds' );
-	gui.add( options, 'wireframe' ).onChange( v => {
 
-		tiles.forEachLoadedModel( tileScene => tileScene.traverse( c => {
-
-			if ( c.material ) c.material.wireframe = v;
-
-		} ) );
-
-	} );
 	gui.open();
 
 }
@@ -101,7 +88,7 @@ function initTiles() {
 	const provider = PROVIDERS[ options.provider ];
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new provider.plugin( {
-		url: TERRAIN_URL ?? provider.url,
+		url: provider.url,
 		maxZoom: provider.maxZoom,
 		overlay,
 		applyOverlayTexture: true,
@@ -116,17 +103,6 @@ function initTiles() {
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
-
-	// draw the displaced grid as wireframe so the relief reads without lighting or texture
-	tiles.addEventListener( 'load-model', ( { scene: tileScene } ) => {
-
-		tileScene.traverse( c => {
-
-			if ( c.material ) c.material.wireframe = options.wireframe;
-
-		} );
-
-	} );
 
 	// controls
 	controls = new GlobeControls( scene, camera, renderer.domElement );

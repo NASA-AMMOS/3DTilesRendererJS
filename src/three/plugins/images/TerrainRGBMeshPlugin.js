@@ -206,7 +206,7 @@ export class TerrainRGBMeshPlugin extends GeneratedSurfacePlugin {
 
 					fillBorder( grid, neighbor[ HEIGHT_GRID ], dx, dy );
 					fillBorder( neighbor[ HEIGHT_GRID ], grid, - dx, - dy );
-					this._updateTileMesh( neighbor );
+					this._updateTileMesh( neighbor, true );
 
 				}
 

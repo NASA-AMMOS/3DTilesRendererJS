@@ -1,5 +1,5 @@
 /** @import { ImageOverlay } from './ImageOverlayPlugin.js' */
-import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector3, Sphere } from 'three';
+import { Mesh, MeshBasicMaterial, MathUtils, Vector3, Sphere, BufferGeometry, BufferAttribute } from 'three';
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
 export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
@@ -21,6 +21,134 @@ const _resolution = { lonVerts: 0, latVerts: 0 };
 
 // the raw terrain elevation range known for a tile, excluding any skirt depth
 const ELEVATION_RANGE = Symbol( 'ELEVATION_RANGE' );
+
+// Plane geometry with a skirt around the perimeter. The surface vertices and triangles are laid out
+// first, matching PlaneGeometry, followed by the skirt vertices and triangles. Each skirt vertex
+// duplicates the perimeter surface vertex at "skirtSourceIndices[ i - surfaceVertexCount ]".
+class SkirtedPlaneGeometry extends BufferGeometry {
+
+	constructor( width = 1, height = 1, widthSegments = 1, heightSegments = 1 ) {
+
+		super();
+
+		const cols = widthSegments + 1;
+		const rows = heightSegments + 1;
+		const surfaceVertexCount = cols * rows;
+
+		// perimeter vertex loop, clockwise so the skirt triangles face outward
+		const perimeter = [];
+		for ( let x = 0; x < cols; x ++ ) {
+
+			perimeter.push( x );
+
+		}
+
+		for ( let y = 1; y < rows; y ++ ) {
+
+			perimeter.push( y * cols + cols - 1 );
+
+		}
+
+		for ( let x = cols - 2; x >= 0; x -- ) {
+
+			perimeter.push( ( rows - 1 ) * cols + x );
+
+		}
+
+		for ( let y = rows - 2; y >= 1; y -- ) {
+
+			perimeter.push( y * cols );
+
+		}
+
+		const skirtVertexCount = perimeter.length;
+		const vertexCount = surfaceVertexCount + skirtVertexCount;
+		const position = new Float32Array( 3 * vertexCount );
+		const normal = new Float32Array( 3 * vertexCount );
+		const uv = new Float32Array( 2 * vertexCount );
+
+		// flat surface vertices
+		for ( let row = 0; row < rows; row ++ ) {
+
+			for ( let col = 0; col < cols; col ++ ) {
+
+				const i = row * cols + col;
+				const u = col / widthSegments;
+				const v = 1 - row / heightSegments;
+				position[ 3 * i + 0 ] = ( u - 0.5 ) * width;
+				position[ 3 * i + 1 ] = ( v - 0.5 ) * height;
+				normal[ 3 * i + 2 ] = 1;
+				uv[ 2 * i + 0 ] = u;
+				uv[ 2 * i + 1 ] = v;
+
+			}
+
+		}
+
+		// skirt vertices copy their source vertex
+		for ( let i = 0; i < skirtVertexCount; i ++ ) {
+
+			const src = perimeter[ i ];
+			const dst = surfaceVertexCount + i;
+			position[ 3 * dst + 0 ] = position[ 3 * src + 0 ];
+			position[ 3 * dst + 1 ] = position[ 3 * src + 1 ];
+			position[ 3 * dst + 2 ] = position[ 3 * src + 2 ];
+			normal[ 3 * dst + 2 ] = 1;
+			uv[ 2 * dst + 0 ] = uv[ 2 * src + 0 ];
+			uv[ 2 * dst + 1 ] = uv[ 2 * src + 1 ];
+
+		}
+
+		// surface triangles
+		const index = new Uint32Array( 6 * widthSegments * heightSegments + 6 * skirtVertexCount );
+		let offset = 0;
+		for ( let y = 0; y < heightSegments; y ++ ) {
+
+			for ( let x = 0; x < widthSegments; x ++ ) {
+
+				const a = y * cols + x;
+				const b = ( y + 1 ) * cols + x;
+				const c = ( y + 1 ) * cols + x + 1;
+				const d = y * cols + x + 1;
+				index[ offset ++ ] = a;
+				index[ offset ++ ] = b;
+				index[ offset ++ ] = d;
+				index[ offset ++ ] = b;
+				index[ offset ++ ] = c;
+				index[ offset ++ ] = d;
+
+			}
+
+		}
+
+		// skirt triangles, one quad per perimeter edge
+		for ( let e = 0; e < skirtVertexCount; e ++ ) {
+
+			const ne = ( e + 1 ) % skirtVertexCount;
+			const a = perimeter[ e ];
+			const b = perimeter[ ne ];
+			const sa = surfaceVertexCount + e;
+			const sb = surfaceVertexCount + ne;
+			index[ offset ++ ] = a;
+			index[ offset ++ ] = b;
+			index[ offset ++ ] = sa;
+			index[ offset ++ ] = b;
+			index[ offset ++ ] = sb;
+			index[ offset ++ ] = sa;
+
+		}
+
+		this.setIndex( new BufferAttribute( index, 1 ) );
+		this.setAttribute( 'position', new BufferAttribute( position, 3 ) );
+		this.setAttribute( 'normal', new BufferAttribute( normal, 3 ) );
+		this.setAttribute( 'uv', new BufferAttribute( uv, 2 ) );
+
+		this.surfaceVertexCount = surfaceVertexCount;
+		this.skirtSourceIndices = new Uint32Array( perimeter );
+
+	}
+
+}
 
 /**
  * Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
@@ -292,11 +420,10 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		// new geometry with an extra ring of vertices around the edge to form the skirt. adjust the
-		// geometry transform itself rather than the mesh because it reduces the artifact errors when
-		// rendering.
+		// adjust the geometry transform itself rather than the mesh because it reduces the artifact
+		// errors when rendering.
 		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, true, _resolution );
-		const geometry = new PlaneGeometry( 2 * sx, 2 * sy, lonVerts + 2, latVerts + 2 );
+		const geometry = new SkirtedPlaneGeometry( 2 * sx, 2 * sy, lonVerts, latVerts );
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.set( x, y, 0 );
 
@@ -305,8 +432,10 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	// writes the displaced vertex positions and uvs for a tile into the given planar geometry
-	_displacePlanarGeometry( tile, geometry ) {
+	// writes the displaced vertex positions and uvs for a tile into the given planar geometry. When
+	// "edgesOnly" is set only the perimeter vertices are updated, for when new elevation data is
+	// limited to the tile edges
+	_displacePlanarGeometry( tile, geometry, edgesOnly = false ) {
 
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
@@ -322,27 +451,24 @@ export class GeneratedSurfacePlugin {
 		}
 
 		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, true, _resolution );
-		const cols = lonVerts + 3;
-		const rows = latVerts + 3;
+		const cols = lonVerts + 1;
 
 		const uvRange = this._tiling.getTileContentUVBounds( tx, ty, level );
 		const { position, uv } = geometry.attributes;
-		const vertCount = position.count;
+		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		let minHeight = Infinity;
 		let maxHeight = - Infinity;
-		for ( let i = 0; i < vertCount; i ++ ) {
 
-			// determine whether this vertex is part of the skirt or not
+		const count = edgesOnly ? skirtSourceIndices.length : surfaceVertexCount;
+		for ( let j = 0; j < count; j ++ ) {
+
+			const i = edgesOnly ? skirtSourceIndices[ j ] : j;
 			const col = i % cols;
 			const row = Math.floor( i / cols );
-			const isSkirt = col === 0 || col === cols - 1 || row === 0 || row === rows - 1;
+			const u = col / lonVerts;
+			const v = 1 - row / latVerts;
 
-			const innerCol = Math.max( 1, Math.min( cols - 2, col ) );
-			const innerRow = Math.max( 1, Math.min( rows - 2, row ) );
-			const u = ( innerCol - 1 ) / lonVerts;
-			const v = 1 - ( innerRow - 1 ) / latVerts;
-
-			// displace the vertex, dropping the skirt ring by the skirt depth
+			// displace the vertex
 			const height = this.getElevation( u, v, tile );
 			if ( height < minHeight ) minHeight = height;
 			if ( height > maxHeight ) maxHeight = height;
@@ -351,7 +477,7 @@ export class GeneratedSurfacePlugin {
 				i,
 				MathUtils.mapLinear( u, 0, 1, - sx, sx ),
 				MathUtils.mapLinear( v, 0, 1, - sy, sy ),
-				isSkirt ? height - tile.geometricError : height,
+				height,
 			);
 
 			// adjust the uvs so only the relevant texture portion is visible
@@ -362,7 +488,22 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		this._updateBoundingVolume( tile, minHeight, maxHeight );
+		// drop the skirt vertices from their source perimeter vertices by the skirt depth
+		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
+
+			const src = skirtSourceIndices[ i ];
+			const dst = surfaceVertexCount + i;
+			position.setXYZ( dst, position.getX( src ), position.getY( src ), position.getZ( src ) - tile.geometricError );
+			uv.setXY( dst, uv.getX( src ), uv.getY( src ) );
+
+		}
+
+		// edge updates only shift heights by a sub texel amount, so the bounding volume is unaffected
+		if ( ! edgesOnly ) {
+
+			this._updateBoundingVolume( tile, minHeight, maxHeight );
+
+		}
 
 		geometry.computeVertexNormals();
 		geometry.computeBoundingSphere();
@@ -374,10 +515,9 @@ export class GeneratedSurfacePlugin {
 
 	_createEllipsoidMesh( tile ) {
 
-		// new geometry with an extra ring of vertices around the edge to form the skirt, positioned
-		// at the tile bounding sphere center
+		// new geometry positioned at the tile bounding sphere center
 		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, false, _resolution );
-		const geometry = new PlaneGeometry( 1, 1, lonVerts + 2, latVerts + 2 );
+		const geometry = new SkirtedPlaneGeometry( 1, 1, lonVerts, latVerts );
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 
 		tile.engineData.boundingVolume.getSphere( _sphere );
@@ -389,8 +529,9 @@ export class GeneratedSurfacePlugin {
 	}
 
 	// writes the displaced vertex positions, normals, and uvs for a tile into the given ellipsoid
-	// geometry, with vertices positioned relative to "center"
-	_displaceEllipsoidGeometry( tile, geometry, center ) {
+	// geometry, with vertices positioned relative to "center". When "edgesOnly" is set only the
+	// perimeter vertices are updated, for when new elevation data is limited to the tile edges
+	_displaceEllipsoidGeometry( tile, geometry, center, edgesOnly = false ) {
 
 		const { tiles, endCaps, _tiling: tiling } = this;
 		const { projection } = tiling;
@@ -400,28 +541,25 @@ export class GeneratedSurfacePlugin {
 
 		const [ , south, , north ] = tile.boundingVolume.region;
 		const { latVerts, lonVerts } = this.getSurfaceResolution( tile, false, _resolution );
-		const cols = lonVerts + 3;
-		const rows = latVerts + 3;
+		const cols = lonVerts + 1;
 
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
 		const uvRange = tiling.getTileContentUVBounds( x, y, level );
 
 		// adjust the geometry to position it at the region
 		const { position, normal, uv } = geometry.attributes;
-		const vertCount = position.count;
+		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		let minHeight = Infinity;
 		let maxHeight = - Infinity;
-		for ( let i = 0; i < vertCount; i ++ ) {
 
-			// determine whether this vertex is part of the skirt or not
+		const count = edgesOnly ? skirtSourceIndices.length : surfaceVertexCount;
+		for ( let j = 0; j < count; j ++ ) {
+
+			const i = edgesOnly ? skirtSourceIndices[ j ] : j;
 			const col = i % cols;
 			const row = Math.floor( i / cols );
-			const isSkirt = col === 0 || col === cols - 1 || row === 0 || row === rows - 1;
-
-			const innerCol = Math.max( 1, Math.min( cols - 2, col ) );
-			const innerRow = Math.max( 1, Math.min( rows - 2, row ) );
-			const uNorm = ( innerCol - 1 ) / lonVerts;
-			const vNorm = 1 - ( innerRow - 1 ) / latVerts;
+			const uNorm = col / lonVerts;
+			const vNorm = 1 - row / latVerts;
 
 			// convert the plane position to lat / lon
 			const lon = projection.convertNormalizedToLongitude( MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ) );
@@ -474,12 +612,6 @@ export class GeneratedSurfacePlugin {
 			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
-			if ( isSkirt ) {
-
-				_pos.addScaledVector( _norm, - tile.geometricError );
-
-			}
-
 			// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
 			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
 			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
@@ -491,7 +623,27 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		this._updateBoundingVolume( tile, minHeight, maxHeight );
+		// drop the skirt vertices from their source perimeter vertices along the surface normal
+		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
+
+			const src = skirtSourceIndices[ i ];
+			const dst = surfaceVertexCount + i;
+			_pos.fromBufferAttribute( position, src );
+			_norm.fromBufferAttribute( normal, src );
+			_pos.addScaledVector( _norm, - tile.geometricError );
+
+			position.setXYZ( dst, _pos.x, _pos.y, _pos.z );
+			normal.setXYZ( dst, _norm.x, _norm.y, _norm.z );
+			uv.setXY( dst, uv.getX( src ), uv.getY( src ) );
+
+		}
+
+		// edge updates only shift heights by a sub texel amount, so the bounding volume is unaffected
+		if ( ! edgesOnly ) {
+
+			this._updateBoundingVolume( tile, minHeight, maxHeight );
+
+		}
 
 		geometry.computeBoundingSphere();
 		position.needsUpdate = true;
@@ -502,7 +654,7 @@ export class GeneratedSurfacePlugin {
 
 	// re-displaces a loaded tile's surface mesh in place after its elevation data has changed and
 	// notifies listeners so acceleration structures can be updated
-	_updateTileMesh( tile ) {
+	_updateTileMesh( tile, edgesOnly = false ) {
 
 		const scene = tile.engineData.scene;
 		if ( ! scene ) {
@@ -518,11 +670,11 @@ export class GeneratedSurfacePlugin {
 
 				if ( useEllipsoid ) {
 
-					this._displaceEllipsoidGeometry( tile, c.geometry, c.position );
+					this._displaceEllipsoidGeometry( tile, c.geometry, c.position, edgesOnly );
 
 				} else {
 
-					this._displacePlanarGeometry( tile, c.geometry );
+					this._displacePlanarGeometry( tile, c.geometry, edgesOnly );
 
 				}
 
