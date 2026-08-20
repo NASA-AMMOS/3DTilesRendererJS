@@ -7,17 +7,55 @@
 		<title>MVT Annotations on Google 3D Tiles</title>
 		<link rel="stylesheet" href="../styles.css">
 		<style>
+			:root {
+				--tooltip-background: #26252f;
+				--tooltip-border: #3f3e4c;
+			}
+
 			#tooltip {
 				position: fixed;
 				pointer-events: none;
-				background: rgba( 0, 0, 0, 0.65 );
-				color: #fff;
-				padding: 6px;
-				border-radius: 4px;
-				font-size: 13px;
-				white-space: nowrap;
 				display: none;
+				padding: 6px 10px;
+				border-radius: 6px;
+				border: 1px solid var( --tooltip-border );
+				background: var( --tooltip-background );
+				box-shadow: 0 2px 12px rgba( 0, 0, 0, 0.45 );
+				color: #fff;
+				font-size: 13px;
+				line-height: 1.35;
+				white-space: nowrap;
+			}
+
+			#tooltip .kind {
+				display: block;
+				color: #aeacc4;
+				font-size: 11px;
 				text-transform: capitalize;
+			}
+
+			/* caret pointing down at the annotation, drawn twice so it keeps the panel's hairline edge */
+			#tooltip::before,
+			#tooltip::after {
+				content: '';
+				position: absolute;
+				top: 100%;
+				left: var( --caret-x, 50% );
+				width: 0;
+				height: 0;
+				transform: translateX( -50% );
+				border-left: 7px solid transparent;
+				border-right: 7px solid transparent;
+			}
+
+			#tooltip::before {
+				border-top: 8px solid var( --tooltip-border );
+			}
+
+			/* pulled up over the panel's bottom border so the caret and the box read as one shape */
+			#tooltip::after {
+				margin-top: -2px;
+				border-top: 8px solid var( --tooltip-background );
 			}
 		</style>
     </head>

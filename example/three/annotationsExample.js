@@ -25,6 +25,7 @@ import {
 	PerspectiveCamera,
 	Raycaster,
 	Vector2,
+	Vector3,
 } from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
@@ -126,7 +127,10 @@ let driver = null;
 const pointer = new Vector2();
 const raycaster = new Raycaster();
 const tooltip = document.getElementById( 'tooltip' );
-let lastClientX = 0, lastClientY = 0;
+const anchor = new Vector3();
+
+const TOOLTIP_CARET_SIZE = 8;
+const TOOLTIP_ANCHOR_GAP = 16;
 
 // supplies the plugin's annotation callbacks and owns its render objects ( added to the driver's
 // group, which the plugin mounts under the tile group ): point annotations -> `annotationPoints`,
@@ -437,12 +441,9 @@ function init() {
 
 function onPointerMove( e ) {
 
-	// pointer for highlighting tooltips
 	const rect = renderer.domElement.getBoundingClientRect();
 	pointer.x = ( ( e.clientX - rect.left ) / rect.width ) * 2 - 1;
 	pointer.y = - ( ( e.clientY - rect.top ) / rect.height ) * 2 + 1;
-	lastClientX = e.clientX;
-	lastClientY = e.clientY;
 
 	updateTooltip();
 
@@ -450,44 +451,63 @@ function onPointerMove( e ) {
 
 function updateTooltip() {
 
-	// run raycast, update tooltip display
 	raycaster.setFromCamera( pointer, camera );
 
 	const hits = raycaster.intersectObject( driver.annotationPoints );
-	if ( hits.length > 0 ) {
+	const properties = hits[ 0 ]?.properties;
+	if ( ! properties ) {
 
-		// display the name of the hovered icon
-		const { properties } = hits[ 0 ];
-		if ( properties ) {
+		tooltip.style.display = 'none';
+		return;
 
-			// get the name based on the properties and language
-			let text;
-			if ( params.language === 'default' ) {
+	}
 
-				text = properties.name;
+	// anchor to the annotation itself rather than the cursor so the caret stays on the icon
+	const rect = renderer.domElement.getBoundingClientRect();
+	anchor.copy( hits[ 0 ].point ).project( camera );
+	const anchorX = rect.left + ( anchor.x * 0.5 + 0.5 ) * rect.width;
+	const anchorY = rect.top + ( - anchor.y * 0.5 + 0.5 ) * rect.height;
 
-			} else {
+	// get the name based on the properties and language
+	let name;
+	if ( params.language === 'default' ) {
 
-				text = properties[ `name:${ params.language }` ] || properties.name;
-
-			}
-
-			tooltip.textContent = text || `${ properties.kind.replace( '_', ' ' ) } (unnamed)`;
-			tooltip.style.display = 'block';
-
-			// position
-			const x = Math.min( Math.max( lastClientX - tooltip.offsetWidth / 2, 4 ), window.innerWidth - tooltip.offsetWidth - 4 );
-			const y = Math.max( lastClientY - tooltip.offsetHeight - 10, 4 );
-			tooltip.style.left = x + 'px';
-			tooltip.style.top = y + 'px';
-
-		}
+		name = properties.name;
 
 	} else {
 
-		tooltip.style.display = 'none';
+		name = properties[ `name:${ params.language }` ] || properties.name;
 
 	}
+
+	const kind = properties.kind?.replace( /_/g, ' ' ) ?? '';
+
+	// show the kind as a subtitle under the name, or on its own when the feature has no name
+	tooltip.innerHTML = '';
+	if ( name ) {
+
+		tooltip.appendChild( document.createTextNode( name ) );
+
+	}
+
+	if ( kind ) {
+
+		const kindEl = document.createElement( 'span' );
+		kindEl.className = 'kind';
+		kindEl.textContent = kind;
+		tooltip.appendChild( kindEl );
+
+	}
+
+	tooltip.style.display = 'block';
+
+	// sit above the annotation, clamped into the window, and offset the caret by however much the
+	// clamp shifted the panel so it keeps pointing at the icon
+	const x = Math.min( Math.max( anchorX - tooltip.offsetWidth / 2, 4 ), window.innerWidth - tooltip.offsetWidth - 4 );
+	const y = Math.max( anchorY - tooltip.offsetHeight - TOOLTIP_CARET_SIZE - TOOLTIP_ANCHOR_GAP, 4 );
+	tooltip.style.left = x + 'px';
+	tooltip.style.top = y + 'px';
+	tooltip.style.setProperty( '--caret-x', `${ anchorX - x }px` );
 
 }
 

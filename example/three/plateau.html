@@ -6,6 +6,73 @@
 
 		<title>PLATEAU Example</title>
 		<link rel="stylesheet" href="../styles.css">
+		<style>
+			:root {
+				--tooltip-background: #26252f;
+				--tooltip-border: #3f3e4c;
+			}
+
+			/* details for the selected building, anchored over it with a caret pointing down at it */
+			#building {
+				position: fixed;
+				pointer-events: none;
+				display: none;
+				min-width: 100px;
+				/* sized to its content rather than to the room left before the edge of the window, so
+				   the rows do not wrap as the panel travels offscreen */
+				width: max-content;
+				padding: 10px 12px;
+				border-radius: 6px;
+				border: 1px solid var( --tooltip-border );
+				background: var( --tooltip-background );
+				box-shadow: 0 2px 12px rgba( 0, 0, 0, 0.45 );
+				color: #fff;
+				font-size: 13px;
+				line-height: 1.4;
+			}
+
+			/* caret pointing down at the building, drawn twice so it keeps the panel's hairline edge */
+			#building::before,
+			#building::after {
+				content: '';
+				position: absolute;
+				top: 100%;
+				left: var( --caret-x, 50% );
+				width: 0;
+				height: 0;
+				transform: translateX( -50% );
+				border-left: 7px solid transparent;
+				border-right: 7px solid transparent;
+			}
+
+			#building::before {
+				border-top: 8px solid var( --tooltip-border );
+			}
+
+			/* pulled up over the panel's bottom border so the caret and the box read as one shape */
+			#building::after {
+				margin-top: -2px;
+				border-top: 8px solid var( --tooltip-background );
+			}
+
+			#building dl {
+				display: grid;
+				grid-template-columns: auto auto;
+				gap: 2px 12px;
+				margin: 0;
+			}
+
+			#building dt {
+				color: #aeacc4;
+				font-size: 11px;
+			}
+
+			#building dd {
+				margin: 0;
+				text-align: right;
+			}
+
+		</style>
     </head>
     <body>
 		<div id="info">
@@ -15,6 +82,8 @@
 				Cesium Ion API token required.
 			</div>
 		</div>
+
+		<div id="building"></div>
 
 		<div id="footer">
 			<div id="credits"></div>
