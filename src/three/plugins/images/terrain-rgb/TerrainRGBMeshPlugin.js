@@ -2,7 +2,9 @@
 import {
 	Mesh,
 	MeshLambertMaterial,
+	MeshBasicMaterial,
 	MathUtils,
+	Vector2,
 	Vector3,
 	Sphere,
 } from 'three';
@@ -20,6 +22,9 @@ const SUBVIEW = Symbol( 'SUBVIEW' );
 const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
 const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
 
+// the raw measured elevation range of a tile, excluding height scale and padding
+const HEIGHT_RANGE = Symbol( 'HEIGHT_RANGE' );
+
 // mesh segments per tile
 const MESH_SIZE = 32;
 
@@ -33,6 +38,85 @@ const EXTRA_LEVELS = 2;
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
+const _hits = [];
+
+// dedicated mesh for raycasting displaced vertices. All tiles share the same vertex layout so a
+// single scratch mesh can represent any of them. The tile geometry itself is never modified.
+let _raycastMesh = null;
+function getRaycastMesh() {
+
+	if ( _raycastMesh === null ) {
+
+		_raycastMesh = new Mesh( new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE ), new MeshBasicMaterial() );
+		_raycastMesh.matrixAutoUpdate = false;
+
+	}
+
+	return _raycastMesh;
+
+}
+
+// Replaces the built-in bump map chunk with a variant that evaluates the height gradient at fixed
+// one texel offsets and projects it onto the screen steps. The built-in chunk differences the
+// texture at screen derivative offsets, and the derivative of a bilinearly filtered texture is
+// constant within each texel cell, which shades every texel as a flat facet.
+function applySmoothBumpChunk( material, texture ) {
+
+	const texelSize = new Vector2( 1 / texture.image.width, 1 / texture.image.height );
+	material.onBeforeCompile = shader => {
+
+		shader.uniforms.bumpMapTexelSize = { value: texelSize };
+		shader.fragmentShader = shader.fragmentShader.replace( '#include <bumpmap_pars_fragment>', /* glsl */`
+			#ifdef USE_BUMPMAP
+
+				uniform sampler2D bumpMap;
+				uniform float bumpScale;
+				uniform vec2 bumpMapTexelSize;
+
+				vec2 dHdxy_fwd() {
+
+					vec2 dSTdx = dFdx( vBumpMapUv );
+					vec2 dSTdy = dFdy( vBumpMapUv );
+
+					// central differences at one texel spacing interpolate smoothly across texel cells
+					vec2 dx = vec2( bumpMapTexelSize.x, 0.0 );
+					vec2 dy = vec2( 0.0, bumpMapTexelSize.y );
+					float gradU = ( texture2D( bumpMap, vBumpMapUv + dx ).x - texture2D( bumpMap, vBumpMapUv - dx ).x ) / ( 2.0 * bumpMapTexelSize.x );
+					float gradV = ( texture2D( bumpMap, vBumpMapUv + dy ).x - texture2D( bumpMap, vBumpMapUv - dy ).x ) / ( 2.0 * bumpMapTexelSize.y );
+
+					// project the gradient onto the screen space steps to match the original convention
+					float dBx = bumpScale * ( gradU * dSTdx.x + gradV * dSTdx.y );
+					float dBy = bumpScale * ( gradU * dSTdy.x + gradV * dSTdy.y );
+
+					return vec2( dBx, dBy );
+
+				}
+
+				vec3 perturbNormalArb( vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDirection ) {
+
+					// The unnormalized surface derivatives keep the world size of a screen pixel so the
+					// height gradient, which is in world units per pixel, resolves to the true physical
+					// slope at every scale.
+					vec3 vSigmaX = dFdx( surf_pos.xyz );
+					vec3 vSigmaY = dFdy( surf_pos.xyz );
+					vec3 vN = surf_norm; // normalized
+
+					vec3 R1 = cross( vSigmaY, vN );
+					vec3 R2 = cross( vN, vSigmaX );
+
+					float fDet = dot( vSigmaX, R1 ) * faceDirection;
+
+					vec3 vGrad = sign( fDet ) * ( dHdxy.x * R1 + dHdxy.y * R2 );
+					return normalize( abs( fDet ) * surf_norm - vGrad );
+
+				}
+
+			#endif
+		` );
+
+	};
+
+}
 
 // bilinear sample of a padded grid at padded texture coordinates
 function sampleGrid( grid, tu, tv ) {
@@ -62,14 +146,32 @@ function sampleGrid( grid, tu, tv ) {
  * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
  * @param {number} [options.tileDimension=512] Source tile pixel size.
  * @param {number} [options.maxZoom=15] Highest zoom level the source provides.
- * @param {number} [options.heightScale=1] Vertical exaggeration.
+ * @param {number} [options.heightScale=1] Vertical exaggeration. Can be adjusted dynamically.
  * @param {ImageOverlay} [options.overlay=null] Overlay used to texture the tiles when
  *   `applyOverlayTexture` is enabled.
  * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.
+ * @param {boolean} [options.unlit=false] Render the tiles without lighting or terrain normals.
  * @param {boolean} [options.endCaps=true] Snap poles to ±90° lat.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
  */
 export class TerrainRGBMeshPlugin {
+
+	get heightScale() {
+
+		return this._heightScale;
+
+	}
+
+	set heightScale( value ) {
+
+		if ( value !== this._heightScale ) {
+
+			this._heightScale = value;
+			this._updateHeightScale();
+
+		}
+
+	}
 
 	constructor( options = {} ) {
 
@@ -80,6 +182,7 @@ export class TerrainRGBMeshPlugin {
 			heightScale = 1,
 			overlay = null,
 			applyOverlayTexture = false,
+			unlit = false,
 			endCaps = true,
 			useRecommendedSettings = true,
 		} = options;
@@ -90,6 +193,7 @@ export class TerrainRGBMeshPlugin {
 
 		this.overlay = overlay;
 		this.applyOverlayTexture = applyOverlayTexture;
+		this.unlit = unlit;
 		this.endCaps = endCaps;
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.maxZoom = maxZoom;
@@ -189,9 +293,29 @@ export class TerrainRGBMeshPlugin {
 		tile[ SOURCE_TILE ] = [ sx, sy, sourceLevel ];
 		tile[ SUBVIEW ] = this._getSubview( tile );
 
-		// build the displaced surface mesh
+		// Build the smooth surface mesh displaced by the elevation texture. The mesh uvs sample the
+		// texture directly and the texture is cloned so each tile can dispose its own reference
+		// while the underlying upload is shared. The same texture drives the bump map so lighting
+		// picks up per-pixel terrain normals.
 		const mesh = this._createEllipsoidMesh( tile );
-		mesh.geometry.computeBoundingSphere();
+		const displacement = grid.clone();
+		mesh.material.displacementMap = displacement;
+		if ( this.unlit ) {
+
+			// a black surface with white emissive ignores the lights while displacement still applies
+			mesh.material.color.set( 0x000000 );
+			mesh.material.emissive.set( 0xffffff );
+
+		} else {
+
+			mesh.material.bumpMap = displacement;
+			applySmoothBumpChunk( mesh.material, displacement );
+
+		}
+
+		// the flat geometry bounds do not include displacement, so rely on the tile traversal culling
+		// TODO: manually inflate the geometry bounding volumes based on the elevation range instead
+		mesh.frustumCulled = false;
 
 		// apply the overlay texture
 		const { overlay, applyOverlayTexture } = this;
@@ -230,11 +354,16 @@ export class TerrainRGBMeshPlugin {
 
 				}
 
-				// clone so the tile can apply its own uv transform - the texture upload is shared
+				// Clone so the tile can apply its own uv transform - the texture upload is shared.
+				// The mesh uvs live in the elevation texture's subview range, so remap the overlay
+				// from that range onto its own uv bounds.
+				const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, tile[ SUBVIEW ] );
 				const uvRange = this._tiling.getTileContentUVBounds( x, y, level );
+				const repeatX = ( uvRange[ 2 ] - uvRange[ 0 ] ) / ( tu1 - tu0 );
+				const repeatY = ( uvRange[ 3 ] - uvRange[ 1 ] ) / ( tv1 - tv0 );
 				const texture = overlay.getTexture( range, level ).clone();
-				texture.offset.set( uvRange[ 0 ], uvRange[ 1 ] );
-				texture.repeat.set( uvRange[ 2 ] - uvRange[ 0 ], uvRange[ 3 ] - uvRange[ 1 ] );
+				texture.offset.set( uvRange[ 0 ] - tu0 * repeatX, uvRange[ 1 ] - tv0 * repeatY );
+				texture.repeat.set( repeatX, repeatY );
 
 				mesh.material.map = texture;
 				mesh.material.needsUpdate = true;
@@ -243,7 +372,69 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
+		// Assigned after the last await so a height scale change mid-parse cannot leave a stale
+		// scale on a material that "_updateHeightScale" has not seen yet. The texture holds meters
+		// and the world is in meters, so the bump scale matches the displacement scale.
+		mesh.material.displacementScale = this._heightScale;
+		mesh.material.bumpScale = this._heightScale;
+
 		return mesh;
+
+	}
+
+	// raycast against a cpu-displaced copy of the tile geometry since the rendered vertices are
+	// displaced on the gpu. TODO: cache the displaced positions per tile and mark them dirty when
+	// the elevation data changes rather than regenerating them per raycast.
+	raycastTile( tile, scene, raycaster, intersects ) {
+
+		const grid = tile[ HEIGHT_GRID ];
+		if ( ! grid ) {
+
+			return false;
+
+		}
+
+		scene.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				const raycastMesh = getRaycastMesh();
+				const basePosition = c.geometry.attributes.position;
+				const baseNormal = c.geometry.attributes.normal;
+				const baseUv = c.geometry.attributes.uv;
+				const position = raycastMesh.geometry.attributes.position;
+
+				// displace the vertices along the normals to match the gpu result. The mesh uvs
+				// sample the elevation texture directly.
+				for ( let i = 0, l = position.count; i < l; i ++ ) {
+
+					const height = sampleGrid( grid, baseUv.getX( i ), baseUv.getY( i ) ) * this._heightScale;
+
+					_pos.fromBufferAttribute( basePosition, i );
+					_norm.fromBufferAttribute( baseNormal, i );
+					_pos.addScaledVector( _norm, height );
+					position.setXYZ( i, _pos.x, _pos.y, _pos.z );
+
+				}
+
+				raycastMesh.geometry.computeBoundingSphere();
+				raycastMesh.matrixWorld.copy( c.matrixWorld );
+
+				// remap the hits to the real mesh
+				_hits.length = 0;
+				raycastMesh.raycast( raycaster, _hits );
+				_hits.forEach( hit => {
+
+					hit.object = c;
+					intersects.push( hit );
+
+				} );
+
+			}
+
+		} );
+
+		return true;
 
 	}
 
@@ -339,18 +530,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// clone of the shared grid texture with a transform mapping the tile onto its subview. The
-	// texture upload is shared between clones.
-	_createSubviewTexture( grid, subview ) {
-
-		const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, subview );
-		const texture = grid.clone();
-		texture.offset.set( tu0, tv0 );
-		texture.repeat.set( tu1 - tu0, tv1 - tv0 );
-		return texture;
-
-	}
-
 	_createEllipsoidMesh( tile ) {
 
 		const { tiles, endCaps, _tiling: tiling } = this;
@@ -371,7 +550,8 @@ export class TerrainRGBMeshPlugin {
 		tile.engineData.boundingVolume.getSphere( _sphere );
 		mesh.position.copy( _sphere.center );
 
-		// position the surface vertices on the displaced ellipsoid surface, tracking the height range
+		// position the surface vertices on the ellipsoid, leaving displacement to the material, while
+		// tracking the raw elevation range of the tile
 		const { position, normal, uv } = geometry.attributes;
 		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		const cols = MESH_SIZE + 1;
@@ -428,21 +608,25 @@ export class TerrainRGBMeshPlugin {
 
 			}
 
-			// derive UV from the final (potentially adjusted) lat/lon so the textures sample correctly
+			// Derive UV from the final (potentially adjusted) lat/lon, mapped into the elevation
+			// texture's subview so the uvs directly sample the correct portion of the texture and
+			// survive any downstream mesh splitting.
 			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
 			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
+			const tu = MathUtils.mapLinear( u, 0, 1, tu0, tu1 );
+			const tv = MathUtils.mapLinear( v, 0, 1, tv0, tv1 );
 
 			// get the position and normal
-			const height = sampleGrid( grid, MathUtils.mapLinear( u, 0, 1, tu0, tu1 ), MathUtils.mapLinear( v, 0, 1, tv0, tv1 ) ) * this.heightScale;
+			const height = sampleGrid( grid, tu, tv );
 			if ( height < minHeight ) minHeight = height;
 			if ( height > maxHeight ) maxHeight = height;
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _pos ).sub( _sphere.center );
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
 			// update the geometry
 			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
 			normal.setXYZ( i, _norm.x, _norm.y, _norm.z );
-			uv.setXY( i, u, v );
+			uv.setXY( i, tu, tv );
 
 		}
 
@@ -461,20 +645,74 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		this._updateBoundingVolume( tile, minHeight, maxHeight );
+		tile[ HEIGHT_RANGE ] = { min: minHeight, max: maxHeight };
+		this._updateBoundingVolume( tile );
 		return mesh;
 
 	}
 
-	// Tightens the tile bounding region to the generated vertex heights, once, before the tile is
-	// rendered. The range is padded by the geometric error since it covers the expected deviation
-	// from the true surface, enclosing detail that finer levels can add as well as the skirts.
-	_updateBoundingVolume( tile, minHeight, maxHeight ) {
+	// Writes the tile's elevation range onto its bounding region: the measured range once its
+	// elevation data has loaded, or the fixed conservative range before then. The range is padded
+	// by the geometric error since it covers the expected deviation from the true surface,
+	// enclosing detail that finer levels can add as well as the skirts.
+	_updateBoundingVolume( tile ) {
 
+		const scale = this._heightScale;
+		const pad = tile[ TILE_LEVEL ] === - 1 ? 0 : tile.geometricError;
+		const range = tile[ HEIGHT_RANGE ];
 		const region = tile.boundingVolume.region;
-		region[ 4 ] = minHeight - tile.geometricError;
-		region[ 5 ] = maxHeight + tile.geometricError;
-		tile.engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
+		if ( range ) {
+
+			region[ 4 ] = range.min * scale - pad;
+			region[ 5 ] = range.max * scale + pad;
+
+		} else {
+
+			region[ 4 ] = MIN_ELEVATION * scale - pad;
+			region[ 5 ] = MAX_ELEVATION * scale;
+
+		}
+
+		// the engine volume only exists once the tile has been preprocessed
+		if ( tile.engineData && tile.engineData.boundingVolume ) {
+
+			tile.engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
+
+		}
+
+	}
+
+	// update the displacement scale on the loaded materials and refresh every bounding volume for
+	// the new height range
+	_updateHeightScale() {
+
+		const { tiles } = this;
+		if ( ! tiles ) {
+
+			return;
+
+		}
+
+		tiles.forEachLoadedModel( scene => {
+
+			scene.traverse( c => {
+
+				if ( c.isMesh ) {
+
+					c.material.displacementScale = this._heightScale;
+					c.material.bumpScale = this._heightScale;
+
+				}
+
+			} );
+
+		} );
+
+		tiles.traverse( tile => {
+
+			this._updateBoundingVolume( tile );
+
+		}, null, false );
 
 	}
 

@@ -139,7 +139,8 @@ export class GridCache extends DataCache {
 
 				// wrap the neighbor x so seams close across the antimeridian
 				const nx = ( x + dx + tileCountX ) % tileCountX;
-				const neighbor = this.get( nx, y + dy * yDir, level );
+				const ny = y + dy * yDir;
+				const neighbor = this.get( nx, ny, level );
 				if ( neighbor && ! ( neighbor instanceof Promise ) ) {
 
 					fillBorder( grid, neighbor, dx, dy );

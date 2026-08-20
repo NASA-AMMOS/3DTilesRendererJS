@@ -8,7 +8,7 @@ import {
 	Vector3,
 } from 'three';
 import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
-import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
+import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay, TilesFadePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const PROVIDERS = {
@@ -30,9 +30,9 @@ const PROVIDERS = {
 };
 
 const options = {
-	errorTarget: 16,
+	errorTarget: 2,
 	provider: 'Terrarium (AWS)',
-	heightScale: 2,
+	heightScale: 1,
 	displayParentBounds: false,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
@@ -115,6 +115,7 @@ function initTiles() {
 		applyOverlayTexture: true,
 	} );
 	tiles.registerPlugin( terrainPlugin );
+	tiles.registerPlugin( new TilesFadePlugin() )
 
 	// The cache byte estimate counts every tile's displacement texture clone at full size even
 	// though the underlying texture upload is shared, so raise the byte budget to compensate.
