@@ -214,6 +214,23 @@ export class TerrainRGBMeshPlugin {
 		}
 
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
+
+		// route the elevation texture requests through the download queue so they are prioritized
+		// and limited per server alongside the other content
+		this._source.fetchData = ( fetchUrl, options ) => {
+
+			const item = { priority: - performance.now() };
+			const promise = this.tiles.downloadQueue.add( fetchUrl, item, () => fetch( fetchUrl, options ) );
+			if ( options.signal ) {
+
+				options.signal.addEventListener( 'abort', () => this.tiles.downloadQueue.remove( item ), { once: true } );
+
+			}
+
+			return promise;
+
+		};
+
 		await this._source.init();
 		this._tiling = this._source.tiling;
 		return this.getTileset();

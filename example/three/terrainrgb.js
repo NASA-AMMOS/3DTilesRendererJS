@@ -14,7 +14,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 const PLANAR_HEIGHT_SCALE = 1 / 40075017;
 
 const options = {
-	errorTarget: 2,
+	errorTarget: 1,
 	provider: 'Terrarium (AWS)',
 	heightScale: 1,
 	unlit: false,

@@ -334,4 +334,37 @@ describe( 'PriorityQueue', () => {
 
 	} );
 
+	it( 'should only complete a job once when its callback throws synchronously.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+		queue.maxJobs = 2;
+
+		// dispatch a synchronously throwing job alongside jobs that never resolve so the job
+		// count can be compared against the number of jobs actually running
+		let started = 0;
+		const pending = () => {
+
+			started ++;
+			return new Promise( () => {} );
+
+		};
+
+		const error = new Error( 'sync error' );
+		const promise = queue.add( {}, () => {
+
+			throw error;
+
+		} );
+		queue.add( {}, pending );
+		queue.add( {}, pending );
+		queue.tryRunJobs();
+
+		await expect( promise ).rejects.toBe( error );
+
+		// a double completion decrements the count below the number of running jobs
+		expect( queue.currJobs ).toEqual( started );
+
+	} );
+
 } );

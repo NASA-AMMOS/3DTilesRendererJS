@@ -258,6 +258,7 @@ export class PriorityQueue {
 
 				reject( err );
 				completedCallback();
+				continue;
 
 			}
 
