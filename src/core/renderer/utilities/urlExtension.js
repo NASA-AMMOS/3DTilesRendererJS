@@ -1,5 +1,6 @@
 /**
  * Returns the origin of the URL, used for grouping requests made to the same server.
+ * @private
  * @param {string} url
  * @returns {string} null if the origin cannot be derived
  */

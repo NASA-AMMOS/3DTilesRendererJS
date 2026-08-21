@@ -339,6 +339,72 @@ Returns the array of values for the given property key across all features. Retu
 `null` if the key is not in the table.
 
 
+## DownloadPriorityQueue
+
+Manages a lazily created PriorityQueue per server origin so the requests to every server are
+prioritized and limited independently, and a slow or saturated server can never delay the
+requests made to others. The items added without a url are managed as their own group.
+
+
+### .running
+
+```js
+readonly running: boolean
+```
+
+returns whether tasks are queued or actively running in any origin queue
+
+
+### .maxJobsPerOrigin
+
+```js
+maxJobsPerOrigin: number = 6
+```
+
+Maximum number of requests that can run concurrently per server.
+
+
+### .priorityCallback
+
+```js
+priorityCallback: ( a: any, b: any ) => number | null = null
+```
+
+Comparator used to sort the queued items of every origin queue.
+
+
+### .add
+
+```js
+add(
+	url: string | null,
+	item: any,
+	callback: ( item: any ) => Promise<any> | any
+): Promise<any>
+```
+
+Adds an item to the queue of the url's server and returns a Promise that resolves when the
+item's callback completes, or rejects if the item is removed before running.
+
+
+### .remove
+
+```js
+remove( item: any ): void
+```
+
+Removes an item from its origin queue, rejecting its promise with an `AbortError` DOMException.
+
+
+### .has
+
+```js
+has( item: any ): boolean
+```
+
+Returns whether the given item is currently queued.
+
+
 ## LRUCache
 
 Least-recently-used cache for managing tile content lifecycle. Tracks which items
