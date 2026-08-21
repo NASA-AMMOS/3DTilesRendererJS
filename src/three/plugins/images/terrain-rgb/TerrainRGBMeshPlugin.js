@@ -175,7 +175,6 @@ export class TerrainRGBMeshPlugin {
 		this._source = null;
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
-		this._preloadedTiles = new Map();
 
 	}
 
@@ -192,16 +191,6 @@ export class TerrainRGBMeshPlugin {
 		const { url, tileDimension, maxZoom } = this;
 		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
-
-		// start the elevation texture downloading as soon as the tile content is requested rather
-		// than waiting for the parse queue, so grids load in parallel and can be sampled early
-		this._onTileDownloadStart = ( { tile } ) => {
-
-			this._preloadGrid( tile );
-
-		};
-
-		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		this.tiles = tiles;
 
@@ -479,41 +468,6 @@ export class TerrainRGBMeshPlugin {
 
 		this._releaseGrid( tile );
 
-		// release the preload lock taken when the tile content download started
-		const preloaded = this._preloadedTiles.get( tile );
-		if ( preloaded ) {
-
-			this._gridCache.release( ...preloaded );
-			this._preloadedTiles.delete( tile );
-
-		}
-
-	}
-
-	_preloadGrid( tile ) {
-
-		if ( tile[ TILE_X ] === undefined || this._preloadedTiles.has( tile ) ) {
-
-			return;
-
-		}
-
-		const level = tile[ TILE_LEVEL ];
-		const sourceLevel = getSourceLevel( level );
-		const scale = 2 ** ( level - sourceLevel );
-		const sx = Math.floor( tile[ TILE_X ] / scale );
-		const sy = Math.floor( tile[ TILE_Y ] / scale );
-
-		this._preloadedTiles.set( tile, [ sx, sy, sourceLevel ] );
-
-		const result = this._gridCache.lock( sx, sy, sourceLevel );
-		if ( result instanceof Promise ) {
-
-			// the lock is released on tile disposal regardless of whether the fetch succeeded
-			result.catch( () => {} );
-
-		}
-
 	}
 
 	_releaseGrid( tile ) {
@@ -531,8 +485,6 @@ export class TerrainRGBMeshPlugin {
 
 	dispose() {
 
-		this.tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
-
 		// Every tile locks its grid once and releases it once, so the cache empties itself. Grids
 		// locked by in-flight parses are released by their abort handling once they settle.
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -540,14 +492,6 @@ export class TerrainRGBMeshPlugin {
 			this.disposeTile( tile );
 
 		} );
-
-		// release the preload locks of tiles that never finished loading
-		this._preloadedTiles.forEach( key => {
-
-			this._gridCache.release( ...key );
-
-		} );
-		this._preloadedTiles.clear();
 
 	}
 

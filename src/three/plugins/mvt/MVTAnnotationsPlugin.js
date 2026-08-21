@@ -664,10 +664,14 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		this._onDisposeModel = ( { tile } ) => {
+		this._onTileDownloadStart = ( { tile, url } ) => {
 
-			this._prefetchVectorTile( tile, false );
-			this.tileLoadState.delete( tile );
+			// skip external tileset files since they are not geometry tiles
+			if ( ! /\.json$/i.test( url ) && ! /\.subtree/i.test( url ) ) {
+
+				this._initTileRange( tile );
+
+			}
 
 		};
 
@@ -675,7 +679,7 @@ export class MVTAnnotationsPlugin {
 		hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		//
 
@@ -706,7 +710,7 @@ export class MVTAnnotationsPlugin {
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
-		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		// visible tiles are the ones currently marked in the hierarchy
 		tileLoadState.forEach( ( range, tile ) => {
@@ -723,9 +727,27 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	disposeTile( tile ) {
+
+		if ( this.tileLoadState.has( tile ) ) {
+
+			this._prefetchVectorTile( tile, false );
+			this.tileLoadState.delete( tile );
+
+		}
+
+	}
+
 	async processTileModel( scene, tile ) {
 
 		const { tiles, overlay } = this;
+
+		// the range was already derived from the tile's region bounding volume on download start
+		if ( this.tileLoadState.has( tile ) ) {
+
+			return;
+
+		}
 
 		// The overlay's projection is not installed until it initializes, and until then it reports
 		// a "none" projection that silently produces the wrong cartographic range here.
@@ -758,6 +780,23 @@ export class MVTAnnotationsPlugin {
 	}
 
 	//
+
+	// Derive the tile's cartographic range from its region bounding volume so the vector tiles
+	// start loading when the tile content download starts, before any geometry is available.
+	_initTileRange( tile ) {
+
+		const { overlay, tileLoadState } = this;
+		if ( ! overlay.isReady || tileLoadState.has( tile ) || ! tile.boundingVolume.region ) {
+
+			return;
+
+		}
+
+		const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
+		tileLoadState.set( tile, [ minLon, minLat, maxLon, maxLat ] );
+		this._prefetchVectorTile( tile, true );
+
+	}
 
 	// Holds or releases the vector tiles covering the given geometry tile so their content is
 	// loaded before the tile is displayed.
