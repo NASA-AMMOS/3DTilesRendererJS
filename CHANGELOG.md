@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.5.2] - Unreleased
+### Added
+- TerrainRGBMeshPlugin, TerrariumMeshPlugin: Add support for terrarium and terrain rgb formats.
+
 ### Fixed
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
 - GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
