@@ -81,6 +81,16 @@ function getRasterMaterial() {
 
 }
 
+// Packs a pair of possibly negative cell indices into a single numeric key. The offsets and span
+// cover the finest practical cell resolutions without index collisions.
+const CELL_KEY_OFFSET = 2 ** 24;
+const CELL_KEY_SPAN = 2 ** 25;
+function getCellKey( xi, yi ) {
+
+	return ( xi + CELL_KEY_OFFSET ) * CELL_KEY_SPAN + yi + CELL_KEY_OFFSET;
+
+}
+
 // whether the longitude falls in the range, accounting for ranges unwrapped past the antimeridian
 function adjustLonToRange( lon, minLon, maxLon ) {
 
@@ -100,12 +110,36 @@ function adjustLonToRange( lon, minLon, maxLon ) {
 
 }
 
-// Bilinear sample of the tile raster, returning null when any texel covering the point has no
-// data. Non-finite values are treated as no data since rasterized degenerate geometry can produce
-// NaN texels.
-// TODO: blending only the valid texels per axis here (taking the single valid one when the other
-// has no data) would let points at the edge of the mesh coverage still resolve, but doing so
-// consistently stops all annotations from displaying. Investigate and support coverage edges.
+// Blend a pair of texels, taking the single valid one when the other has no data. Non-finite
+// values are treated as no data since rasterized degenerate geometry can produce NaN texels.
+function blendPair( a, b, t ) {
+
+	const aValid = Number.isFinite( a );
+	const bValid = Number.isFinite( b );
+	if ( aValid && bValid ) {
+
+		return MathUtils.lerp( a, b, t );
+
+	}
+
+	if ( aValid ) {
+
+		return a;
+
+	}
+
+	if ( bValid ) {
+
+		return b;
+
+	}
+
+	return NO_DATA;
+
+}
+
+// bilinear sample of the tile raster, blending the valid texels per axis so points at the edge of
+// the mesh coverage still resolve. Returns null when no texel covering the point has data.
 function sampleInfo( info, lat, lon ) {
 
 	const { region, grid, resolution } = info;
@@ -131,17 +165,19 @@ function sampleInfo( info, lat, lon ) {
 	const h10 = grid[ y0 * resolution + x1 ];
 	const h01 = grid[ y1 * resolution + x0 ];
 	const h11 = grid[ y1 * resolution + x1 ];
-	if ( ! Number.isFinite( h00 ) || ! Number.isFinite( h10 ) || ! Number.isFinite( h01 ) || ! Number.isFinite( h11 ) ) {
+	const tx = fx - x0;
+	const ty = fy - y0;
+
+	const h0 = blendPair( h00, h10, tx );
+	const h1 = blendPair( h01, h11, tx );
+	const h = blendPair( h0, h1, ty );
+	if ( ! Number.isFinite( h ) ) {
 
 		return null;
 
 	}
 
-	const tx = fx - x0;
-	const ty = fy - y0;
-	const h0 = MathUtils.lerp( h00, h10, tx );
-	const h1 = MathUtils.lerp( h01, h11, tx );
-	return MathUtils.lerp( h0, h1, ty );
+	return h;
 
 }
 
@@ -169,7 +205,7 @@ export class RasterElevationSamplingPlugin {
 		this.renderer = renderer;
 		this.resolution = resolution;
 
-		this._sortedActiveTiles = [];
+		this._depthLevels = [];
 
 	}
 
@@ -177,29 +213,88 @@ export class RasterElevationSamplingPlugin {
 
 		this.tiles = tiles;
 
-		// Keep a prebuilt list of the active tiles sorted deepest first so the samples test the
-		// tiles that take precedence first and can stop at the first depth with data. Tiles at the
-		// same depth are sorted by their max elevation so the highest surfaces are found first.
+		// Bucket the sampleable active tiles into a grid of cells per depth, with the cell size
+		// matched to the largest tile patch at that depth so each tile spans at most four cells.
+		// The cell buckets are sorted by max elevation so the highest surfaces are found first, and
+		// the depths are ordered deepest first so the samples test the tiles that take precedence
+		// first and can stop at the first depth with data.
 		this._onUpdateAfter = () => {
 
-			const sorted = this._sortedActiveTiles;
-			sorted.length = 0;
-			tiles.activeTiles.forEach( tile => sorted.push( tile ) );
-			sorted.sort( ( a, b ) => {
+			const byDepth = new Map();
+			tiles.activeTiles.forEach( tile => {
 
-				const depthA = a.internal.depth;
-				const depthB = b.internal.depth;
-				if ( depthA !== depthB ) {
+				const info = tile[ ELEVATION_INFO ];
+				if ( ! info || info.grid === null ) {
 
-					return depthB - depthA;
+					return;
 
 				}
 
-				const maxA = a[ ELEVATION_INFO ] ? a[ ELEVATION_INFO ].region[ 5 ] : - Infinity;
-				const maxB = b[ ELEVATION_INFO ] ? b[ ELEVATION_INFO ].region[ 5 ] : - Infinity;
-				return maxB - maxA;
+				const depth = tile.internal.depth;
+				let tilesAtDepth = byDepth.get( depth );
+				if ( ! tilesAtDepth ) {
+
+					tilesAtDepth = [];
+					byDepth.set( depth, tilesAtDepth );
+
+				}
+
+				tilesAtDepth.push( tile );
 
 			} );
+
+			const levels = this._depthLevels;
+			levels.length = 0;
+			byDepth.forEach( ( tilesAtDepth, depth ) => {
+
+				// find the largest patch dimensions at this depth
+				let cellWidth = 0;
+				let cellHeight = 0;
+				tilesAtDepth.forEach( tile => {
+
+					const region = tile[ ELEVATION_INFO ].region;
+					cellWidth = Math.max( cellWidth, region[ 2 ] - region[ 0 ] );
+					cellHeight = Math.max( cellHeight, region[ 3 ] - region[ 1 ] );
+
+				} );
+
+				// insert the tiles into every cell they overlap in max elevation order
+				tilesAtDepth.sort( ( a, b ) => b[ ELEVATION_INFO ].region[ 5 ] - a[ ELEVATION_INFO ].region[ 5 ] );
+
+				const cells = new Map();
+				tilesAtDepth.forEach( tile => {
+
+					const region = tile[ ELEVATION_INFO ].region;
+					const minXi = Math.floor( region[ 0 ] / cellWidth );
+					const maxXi = Math.floor( region[ 2 ] / cellWidth );
+					const minYi = Math.floor( region[ 1 ] / cellHeight );
+					const maxYi = Math.floor( region[ 3 ] / cellHeight );
+					for ( let xi = minXi; xi <= maxXi; xi ++ ) {
+
+						for ( let yi = minYi; yi <= maxYi; yi ++ ) {
+
+							const key = getCellKey( xi, yi );
+							let bucket = cells.get( key );
+							if ( ! bucket ) {
+
+								bucket = [];
+								cells.set( key, bucket );
+
+							}
+
+							bucket.push( tile );
+
+						}
+
+					}
+
+				} );
+
+				levels.push( { depth, cellWidth, cellHeight, cells } );
+
+			} );
+
+			levels.sort( ( a, b ) => b.depth - a.depth );
 
 		};
 
@@ -222,49 +317,61 @@ export class RasterElevationSamplingPlugin {
 
 		}
 
-		// Check the exact mesh patch of the active tiles from deepest to shallowest. Deeper tile
+		// Check the cell containing the point at every depth from deepest to shallowest, probing
+		// the wrapped longitudes so patches unwrapped past the antimeridian are found. Deeper tile
 		// data takes precedence over the coarser tiles containing it so simplified geometry cannot
 		// override it, and the overlapping tiles at the same depth resolve to the highest surface.
-		const sorted = this._sortedActiveTiles;
+		const levels = this._depthLevels;
 		let best = null;
 		let bestDepth = - 1;
-		for ( let i = 0, l = sorted.length; i < l; i ++ ) {
+		for ( let i = 0, l = levels.length; i < l; i ++ ) {
 
-			const tile = sorted[ i ];
-			const info = tile[ ELEVATION_INFO ];
-			if ( ! info || info.grid === null ) {
-
-				continue;
-
-			}
-
-			// the list is sorted by depth so no tiles that take precedence remain
-			const depth = tile.internal.depth;
-			if ( depth < bestDepth ) {
+			const level = levels[ i ];
+			if ( level.depth < bestDepth ) {
 
 				break;
 
 			}
 
-			// the tiles at this depth are sorted by max elevation so none of the remaining tiles
-			// can rise above the best sample
-			if ( best !== null && info.region[ 5 ] <= best ) {
+			const { cellWidth, cellHeight, cells } = level;
+			const yi = Math.floor( lat / cellHeight );
+			for ( let wrap = - 1; wrap <= 1; wrap ++ ) {
 
-				break;
+				const xi = Math.floor( ( lon + wrap * 2 * Math.PI ) / cellWidth );
+				const bucket = cells.get( getCellKey( xi, yi ) );
+				if ( ! bucket ) {
 
-			}
+					continue;
 
-			const sample = sampleInfo( info, lat, lon );
-			if ( sample === null ) {
+				}
 
-				continue;
+				for ( let j = 0, jl = bucket.length; j < jl; j ++ ) {
 
-			}
+					// the tile may have been disposed since the cells were built
+					const info = bucket[ j ][ ELEVATION_INFO ];
+					if ( ! info ) {
 
-			if ( best === null || sample > best ) {
+						continue;
 
-				best = sample;
-				bestDepth = depth;
+					}
+
+					// the bucket is sorted by max elevation so none of the remaining tiles can
+					// rise above the best sample
+					if ( best !== null && info.region[ 5 ] <= best ) {
+
+						break;
+
+					}
+
+					const sample = sampleInfo( info, lat, lon );
+					if ( sample !== null && ( best === null || sample > best ) ) {
+
+						best = sample;
+						bestDepth = level.depth;
+
+					}
+
+				}
 
 			}
 
@@ -420,7 +527,7 @@ export class RasterElevationSamplingPlugin {
 	dispose() {
 
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
-		this._sortedActiveTiles.length = 0;
+		this._depthLevels.length = 0;
 
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
