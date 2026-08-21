@@ -218,7 +218,8 @@ export class PriorityQueue {
 	}
 
 	/**
-	 * Immediately attempts to dequeue and run pending jobs up to `maxJobs` concurrency.
+	 * Immediately attempts to dequeue and run pending jobs up to `maxJobs` concurrency, skipping
+	 * the items that `_canRunJob` rejects.
 	 */
 	tryRunJobs() {
 
@@ -229,9 +230,10 @@ export class PriorityQueue {
 		const maxJobs = this.maxJobs;
 		let iterated = 0;
 
-		const completedCallback = () => {
+		const completedCallback = data => {
 
 			this.currJobs --;
+			this._jobCompleted( data );
 
 			if ( this.autoUpdate ) {
 
@@ -241,14 +243,25 @@ export class PriorityQueue {
 
 		};
 
-		while ( maxJobs > this.currJobs && items.length > 0 && iterated < maxJobs ) {
+		// iterate from the highest priority end of the queue
+		for ( let i = items.length - 1; i >= 0 && maxJobs > this.currJobs && iterated < maxJobs; i -- ) {
+
+			const item = items[ i ];
+			const data = callbacks.get( item );
+			if ( ! this._canRunJob( data ) ) {
+
+				continue;
+
+			}
 
 			this.currJobs ++;
 			iterated ++;
-			const item = items.pop();
-			const { callback, resolve, reject } = callbacks.get( item );
+			this._jobStarted( data );
+
+			items.splice( i, 1 );
 			callbacks.delete( item );
 
+			const { callback, resolve, reject } = data;
 			let result;
 			try {
 
@@ -257,7 +270,8 @@ export class PriorityQueue {
 			} catch ( err ) {
 
 				reject( err );
-				completedCallback();
+				completedCallback( data );
+				continue;
 
 			}
 
@@ -266,12 +280,12 @@ export class PriorityQueue {
 				result
 					.then( resolve )
 					.catch( reject )
-					.finally( completedCallback );
+					.finally( () => completedCallback( data ) );
 
 			} else {
 
 				resolve( result );
-				completedCallback();
+				completedCallback( data );
 
 			}
 
@@ -341,5 +355,17 @@ export class PriorityQueue {
 		}
 
 	}
+
+	// Overridable hooks for constraining and tracking the running jobs, called with the queued
+	// item's internal data
+	_canRunJob( data ) {
+
+		return true;
+
+	}
+
+	_jobStarted( data ) {}
+
+	_jobCompleted( data ) {}
 
 }
