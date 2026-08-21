@@ -1,6 +1,7 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
+import { DownloadPriorityQueue } from '../utilities/DownloadPriorityQueue.js';
 import { runTraversal } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
@@ -329,8 +330,8 @@ export const unifiedPriorityCallback = ( a, b ) => {
 export const DEFAULT_LRU_CACHE = new LRUCache();
 DEFAULT_LRU_CACHE.unloadPriorityCallback = lruPriorityCallback;
 
-export const DEFAULT_DOWNLOAD_QUEUE = new PriorityQueue();
-DEFAULT_DOWNLOAD_QUEUE.maxJobs = 25;
+export const DEFAULT_DOWNLOAD_QUEUE = new DownloadPriorityQueue();
+DEFAULT_DOWNLOAD_QUEUE.maxJobsPerOrigin = 25;
 DEFAULT_DOWNLOAD_QUEUE.priorityCallback = unifiedPriorityCallback;
 
 export const DEFAULT_PARSE_QUEUE = new PriorityQueue();
@@ -1579,8 +1580,8 @@ export class TilesRendererBase {
 		tile.internal.loadingState = QUEUED;
 		loadingTiles.add( tile );
 
-		// queue the download and parse
-		return downloadQueue.add( tile, downloadTile => {
+		// queue the download and parse, limiting the concurrent requests per server
+		return downloadQueue.add( url, tile, downloadTile => {
 
 			if ( signal.aborted ) {
 

@@ -9,6 +9,8 @@ export * from './constants.js';
 
 export * from './utilities/LRUCache.js';
 export * from './utilities/PriorityQueue.js';
+export * from './utilities/DownloadPriorityQueue.js';
+export * from './utilities/urlExtension.js';
 export * as TraversalUtils from './utilities/TraversalUtils.js';
 export * as LoaderUtils from './utilities/LoaderUtils.js';
 export * from './utilities/BatchTable.js';
