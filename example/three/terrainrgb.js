@@ -33,6 +33,7 @@ const options = {
 	errorTarget: 2,
 	provider: 'Terrarium (AWS)',
 	heightScale: 1,
+	unlit: false,
 	displayParentBounds: false,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
@@ -77,6 +78,7 @@ function init() {
 		keepCameraAboveTerrain();
 
 	} );
+	gui.add( options, 'unlit' ).onChange( initTiles );
 	gui.add( options, 'displayParentBounds' );
 	gui.add( options, 'displayBoxBounds' );
 	gui.add( options, 'displayRegionBounds' );
@@ -111,6 +113,7 @@ function initTiles() {
 		url: provider.url,
 		maxZoom: provider.maxZoom,
 		heightScale: options.heightScale,
+		unlit: options.unlit,
 		overlay,
 		applyOverlayTexture: true,
 	} );

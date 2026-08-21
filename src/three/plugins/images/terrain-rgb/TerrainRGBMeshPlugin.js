@@ -1,10 +1,8 @@
 /** @import { ImageOverlay } from '../ImageOverlayPlugin.js' */
 import {
 	Mesh,
-	MeshLambertMaterial,
 	MeshBasicMaterial,
 	MathUtils,
-	Vector2,
 	Vector3,
 	Sphere,
 } from 'three';
@@ -12,6 +10,8 @@ import { XYZImageSource } from '../sources/XYZImageSource.js';
 import { getCartographicToMeterDerivative } from '../utils/getCartographicToMeterDerivative.js';
 import { SkirtedPlaneGeometry } from './SkirtedPlaneGeometry.js';
 import { GridCache } from './GridCache.js';
+import { TerrainLambertMaterial } from './TerrainLambertMaterial.js';
+import { TerrainBasicMaterial } from './TerrainBasicMaterial.js';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
@@ -53,68 +53,6 @@ function getRaycastMesh() {
 	}
 
 	return _raycastMesh;
-
-}
-
-// Replaces the built-in bump map chunk with a variant that evaluates the height gradient at fixed
-// one texel offsets and projects it onto the screen steps. The built-in chunk differences the
-// texture at screen derivative offsets, and the derivative of a bilinearly filtered texture is
-// constant within each texel cell, which shades every texel as a flat facet.
-function applySmoothBumpChunk( material, texture ) {
-
-	const texelSize = new Vector2( 1 / texture.image.width, 1 / texture.image.height );
-	material.onBeforeCompile = shader => {
-
-		shader.uniforms.bumpMapTexelSize = { value: texelSize };
-		shader.fragmentShader = shader.fragmentShader.replace( '#include <bumpmap_pars_fragment>', /* glsl */`
-			#ifdef USE_BUMPMAP
-
-				uniform sampler2D bumpMap;
-				uniform float bumpScale;
-				uniform vec2 bumpMapTexelSize;
-
-				vec2 dHdxy_fwd() {
-
-					vec2 dSTdx = dFdx( vBumpMapUv );
-					vec2 dSTdy = dFdy( vBumpMapUv );
-
-					// central differences at one texel spacing interpolate smoothly across texel cells
-					vec2 dx = vec2( bumpMapTexelSize.x, 0.0 );
-					vec2 dy = vec2( 0.0, bumpMapTexelSize.y );
-					float gradU = ( texture2D( bumpMap, vBumpMapUv + dx ).x - texture2D( bumpMap, vBumpMapUv - dx ).x ) / ( 2.0 * bumpMapTexelSize.x );
-					float gradV = ( texture2D( bumpMap, vBumpMapUv + dy ).x - texture2D( bumpMap, vBumpMapUv - dy ).x ) / ( 2.0 * bumpMapTexelSize.y );
-
-					// project the gradient onto the screen space steps to match the original convention
-					float dBx = bumpScale * ( gradU * dSTdx.x + gradV * dSTdx.y );
-					float dBy = bumpScale * ( gradU * dSTdy.x + gradV * dSTdy.y );
-
-					return vec2( dBx, dBy );
-
-				}
-
-				vec3 perturbNormalArb( vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDirection ) {
-
-					// The unnormalized surface derivatives keep the world size of a screen pixel so the
-					// height gradient, which is in world units per pixel, resolves to the true physical
-					// slope at every scale.
-					vec3 vSigmaX = dFdx( surf_pos.xyz );
-					vec3 vSigmaY = dFdy( surf_pos.xyz );
-					vec3 vN = surf_norm; // normalized
-
-					vec3 R1 = cross( vSigmaY, vN );
-					vec3 R2 = cross( vN, vSigmaX );
-
-					float fDet = dot( vSigmaX, R1 ) * faceDirection;
-
-					vec3 vGrad = sign( fDet ) * ( dHdxy.x * R1 + dHdxy.y * R2 );
-					return normalize( abs( fDet ) * surf_norm - vGrad );
-
-				}
-
-			#endif
-		` );
-
-	};
 
 }
 
@@ -300,16 +238,9 @@ export class TerrainRGBMeshPlugin {
 		const mesh = this._createEllipsoidMesh( tile );
 		const displacement = grid.clone();
 		mesh.material.displacementMap = displacement;
-		if ( this.unlit ) {
-
-			// a black surface with white emissive ignores the lights while displacement still applies
-			mesh.material.color.set( 0x000000 );
-			mesh.material.emissive.set( 0xffffff );
-
-		} else {
+		if ( ! this.unlit ) {
 
 			mesh.material.bumpMap = displacement;
-			applySmoothBumpChunk( mesh.material, displacement );
 
 		}
 
@@ -546,7 +477,7 @@ export class TerrainRGBMeshPlugin {
 
 		// new geometry positioned at the tile bounding sphere center
 		const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
-		const mesh = new Mesh( geometry, new MeshLambertMaterial() );
+		const mesh = new Mesh( geometry, this.unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
 		tile.engineData.boundingVolume.getSphere( _sphere );
 		mesh.position.copy( _sphere.center );
 
