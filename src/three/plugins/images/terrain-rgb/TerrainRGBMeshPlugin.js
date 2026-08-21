@@ -18,7 +18,6 @@ const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 const HEIGHT_GRID = Symbol( 'HEIGHT_GRID' );
 const SOURCE_TILE = Symbol( 'SOURCE_TILE' );
-const SUBVIEW = Symbol( 'SUBVIEW' );
 const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
 const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
 
@@ -52,6 +51,29 @@ function getRaycastMesh() {
 	}
 
 	return _raycastMesh;
+
+}
+
+// the source tile level holding the texture a tile at the given level reads a subview of
+function getSourceLevel( level ) {
+
+	return EXTRA_LEVELS * Math.floor( level / EXTRA_LEVELS );
+
+}
+
+// texture coordinate range of a subview within the padded grid texture. The half texel inset
+// means tile edges sample into the stitched border so both sides of a seam agree.
+function getSubviewUVBounds( grid, subview ) {
+
+	const { width, height } = grid.image;
+	const w = width - 2;
+	const h = height - 2;
+	return [
+		( subview[ 0 ] * w + 1 ) / width,
+		( subview[ 1 ] * h + 1 ) / height,
+		( subview[ 2 ] * w + 1 ) / width,
+		( subview[ 3 ] * h + 1 ) / height,
+	];
 
 }
 
@@ -137,20 +159,17 @@ export class TerrainRGBMeshPlugin {
 		this.priority = - 10;
 		this.tiles = null;
 
+		this.url = url;
+		this.tileDimension = tileDimension;
+		this.maxZoom = maxZoom;
 		this.overlay = overlay;
 		this.applyOverlayTexture = applyOverlayTexture;
 		this.unlit = unlit;
 		this.endCaps = endCaps;
 		this.useRecommendedSettings = useRecommendedSettings;
-		this.maxZoom = maxZoom;
-
-		this._extraLevels = EXTRA_LEVELS;
-
-		// extend the tree past the last fetched texture level so its subview layers exist
-		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
-
 		this.heightScale = heightScale;
-		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
+
+		this._source = null;
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
 
@@ -163,6 +182,12 @@ export class TerrainRGBMeshPlugin {
 			tiles.errorTarget = 1;
 
 		}
+
+		// options are fixed once the plugin is initialized. The tree extends past the last fetched
+		// texture level so its subview layers exist.
+		const { url, tileDimension, maxZoom } = this;
+		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
+		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
 
 		this.tiles = tiles;
 
@@ -195,7 +220,7 @@ export class TerrainRGBMeshPlugin {
 		const level = tile[ TILE_LEVEL ];
 
 		// find the source tile that this render tile reads a subview of
-		const sourceLevel = this._getSourceLevel( level );
+		const sourceLevel = getSourceLevel( level );
 		const scale = 2 ** ( level - sourceLevel );
 		const sx = Math.floor( x / scale );
 		const sy = Math.floor( y / scale );
@@ -227,11 +252,11 @@ export class TerrainRGBMeshPlugin {
 
 		tile[ HEIGHT_GRID ] = grid;
 		tile[ SOURCE_TILE ] = [ sx, sy, sourceLevel ];
-		tile[ SUBVIEW ] = this._getSubview( tile );
 
 		// Build the surface mesh displaced by the elevation texture, which also drives the bump map
 		// normals. Clones share the texture upload while each tile disposes its own reference.
-		const mesh = this._createEllipsoidMesh( tile );
+		const subview = this._getSubview( tile );
+		const mesh = this._createEllipsoidMesh( tile, subview );
 		const displacement = grid.clone();
 		mesh.material.displacementMap = displacement;
 		if ( ! this.unlit ) {
@@ -292,7 +317,7 @@ export class TerrainRGBMeshPlugin {
 
 				// The mesh uvs live in the elevation texture's subview range, so remap the overlay
 				// from that range onto its own uv bounds via a clone's transform.
-				const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, tile[ SUBVIEW ] );
+				const [ tu0, tv0, tu1, tv1 ] = getSubviewUVBounds( grid, subview );
 				const uvRange = this._tiling.getTileContentUVBounds( x, y, level );
 				const repeatX = ( uvRange[ 2 ] - uvRange[ 0 ] ) / ( tu1 - tu0 );
 				const repeatY = ( uvRange[ 3 ] - uvRange[ 1 ] ) / ( tv1 - tv0 );
@@ -386,13 +411,6 @@ export class TerrainRGBMeshPlugin {
 
 	disposeTile( tile ) {
 
-		this._releaseOverlay( tile );
-		this._releaseGrid( tile );
-
-	}
-
-	_releaseOverlay( tile ) {
-
 		const range = tile[ OVERLAY_RANGE ];
 		if ( this.overlay && range ) {
 
@@ -401,6 +419,8 @@ export class TerrainRGBMeshPlugin {
 			delete tile[ OVERLAY_LEVEL ];
 
 		}
+
+		this._releaseGrid( tile );
 
 	}
 
@@ -412,7 +432,6 @@ export class TerrainRGBMeshPlugin {
 			this._gridCache.release( ...sourceTile );
 			delete tile[ SOURCE_TILE ];
 			delete tile[ HEIGHT_GRID ];
-			delete tile[ SUBVIEW ];
 
 		}
 
@@ -427,13 +446,6 @@ export class TerrainRGBMeshPlugin {
 			this.disposeTile( tile );
 
 		} );
-
-	}
-
-	// the source tile level holding the texture a tile at the given level reads a subview of
-	_getSourceLevel( level ) {
-
-		return this._extraLevels * Math.floor( level / this._extraLevels );
 
 	}
 
@@ -459,23 +471,7 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// texture coordinate range of a subview within the padded grid texture. The half texel inset
-	// means tile edges sample into the stitched border so both sides of a seam agree.
-	_getSubviewUVBounds( grid, subview ) {
-
-		const { width, height } = grid.image;
-		const w = width - 2;
-		const h = height - 2;
-		return [
-			( subview[ 0 ] * w + 1 ) / width,
-			( subview[ 1 ] * h + 1 ) / height,
-			( subview[ 2 ] * w + 1 ) / width,
-			( subview[ 3 ] * h + 1 ) / height,
-		];
-
-	}
-
-	_createEllipsoidMesh( tile ) {
+	_createEllipsoidMesh( tile, subview ) {
 
 		const { tiles, endCaps, _tiling: tiling } = this;
 		const { projection } = tiling;
@@ -487,7 +483,7 @@ export class TerrainRGBMeshPlugin {
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
 
 		const grid = tile[ HEIGHT_GRID ];
-		const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, tile[ SUBVIEW ] );
+		const [ tu0, tv0, tu1, tv1 ] = getSubviewUVBounds( grid, subview );
 
 		// new geometry positioned at the tile bounding sphere center
 		const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
@@ -706,7 +702,7 @@ export class TerrainRGBMeshPlugin {
 	// between fetch levels inherit the ancestor texture url
 	getUrl( x, y, level ) {
 
-		const sourceLevel = this._getSourceLevel( level );
+		const sourceLevel = getSourceLevel( level );
 		const scale = 2 ** ( level - sourceLevel );
 		return this._source.getUrl( Math.floor( x / scale ), Math.floor( y / scale ), sourceLevel );
 
