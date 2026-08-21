@@ -4,11 +4,9 @@ import {
 	PerspectiveCamera,
 	AmbientLight,
 	DirectionalLight,
-	Raycaster,
-	Vector3,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay, TilesFadePlugin } from '3d-tiles-renderer/plugins';
+import { TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay, TilesFadePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const PROVIDERS = {
@@ -39,12 +37,9 @@ const options = {
 	heightScale: 1,
 	unlit: false,
 	planar: false,
-	displayParentBounds: false,
-	displayBoxBounds: false,
-	displayRegionBounds: false,
 };
 
-let camera, controls, scene, renderer, tiles, terrainPlugin, debugPlugin;
+let camera, controls, scene, renderer, tiles, terrainPlugin;
 
 init();
 render();
@@ -80,14 +75,10 @@ function init() {
 	gui.add( options, 'heightScale', 0, 10 ).onChange( v => {
 
 		terrainPlugin.heightScale = options.planar ? v * PLANAR_HEIGHT_SCALE : v;
-		keepCameraAboveTerrain();
 
 	} );
 	gui.add( options, 'unlit' ).onChange( initTiles );
 	gui.add( options, 'planar' ).onChange( initTiles );
-	gui.add( options, 'displayParentBounds' );
-	gui.add( options, 'displayBoxBounds' );
-	gui.add( options, 'displayRegionBounds' );
 
 	gui.open();
 
@@ -122,14 +113,10 @@ function initTiles() {
 		unlit: options.unlit,
 		shape: options.planar ? 'planar' : 'ellipsoid',
 		overlay,
-		applyOverlayTexture: true,
+		// applyOverlayTexture: true,
 	} );
 	tiles.registerPlugin( terrainPlugin );
 	tiles.registerPlugin( new TilesFadePlugin() );
-
-	// debug bounding volume display
-	debugPlugin = new DebugTilesPlugin();
-	tiles.registerPlugin( debugPlugin );
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 
@@ -165,31 +152,6 @@ function initTiles() {
 
 }
 
-// The terrain can rise above the camera when the exaggeration is increased, so raycast down from
-// far overhead and lift the camera back over the surface when it ends up underneath.
-function keepCameraAboveTerrain() {
-
-	if ( options.planar ) {
-
-		return;
-
-	}
-
-	const margin = 150;
-	const up = new Vector3().copy( camera.position ).normalize();
-	const raycaster = new Raycaster();
-	raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
-	raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
-
-	const hit = raycaster.intersectObject( tiles.group, true )[ 0 ];
-	if ( hit && hit.point.dot( up ) + margin > camera.position.dot( up ) ) {
-
-		camera.position.copy( hit.point ).addScaledVector( up, margin );
-
-	}
-
-}
-
 function onWindowResize() {
 
 	camera.aspect = window.innerWidth / window.innerHeight;
@@ -213,9 +175,6 @@ function render() {
 	camera.updateMatrixWorld();
 
 	tiles.errorTarget = options.errorTarget;
-	debugPlugin.displayParentBounds = options.displayParentBounds;
-	debugPlugin.displayBoxBounds = options.displayBoxBounds;
-	debugPlugin.displayRegionBounds = options.displayRegionBounds;
 	tiles.setCamera( camera );
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.update();
