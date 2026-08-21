@@ -118,7 +118,7 @@ const params = {
 	terrain: false,
 
 	occupancyGrid: false,
-	annotationLines: false,
+	pathVisualization: 'OFF',
 	tileHierarchy: false,
 
 };
@@ -394,8 +394,8 @@ function initTiles() {
 	// debug displays
 	const annotationsPlugin = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
 	annotationsPlugin.debug.occupancy.enabled = params.occupancyGrid;
-	annotationsPlugin.debug.paths.enabled = params.annotationLines;
 	annotationsPlugin.debug.hierarchy.enabled = params.tileHierarchy;
+	applyPathVisualization();
 
 }
 
@@ -474,16 +474,24 @@ function init() {
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.occupancy.enabled = v;
 
 	} );
-	debugFolder.add( params, 'annotationLines' ).onChange( v => {
-
-		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths.enabled = v;
-
-	} );
+	debugFolder.add( params, 'pathVisualization', [ 'OFF', 'NONE', 'ID', 'LEVEL', 'TILE', 'NAME', 'REJECTION' ] ).onChange( applyPathVisualization );
 	debugFolder.add( params, 'tileHierarchy' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.hierarchy.enabled = v;
 
 	} );
+
+}
+
+// apply the selected path debug display: hidden entirely, one of the overlay color modes, or the
+// per-anchor rejection reason display
+function applyPathVisualization() {
+
+	const paths = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths;
+	const rejection = params.pathVisualization === 'REJECTION';
+	paths.enabled = params.pathVisualization !== 'OFF';
+	paths.colorAnchorsByRejection = rejection;
+	paths.colorMode = paths.ColorMode[ params.pathVisualization ] ?? paths.ColorMode.NONE;
 
 }
 

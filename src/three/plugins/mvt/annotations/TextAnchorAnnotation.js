@@ -1,32 +1,40 @@
 import { Vector2, Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
-// reject labels whose projected baseline curves tighter than this radius in screen px at any
-// glyph, since sharply curving text becomes hard to read
-const MIN_LABEL_RADIUS = 40;
-
-// reject labels whose baseline turns more than this at a single segment joint. Catches
-// the sharp kinks in the curve.
-const MAX_KINK_ANGLE = Math.PI / 2;
-const MAX_KINK_COS = Math.cos( MAX_KINK_ANGLE );
+// Reject labels when the summed turn of the baseline corners within any window along the label
+// exceeds this angle, since sharply curving text becomes hard to read. Summing over a window sized
+// relative to the glyphs catches both hard kinks and tight curves while staying insensitive to
+// sub-pixel corner noise. This mirrors the MapLibre "text-max-angle" behavior.
+const MAX_LABEL_TURN_ANGLE = Math.PI / 4;
+const TURN_WINDOW_GLYPH_RATIO = 3 / 5;
 
 // If characters are laid out on a zigzagging path then they can wind up closer than their character
 // advance with implies they should be. If the characters are closer than this ratio of their advances
 // then reject the label.
 const MIN_CHAR_SPACING_RATIO = 0.8;
 
+// why the last "evaluate" rejected the label, for debug visualization
+export const RejectionReason = {
+	NONE: 0,
+	NOT_READY: 1,
+	NO_FIT: 2,
+	DEPTH: 3,
+	OCCUPANCY: 4,
+	SPACING: 5,
+	ANGLE: 6,
+};
+
 const _segIndices = [];
 const _segAlphas = [];
 const _vec = /* @__PURE__ */ new Vector3();
 
-// trailing two glyph screen positions and edge vectors, reused for the three-point curvature estimate
 const _prevPos = /* @__PURE__ */ new Vector2();
-const _prevPrevPos = /* @__PURE__ */ new Vector2();
 const _dir = /* @__PURE__ */ new Vector2();
-const _prevDir = /* @__PURE__ */ new Vector2();
-const _ab = /* @__PURE__ */ new Vector2();
-const _ac = /* @__PURE__ */ new Vector2();
-const _bc = /* @__PURE__ */ new Vector2();
+const _nextDir = /* @__PURE__ */ new Vector2();
+
+// sliding window of baseline corner turns used by the angle rejection
+const _turnDistances = [];
+const _turnAngles = [];
 
 // A text anchor that lays on a give line and stores references to path from different LoDs,
 // choosing the best one to "snap" to.
@@ -99,12 +107,16 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		this.characterPositions = [];
 		this.characterAngles = [];
 
+		this.rejectionReason = RejectionReason.NONE;
+
 	}
 
 	// overrides
 	// "force" places the characters at the current projection even when they don't fit,
 	// used to keep a fading-out label laid out (see ScreenOccupationManager.refreshLayout)
 	evaluate( handle, force = false ) {
+
+		this.rejectionReason = RejectionReason.NONE;
 
 		const { text } = this;
 		if ( ! text ) {
@@ -118,12 +130,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const { cumulativeLen } = line;
 		if ( ! line.ready ) {
 
+			this.rejectionReason = RejectionReason.NOT_READY;
 			return false;
 
 		}
 
 		if ( cumulativeLen.length < 2 ) {
 
+			this.rejectionReason = RejectionReason.NOT_READY;
 			return false;
 
 		}
@@ -144,6 +158,19 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		// it fits: commit occupancy marks, world positions, and baseline angles
 		this._placeCharacters( handle, _segIndices, _segAlphas );
 		return true;
+
+	}
+
+	// mark the layout invalid, recording the first failed test as the rejection reason
+	_reject( reason ) {
+
+		if ( this.valid ) {
+
+			this.rejectionReason = reason;
+
+		}
+
+		this.valid = false;
 
 	}
 
@@ -209,6 +236,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		const totalLength = cumulativeLen[ cumulativeLen.length - 1 ];
 		const length = text.length;
 
+		// sliding window of the baseline corner turns within the label span
+		const labelStart = anchorOffset - totalTextWidth * 0.5;
+		const turnWindow = TURN_WINDOW_GLYPH_RATIO * characterRadius;
+		let turnSum = 0;
+		let turnHead = 0;
+		_turnDistances.length = 0;
+		_turnAngles.length = 0;
+
 		let seg = 0;
 		let charCursor = 0;
 		let prevAdvance = 0;
@@ -227,15 +262,56 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			// past the ends instead of bailing)
 			if ( target < 0 || target > totalLength ) {
 
-				this.valid = false;
+				this._reject( RejectionReason.NO_FIT );
 				if ( ! force ) break;
 
 			}
 
-			// advance to the segment containing "target"
+			// advance to the segment containing "target", accumulating the baseline turn at every
+			// corner crossed within the label span and rejecting when a window turns too sharply
 			while ( seg < pointCount - 2 && cumulativeLen[ seg + 1 ] < target ) {
 
 				seg ++;
+
+				const dist = cumulativeLen[ seg ];
+				if ( dist < labelStart ) {
+
+					continue;
+
+				}
+
+				// turn angle at the corner between the two adjacent segments
+				const c0 = screenPositions[ seg - 1 ];
+				const c1 = screenPositions[ seg ];
+				const c2 = screenPositions[ seg + 1 ];
+				_dir.set( c1.x - c0.x, c1.y - c0.y );
+				_nextDir.set( c2.x - c1.x, c2.y - c1.y );
+				const turn = Math.abs( Math.atan2( _dir.cross( _nextDir ), _dir.dot( _nextDir ) ) );
+
+				_turnDistances.push( dist );
+				_turnAngles.push( turn );
+				turnSum += turn;
+
+				// drop the corners that have left the window
+				while ( dist - _turnDistances[ turnHead ] > turnWindow ) {
+
+					turnSum -= _turnAngles[ turnHead ];
+					turnHead ++;
+
+				}
+
+				if ( turnSum > MAX_LABEL_TURN_ANGLE ) {
+
+					this._reject( RejectionReason.ANGLE );
+					if ( ! force ) break;
+
+				}
+
+			}
+
+			if ( ! this.valid && ! force ) {
+
+				break;
 
 			}
 
@@ -248,9 +324,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			_vec.lerpVectors( p0, p1, segAlpha );
 
 			// off-screen in depth, or colliding with an already-placed annotation
-			if ( _vec.z < 0 || _vec.z > 1 || handle.test( _vec.x, _vec.y, characterRadius ) ) {
+			if ( _vec.z < 0 || _vec.z > 1 ) {
 
-				this.valid = false;
+				this._reject( RejectionReason.DEPTH );
+				if ( ! force ) break;
+
+			} else if ( handle.test( _vec.x, _vec.y, characterRadius ) ) {
+
+				this._reject( RejectionReason.OCCUPANCY );
 				if ( ! force ) break;
 
 			}
@@ -265,56 +346,14 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 				const minSpacing = ( advance + prevAdvance ) * 0.5 * MIN_CHAR_SPACING_RATIO;
 				if ( disToCharSq < minSpacing * minSpacing ) {
 
-					this.valid = false;
+					this._reject( RejectionReason.SPACING );
 					if ( ! force ) break;
 
 				}
 
 			}
 
-			// estimate local curvature from the last three glyph positions using Menger curvature / circumradius
-			// and reject the label if the baseline bends too tightly
-			if ( i >= 2 ) {
-
-				// get the segments
-				_ab.subVectors( _prevPos, _prevPrevPos );
-				_ac.subVectors( _vec, _prevPrevPos );
-				_bc.subVectors( _vec, _prevPos );
-
-				// curvature = 2 * area / ( |AB| * |BC| * |CA| ) = 1 / circumradius
-				const area = Math.abs( _ab.cross( _ac ) );
-				const denom = _ab.length() * _bc.length() * _ac.length();
-				const curvature = denom > 0 ? 2 * area / denom : 0;
-
-				// reject when the baseline curves tighter than the minimum readable radius
-				if ( curvature > 1 / MIN_LABEL_RADIUS ) {
-
-					this.valid = false;
-					if ( ! force ) break;
-
-				}
-
-			}
-
-			// reject sharp kinks: the turn between this character's segment direction and the
-			// previous character's must stay under MAX_KINK_ANGLE.
-			_dir.subVectors( p1, p0 ).normalize();
-			if ( i > 0 ) {
-
-				const cosTurn = _dir.dot( _prevDir );
-				if ( cosTurn < MAX_KINK_COS ) {
-
-					this.valid = false;
-					if ( ! force ) break;
-
-				}
-
-			}
-
-			_prevDir.copy( _dir );
 			prevAdvance = advance;
-
-			_prevPrevPos.copy( _prevPos );
 			_prevPos.copy( _vec );
 
 			outputIndices[ slot ] = seg;
