@@ -9,25 +9,6 @@ import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-rend
 import { TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay, TilesFadePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-const PROVIDERS = {
-
-	// Terrarium tiles from the AWS terrain tiles dataset
-	'Terrarium (AWS)': {
-		plugin: TerrariumMeshPlugin,
-		url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
-		maxZoom: 15,
-	},
-
-	// Terrain-RGB tiles of the open Mapterhorn dataset hosted by Re:Earth
-	'Terrain-RGB (Re:Earth)': {
-		plugin: TerrainRGBMeshPlugin,
-		url: 'https://terrain.reearth.land/mapterhorn-egm08/mapbox/elevation/{z}/{x}/{y}.png',
-		tileDimension: 512,
-		maxZoom: 14,
-	},
-
-};
-
 // heights are in meters while the planar world spans normalized units, one unit per the mercator
 // circumference of the earth
 const PLANAR_HEIGHT_SCALE = 1 / 40075017;
@@ -72,7 +53,7 @@ function init() {
 	// GUI
 	const gui = new GUI();
 	gui.add( options, 'errorTarget', 1, 40, 1 );
-	gui.add( options, 'provider', Object.keys( PROVIDERS ) ).onChange( initTiles );
+	gui.add( options, 'provider', [ 'Terrarium (AWS)', 'Terrain-RGB (Re:Earth)' ] ).onChange( initTiles );
 	gui.add( options, 'heightScale', 0, 10 ).onChange( v => {
 
 		terrainPlugin.heightScale = options.planar ? v * PLANAR_HEIGHT_SCALE : v;
@@ -105,18 +86,31 @@ function initTiles() {
 	} );
 
 	// tiles: the plugin generates the elevation surface, so no tileset url is needed
-	const provider = PROVIDERS[ options.provider ];
 	tiles = new TilesRenderer();
-	terrainPlugin = new provider.plugin( {
-		url: provider.url,
-		tileDimension: provider.tileDimension,
-		maxZoom: provider.maxZoom,
-		heightScale: options.planar ? options.heightScale * PLANAR_HEIGHT_SCALE : options.heightScale,
-		unlit: options.unlit,
-		shape: options.planar ? 'planar' : 'ellipsoid',
-		overlay,
-		applyOverlayTexture: true,
-	} );
+	if ( options.provider === 'Terrarium (AWS)' ) {
+
+		// Terrarium tiles from the AWS terrain tiles dataset
+		terrainPlugin = new TerrariumMeshPlugin( {
+			url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+			maxZoom: 15,
+		} );
+
+	} else {
+
+		// Terrain-RGB tiles of the open Mapterhorn dataset hosted by Re:Earth
+		terrainPlugin = new TerrainRGBMeshPlugin( {
+			url: 'https://terrain.reearth.land/mapterhorn-egm08/mapbox/elevation/{z}/{x}/{y}.png',
+			tileDimension: 512,
+			maxZoom: 14,
+		} );
+
+	}
+
+	terrainPlugin.heightScale = options.planar ? options.heightScale * PLANAR_HEIGHT_SCALE : options.heightScale;
+	terrainPlugin.unlit = options.unlit;
+	terrainPlugin.shape = options.planar ? 'planar' : 'ellipsoid';
+	terrainPlugin.overlay = overlay;
+	terrainPlugin.applyOverlayTexture = true;
 	tiles.registerPlugin( terrainPlugin );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.setCamera( camera );
