@@ -781,8 +781,8 @@ export class MVTAnnotationsPlugin {
 
 	//
 
-	// Derive the tile's cartographic range from its region bounding volume so the vector tiles
-	// start loading when the tile content download starts, before any geometry is available.
+	// Derive the tile's range from its region bounding volume so the vector tiles start loading
+	// when the tile content download starts, before any geometry is available.
 	_initTileRange( tile ) {
 
 		const { overlay, tileLoadState } = this;
@@ -792,8 +792,13 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		// convert the cartographic region to the normalized range used by the overlay
 		const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-		tileLoadState.set( tile, [ minLon, minLat, maxLon, maxLat ] );
+		let range = [ minLon, minLat, maxLon, maxLat ];
+		range = overlay.projection.clampToBounds( range );
+		range = overlay.projection.toNormalizedRange( range );
+
+		tileLoadState.set( tile, range );
 		this._prefetchVectorTile( tile, true );
 
 	}

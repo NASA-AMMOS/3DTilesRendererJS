@@ -115,7 +115,7 @@ const params = {
 	drawMode: MVTGlyphs.DrawMode.OVERLAY,
 	displayIcons: true,
 	displayPaths: true,
-	terrain: false,
+	terrainRGB: false,
 
 	occupancyGrid: false,
 	pathVisualization: 'OFF',
@@ -310,7 +310,7 @@ function initTiles() {
 	// instantiate the tiles renderer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	if ( params.terrain ) {
+	if ( params.terrainRGB ) {
 
 		// terrain generated from raster elevation tiles, textured with satellite imagery
 		tiles.registerPlugin( new TerrariumMeshPlugin( {
@@ -352,7 +352,7 @@ function initTiles() {
 	driver.displayPaths = params.displayPaths;
 	driver.annotationPoints.drawMode = params.drawMode;
 	driver.characterPoints.drawMode = params.drawMode;
-	if ( params.terrain ) {
+	if ( params.terrainRGB ) {
 
 		// let annotations settle via the terrain plugin's elevation sampling
 		driver.performSettleRaycast = null;
@@ -466,7 +466,7 @@ function init() {
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
-	gui.add( params, 'terrain' ).onChange( initTiles );
+	gui.add( params, 'terrainRGB' ).onChange( initTiles );
 
 	const debugFolder = gui.addFolder( 'Debug' );
 	debugFolder.add( params, 'occupancyGrid' ).onChange( v => {
