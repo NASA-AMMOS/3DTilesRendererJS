@@ -8,7 +8,7 @@ export class DownloadPriorityQueue {
 
 	get running(): boolean;
 
-	add( url : string | null, item : any, callback : ( item : any ) => any ) : Promise< any >;
+	add( url : string | null, item : any, callback : ( item : any ) => any, signal? : AbortSignal | null ) : Promise< any >;
 	remove( item : any ) : void;
 	has( item : any ) : boolean;
 

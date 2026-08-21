@@ -220,14 +220,7 @@ export class TerrainRGBMeshPlugin {
 		this._source.fetchData = ( fetchUrl, options ) => {
 
 			const item = { priority: - performance.now() };
-			const promise = this.tiles.downloadQueue.add( fetchUrl, item, () => fetch( fetchUrl, options ) );
-			if ( options.signal ) {
-
-				options.signal.addEventListener( 'abort', () => this.tiles.downloadQueue.remove( item ), { once: true } );
-
-			}
-
-			return promise;
+			return this.tiles.downloadQueue.add( fetchUrl, item, () => fetch( fetchUrl, options ), options.signal );
 
 		};
 
