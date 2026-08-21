@@ -15,10 +15,66 @@ import {
 	Scene,
 	ShaderMaterial,
 	Vector2,
+	Vector3,
 	Vector4,
 	WebGLRenderTarget,
 } from 'three';
-import { getMeshesCartographicRange } from './images/overlays/utils.js';
+const _fullMatrix = /* @__PURE__ */ new Matrix4();
+const _vertex = /* @__PURE__ */ new Vector3();
+const _cart = {};
+
+// Computes the per-vertex cartographic positions of the meshes and their total range, unwrapping
+// the longitudes relative to the first vertex so ranges crossing the antimeridian stay contiguous.
+function getMeshesCartographicData( meshes, ellipsoid, meshToEllipsoidMatrix ) {
+
+	const uvs = [];
+	let minLon = Infinity;
+	let minLat = Infinity;
+	let minHeight = Infinity;
+	let maxLon = - Infinity;
+	let maxLat = - Infinity;
+	let maxHeight = - Infinity;
+	let centerLon = null;
+
+	meshes.forEach( mesh => {
+
+		const uv = [];
+		const posAttr = mesh.geometry.getAttribute( 'position' );
+		_fullMatrix.copy( mesh.matrixWorld ).premultiply( meshToEllipsoidMatrix );
+		for ( let i = 0, l = posAttr.count; i < l; i ++ ) {
+
+			_vertex.fromBufferAttribute( posAttr, i ).applyMatrix4( _fullMatrix );
+			ellipsoid.getPositionToCartographic( _vertex, _cart );
+
+			let lon = _cart.lon;
+			if ( centerLon === null ) {
+
+				centerLon = lon;
+
+			} else if ( Math.abs( centerLon - lon ) > Math.PI ) {
+
+				lon += Math.sign( centerLon - lon ) * 2 * Math.PI;
+
+			}
+
+			uv.push( lon, _cart.lat, _cart.height );
+
+			minLon = Math.min( minLon, lon );
+			maxLon = Math.max( maxLon, lon );
+			minLat = Math.min( minLat, _cart.lat );
+			maxLat = Math.max( maxLat, _cart.lat );
+			minHeight = Math.min( minHeight, _cart.height );
+			maxHeight = Math.max( maxHeight, _cart.height );
+
+		}
+
+		uvs.push( uv );
+
+	} );
+
+	return { uvs, region: [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ] };
+
+}
 
 // per-tile elevation raster { region, grid, disposed }
 const ELEVATION_INFO = Symbol( 'ELEVATION_INFO' );
@@ -412,7 +468,7 @@ export class RasterElevationSamplingPlugin {
 
 		}
 
-		const { uvs, region } = getMeshesCartographicRange( meshes, tiles.ellipsoid, _matrix );
+		const { uvs, region } = getMeshesCartographicData( meshes, tiles.ellipsoid, _matrix );
 		const [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ] = region;
 		if ( ! ( maxLon > minLon ) || ! ( maxLat > minLat ) ) {
 

@@ -107,9 +107,10 @@ export class SettlingManager {
 		// When null the default raycast against the tile group is used.
 		this.performSettleRaycast = null;
 
-		// optional object providing "sampleCartographicElevation( lat, lon )" used to settle items by
+		// Optional object providing "sampleCartographicElevation( lat, lon )" used to settle items by
 		// sampling elevations directly, which is much faster than raycasting. "performSettleRaycast"
-		// takes precedence and the raycast fallback is used when no elevation data is loaded, yet.
+		// takes precedence, and points that no data covers settle to the ellipsoid surface just as a
+		// missed raycast does.
 		this.elevationSource = null;
 
 		// items awaiting resettling

@@ -18,8 +18,8 @@ import {
 	UpdateOnChangePlugin,
 	TerrariumMeshPlugin,
 	XYZTilesOverlay,
-	RasterElevationSamplingPlugin,
 } from '3d-tiles-renderer/plugins';
+import { RasterElevationSamplingPlugin } from './src/plugins/RasterElevationSamplingPlugin.js';
 import { LoadRegionPlugin } from '3d-tiles-renderer/plugins';
 import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
 import {

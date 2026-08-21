@@ -12,7 +12,6 @@ export * from './QuantizedMeshPlugin.js';
 export * from './images/ImageOverlayPlugin.js';
 export * from './LoadRegionPlugin.js';
 export * from './DebugTilesPlugin.js';
-export * from './RasterElevationSamplingPlugin.js';
 export * from './mvt/MVTAnnotationsPlugin.js';
 
 // other formats
