@@ -1,33 +1,83 @@
-/** @import { ItemCallback } from './PriorityQueue.js' */
+/** @import { ItemCallback, PriorityCallback } from './PriorityQueue.js' */
 import { PriorityQueue } from './PriorityQueue.js';
 import { getUrlOrigin } from './urlExtension.js';
 
 /**
- * PriorityQueue for scheduling downloads that limits the concurrent requests per server rather
- * than in total, so a slow or saturated server can never delay the requests made to others. The
- * items added without a url are limited as their own group.
+ * Manages a lazily created PriorityQueue per server origin so the requests to every server are
+ * prioritized and limited independently, and a slow or saturated server can never delay the
+ * requests made to others. The items added without a url are managed as their own group.
  */
-export class DownloadPriorityQueue extends PriorityQueue {
+export class DownloadPriorityQueue {
 
-	constructor() {
+	/**
+	 * returns whether tasks are queued or actively running in any origin queue
+	 * @readonly
+	 * @type {boolean}
+	 */
+	get running() {
 
-		super();
+		for ( const queue of this.originQueues.values() ) {
 
-		this.maxJobs = Infinity;
+			if ( queue.running ) {
 
-		/**
-		 * Maximum number of requests that can run concurrently per server.
-		 * @type {number}
-		 * @default 6
-		 */
-		this.maxJobsPerOrigin = 6;
+				return true;
 
-		this.originJobs = new Map();
+			}
+
+		}
+
+		return false;
 
 	}
 
 	/**
-	 * Adds an item to the queue, limiting the concurrent requests to the url's server.
+	 * Maximum number of requests that can run concurrently per server.
+	 * @type {number}
+	 * @default 6
+	 */
+	get maxJobsPerOrigin() {
+
+		return this._maxJobsPerOrigin;
+
+	}
+
+	set maxJobsPerOrigin( v ) {
+
+		this._maxJobsPerOrigin = v;
+		this.originQueues.forEach( queue => queue.maxJobs = v );
+
+	}
+
+	/**
+	 * Comparator used to sort the queued items of every origin queue.
+	 * @type {PriorityCallback|null}
+	 * @default null
+	 */
+	get priorityCallback() {
+
+		return this._priorityCallback;
+
+	}
+
+	set priorityCallback( v ) {
+
+		this._priorityCallback = v;
+		this.originQueues.forEach( queue => queue.priorityCallback = v );
+
+	}
+
+	constructor() {
+
+		this.originQueues = new Map();
+		this._itemQueues = new WeakMap();
+		this._maxJobsPerOrigin = 6;
+		this._priorityCallback = null;
+
+	}
+
+	/**
+	 * Adds an item to the queue of the url's server and returns a Promise that resolves when the
+	 * item's callback completes, or rejects if the item is removed before running.
 	 * @param {string|null} url - Url the item requests data from
 	 * @param {any} item
 	 * @param {ItemCallback} callback - Invoked with `item` when it is dequeued; may return a Promise
@@ -35,46 +85,65 @@ export class DownloadPriorityQueue extends PriorityQueue {
 	 */
 	add( url, item, callback ) {
 
+		// drop the queues for origins with no work left
+		this.originQueues.forEach( ( queue, key ) => {
+
+			if ( ! queue.running ) {
+
+				this.originQueues.delete( key );
+
+			}
+
+		} );
+
 		const origin = url === null ? null : getUrlOrigin( url );
-		const existing = this.callbacks.get( item );
-		if ( existing && existing.origin !== origin ) {
+		let queue = this.originQueues.get( origin );
+		if ( ! queue ) {
+
+			queue = new PriorityQueue();
+			queue.maxJobs = this._maxJobsPerOrigin;
+			queue.priorityCallback = this._priorityCallback;
+			this.originQueues.set( origin, queue );
+
+		}
+
+		const existing = this._itemQueues.get( item );
+		if ( existing && existing !== queue && existing.has( item ) ) {
 
 			throw new Error( 'DownloadPriorityQueue: Item is already queued with a different url origin.' );
 
 		}
 
-		const promise = super.add( item, callback );
-		this.callbacks.get( item ).origin = origin;
-		return promise;
+		this._itemQueues.set( item, queue );
+		return queue.add( item, callback );
 
 	}
 
-	_canRunJob( data ) {
+	/**
+	 * Removes an item from its origin queue, rejecting its promise with an `AbortError` DOMException.
+	 * @param {any} item
+	 */
+	remove( item ) {
 
-		return ( this.originJobs.get( data.origin ) || 0 ) < this.maxJobsPerOrigin;
+		const queue = this._itemQueues.get( item );
+		if ( queue ) {
 
-	}
-
-	_jobStarted( data ) {
-
-		const { origin } = data;
-		this.originJobs.set( origin, ( this.originJobs.get( origin ) || 0 ) + 1 );
-
-	}
-
-	_jobCompleted( data ) {
-
-		const { origin } = data;
-		const count = this.originJobs.get( origin ) - 1;
-		if ( count === 0 ) {
-
-			this.originJobs.delete( origin );
-
-		} else {
-
-			this.originJobs.set( origin, count );
+			queue.remove( item );
+			this._itemQueues.delete( item );
 
 		}
+
+	}
+
+	/**
+	 * Returns whether the given item is currently queued.
+	 * @param {any} item
+	 * @returns {boolean}
+	 */
+	has( item ) {
+
+		const queue = this._itemQueues.get( item );
+		return Boolean( queue && queue.has( item ) );
 
 	}
 
