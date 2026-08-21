@@ -3,8 +3,9 @@ import { PriorityQueue } from './PriorityQueue.js';
 import { getUrlOrigin } from './urlExtension.js';
 
 /**
- * PriorityQueue for scheduling downloads that additionally limits the concurrent requests made to
- * any single server, so a slow server cannot occupy every slot and block the requests to others.
+ * PriorityQueue for scheduling downloads that limits the concurrent requests per server rather
+ * than in total, so a slow or saturated server can never delay the requests made to others. The
+ * items added without a url are limited as their own group.
  */
 export class DownloadPriorityQueue extends PriorityQueue {
 
@@ -12,9 +13,10 @@ export class DownloadPriorityQueue extends PriorityQueue {
 
 		super();
 
+		this.maxJobs = Infinity;
+
 		/**
-		 * Maximum number of requests that can run concurrently per server for the items added with
-		 * a url, matching the concurrent connection limit browsers apply per origin.
+		 * Maximum number of requests that can run concurrently per server.
 		 * @type {number}
 		 * @default 6
 		 */
@@ -26,12 +28,12 @@ export class DownloadPriorityQueue extends PriorityQueue {
 
 	/**
 	 * Adds an item to the queue, limiting the concurrent requests to the url's server.
+	 * @param {string|null} url - Url the item requests data from
 	 * @param {any} item
 	 * @param {ItemCallback} callback - Invoked with `item` when it is dequeued; may return a Promise
-	 * @param {string|null} [url=null] - Url the item requests data from
 	 * @returns {Promise<any>}
 	 */
-	add( item, callback, url = null ) {
+	add( url, item, callback ) {
 
 		const origin = url === null ? null : getUrlOrigin( url );
 		const existing = this.callbacks.get( item );
@@ -49,43 +51,28 @@ export class DownloadPriorityQueue extends PriorityQueue {
 
 	_canRunJob( data ) {
 
-		const { origin } = data;
-		if ( origin === null || origin === undefined ) {
-
-			return true;
-
-		}
-
-		return ( this.originJobs.get( origin ) || 0 ) < this.maxJobsPerOrigin;
+		return ( this.originJobs.get( data.origin ) || 0 ) < this.maxJobsPerOrigin;
 
 	}
 
 	_jobStarted( data ) {
 
 		const { origin } = data;
-		if ( origin !== null && origin !== undefined ) {
-
-			this.originJobs.set( origin, ( this.originJobs.get( origin ) || 0 ) + 1 );
-
-		}
+		this.originJobs.set( origin, ( this.originJobs.get( origin ) || 0 ) + 1 );
 
 	}
 
 	_jobCompleted( data ) {
 
 		const { origin } = data;
-		if ( origin !== null && origin !== undefined ) {
+		const count = this.originJobs.get( origin ) - 1;
+		if ( count === 0 ) {
 
-			const count = this.originJobs.get( origin ) - 1;
-			if ( count === 0 ) {
+			this.originJobs.delete( origin );
 
-				this.originJobs.delete( origin );
+		} else {
 
-			} else {
-
-				this.originJobs.set( origin, count );
-
-			}
+			this.originJobs.set( origin, count );
 
 		}
 

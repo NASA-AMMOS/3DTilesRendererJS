@@ -331,7 +331,7 @@ export const DEFAULT_LRU_CACHE = new LRUCache();
 DEFAULT_LRU_CACHE.unloadPriorityCallback = lruPriorityCallback;
 
 export const DEFAULT_DOWNLOAD_QUEUE = new DownloadPriorityQueue();
-DEFAULT_DOWNLOAD_QUEUE.maxJobs = 25;
+DEFAULT_DOWNLOAD_QUEUE.maxJobsPerOrigin = 25;
 DEFAULT_DOWNLOAD_QUEUE.priorityCallback = unifiedPriorityCallback;
 
 export const DEFAULT_PARSE_QUEUE = new PriorityQueue();
@@ -1581,7 +1581,7 @@ export class TilesRendererBase {
 		loadingTiles.add( tile );
 
 		// queue the download and parse, limiting the concurrent requests per server
-		return downloadQueue.add( tile, downloadTile => {
+		return downloadQueue.add( url, tile, downloadTile => {
 
 			if ( signal.aborted ) {
 
@@ -1607,7 +1607,7 @@ export class TilesRendererBase {
 			} );
 			return res;
 
-		}, url )
+		} )
 			.then( res => {
 
 				if ( signal.aborted ) {

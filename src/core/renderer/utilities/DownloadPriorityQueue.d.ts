@@ -4,6 +4,6 @@ export class DownloadPriorityQueue extends PriorityQueue {
 
 	maxJobsPerOrigin : number;
 
-	add( item : any, callback : ( item : any ) => any, url? : string | null ) : Promise< any >;
+	add( url : string | null, item : any, callback : ( item : any ) => any ) : Promise< any >;
 
 }
