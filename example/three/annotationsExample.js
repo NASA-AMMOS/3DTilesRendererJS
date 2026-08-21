@@ -18,6 +18,7 @@ import {
 	UpdateOnChangePlugin,
 	TerrariumMeshPlugin,
 	XYZTilesOverlay,
+	RasterElevationPlugin,
 } from '3d-tiles-renderer/plugins';
 import { LoadRegionPlugin } from '3d-tiles-renderer/plugins';
 import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
@@ -116,6 +117,8 @@ const params = {
 	displayIcons: true,
 	displayPaths: true,
 	terrainRGB: false,
+	rasterElevation: true,
+	saturateSettles: true,
 
 	occupancyGrid: false,
 	pathVisualization: 'OFF',
@@ -125,6 +128,8 @@ const params = {
 
 let controls, scene, renderer, camera, tiles;
 let driver = null;
+let settleLogTime = 0;
+let settleRaycastFn = null;
 
 // raycasting
 const pointer = new Vector2();
@@ -307,6 +312,9 @@ function initTiles() {
 
 	}
 
+	// restart the settle rate logging so toggled settings can be compared
+	settleLogTime = performance.now();
+
 	// instantiate the tiles renderer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
@@ -331,6 +339,9 @@ function initTiles() {
 		} ) );
 		tiles.registerPlugin( new MeshBVHPlugin() );
 
+		// rasterized per-tile elevations for fast annotation settling queries
+		tiles.registerPlugin( new RasterElevationPlugin( { renderer } ) );
+
 	}
 
 	tiles.registerPlugin( new TilesFadePlugin() );
@@ -352,12 +363,8 @@ function initTiles() {
 	driver.displayPaths = params.displayPaths;
 	driver.annotationPoints.drawMode = params.drawMode;
 	driver.characterPoints.drawMode = params.drawMode;
-	if ( params.terrainRGB ) {
-
-		// let annotations settle via the terrain plugin's elevation sampling
-		driver.performSettleRaycast = null;
-
-	}
+	settleRaycastFn = driver.performSettleRaycast;
+	applySettleMode();
 
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
@@ -467,6 +474,22 @@ function init() {
 
 	} );
 	gui.add( params, 'terrainRGB' ).onChange( initTiles );
+	gui.add( params, 'rasterElevation' ).onChange( () => {
+
+		// swap the settle mode in place and re-settle every annotation so the approaches can be
+		// compared without moving the camera or reloading tiles
+		applySettleMode();
+
+		const annotationsPlugin = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
+		annotationsPlugin.settlingManager.needsUpdate = true;
+		annotationsPlugin.settlingManager.elevationSampleCount = 0;
+		annotationsPlugin.settlingManager.raycastCount = 0;
+		settleLogTime = performance.now();
+
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+	gui.add( params, 'saturateSettles' );
 
 	const debugFolder = gui.addFolder( 'Debug' );
 	debugFolder.add( params, 'occupancyGrid' ).onChange( v => {
@@ -480,6 +503,22 @@ function init() {
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.hierarchy.enabled = v;
 
 	} );
+
+}
+
+// Use the elevation sampling plugin for settling when enabled, or the driver's raycast override.
+// Terrain settling always samples since the plugin generates the surface.
+function applySettleMode() {
+
+	if ( params.terrainRGB || params.rasterElevation ) {
+
+		driver.performSettleRaycast = null;
+
+	} else {
+
+		driver.performSettleRaycast = settleRaycastFn;
+
+	}
 
 }
 
@@ -590,6 +629,15 @@ function animate() {
 	// controls update
 	controls.update();
 
+	// dirty every settle sample each frame so the settling queue stays saturated and the sample
+	// rate measures throughput rather than the amount of pending work
+	if ( params.saturateSettles ) {
+
+		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).settlingManager.needsUpdate = true;
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	}
+
 	// tiles update
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
@@ -597,6 +645,22 @@ function animate() {
 	tiles.update();
 
 	renderer.render( scene, camera );
+
+	// log the settle sample rate for benchmarking the elevation query approaches
+	const now = performance.now();
+	if ( now - settleLogTime >= 1000 ) {
+
+		const { settlingManager } = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
+		const sampled = settlingManager.elevationSampleCount;
+		const raycast = settlingManager.raycastCount;
+		const rate = Math.round( ( sampled + raycast ) * 1000 / ( now - settleLogTime ) );
+		console.log( `settles / sec: ${ rate } ( sampled: ${ sampled }, raycast: ${ raycast } )` );
+
+		settlingManager.elevationSampleCount = 0;
+		settlingManager.raycastCount = 0;
+		settleLogTime = now;
+
+	}
 
 	// credits
 	const mat = tiles.group.matrixWorldInverse;

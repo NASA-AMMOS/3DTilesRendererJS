@@ -98,6 +98,11 @@ export class SettlingManager {
 		this.camera = null;
 		this.maxSettleTimeMs = 1;
 
+		// number of samples settled via elevation sampling and raycasting, for benchmarking. Can be
+		// reset by the user.
+		this.elevationSampleCount = 0;
+		this.raycastCount = 0;
+
 		// custom settling callback ( ray, lat, lon, target ) => boolean overriding the default raycast.
 		// When null the default raycast against the tile group is used.
 		this.performSettleRaycast = null;
@@ -192,12 +197,14 @@ export class SettlingManager {
 
 		const { tiles, performSettleRaycast, elevationSource } = this;
 
-		// sample the elevation directly when a source is available
+		// sample the elevation directly when a source is available, falling back to the raycast
+		// when no data covers the point
 		if ( performSettleRaycast === null && elevationSource !== null ) {
 
 			const height = elevationSource.sampleCartographicElevation( lat, lon );
 			if ( height !== null ) {
 
+				this.elevationSampleCount ++;
 				tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _hit );
 				if ( _hit.distanceTo( target ) > threshold ) {
 
@@ -212,6 +219,7 @@ export class SettlingManager {
 		}
 
 		// cast a ray to snap a single cartographic sample onto the surface
+		this.raycastCount ++;
 		const { origin, direction } = _raycaster.ray;
 
 		// build the local ray and transform to world space for raycasting
