@@ -394,6 +394,7 @@ export class MVTGlyphs extends Group {
 
 			geometry.dispose();
 			geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( count * 3 ), 3 ) );
+			geometry.setAttribute( 'anchorPosition', new BufferAttribute( new Float32Array( count * 3 ), 3 ) );
 			geometry.setAttribute( 'glyphUV', new BufferAttribute( new Float32Array( count * 2 ), 2 ) );
 			geometry.setAttribute( 'alpha', new BufferAttribute( new Float32Array( count ), 1 ) );
 			geometry.setAttribute( 'angle', new BufferAttribute( new Float32Array( count ), 1 ) );
@@ -404,20 +405,24 @@ export class MVTGlyphs extends Group {
 
 	}
 
-	// write a single glyph's attributes; position is stored relative to this.position ( the
-	// camera-local origin ) and `key` looks up the atlas slot, or -1 when it isn't present
-	_writeGlyph( i, pos, key, fade, angle = 0 ) {
+	// Write a single glyph's attributes; position is stored relative to this.position ( the
+	// camera-local origin ) and `key` looks up the atlas slot, or -1 when it isn't present. The
+	// anchor is the shared label position depth fading is evaluated at so every glyph of a label
+	// fades together.
+	_writeGlyph( i, pos, key, fade, angle = 0, anchor = pos ) {
 
 		const { geometry, glyphAtlas } = this;
 		const origin = this.position;
 		const {
 			position: posAttr,
+			anchorPosition: anchorAttr,
 			glyphUV: uvAttr,
 			alpha: alphaAttr,
 			angle: angleAttr,
 		} = geometry.attributes;
 
 		posAttr.setXYZ( i, pos.x - origin.x, pos.y - origin.y, pos.z - origin.z );
+		anchorAttr.setXYZ( i, anchor.x - origin.x, anchor.y - origin.y, anchor.z - origin.z );
 
 		if ( key !== null && glyphAtlas.has( key ) ) {
 
@@ -440,6 +445,7 @@ export class MVTGlyphs extends Group {
 
 		const { geometry } = this;
 		geometry.getAttribute( 'position' ).needsUpdate = true;
+		geometry.getAttribute( 'anchorPosition' ).needsUpdate = true;
 		geometry.getAttribute( 'glyphUV' ).needsUpdate = true;
 		geometry.getAttribute( 'alpha' ).needsUpdate = true;
 		geometry.getAttribute( 'angle' ).needsUpdate = true;
