@@ -7,7 +7,7 @@ import {
 	Raycaster,
 	Vector3,
 } from 'three';
-import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
+import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
 import { DebugTilesPlugin, TerrainRGBMeshPlugin, TerrariumMeshPlugin, XYZTilesOverlay, TilesFadePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
@@ -29,11 +29,16 @@ const PROVIDERS = {
 
 };
 
+// heights are in meters while the planar world spans normalized units, one unit per the mercator
+// circumference of the earth
+const PLANAR_HEIGHT_SCALE = 1 / 40075017;
+
 const options = {
 	errorTarget: 2,
 	provider: 'Terrarium (AWS)',
 	heightScale: 1,
 	unlit: false,
+	planar: false,
 	displayParentBounds: false,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
@@ -74,11 +79,12 @@ function init() {
 	gui.add( options, 'provider', Object.keys( PROVIDERS ) ).onChange( initTiles );
 	gui.add( options, 'heightScale', 0, 10 ).onChange( v => {
 
-		terrainPlugin.heightScale = v;
+		terrainPlugin.heightScale = options.planar ? v * PLANAR_HEIGHT_SCALE : v;
 		keepCameraAboveTerrain();
 
 	} );
 	gui.add( options, 'unlit' ).onChange( initTiles );
+	gui.add( options, 'planar' ).onChange( initTiles );
 	gui.add( options, 'displayParentBounds' );
 	gui.add( options, 'displayBoxBounds' );
 	gui.add( options, 'displayRegionBounds' );
@@ -112,8 +118,9 @@ function initTiles() {
 	terrainPlugin = new provider.plugin( {
 		url: provider.url,
 		maxZoom: provider.maxZoom,
-		heightScale: options.heightScale,
+		heightScale: options.planar ? options.heightScale * PLANAR_HEIGHT_SCALE : options.heightScale,
 		unlit: options.unlit,
+		shape: options.planar ? 'planar' : 'ellipsoid',
 		overlay,
 		applyOverlayTexture: true,
 	} );
@@ -123,23 +130,50 @@ function initTiles() {
 	// debug bounding volume display
 	debugPlugin = new DebugTilesPlugin();
 	tiles.registerPlugin( debugPlugin );
-	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 
 	// controls
-	controls = new GlobeControls( scene, camera, renderer.domElement );
-	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
-	controls.enableDamping = true;
-	controls.minDistance = 150;
-	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
-	controls.camera.quaternion.identity();
+	if ( options.planar ) {
+
+		controls = new EnvironmentControls( scene, camera, renderer.domElement );
+		controls.enableDamping = true;
+		controls.minDistance = 1e-4;
+		controls.maxDistance = 5;
+		controls.cameraRadius = 0;
+		controls.fallbackPlane.normal.set( 0, 0, 1 );
+		controls.up.set( 0, 0, 1 );
+		controls.camera.position.set( 0, 0, 2 );
+		controls.camera.quaternion.identity();
+
+		camera.near = 1e-4;
+		camera.far = 10;
+		camera.updateProjectionMatrix();
+
+	} else {
+
+		tiles.group.rotation.x = - Math.PI / 2;
+
+		controls = new GlobeControls( scene, camera, renderer.domElement );
+		controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+		controls.enableDamping = true;
+		controls.minDistance = 150;
+		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
+		controls.camera.quaternion.identity();
+
+	}
 
 }
 
 // The terrain can rise above the camera when the exaggeration is increased, so raycast down from
 // far overhead and lift the camera back over the surface when it ends up underneath.
 function keepCameraAboveTerrain() {
+
+	if ( options.planar ) {
+
+		return;
+
+	}
 
 	const margin = 150;
 	const up = new Vector3().copy( camera.position ).normalize();
