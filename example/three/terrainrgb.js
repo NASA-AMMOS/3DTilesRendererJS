@@ -22,6 +22,7 @@ const PROVIDERS = {
 	'Terrain-RGB (Re:Earth)': {
 		plugin: TerrainRGBMeshPlugin,
 		url: 'https://terrain.reearth.land/mapterhorn-egm08/mapbox/elevation/{z}/{x}/{y}.png',
+		tileDimension: 512,
 		maxZoom: 14,
 	},
 
@@ -56,7 +57,7 @@ function init() {
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 );
 
 	// lights for the displaced terrain material
-	const ambientLight = new AmbientLight( 0xffffff, 1.5 );
+	const ambientLight = new AmbientLight( 0xffffff, 0.5 );
 	scene.add( ambientLight );
 
 	const directionalLight = new DirectionalLight( 0xffffff, 2 );
@@ -108,12 +109,13 @@ function initTiles() {
 	tiles = new TilesRenderer();
 	terrainPlugin = new provider.plugin( {
 		url: provider.url,
+		tileDimension: provider.tileDimension,
 		maxZoom: provider.maxZoom,
 		heightScale: options.planar ? options.heightScale * PLANAR_HEIGHT_SCALE : options.heightScale,
 		unlit: options.unlit,
 		shape: options.planar ? 'planar' : 'ellipsoid',
 		overlay,
-		// applyOverlayTexture: true,
+		applyOverlayTexture: true,
 	} );
 	tiles.registerPlugin( terrainPlugin );
 	tiles.registerPlugin( new TilesFadePlugin() );

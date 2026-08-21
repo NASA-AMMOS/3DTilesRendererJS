@@ -112,7 +112,7 @@ function sampleGrid( grid, tu, tv ) {
  *
  * @param {Object} [options]
  * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
- * @param {number} [options.tileDimension=512] Source tile pixel size.
+ * @param {number} [options.tileDimension=256] Source tile pixel size.
  * @param {number} [options.maxZoom=15] Highest zoom level the source provides.
  * @param {number} [options.heightScale=1] Vertical exaggeration. Can be adjusted dynamically.
  * @param {ImageOverlay} [options.overlay=null] Overlay used to texture the tiles when
@@ -146,7 +146,7 @@ export class TerrainRGBMeshPlugin {
 
 		const {
 			url = null,
-			tileDimension = 512,
+			tileDimension = 256,
 			maxZoom = 15,
 			heightScale = 1,
 			overlay = null,

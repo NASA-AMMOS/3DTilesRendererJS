@@ -1814,6 +1814,66 @@ dispose(): void
 Disposes all texture, table, and attribute accessors.
 
 
+## TerrainRGBMeshPlugin
+
+Generates terrain tiles from raster Terrain-RGB elevation tiles. Each elevation texture is
+shared by multiple layers of sub tiles that displace a smooth surface mesh on the GPU with a
+subview of the texture, so elevation scale and seam updates only require texture changes.
+
+> [!NOTE]
+> Enabling frustum culling on the tile meshes is not supported since the geometry bounds do not
+> include the gpu displacement. Culling is handled by the tile traversal.
+
+> [!NOTE]
+> Debug bounding volume visualizations, such as those from DebugTilesPlugin, may not display
+> correctly after changing the height scale since they are not rebuilt when the tile bounding
+> volumes update.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
+		url: string,
+
+		// Source tile pixel size.
+		tileDimension = 256: number,
+
+		// Highest zoom level the source provides.
+		maxZoom = 15: number,
+
+		// Vertical exaggeration. Can be adjusted dynamically.
+		heightScale = 1: number,
+
+		// Overlay used to texture the tiles when  
+		// `applyOverlayTexture` is enabled.
+		overlay = null: ImageOverlay,
+
+		// Whether to apply the overlay texture.
+		applyOverlayTexture = false: boolean,
+
+		// Render the tiles without lighting or terrain normals.
+		unlit = false: boolean,
+
+		// Surface shape.
+		shape = 'ellipsoid': 'ellipsoid' | 'planar',
+
+		// Snap poles to ±90° lat.
+		endCaps = true: boolean,
+
+		// Apply recommended TilesRenderer settings.
+		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
+## TerrariumMeshPlugin
+
+[TerrainRGBMeshPlugin](TerrainRGBMeshPlugin) for the Terrarium encoding.
+
+
 ## TileCompressionPlugin
 
 Plugin that processes tile geometry buffer attributes into smaller data types on load

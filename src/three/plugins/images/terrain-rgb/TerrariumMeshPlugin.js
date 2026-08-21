@@ -7,8 +7,7 @@ export class TerrariumMeshPlugin extends TerrainRGBMeshPlugin {
 
 	constructor( options = {} ) {
 
-		// AWS Terrarium tiles are 256px
-		super( { tileDimension: 256, ...options } );
+		super( options );
 
 		this.name = 'TERRARIUM_MESH_PLUGIN';
 
