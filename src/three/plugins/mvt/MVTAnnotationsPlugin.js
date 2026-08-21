@@ -526,7 +526,9 @@ export class MVTAnnotationsPlugin {
 			// be done.
 			occupancy.needsUpdate = occupancy.needsUpdate || settlingManager.hasPendingWork;
 
-			// raycasters, preferring direct elevation sampling when a registered plugin provides it
+			// Cache the one plugin used for elevation sampling so the settling samples don't have to
+			// iterate over the plugins that may not provide the function. It's re-queried every frame
+			// so a removed plugin isn't kept around and plugins can be added and removed at any time.
 			settlingManager.camera = camera;
 			settlingManager.performSettleRaycast = driver.performSettleRaycast;
 			settlingManager.elevationSource = tiles.plugins.find( plugin => plugin.sampleCartographicElevation ) || null;
@@ -724,6 +726,9 @@ export class MVTAnnotationsPlugin {
 			this._prefetchVectorTile( tile, false );
 
 		} );
+
+		// release the cached elevation sampling plugin
+		this.settlingManager.elevationSource = null;
 
 	}
 
