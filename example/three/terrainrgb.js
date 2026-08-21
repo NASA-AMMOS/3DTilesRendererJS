@@ -118,12 +118,7 @@ function initTiles() {
 		applyOverlayTexture: true,
 	} );
 	tiles.registerPlugin( terrainPlugin );
-	tiles.registerPlugin( new TilesFadePlugin() )
-
-	// The cache byte estimate counts every tile's displacement texture clone at full size even
-	// though the underlying texture upload is shared, so raise the byte budget to compensate.
-	tiles.lruCache.minBytesSize = 1e9;
-	tiles.lruCache.maxBytesSize = 1.5e9;
+	tiles.registerPlugin( new TilesFadePlugin() );
 
 	// debug bounding volume display
 	debugPlugin = new DebugTilesPlugin();
