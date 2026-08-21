@@ -117,9 +117,6 @@ const params = {
 	displayIcons: true,
 	displayPaths: true,
 	terrainRGB: false,
-	rasterElevation: true,
-	saturateSettles: true,
-	updateTiles: true,
 
 	occupancyGrid: false,
 	pathVisualization: 'OFF',
@@ -129,8 +126,6 @@ const params = {
 
 let controls, scene, renderer, camera, tiles;
 let driver = null;
-let settleLogTime = 0;
-let settleRaycastFn = null;
 
 // raycasting
 const pointer = new Vector2();
@@ -200,42 +195,6 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		this.group.add( annotationPoints, characterPoints );
 		this.annotationPoints = annotationPoints;
 		this.characterPoints = characterPoints;
-
-		this.settleRaycaster = new Raycaster();
-
-		// prefer the nearest hit on a visible tile so oversized offscreen coverage tiles don't win,
-		// otherwise take the nearest hit. This is to avoid cases where high LoD tiles are "active"
-		// and overlap low LoD tiles, resulting in incorrect offsets.
-		this.performSettleRaycast = ( ray, lat, lon, target ) => {
-
-			const { settleRaycaster } = this;
-			settleRaycaster.ray.copy( ray );
-			settleRaycaster.far = 2 * 1e8;
-			settleRaycaster.firstHitOnly = false;
-
-			const hits = settleRaycaster.intersectObject( tiles.group, true );
-			for ( let i = 0, l = hits.length; i < l; i ++ ) {
-
-				const tile = hits[ i ].object.userData.tile;
-				if ( ! tile || tiles.visibleTiles.has( tile ) ) {
-
-					target.copy( hits[ i ].point );
-					return true;
-
-				}
-
-			}
-
-			if ( hits.length > 0 ) {
-
-				target.copy( hits[ 0 ].point );
-				return true;
-
-			}
-
-			return false;
-
-		};
 
 	}
 
@@ -313,9 +272,6 @@ function initTiles() {
 
 	}
 
-	// restart the settle rate logging so toggled settings can be compared
-	settleLogTime = performance.now();
-
 	// instantiate the tiles renderer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
@@ -353,8 +309,8 @@ function initTiles() {
 	// Note: The source coop link can be very slow to load so it's recommended to load the data locally
 	// or host it on a faster server.
 	const overlay = new PMTilesOverlay( {
-		url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
-		// url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+		// url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
 	} );
 
 	// create the driver for rendering labels, icons
@@ -364,8 +320,6 @@ function initTiles() {
 	driver.displayPaths = params.displayPaths;
 	driver.annotationPoints.drawMode = params.drawMode;
 	driver.characterPoints.drawMode = params.drawMode;
-	settleRaycastFn = driver.performSettleRaycast;
-	applySettleMode();
 
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
@@ -475,23 +429,6 @@ function init() {
 
 	} );
 	gui.add( params, 'terrainRGB' ).onChange( initTiles );
-	gui.add( params, 'rasterElevation' ).onChange( () => {
-
-		// swap the settle mode in place and re-settle every annotation so the approaches can be
-		// compared without moving the camera or reloading tiles
-		applySettleMode();
-
-		const annotationsPlugin = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
-		annotationsPlugin.settlingManager.needsUpdate = true;
-		annotationsPlugin.settlingManager.elevationSampleCount = 0;
-		annotationsPlugin.settlingManager.raycastCount = 0;
-		settleLogTime = performance.now();
-
-		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
-
-	} );
-	gui.add( params, 'saturateSettles' );
-	gui.add( params, 'updateTiles' );
 
 	const debugFolder = gui.addFolder( 'Debug' );
 	debugFolder.add( params, 'occupancyGrid' ).onChange( v => {
@@ -508,30 +445,11 @@ function init() {
 
 }
 
-// Use the elevation sampling plugin for settling when enabled, or the driver's raycast override.
-// Terrain settling always samples since the plugin generates the surface.
-function applySettleMode() {
-
-	if ( params.terrainRGB || params.rasterElevation ) {
-
-		driver.performSettleRaycast = null;
-
-	} else {
-
-		driver.performSettleRaycast = settleRaycastFn;
-
-	}
-
-}
-
-// apply the selected path debug display: hidden entirely, one of the overlay color modes, or the
-// per-anchor rejection reason display
+// apply the selected path debug display: hidden entirely or one of the overlay color modes
 function applyPathVisualization() {
 
 	const paths = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths;
-	const rejection = params.pathVisualization === 'REJECTION';
 	paths.enabled = params.pathVisualization !== 'OFF';
-	paths.colorAnchorsByRejection = rejection;
 	paths.colorMode = paths.ColorMode[ params.pathVisualization ] ?? paths.ColorMode.NONE;
 
 }
@@ -631,42 +549,13 @@ function animate() {
 	// controls update
 	controls.update();
 
-	// dirty every settle sample each frame so the settling queue stays saturated and the sample
-	// rate measures throughput rather than the amount of pending work
-	if ( params.saturateSettles ) {
-
-		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).settlingManager.needsUpdate = true;
-		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
-
-	}
-
-	// tiles update, which can be frozen so the camera can inspect the current annotation state
+	// tiles update
 	camera.updateMatrixWorld();
-	if ( params.updateTiles ) {
-
-		tiles.setResolutionFromRenderer( camera, renderer );
-		tiles.setCamera( camera );
-		tiles.update();
-
-	}
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.setCamera( camera );
+	tiles.update();
 
 	renderer.render( scene, camera );
-
-	// log the settle sample rate for benchmarking the elevation query approaches
-	const now = performance.now();
-	if ( now - settleLogTime >= 1000 ) {
-
-		const { settlingManager } = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
-		const sampled = settlingManager.elevationSampleCount;
-		const raycast = settlingManager.raycastCount;
-		const rate = Math.round( ( sampled + raycast ) * 1000 / ( now - settleLogTime ) );
-		console.log( `settles / sec: ${ rate } ( sampled: ${ sampled }, raycast: ${ raycast } )` );
-
-		settlingManager.elevationSampleCount = 0;
-		settlingManager.raycastCount = 0;
-		settleLogTime = now;
-
-	}
 
 	// credits
 	const mat = tiles.group.matrixWorldInverse;

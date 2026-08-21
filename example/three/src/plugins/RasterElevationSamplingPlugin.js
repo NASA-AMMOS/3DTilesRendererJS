@@ -23,8 +23,8 @@ const _fullMatrix = /* @__PURE__ */ new Matrix4();
 const _vertex = /* @__PURE__ */ new Vector3();
 const _cart = {};
 
-// Computes the per-vertex cartographic positions of the meshes and their total range, unwrapping
-// the longitudes relative to the first vertex so ranges crossing the antimeridian stay contiguous.
+// computes the per-vertex cartographic positions and total range of the meshes, unwrapping
+// longitudes so ranges crossing the antimeridian stay contiguous
 function getMeshesCartographicData( meshes, ellipsoid, meshToEllipsoidMatrix ) {
 
 	const uvs = [];
@@ -79,66 +79,55 @@ function getMeshesCartographicData( meshes, ellipsoid, meshToEllipsoidMatrix ) {
 // per-tile elevation raster { region, grid, disposed }
 const ELEVATION_INFO = Symbol( 'ELEVATION_INFO' );
 
-// Value stored in the grid where no geometry was drawn, detected via the raster alpha channel.
-// Written on the cpu so it round trips through the float grid exactly.
+// value stored in the grid where no geometry was drawn
 const NO_DATA = - Infinity;
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _color = /* @__PURE__ */ new Color();
 const _prevColor = /* @__PURE__ */ new Color();
 
-// camera required by the renderer, unused since the shader outputs clip positions directly
+// unused camera required by the render call
 const _camera = /* @__PURE__ */ new OrthographicCamera();
 
-// rasterizes vertices holding [ lon, lat, height ] over the tile's cartographic range, with the
-// height written as depth so the depth test resolves the top surface per texel
-let _material = null;
-function getRasterMaterial() {
+// rasterizes [ lon, lat, height ] vertices over the tile's cartographic range, writing height as
+// depth so the top surface wins the depth test
+function createRasterMaterial() {
 
-	if ( _material === null ) {
+	return new ShaderMaterial( {
+		side: DoubleSide,
+		blending: NoBlending,
+		uniforms: {
+			range: { value: new Vector4() },
+			heightRange: { value: new Vector2() },
+		},
+		vertexShader: /* glsl */`
+			uniform vec4 range;
+			uniform vec2 heightRange;
+			varying float vHeight;
+			void main() {
 
-		_material = new ShaderMaterial( {
-			side: DoubleSide,
-			blending: NoBlending,
-			uniforms: {
-				range: { value: new Vector4() },
-				heightRange: { value: new Vector2() },
-			},
-			vertexShader: /* glsl */`
-				uniform vec4 range;
-				uniform vec2 heightRange;
-				varying float vHeight;
-				void main() {
+				vHeight = position.z;
 
-					vHeight = position.z;
+				float x = 2.0 * ( position.x - range.x ) / ( range.z - range.x ) - 1.0;
+				float y = 2.0 * ( position.y - range.y ) / ( range.w - range.y ) - 1.0;
+				float z = 1.0 - 2.0 * ( position.z - heightRange.x ) / ( heightRange.y - heightRange.x );
+				gl_Position = vec4( x, y, z, 1.0 );
 
-					// map the cartographic position across the target and the height to depth such
-					// that the highest surface wins the depth test
-					float x = 2.0 * ( position.x - range.x ) / ( range.z - range.x ) - 1.0;
-					float y = 2.0 * ( position.y - range.y ) / ( range.w - range.y ) - 1.0;
-					float z = 1.0 - 2.0 * ( position.z - heightRange.x ) / ( heightRange.y - heightRange.x );
-					gl_Position = vec4( x, y, z, 1.0 );
+			}
+		`,
+		fragmentShader: /* glsl */`
+			varying float vHeight;
+			void main() {
 
-				}
-			`,
-			fragmentShader: /* glsl */`
-				varying float vHeight;
-				void main() {
+				gl_FragColor = vec4( vHeight, 0.0, 0.0, 1.0 );
 
-					gl_FragColor = vec4( vHeight, 0.0, 0.0, 1.0 );
-
-				}
-			`,
-		} );
-
-	}
-
-	return _material;
+			}
+		`,
+	} );
 
 }
 
-// Packs a pair of possibly negative cell indices into a single numeric key. The offsets and span
-// cover the finest practical cell resolutions without index collisions.
+// packs a pair of possibly negative cell indices into a single numeric key
 const CELL_KEY_OFFSET = 2 ** 24;
 const CELL_KEY_SPAN = 2 ** 25;
 function getCellKey( xi, yi ) {
@@ -147,7 +136,7 @@ function getCellKey( xi, yi ) {
 
 }
 
-// whether the longitude falls in the range, accounting for ranges unwrapped past the antimeridian
+// wrap the longitude into ranges unwrapped past the antimeridian
 function adjustLonToRange( lon, minLon, maxLon ) {
 
 	if ( lon < minLon && lon + 2 * Math.PI <= maxLon ) {
@@ -166,8 +155,7 @@ function adjustLonToRange( lon, minLon, maxLon ) {
 
 }
 
-// Blend a pair of texels, taking the single valid one when the other has no data. Non-finite
-// values are treated as no data since rasterized degenerate geometry can produce NaN texels.
+// blend a pair of texels, treating non-finite values as no data
 function blendPair( a, b, t ) {
 
 	const aValid = Number.isFinite( a );
@@ -194,8 +182,7 @@ function blendPair( a, b, t ) {
 
 }
 
-// bilinear sample of the tile raster, blending the valid texels per axis so points at the edge of
-// the mesh coverage still resolve. Returns null when no texel covering the point has data.
+// bilinear sample of the tile raster, or null when no texel covering the point has data
 function sampleInfo( info, lat, lon ) {
 
 	const { region, grid, resolution } = info;
@@ -239,9 +226,7 @@ function sampleInfo( info, lat, lon ) {
 
 /**
  * Rasterizes the elevation of every loaded tile into a small float grid so elevations can be
- * queried against the tile set quickly without raycasting, exposed via
- * `sampleCartographicElevation`. Each grid is generated once when the tile geometry loads since
- * tile content never changes.
+ * sampled quickly via `sampleCartographicElevation` without raycasting.
  *
  * @param {Object} options
  * @param {WebGLRenderer} options.renderer The renderer used to rasterize the tile geometry.
@@ -262,6 +247,7 @@ export class RasterElevationSamplingPlugin {
 		this.resolution = resolution;
 
 		this._depthLevels = [];
+		this._material = null;
 
 	}
 
@@ -269,11 +255,8 @@ export class RasterElevationSamplingPlugin {
 
 		this.tiles = tiles;
 
-		// Bucket the sampleable active tiles into a grid of cells per depth, with the cell size
-		// matched to the largest tile patch at that depth so each tile spans at most four cells.
-		// The cell buckets are sorted by max elevation so the highest surfaces are found first, and
-		// the depths are ordered deepest first so the samples test the tiles that take precedence
-		// first and can stop at the first depth with data.
+		// bucket the sampleable active tiles into a grid of cells per depth, with the cell size
+		// matched to the largest tile patch at that depth so each tile spans at most four cells
 		this._onUpdateAfter = () => {
 
 			const byDepth = new Map();
@@ -373,10 +356,9 @@ export class RasterElevationSamplingPlugin {
 
 		}
 
-		// Check the cell containing the point at every depth from deepest to shallowest, probing
-		// the wrapped longitudes so patches unwrapped past the antimeridian are found. Deeper tile
-		// data takes precedence over the coarser tiles containing it so simplified geometry cannot
-		// override it, and the overlapping tiles at the same depth resolve to the highest surface.
+		// check the cell containing the point at every depth from deepest to shallowest - deeper
+		// tile data takes precedence and overlapping tiles at the same depth resolve to the
+		// highest surface
 		const levels = this._depthLevels;
 		let best = null;
 		let bestDepth = - 1;
@@ -411,8 +393,7 @@ export class RasterElevationSamplingPlugin {
 
 					}
 
-					// the bucket is sorted by max elevation so none of the remaining tiles can
-					// rise above the best sample
+					// the bucket is sorted by max elevation so no remaining tile can beat the best
 					if ( best !== null && info.region[ 5 ] <= best ) {
 
 						break;
@@ -460,7 +441,7 @@ export class RasterElevationSamplingPlugin {
 
 		}
 
-		// find the cartographic range and per-vertex cartographic positions of the geometry
+		// find the cartographic positions and range of the geometry
 		_matrix.identity();
 		if ( scene.parent !== null ) {
 
@@ -484,9 +465,15 @@ export class RasterElevationSamplingPlugin {
 		};
 		tile[ ELEVATION_INFO ] = info;
 
-		// build the raster scene from the cartographic vertex positions, sharing the mesh indices
+		// build the raster scene from the cartographic vertex positions
+		if ( this._material === null ) {
+
+			this._material = createRasterMaterial();
+
+		}
+
 		const rasterScene = new Scene();
-		const material = getRasterMaterial();
+		const material = this._material;
 		material.uniforms.range.value.set( minLon, minLat, maxLon, maxLat );
 		material.uniforms.heightRange.value.set( minHeight, maxHeight > minHeight ? maxHeight : minHeight + 1 );
 
@@ -535,8 +522,8 @@ export class RasterElevationSamplingPlugin {
 
 		geometries.forEach( geometry => geometry.dispose() );
 
-		// Read the raster back and extract the height channel before the tile is considered
-		// processed, so every displayed tile can be sampled immediately.
+		// read the raster back before the tile is considered processed so every displayed tile can
+		// be sampled immediately
 		const buffer = new Float32Array( resolution * resolution * 4 );
 		try {
 
@@ -584,6 +571,13 @@ export class RasterElevationSamplingPlugin {
 
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this._depthLevels.length = 0;
+
+		if ( this._material !== null ) {
+
+			this._material.dispose();
+			this._material = null;
+
+		}
 
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
