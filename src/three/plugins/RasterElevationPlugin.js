@@ -100,8 +100,7 @@ function adjustLonToRange( lon, minLon, maxLon ) {
 
 }
 
-// bilinear sample of the tile raster, returning null on any no-data texel so the caller falls
-// back to another tile
+// bilinear sample of the tile raster, returning null when no texel covering the point has data
 function sampleInfo( info, lat, lon ) {
 
 	const { region, grid, resolution } = info;
@@ -174,22 +173,48 @@ export class RasterElevationPlugin {
 	}
 
 	/**
-	 * Samples the rasterized elevation at the given cartographic point, preferring the deepest
-	 * loaded tile data and falling back to ancestors where a tile has no coverage.
+	 * Samples the rasterized elevation of the active tiles at the given cartographic point,
+	 * resolving overlapping tiles to the highest surface.
 	 * @param {number} lat Latitude in radians.
 	 * @param {number} lon Longitude in radians.
 	 * @returns {number|null} The elevation, or `null` when no data covering the point is loaded.
 	 */
 	sampleCartographicElevation( lat, lon ) {
 
-		const root = this.tiles && this.tiles.root;
-		if ( ! root ) {
+		if ( this.tiles === null ) {
 
 			return null;
 
 		}
 
-		return this._sampleTile( root, lat, lon );
+		// check the exact mesh patch of every active tile, skipping the tiles that cannot rise
+		// above the best sample found so far
+		let best = null;
+		for ( const tile of this.tiles.activeTiles ) {
+
+			const info = tile[ ELEVATION_INFO ];
+			if ( ! info || info.grid === null ) {
+
+				continue;
+
+			}
+
+			if ( best !== null && info.region[ 5 ] <= best ) {
+
+				continue;
+
+			}
+
+			const sample = sampleInfo( info, lat, lon );
+			if ( sample !== null && ( best === null || sample > best ) ) {
+
+				best = sample;
+
+			}
+
+		}
+
+		return best;
 
 	}
 
@@ -333,63 +358,6 @@ export class RasterElevationPlugin {
 			delete tile[ ELEVATION_INFO ];
 
 		}
-
-	}
-
-	// Sample the deepest loaded tile data covering the point, pruning the traversal with the exact
-	// mesh-derived patches and skipping subtrees that cannot exceed the best sample found so far.
-	// Tiles without loaded geometry have no patch and are passed through.
-	_sampleTile( tile, lat, lon ) {
-
-		const info = tile[ ELEVATION_INFO ];
-		if ( info ) {
-
-			const [ minLon, minLat, maxLon, maxLat ] = info.region;
-			const adjustedLon = adjustLonToRange( lon, minLon, maxLon );
-			if ( lat < minLat || lat > maxLat || adjustedLon < minLon || adjustedLon > maxLon ) {
-
-				return null;
-
-			}
-
-		}
-
-		// deeper tile data takes precedence over the coarser tiles containing it, and overlapping
-		// peers resolve to the highest surface
-		let best = null;
-		const children = tile.children || [];
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			const child = children[ i ];
-			const childInfo = child[ ELEVATION_INFO ];
-			if ( best !== null && childInfo && childInfo.region[ 5 ] <= best ) {
-
-				continue;
-
-			}
-
-			const sample = this._sampleTile( child, lat, lon );
-			if ( sample !== null && ( best === null || sample > best ) ) {
-
-				best = sample;
-
-			}
-
-		}
-
-		if ( best !== null ) {
-
-			return best;
-
-		}
-
-		if ( info && info.grid !== null ) {
-
-			return sampleInfo( info, lat, lon );
-
-		}
-
-		return null;
 
 	}
 

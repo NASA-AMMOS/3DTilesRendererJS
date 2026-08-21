@@ -197,24 +197,21 @@ export class SettlingManager {
 
 		const { tiles, performSettleRaycast, elevationSource } = this;
 
-		// sample the elevation directly when a source is available, falling back to the raycast
-		// when no data covers the point
+		// sample the elevation directly when a source is available, settling to the ellipsoid
+		// surface when no data covers the point just as a missed raycast does
 		if ( performSettleRaycast === null && elevationSource !== null ) {
 
+			this.elevationSampleCount ++;
+
 			const height = elevationSource.sampleCartographicElevation( lat, lon );
-			if ( height !== null ) {
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, height !== null ? height : 0, _hit );
+			if ( _hit.distanceTo( target ) > threshold ) {
 
-				this.elevationSampleCount ++;
-				tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _hit );
-				if ( _hit.distanceTo( target ) > threshold ) {
-
-					target.copy( _hit );
-
-				}
-
-				return;
+				target.copy( _hit );
 
 			}
+
+			return;
 
 		}
 
