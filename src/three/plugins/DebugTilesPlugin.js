@@ -207,28 +207,34 @@ export class DebugTilesPlugin {
 
 			this._displayParentBounds = v;
 
+			// Traverse without forcing child preprocessing since procedurally expanded tile sets can
+			// otherwise generate their full tile hierarchy here. Unprocessed tiles cannot be visible.
 			if ( ! v ) {
 
 				// Reset all ref counts
 				this.tiles.traverse( tile => {
 
-					tile[ PARENT_BOUND_REF_COUNT ] = null;
-					this._onTileVisibilityChange( tile, tile.traversal.visible );
+					if ( tile.traversal ) {
 
-				} );
+						tile[ PARENT_BOUND_REF_COUNT ] = null;
+						this._onTileVisibilityChange( tile, tile.traversal.visible );
+
+					}
+
+				}, null, false );
 
 			} else {
 
 				// Initialize ref count for existing tiles
 				this.tiles.traverse( tile => {
 
-					if ( tile.traversal.visible ) {
+					if ( tile.traversal && tile.traversal.visible ) {
 
 						this._onTileVisibilityChange( tile, true );
 
 					}
 
-				} );
+				}, null, false );
 
 			}
 
