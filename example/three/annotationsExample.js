@@ -119,6 +119,7 @@ const params = {
 	terrainRGB: false,
 	rasterElevation: true,
 	saturateSettles: true,
+	updateTiles: true,
 
 	occupancyGrid: false,
 	pathVisualization: 'OFF',
@@ -490,6 +491,7 @@ function init() {
 
 	} );
 	gui.add( params, 'saturateSettles' );
+	gui.add( params, 'updateTiles' );
 
 	const debugFolder = gui.addFolder( 'Debug' );
 	debugFolder.add( params, 'occupancyGrid' ).onChange( v => {
@@ -638,11 +640,15 @@ function animate() {
 
 	}
 
-	// tiles update
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.setCamera( camera );
+	// tiles update, which can be frozen so the camera can inspect the current annotation state
 	camera.updateMatrixWorld();
-	tiles.update();
+	if ( params.updateTiles ) {
+
+		tiles.setResolutionFromRenderer( camera, renderer );
+		tiles.setCamera( camera );
+		tiles.update();
+
+	}
 
 	renderer.render( scene, camera );
 

@@ -23,9 +23,9 @@ import { getMeshesCartographicRange } from './images/overlays/utils.js';
 // per-tile elevation raster { region, grid, disposed }
 const ELEVATION_INFO = Symbol( 'ELEVATION_INFO' );
 
-// value stored in the grid where no geometry was drawn, detected via the raster alpha channel
-const NO_DATA = - 1e30;
-const NO_DATA_THRESHOLD = - 1e29;
+// Value stored in the grid where no geometry was drawn, detected via the raster alpha channel.
+// Written on the cpu so it round trips through the float grid exactly.
+const NO_DATA = - Infinity;
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _color = /* @__PURE__ */ new Color();
@@ -100,7 +100,12 @@ function adjustLonToRange( lon, minLon, maxLon ) {
 
 }
 
-// bilinear sample of the tile raster, returning null when no texel covering the point has data
+// Bilinear sample of the tile raster, returning null when any texel covering the point has no
+// data. Non-finite values are treated as no data since rasterized degenerate geometry can produce
+// NaN texels.
+// TODO: blending only the valid texels per axis here (taking the single valid one when the other
+// has no data) would let points at the edge of the mesh coverage still resolve, but doing so
+// consistently stops all annotations from displaying. Investigate and support coverage edges.
 function sampleInfo( info, lat, lon ) {
 
 	const { region, grid, resolution } = info;
@@ -126,7 +131,7 @@ function sampleInfo( info, lat, lon ) {
 	const h10 = grid[ y0 * resolution + x1 ];
 	const h01 = grid[ y1 * resolution + x0 ];
 	const h11 = grid[ y1 * resolution + x1 ];
-	if ( h00 < NO_DATA_THRESHOLD || h10 < NO_DATA_THRESHOLD || h01 < NO_DATA_THRESHOLD || h11 < NO_DATA_THRESHOLD ) {
+	if ( ! Number.isFinite( h00 ) || ! Number.isFinite( h10 ) || ! Number.isFinite( h01 ) || ! Number.isFinite( h11 ) ) {
 
 		return null;
 
@@ -134,9 +139,9 @@ function sampleInfo( info, lat, lon ) {
 
 	const tx = fx - x0;
 	const ty = fy - y0;
-	const h0 = h00 * ( 1 - tx ) + h10 * tx;
-	const h1 = h01 * ( 1 - tx ) + h11 * tx;
-	return h0 * ( 1 - ty ) + h1 * ty;
+	const h0 = MathUtils.lerp( h00, h10, tx );
+	const h1 = MathUtils.lerp( h01, h11, tx );
+	return MathUtils.lerp( h0, h1, ty );
 
 }
 
