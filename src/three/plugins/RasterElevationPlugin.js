@@ -169,11 +169,41 @@ export class RasterElevationPlugin {
 		this.renderer = renderer;
 		this.resolution = resolution;
 
+		this._sortedActiveTiles = [];
+
 	}
 
 	init( tiles ) {
 
 		this.tiles = tiles;
+
+		// Keep a prebuilt list of the active tiles sorted deepest first so the samples test the
+		// tiles that take precedence first and can stop at the first depth with data. Tiles at the
+		// same depth are sorted by their max elevation so the highest surfaces are found first.
+		this._onUpdateAfter = () => {
+
+			const sorted = this._sortedActiveTiles;
+			sorted.length = 0;
+			tiles.activeTiles.forEach( tile => sorted.push( tile ) );
+			sorted.sort( ( a, b ) => {
+
+				const depthA = a.internal.depth;
+				const depthB = b.internal.depth;
+				if ( depthA !== depthB ) {
+
+					return depthB - depthA;
+
+				}
+
+				const maxA = a[ ELEVATION_INFO ] ? a[ ELEVATION_INFO ].region[ 5 ] : - Infinity;
+				const maxB = b[ ELEVATION_INFO ] ? b[ ELEVATION_INFO ].region[ 5 ] : - Infinity;
+				return maxB - maxA;
+
+			} );
+
+		};
+
+		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 
 	}
 
@@ -192,11 +222,15 @@ export class RasterElevationPlugin {
 
 		}
 
-		// check the exact mesh patch of every active tile, skipping the tiles that cannot rise
-		// above the best sample found so far
+		// Check the exact mesh patch of the active tiles from deepest to shallowest. Deeper tile
+		// data takes precedence over the coarser tiles containing it so simplified geometry cannot
+		// override it, and the overlapping tiles at the same depth resolve to the highest surface.
+		const sorted = this._sortedActiveTiles;
 		let best = null;
-		for ( const tile of this.tiles.activeTiles ) {
+		let bestDepth = - 1;
+		for ( let i = 0, l = sorted.length; i < l; i ++ ) {
 
+			const tile = sorted[ i ];
 			const info = tile[ ELEVATION_INFO ];
 			if ( ! info || info.grid === null ) {
 
@@ -204,16 +238,33 @@ export class RasterElevationPlugin {
 
 			}
 
+			// the list is sorted by depth so no tiles that take precedence remain
+			const depth = tile.internal.depth;
+			if ( depth < bestDepth ) {
+
+				break;
+
+			}
+
+			// the tiles at this depth are sorted by max elevation so none of the remaining tiles
+			// can rise above the best sample
 			if ( best !== null && info.region[ 5 ] <= best ) {
+
+				break;
+
+			}
+
+			const sample = sampleInfo( info, lat, lon );
+			if ( sample === null ) {
 
 				continue;
 
 			}
 
-			const sample = sampleInfo( info, lat, lon );
-			if ( sample !== null && ( best === null || sample > best ) ) {
+			if ( best === null || sample > best ) {
 
 				best = sample;
+				bestDepth = depth;
 
 			}
 
@@ -367,6 +418,9 @@ export class RasterElevationPlugin {
 	}
 
 	dispose() {
+
+		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+		this._sortedActiveTiles.length = 0;
 
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
