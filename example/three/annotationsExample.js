@@ -16,6 +16,8 @@ import {
 	MVTIconGlyphs,
 	MVTLabelGlyphs,
 	UpdateOnChangePlugin,
+	TerrariumMeshPlugin,
+	XYZTilesOverlay,
 } from '3d-tiles-renderer/plugins';
 import { LoadRegionPlugin } from '3d-tiles-renderer/plugins';
 import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
@@ -113,6 +115,7 @@ const params = {
 	drawMode: MVTGlyphs.DrawMode.OVERLAY,
 	displayIcons: true,
 	displayPaths: true,
+	terrain: false,
 
 	occupancyGrid: false,
 	annotationLines: false,
@@ -145,7 +148,8 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		this.displayIcons = true;
 		this.displayPaths = true;
 
-		const dpr = renderer.getPixelRatio();
+		// stroke width scaled to the atlas resolution so outlines look the same on all devices
+		const strokeWidth = 1.5 * window.devicePixelRatio;
 
 		// icons for point annotations
 		const annotationPoints = new MVTIconGlyphs( {
@@ -160,7 +164,7 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		annotationPoints.glyphAtlas.drawChar( 'point', '●', {
 			fillStyle: 'white',
 			strokeStyle: '#3f3e4c',
-			strokeWidth: 3 * dpr,
+			strokeWidth,
 			font: '30px sans-serif',
 		} );
 
@@ -172,7 +176,7 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 					annotationPoints.glyphAtlas.drawSVG( icon, svgText, {
 						fillStyle: 'white',
 						strokeStyle: '#3f3e4c',
-						strokeWidth: 3 * dpr,
+						strokeWidth,
 						iconScale: 0.9,
 					} );
 
@@ -184,7 +188,7 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		// glyphs for text ( road ) annotations
 		const characterPoints = new MVTLabelGlyphs( {
 			strokeStyle: '#3f3e4c',
-			strokeWidth: 3 * dpr,
+			strokeWidth,
 		} );
 
 		this.group.add( annotationPoints, characterPoints );
@@ -296,15 +300,40 @@ animate();
 
 function initTiles() {
 
+	if ( tiles ) {
+
+		tiles.dispose();
+		scene.remove( tiles.group );
+
+	}
+
 	// instantiate the tiles renderer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
-	tiles.registerPlugin( new GLTFExtensionsPlugin( {
-		dracoLoader: new DRACOLoader(),
-	} ) );
+	if ( params.terrain ) {
+
+		// terrain generated from raster elevation tiles, textured with satellite imagery
+		tiles.registerPlugin( new TerrariumMeshPlugin( {
+			url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+			maxZoom: 15,
+			unlit: true,
+			overlay: new XYZTilesOverlay( {
+				url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+			} ),
+			applyOverlayTexture: true,
+		} ) );
+
+	} else {
+
+		tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
+		tiles.registerPlugin( new GLTFExtensionsPlugin( {
+			dracoLoader: new DRACOLoader(),
+		} ) );
+		tiles.registerPlugin( new MeshBVHPlugin() );
+
+	}
+
 	tiles.registerPlugin( new TilesFadePlugin() );
-	tiles.registerPlugin( new MeshBVHPlugin() );
 
 	//
 
@@ -312,12 +341,24 @@ function initTiles() {
 	// Note: The source coop link can be very slow to load so it's recommended to load the data locally
 	// or host it on a faster server.
 	const overlay = new PMTilesOverlay( {
-		// url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
-		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+		url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
+		// url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
 	} );
 
 	// create the driver for rendering labels, icons
 	driver = new ExampleAnnotationsDriver();
+	driver.language = params.language;
+	driver.displayIcons = params.displayIcons;
+	driver.displayPaths = params.displayPaths;
+	driver.annotationPoints.drawMode = params.drawMode;
+	driver.characterPoints.drawMode = params.drawMode;
+	if ( params.terrain ) {
+
+		// let annotations settle via the terrain plugin's elevation sampling
+		driver.performSettleRaycast = null;
+
+	}
+
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
@@ -349,6 +390,12 @@ function initTiles() {
 
 	// controls
 	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+
+	// debug displays
+	const annotationsPlugin = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
+	annotationsPlugin.debug.occupancy.enabled = params.occupancyGrid;
+	annotationsPlugin.debug.paths.enabled = params.annotationLines;
+	annotationsPlugin.debug.hierarchy.enabled = params.tileHierarchy;
 
 }
 
@@ -419,6 +466,7 @@ function init() {
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
+	gui.add( params, 'terrain' ).onChange( initTiles );
 
 	const debugFolder = gui.addFolder( 'Debug' );
 	debugFolder.add( params, 'occupancyGrid' ).onChange( v => {

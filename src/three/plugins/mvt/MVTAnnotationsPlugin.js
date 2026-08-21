@@ -526,9 +526,10 @@ export class MVTAnnotationsPlugin {
 			// be done.
 			occupancy.needsUpdate = occupancy.needsUpdate || settlingManager.hasPendingWork;
 
-			// raycasters
+			// raycasters, preferring direct elevation sampling when a registered plugin provides it
 			settlingManager.camera = camera;
 			settlingManager.performSettleRaycast = driver.performSettleRaycast;
+			settlingManager.elevationSource = tiles.plugins.find( plugin => plugin.sampleCartographicElevation ) || null;
 			settlingManager.update();
 
 			// occupancy

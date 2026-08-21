@@ -175,6 +175,7 @@ export class TerrainRGBMeshPlugin {
 		this._source = null;
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
+		this._preloadedTiles = new Map();
 
 	}
 
@@ -191,6 +192,16 @@ export class TerrainRGBMeshPlugin {
 		const { url, tileDimension, maxZoom } = this;
 		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
+
+		// start the elevation texture downloading as soon as the tile content is requested rather
+		// than waiting for the parse queue, so grids load in parallel and can be sampled early
+		this._onTileDownloadStart = ( { tile } ) => {
+
+			this._preloadGrid( tile );
+
+		};
+
+		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 		this.tiles = tiles;
 
@@ -399,6 +410,49 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
+	/**
+	 * Samples the loaded elevation data at the given cartographic point using the finest loaded
+	 * texture covering it. The height scale is applied so the result matches the displaced surface.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @returns {number|null} The elevation, or `null` when no data covering the point is loaded.
+	 */
+	sampleCartographicElevation( lat, lon ) {
+
+		const tiling = this._tiling;
+		if ( tiling === null || ! tiling.projection.isCartographic ) {
+
+			return null;
+
+		}
+
+		const { projection } = tiling;
+		const nx = projection.convertLongitudeToNormalized( lon );
+		const ny = projection.convertLatitudeToNormalized( lat );
+
+		for ( let level = getSourceLevel( tiling.maxLevel ); level >= 0; level -= EXTRA_LEVELS ) {
+
+			const [ x, y ] = tiling.getTileAtPoint( nx, ny, level, true );
+			const grid = this._gridCache.get( x, y, level );
+			if ( grid && ! ( grid instanceof Promise ) ) {
+
+				// map the point into the padded grid texture coordinates
+				const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
+				const { width, height } = grid.image;
+				const u = ( nx - minU ) / ( maxU - minU );
+				const v = ( ny - minV ) / ( maxV - minV );
+				const tu = ( u * ( width - 2 ) + 1 ) / width;
+				const tv = ( v * ( height - 2 ) + 1 ) / height;
+				return sampleGrid( grid, tu, tv ) * this._heightScale;
+
+			}
+
+		}
+
+		return null;
+
+	}
+
 	preprocessNode( tile ) {
 
 		const tiling = this._tiling;
@@ -425,6 +479,41 @@ export class TerrainRGBMeshPlugin {
 
 		this._releaseGrid( tile );
 
+		// release the preload lock taken when the tile content download started
+		const preloaded = this._preloadedTiles.get( tile );
+		if ( preloaded ) {
+
+			this._gridCache.release( ...preloaded );
+			this._preloadedTiles.delete( tile );
+
+		}
+
+	}
+
+	_preloadGrid( tile ) {
+
+		if ( tile[ TILE_X ] === undefined || this._preloadedTiles.has( tile ) ) {
+
+			return;
+
+		}
+
+		const level = tile[ TILE_LEVEL ];
+		const sourceLevel = getSourceLevel( level );
+		const scale = 2 ** ( level - sourceLevel );
+		const sx = Math.floor( tile[ TILE_X ] / scale );
+		const sy = Math.floor( tile[ TILE_Y ] / scale );
+
+		this._preloadedTiles.set( tile, [ sx, sy, sourceLevel ] );
+
+		const result = this._gridCache.lock( sx, sy, sourceLevel );
+		if ( result instanceof Promise ) {
+
+			// the lock is released on tile disposal regardless of whether the fetch succeeded
+			result.catch( () => {} );
+
+		}
+
 	}
 
 	_releaseGrid( tile ) {
@@ -442,6 +531,8 @@ export class TerrainRGBMeshPlugin {
 
 	dispose() {
 
+		this.tiles.removeEventListener( 'tile-download-start', this._onTileDownloadStart );
+
 		// Every tile locks its grid once and releases it once, so the cache empties itself. Grids
 		// locked by in-flight parses are released by their abort handling once they settle.
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -449,6 +540,14 @@ export class TerrainRGBMeshPlugin {
 			this.disposeTile( tile );
 
 		} );
+
+		// release the preload locks of tiles that never finished loading
+		this._preloadedTiles.forEach( key => {
+
+			this._gridCache.release( ...key );
+
+		} );
+		this._preloadedTiles.clear();
 
 	}
 
