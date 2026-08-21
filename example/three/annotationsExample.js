@@ -371,6 +371,7 @@ function initTiles() {
 		overlay,
 		camera,
 		driver,
+		renderer,
 	} ) );
 
 	//

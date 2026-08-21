@@ -1,5 +1,6 @@
-/** @import { Camera, Scene, Ray, Vector3 } from 'three' */
-import { Group, Matrix4 } from 'three';
+/** @import { Camera, Ray, Vector3, WebGLRenderer } from 'three' */
+import { Group, Matrix4, Scene, Vector2, WebGLRenderTarget, DepthTexture, MeshDepthMaterial } from 'three';
+import { MVTGlyphMaterial } from './MVTGlyphMaterial.js';
 import { MVTHierarchy } from './MVTHierarchy.js';
 import { DelayedScreenOccupationManager } from './DelayedScreenOccupationManager.js';
 import { SettlingManager } from './SettlingManager.js';
@@ -16,6 +17,10 @@ import { MVTIconGlyphs } from './MVTIconGlyphs.js';
 import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+const _size = /* @__PURE__ */ new Vector2();
+
+// resolution of the depth prepass target relative to the drawing buffer
+const DEPTH_PREPASS_SCALE = 1;
 
 // provide all meshes in the scene
 function collectMeshes( object ) {
@@ -302,6 +307,9 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
  * used to drive loaded levels of detail for the overlays. Lower values load coarser tiles with
  * fewer annotations, independently of the shared overlay's own resolution. Set to null to use
  * the overlay resolution. Cannot be changed once initialized.
+ * @param {WebGLRenderer} [options.renderer=null] - When provided the tile geometry depth is
+ * rendered each frame and the annotations fade out where they fall behind it, hiding them
+ * behind terrain.
  */
 export class MVTAnnotationsPlugin {
 
@@ -322,6 +330,7 @@ export class MVTAnnotationsPlugin {
 			camera = null,
 			driver = new DefaultMVTAnnotationsDriver(),
 			resolution = 50,
+			renderer = null,
 		} = options;
 
 		// user settings
@@ -329,6 +338,7 @@ export class MVTAnnotationsPlugin {
 		this.camera = camera;
 		this.driver = driver;
 		this.resolution = resolution;
+		this.renderer = renderer;
 
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
@@ -351,6 +361,10 @@ export class MVTAnnotationsPlugin {
 			hierarchy: new HierarchyOverlay(),
 		};
 
+		// depth prepass resources used to fade the glyphs behind terrain when a renderer is provided
+		this._depthTarget = null;
+		this._depthScene = null;
+
 	}
 
 	async init( tiles ) {
@@ -361,6 +375,15 @@ export class MVTAnnotationsPlugin {
 		// mount the driver's render group under the tile group
 		tiles.group.add( this.driver.group );
 		this.driver.group.updateMatrixWorld();
+
+		// depth prepass resources for fading the glyphs behind terrain
+		if ( this.renderer !== null ) {
+
+			this._depthTarget = new WebGLRenderTarget( 1, 1, { depthTexture: new DepthTexture( 1, 1 ) } );
+			this._depthScene = new Scene();
+			this._depthScene.overrideMaterial = new MeshDepthMaterial();
+
+		}
 
 		const {
 			overlay,
@@ -577,6 +600,9 @@ export class MVTAnnotationsPlugin {
 
 			}
 
+			// render the tile depth for the glyph materials to fade against
+			this._renderDepthPrepass();
+
 			// debug
 			debug.paths.camera = this.camera;
 			debug.occupancy.update();
@@ -730,6 +756,16 @@ export class MVTAnnotationsPlugin {
 		// release the cached elevation sampling plugin
 		this.settlingManager.elevationSource = null;
 
+		// release the depth prepass resources
+		if ( this._depthTarget !== null ) {
+
+			this._depthTarget.dispose();
+			this._depthScene.overrideMaterial.dispose();
+			this._depthTarget = null;
+			this._depthScene = null;
+
+		}
+
 	}
 
 	disposeTile( tile ) {
@@ -785,6 +821,61 @@ export class MVTAnnotationsPlugin {
 	}
 
 	//
+
+	// Render the tile geometry depth into the prepass target and provide it to the glyph
+	// materials so the annotations fade out behind terrain.
+	_renderDepthPrepass() {
+
+		const { renderer, tiles, camera, driver, _depthTarget: target, _depthScene: depthScene } = this;
+		if ( target === null || camera === null ) {
+
+			return;
+
+		}
+
+		const group = tiles.group;
+		const parent = group.parent;
+		if ( parent === null ) {
+
+			return;
+
+		}
+
+		// fit the target to a fraction of the drawing buffer
+		renderer.getDrawingBufferSize( _size ).multiplyScalar( DEPTH_PREPASS_SCALE ).round();
+		if ( target.width !== _size.x || target.height !== _size.y ) {
+
+			target.setSize( _size.x, _size.y );
+
+		}
+
+		// render the tile geometry alone into the target, excluding the glyphs
+		const prevTarget = renderer.getRenderTarget();
+		const prevAutoClear = renderer.autoClear;
+		driver.group.visible = false;
+		depthScene.add( group );
+
+		renderer.setRenderTarget( target );
+		renderer.autoClear = true;
+		renderer.render( depthScene, camera );
+
+		renderer.setRenderTarget( prevTarget );
+		renderer.autoClear = prevAutoClear;
+		parent.add( group );
+		driver.group.visible = true;
+
+		// provide the depth to the glyph materials
+		driver.group.traverse( c => {
+
+			if ( c.material instanceof MVTGlyphMaterial ) {
+
+				c.material.depthFadeTexture = target.depthTexture;
+
+			}
+
+		} );
+
+	}
 
 	// Derive the tile's range from its region bounding volume so the vector tiles start loading
 	// when the tile content download starts, before any geometry is available.

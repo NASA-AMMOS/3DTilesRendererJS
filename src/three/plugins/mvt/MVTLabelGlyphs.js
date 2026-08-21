@@ -1,7 +1,9 @@
+import { Vector3 } from 'three';
 import { MVTGlyphs } from './MVTGlyphs.js';
 
 // Scratch set for storing which characters are needed by the current glyphs
 const _needed = new Set();
+const _anchorPos = /* @__PURE__ */ new Vector3();
 
 /**
  * Renders text labels one glyph per character, laid out along each annotation's path. Characters are
@@ -164,9 +166,10 @@ export class MVTLabelGlyphs extends MVTGlyphs {
 			const positions = anchor.characterPositions;
 			const angles = anchor.characterAngles;
 			const text = anchor.text;
+			anchor.getPosition( _anchorPos );
 			for ( let c = 0, l = positions.length; c < l; c ++ ) {
 
-				this._writeGlyph( i ++, positions[ c ], text[ c ], fade, angles[ c ] );
+				this._writeGlyph( i ++, positions[ c ], text[ c ], fade, angles[ c ], _anchorPos );
 
 			}
 
