@@ -40,8 +40,7 @@ const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
 const _hits = [];
 
-// dedicated mesh for raycasting displaced vertices. All tiles share the same vertex layout so a
-// single scratch mesh can represent any of them. The tile geometry itself is never modified.
+// shared scratch mesh for raycasting displaced vertices since all tiles use the same vertex layout
 let _raycastMesh = null;
 function getRaycastMesh() {
 
@@ -79,6 +78,15 @@ function sampleGrid( grid, tu, tv ) {
  * Generates terrain tiles from raster Terrain-RGB elevation tiles. Each elevation texture is
  * shared by multiple layers of sub tiles that displace a smooth surface mesh on the GPU with a
  * subview of the texture, so elevation scale and seam updates only require texture changes.
+ *
+ * > [!NOTE]
+ * > Enabling frustum culling on the tile meshes is not supported since the geometry bounds do not
+ * > include the gpu displacement. Culling is handled by the tile traversal.
+ *
+ * > [!NOTE]
+ * > Debug bounding volume visualizations, such as those from DebugTilesPlugin, may not display
+ * > correctly after changing the height scale since they are not rebuilt when the tile bounding
+ * > volumes update.
  *
  * @param {Object} [options]
  * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
@@ -136,25 +144,15 @@ export class TerrainRGBMeshPlugin {
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.maxZoom = maxZoom;
 
-		// number of tile tree levels that share each fetched texture level. Textures are only
-		// fetched at levels that are multiples of this, and the levels in between inherit the
-		// ancestor texture as subviews.
 		this._extraLevels = EXTRA_LEVELS;
 
-		// extend the tree past the last fetched texture level so its subview layers exist, too
+		// extend the tree past the last fetched texture level so its subview layers exist
 		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
 
 		this.heightScale = heightScale;
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
-
-	}
-
-	// the source tile holding the texture a tile at the given level reads a subview of
-	_getSourceLevel( level ) {
-
-		return this._extraLevels * Math.floor( level / this._extraLevels );
 
 	}
 
@@ -231,10 +229,8 @@ export class TerrainRGBMeshPlugin {
 		tile[ SOURCE_TILE ] = [ sx, sy, sourceLevel ];
 		tile[ SUBVIEW ] = this._getSubview( tile );
 
-		// Build the smooth surface mesh displaced by the elevation texture. The mesh uvs sample the
-		// texture directly and the texture is cloned so each tile can dispose its own reference
-		// while the underlying upload is shared. The same texture drives the bump map so lighting
-		// picks up per-pixel terrain normals.
+		// Build the surface mesh displaced by the elevation texture, which also drives the bump map
+		// normals. Clones share the texture upload while each tile disposes its own reference.
 		const mesh = this._createEllipsoidMesh( tile );
 		const displacement = grid.clone();
 		mesh.material.displacementMap = displacement;
@@ -244,9 +240,18 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// the flat geometry bounds do not include displacement, so rely on the tile traversal culling
-		// TODO: manually inflate the geometry bounding volumes based on the elevation range instead
-		mesh.frustumCulled = false;
+		// seed the children with this tile's measured height range so they hold a tighter estimate
+		// than the conservative default until their own data loads
+		tile.children.forEach( child => {
+
+			if ( ! child[ HEIGHT_RANGE ] ) {
+
+				child[ HEIGHT_RANGE ] = tile[ HEIGHT_RANGE ];
+				this._updateBoundingVolume( child );
+
+			}
+
+		} );
 
 		// apply the overlay texture
 		const { overlay, applyOverlayTexture } = this;
@@ -285,9 +290,8 @@ export class TerrainRGBMeshPlugin {
 
 				}
 
-				// Clone so the tile can apply its own uv transform - the texture upload is shared.
 				// The mesh uvs live in the elevation texture's subview range, so remap the overlay
-				// from that range onto its own uv bounds.
+				// from that range onto its own uv bounds via a clone's transform.
 				const [ tu0, tv0, tu1, tv1 ] = this._getSubviewUVBounds( grid, tile[ SUBVIEW ] );
 				const uvRange = this._tiling.getTileContentUVBounds( x, y, level );
 				const repeatX = ( uvRange[ 2 ] - uvRange[ 0 ] ) / ( tu1 - tu0 );
@@ -303,9 +307,8 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// Assigned after the last await so a height scale change mid-parse cannot leave a stale
-		// scale on a material that "_updateHeightScale" has not seen yet. The texture holds meters
-		// and the world is in meters, so the bump scale matches the displacement scale.
+		// assigned after the last await so a height scale change mid-parse cannot leave a stale
+		// scale on a material that "_updateHeightScale" has not seen yet
 		mesh.material.displacementScale = this._heightScale;
 		mesh.material.bumpScale = this._heightScale;
 
@@ -313,9 +316,9 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// raycast against a cpu-displaced copy of the tile geometry since the rendered vertices are
-	// displaced on the gpu. TODO: cache the displaced positions per tile and mark them dirty when
-	// the elevation data changes rather than regenerating them per raycast.
+	// Raycast against a cpu-displaced copy of the tile geometry since the rendered vertices are
+	// displaced on the gpu.
+	// TODO: cache the displaced positions per tile rather than regenerating them per raycast
 	raycastTile( tile, scene, raycaster, intersects ) {
 
 		const grid = tile[ HEIGHT_GRID ];
@@ -335,8 +338,7 @@ export class TerrainRGBMeshPlugin {
 				const baseUv = c.geometry.attributes.uv;
 				const position = raycastMesh.geometry.attributes.position;
 
-				// displace the vertices along the normals to match the gpu result. The mesh uvs
-				// sample the elevation texture directly.
+				// displace the vertices along the normals to match the gpu result
 				for ( let i = 0, l = position.count; i < l; i ++ ) {
 
 					const height = sampleGrid( grid, baseUv.getX( i ), baseUv.getY( i ) ) * this._heightScale;
@@ -418,15 +420,20 @@ export class TerrainRGBMeshPlugin {
 
 	dispose() {
 
-		// Only the overlay textures are released per tile. The grid cache disposes the shared grids
-		// directly, so they must not also be released here first.
+		// Every tile locks its grid once and releases it once, so the cache empties itself. Grids
+		// locked by in-flight parses are released by their abort handling once they settle.
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this._releaseOverlay( tile );
+			this.disposeTile( tile );
 
 		} );
 
-		this._gridCache.dispose();
+	}
+
+	// the source tile level holding the texture a tile at the given level reads a subview of
+	_getSourceLevel( level ) {
+
+		return this._extraLevels * Math.floor( level / this._extraLevels );
 
 	}
 
@@ -488,8 +495,7 @@ export class TerrainRGBMeshPlugin {
 		tile.engineData.boundingVolume.getSphere( _sphere );
 		mesh.position.copy( _sphere.center );
 
-		// position the surface vertices on the ellipsoid, leaving displacement to the material, while
-		// tracking the raw elevation range of the tile
+		// position the surface vertices on the ellipsoid, tracking the raw elevation range
 		const { position, normal, uv } = geometry.attributes;
 		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		const cols = MESH_SIZE + 1;
@@ -546,9 +552,8 @@ export class TerrainRGBMeshPlugin {
 
 			}
 
-			// Derive UV from the final (potentially adjusted) lat/lon, mapped into the elevation
-			// texture's subview so the uvs directly sample the correct portion of the texture and
-			// survive any downstream mesh splitting.
+			// derive uvs from the final adjusted lat / lon, mapped into the elevation texture's
+			// subview so they sample the correct portion of the texture directly
 			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
 			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
 			const tu = MathUtils.mapLinear( u, 0, 1, tu0, tu1 );
