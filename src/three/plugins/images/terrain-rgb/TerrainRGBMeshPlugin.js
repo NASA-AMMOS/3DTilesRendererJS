@@ -384,6 +384,13 @@ export class TerrainRGBMeshPlugin {
 
 	disposeTile( tile ) {
 
+		this._releaseOverlay( tile );
+		this._releaseGrid( tile );
+
+	}
+
+	_releaseOverlay( tile ) {
+
 		const range = tile[ OVERLAY_RANGE ];
 		if ( this.overlay && range ) {
 
@@ -392,8 +399,6 @@ export class TerrainRGBMeshPlugin {
 			delete tile[ OVERLAY_LEVEL ];
 
 		}
-
-		this._releaseGrid( tile );
 
 	}
 
@@ -413,9 +418,11 @@ export class TerrainRGBMeshPlugin {
 
 	dispose() {
 
+		// Only the overlay textures are released per tile. The grid cache disposes the shared grids
+		// directly, so they must not also be released here first.
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this.disposeTile( tile );
+			this._releaseOverlay( tile );
 
 		} );
 
