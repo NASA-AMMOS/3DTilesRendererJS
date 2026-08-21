@@ -18,7 +18,7 @@ import {
 	UpdateOnChangePlugin,
 	TerrariumMeshPlugin,
 	XYZTilesOverlay,
-	RasterElevationPlugin,
+	RasterElevationSamplingPlugin,
 } from '3d-tiles-renderer/plugins';
 import { LoadRegionPlugin } from '3d-tiles-renderer/plugins';
 import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
@@ -341,7 +341,7 @@ function initTiles() {
 		tiles.registerPlugin( new MeshBVHPlugin() );
 
 		// rasterized per-tile elevations for fast annotation settling queries
-		tiles.registerPlugin( new RasterElevationPlugin( { renderer } ) );
+		tiles.registerPlugin( new RasterElevationSamplingPlugin( { renderer } ) );
 
 	}
 

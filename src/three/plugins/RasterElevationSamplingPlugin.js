@@ -155,7 +155,7 @@ function sampleInfo( info, lat, lon ) {
  * @param {WebGLRenderer} options.renderer The renderer used to rasterize the tile geometry.
  * @param {number} [options.resolution=128] Raster resolution per tile.
  */
-export class RasterElevationPlugin {
+export class RasterElevationSamplingPlugin {
 
 	constructor( options = {} ) {
 
@@ -164,7 +164,7 @@ export class RasterElevationPlugin {
 			resolution = 128,
 		} = options;
 
-		this.name = 'RASTER_ELEVATION_PLUGIN';
+		this.name = 'RASTER_ELEVATION_SAMPLING_PLUGIN';
 		this.tiles = null;
 		this.renderer = renderer;
 		this.resolution = resolution;
