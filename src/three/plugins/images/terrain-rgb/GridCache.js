@@ -64,10 +64,35 @@ function fillBorder( dst, src, dx, dy ) {
 	const w = width - 2;
 	const h = height - 2;
 
-	const minX = dx === 1 ? width - 1 : dx === - 1 ? 0 : 1;
-	const maxX = dx === - 1 ? 0 : dx === 1 ? width - 1 : width - 2;
-	const minY = dy === 1 ? height - 1 : dy === - 1 ? 0 : 1;
-	const maxY = dy === - 1 ? 0 : dy === 1 ? height - 1 : height - 2;
+	// the border texel range facing the neighbor: a single column or row for horizontal or
+	// vertical neighbors, and the interior span along the shared edge
+	let minX = 1;
+	let maxX = width - 2;
+	if ( dx === - 1 ) {
+
+		minX = 0;
+		maxX = 0;
+
+	} else if ( dx === 1 ) {
+
+		minX = width - 1;
+		maxX = width - 1;
+
+	}
+
+	let minY = 1;
+	let maxY = height - 2;
+	if ( dy === - 1 ) {
+
+		minY = 0;
+		maxY = 0;
+
+	} else if ( dy === 1 ) {
+
+		minY = height - 1;
+		maxY = height - 1;
+
+	}
 
 	for ( let y = minY; y <= maxY; y ++ ) {
 

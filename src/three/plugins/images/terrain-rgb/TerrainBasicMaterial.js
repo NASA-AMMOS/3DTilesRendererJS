@@ -1,9 +1,7 @@
 import { MeshBasicMaterial, Matrix3 } from 'three';
 
-// MeshBasicMaterial with displacement map support injected into the vertex shader, for rendering
-// displaced terrain without lighting. The renderer refreshes the displacement uniforms from the
-// material properties every frame since the built-in materials that support displacement share
-// the same property names.
+// MeshBasicMaterial with displacement map support injected for rendering displaced terrain
+// without lighting. The renderer refreshes the displacement uniforms from the material properties.
 export class TerrainBasicMaterial extends MeshBasicMaterial {
 
 	constructor( params ) {
