@@ -102,6 +102,12 @@ export class SettlingManager {
 		// When null the default raycast against the tile group is used.
 		this.performSettleRaycast = null;
 
+		// Optional object providing "sampleCartographicElevation( lat, lon )" used to settle items by
+		// sampling elevations directly, which is much faster than raycasting. "performSettleRaycast"
+		// takes precedence, and points that no data covers settle to the ellipsoid surface just as a
+		// missed raycast does.
+		this.elevationSource = null;
+
 		// items awaiting resettling
 		this._queue = new Set();
 		this._items = new Set();
@@ -185,8 +191,25 @@ export class SettlingManager {
 
 	_settleSample( lat, lon, target, threshold ) {
 
+		const { tiles, performSettleRaycast, elevationSource } = this;
+
+		// sample the elevation directly when a source is available, settling to the ellipsoid
+		// surface when no data covers the point just as a missed raycast does
+		if ( performSettleRaycast === null && elevationSource !== null ) {
+
+			const height = elevationSource.sampleCartographicElevation( lat, lon );
+			tiles.ellipsoid.getCartographicToPosition( lat, lon, height !== null ? height : 0, _hit );
+			if ( _hit.distanceTo( target ) > threshold ) {
+
+				target.copy( _hit );
+
+			}
+
+			return;
+
+		}
+
 		// cast a ray to snap a single cartographic sample onto the surface
-		const { tiles, performSettleRaycast } = this;
 		const { origin, direction } = _raycaster.ray;
 
 		// build the local ray and transform to world space for raycasting

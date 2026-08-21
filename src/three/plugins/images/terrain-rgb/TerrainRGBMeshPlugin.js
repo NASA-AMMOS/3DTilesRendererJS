@@ -54,10 +54,11 @@ function getRaycastMesh() {
 
 }
 
-// the source tile level holding the texture a tile at the given level reads a subview of
-function getSourceLevel( level ) {
+// The source tile level holding the texture a tile at the given level reads a subview of, clamped
+// to the deepest fetched level so the levels beyond it keep subdividing the finest textures.
+function getSourceLevel( level, maxSourceLevel ) {
 
-	return EXTRA_LEVELS * Math.floor( level / EXTRA_LEVELS );
+	return Math.min( EXTRA_LEVELS * Math.floor( level / EXTRA_LEVELS ), maxSourceLevel );
 
 }
 
@@ -175,6 +176,7 @@ export class TerrainRGBMeshPlugin {
 		this._source = null;
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
+		this._maxSourceLevel = - 1;
 
 	}
 
@@ -186,10 +188,31 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// options are fixed once the plugin is initialized. The tree extends past the last fetched
-		// texture level so its subview layers exist.
-		const { url, tileDimension, maxZoom } = this;
-		const maxLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS ) + EXTRA_LEVELS - 1;
+		this.tiles = tiles;
+
+	}
+
+	async loadRootTileset() {
+
+		if ( this.overlay ) {
+
+			await this.overlay.init();
+
+		}
+
+		// Options are fixed at this point. The tree extends past the last fetched texture level so
+		// its subview layers exist, and further down to the overlay's resolution when its texture is
+		// applied so the overlay data displays at full fidelity.
+		const { url, tileDimension, maxZoom, overlay, applyOverlayTexture } = this;
+		this._maxSourceLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS );
+
+		let maxLevel = this._maxSourceLevel + EXTRA_LEVELS - 1;
+		if ( overlay && applyOverlayTexture ) {
+
+			maxLevel = Math.max( maxLevel, overlay.tiling.maxLevel );
+
+		}
+
 		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
 
 		// route the elevation texture requests through the download queue so they are prioritized
@@ -197,10 +220,10 @@ export class TerrainRGBMeshPlugin {
 		this._source.fetchData = ( fetchUrl, options ) => {
 
 			const item = { priority: - performance.now() };
-			const promise = tiles.downloadQueue.add( fetchUrl, item, () => fetch( fetchUrl, options ) );
+			const promise = this.tiles.downloadQueue.add( fetchUrl, item, () => fetch( fetchUrl, options ) );
 			if ( options.signal ) {
 
-				options.signal.addEventListener( 'abort', () => tiles.downloadQueue.remove( item ), { once: true } );
+				options.signal.addEventListener( 'abort', () => this.tiles.downloadQueue.remove( item ), { once: true } );
 
 			}
 
@@ -208,19 +231,7 @@ export class TerrainRGBMeshPlugin {
 
 		};
 
-		this.tiles = tiles;
-
-	}
-
-	async loadRootTileset() {
-
 		await this._source.init();
-		if ( this.overlay ) {
-
-			await this.overlay.init();
-
-		}
-
 		this._tiling = this._source.tiling;
 		return this.getTileset();
 
@@ -239,7 +250,7 @@ export class TerrainRGBMeshPlugin {
 		const level = tile[ TILE_LEVEL ];
 
 		// find the source tile that this render tile reads a subview of
-		const sourceLevel = getSourceLevel( level );
+		const sourceLevel = getSourceLevel( level, this._maxSourceLevel );
 		const scale = 2 ** ( level - sourceLevel );
 		const sx = Math.floor( x / scale );
 		const sy = Math.floor( y / scale );
@@ -412,6 +423,49 @@ export class TerrainRGBMeshPlugin {
 		} );
 
 		return true;
+
+	}
+
+	/**
+	 * Samples the loaded elevation data at the given cartographic point using the finest loaded
+	 * texture covering it. The height scale is applied so the result matches the displaced surface.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @returns {number|null} The elevation, or `null` when no data covering the point is loaded.
+	 */
+	sampleCartographicElevation( lat, lon ) {
+
+		const tiling = this._tiling;
+		if ( tiling === null || ! tiling.projection.isCartographic ) {
+
+			return null;
+
+		}
+
+		const { projection } = tiling;
+		const nx = projection.convertLongitudeToNormalized( lon );
+		const ny = projection.convertLatitudeToNormalized( lat );
+
+		for ( let level = this._maxSourceLevel; level >= 0; level -= EXTRA_LEVELS ) {
+
+			const [ x, y ] = tiling.getTileAtPoint( nx, ny, level, true );
+			const grid = this._gridCache.get( x, y, level );
+			if ( grid && ! ( grid instanceof Promise ) ) {
+
+				// map the point into the padded grid texture coordinates
+				const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
+				const { width, height } = grid.image;
+				const u = ( nx - minU ) / ( maxU - minU );
+				const v = ( ny - minV ) / ( maxV - minV );
+				const tu = ( u * ( width - 2 ) + 1 ) / width;
+				const tv = ( v * ( height - 2 ) + 1 ) / height;
+				return sampleGrid( grid, tu, tv ) * this._heightScale;
+
+			}
+
+		}
+
+		return null;
 
 	}
 
@@ -795,7 +849,7 @@ export class TerrainRGBMeshPlugin {
 	// between fetch levels inherit the ancestor texture url
 	getUrl( x, y, level ) {
 
-		const sourceLevel = getSourceLevel( level );
+		const sourceLevel = getSourceLevel( level, this._maxSourceLevel );
 		const scale = 2 ** ( level - sourceLevel );
 		return this._source.getUrl( Math.floor( x / scale ), Math.floor( y / scale ), sourceLevel );
 

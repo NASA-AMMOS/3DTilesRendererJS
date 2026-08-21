@@ -1,5 +1,6 @@
 import { BufferAttribute, DataTexture, LineSegments, Points, Vector3, Color } from 'three';
 import { LineAnnotation } from '../annotations/LineAnnotation.js';
+import { RejectionReason } from '../annotations/TextAnchorAnnotation.js';
 import { ColorManager } from './ColorManager.js';
 
 const ColorMode = {
@@ -8,6 +9,18 @@ const ColorMode = {
 	LEVEL: 2,
 	TILE: 3,
 	NAME: 4,
+	REJECTION: 5,
+};
+
+// anchor colors used by ColorMode.REJECTION
+const REJECTION_COLORS = {
+	[ RejectionReason.NONE ]: 0xffffff,
+	[ RejectionReason.NOT_READY ]: 0x777777,
+	[ RejectionReason.NO_FIT ]: 0x2255ff,
+	[ RejectionReason.DEPTH ]: 0x444444,
+	[ RejectionReason.OCCUPANCY ]: 0x00ffff,
+	[ RejectionReason.SPACING ]: 0xffff00,
+	[ RejectionReason.ANGLE ]: 0xff0000,
 };
 
 const _origin = /* @__PURE__ */ new Vector3();
@@ -164,7 +177,16 @@ export class LineAnnotationOverlay {
 			anchor.getPosition( _vector ).sub( _origin );
 			pointsPosAttr.setXYZ( offset, ..._vector );
 
-			this._getColor( anchor.getActiveReference().line, _col );
+			if ( this.colorMode === ColorMode.REJECTION ) {
+
+				_col.set( REJECTION_COLORS[ anchor.rejectionReason ] ?? 0xffffff );
+
+			} else {
+
+				this._getColor( anchor.getActiveReference().line, _col );
+
+			}
+
 			pointsColAttr.setXYZ( offset, ..._col );
 
 			offset ++;

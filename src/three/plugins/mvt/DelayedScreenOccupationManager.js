@@ -239,12 +239,20 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 		}
 
-		// keep items that are still lingering laid out at the current view so they don't freeze
-		// or squish while the timer runs.
+		// Keep items that are still lingering laid out at the current view so they don't freeze
+		// or squish while the timer runs. Items whose layout is no longer valid begin hiding and
+		// trigger a placement pass so they are removed or placed validly again.
 		for ( const item of visible.values() ) {
 
 			item.visibleDuration = currTime - item.visibleTime;
 			this.manager.refreshLayout( item );
+
+			if ( item.valid === false && ! _hideTimers.has( item ) ) {
+
+				_hideTimers.set( item, 0 );
+				this.manager.needsUpdate = true;
+
+			}
 
 		}
 

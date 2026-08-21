@@ -16,7 +16,10 @@ import {
 	MVTIconGlyphs,
 	MVTLabelGlyphs,
 	UpdateOnChangePlugin,
+	TerrariumMeshPlugin,
+	XYZTilesOverlay,
 } from '3d-tiles-renderer/plugins';
+import { RasterElevationSamplingPlugin } from './src/plugins/RasterElevationSamplingPlugin.js';
 import { LoadRegionPlugin } from '3d-tiles-renderer/plugins';
 import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
 import {
@@ -113,9 +116,10 @@ const params = {
 	drawMode: MVTGlyphs.DrawMode.OVERLAY,
 	displayIcons: true,
 	displayPaths: true,
+	terrainRGB: false,
 
 	occupancyGrid: false,
-	annotationLines: false,
+	pathVisualization: 'OFF',
 	tileHierarchy: false,
 
 };
@@ -145,7 +149,8 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		this.displayIcons = true;
 		this.displayPaths = true;
 
-		const dpr = renderer.getPixelRatio();
+		// stroke width scaled to the atlas resolution so outlines look the same on all devices
+		const strokeWidth = 1.5 * window.devicePixelRatio;
 
 		// icons for point annotations
 		const annotationPoints = new MVTIconGlyphs( {
@@ -160,7 +165,7 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		annotationPoints.glyphAtlas.drawChar( 'point', '●', {
 			fillStyle: 'white',
 			strokeStyle: '#3f3e4c',
-			strokeWidth: 3 * dpr,
+			strokeWidth,
 			font: '30px sans-serif',
 		} );
 
@@ -172,7 +177,7 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 					annotationPoints.glyphAtlas.drawSVG( icon, svgText, {
 						fillStyle: 'white',
 						strokeStyle: '#3f3e4c',
-						strokeWidth: 3 * dpr,
+						strokeWidth,
 						iconScale: 0.9,
 					} );
 
@@ -184,48 +189,12 @@ class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 		// glyphs for text ( road ) annotations
 		const characterPoints = new MVTLabelGlyphs( {
 			strokeStyle: '#3f3e4c',
-			strokeWidth: 3 * dpr,
+			strokeWidth,
 		} );
 
 		this.group.add( annotationPoints, characterPoints );
 		this.annotationPoints = annotationPoints;
 		this.characterPoints = characterPoints;
-
-		this.settleRaycaster = new Raycaster();
-
-		// prefer the nearest hit on a visible tile so oversized offscreen coverage tiles don't win,
-		// otherwise take the nearest hit. This is to avoid cases where high LoD tiles are "active"
-		// and overlap low LoD tiles, resulting in incorrect offsets.
-		this.performSettleRaycast = ( ray, lat, lon, target ) => {
-
-			const { settleRaycaster } = this;
-			settleRaycaster.ray.copy( ray );
-			settleRaycaster.far = 2 * 1e8;
-			settleRaycaster.firstHitOnly = false;
-
-			const hits = settleRaycaster.intersectObject( tiles.group, true );
-			for ( let i = 0, l = hits.length; i < l; i ++ ) {
-
-				const tile = hits[ i ].object.userData.tile;
-				if ( ! tile || tiles.visibleTiles.has( tile ) ) {
-
-					target.copy( hits[ i ].point );
-					return true;
-
-				}
-
-			}
-
-			if ( hits.length > 0 ) {
-
-				target.copy( hits[ 0 ].point );
-				return true;
-
-			}
-
-			return false;
-
-		};
 
 	}
 
@@ -296,15 +265,43 @@ animate();
 
 function initTiles() {
 
+	if ( tiles ) {
+
+		tiles.dispose();
+		scene.remove( tiles.group );
+
+	}
+
 	// instantiate the tiles renderer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
-	tiles.registerPlugin( new GLTFExtensionsPlugin( {
-		dracoLoader: new DRACOLoader(),
-	} ) );
+	if ( params.terrainRGB ) {
+
+		// terrain generated from raster elevation tiles, textured with satellite imagery
+		tiles.registerPlugin( new TerrariumMeshPlugin( {
+			url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+			maxZoom: 15,
+			unlit: true,
+			overlay: new XYZTilesOverlay( {
+				url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+			} ),
+			applyOverlayTexture: true,
+		} ) );
+
+	} else {
+
+		tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
+		tiles.registerPlugin( new GLTFExtensionsPlugin( {
+			dracoLoader: new DRACOLoader(),
+		} ) );
+		tiles.registerPlugin( new MeshBVHPlugin() );
+
+		// rasterized per-tile elevations for fast annotation settling queries
+		tiles.registerPlugin( new RasterElevationSamplingPlugin( { renderer } ) );
+
+	}
+
 	tiles.registerPlugin( new TilesFadePlugin() );
-	tiles.registerPlugin( new MeshBVHPlugin() );
 
 	//
 
@@ -318,6 +315,12 @@ function initTiles() {
 
 	// create the driver for rendering labels, icons
 	driver = new ExampleAnnotationsDriver();
+	driver.language = params.language;
+	driver.displayIcons = params.displayIcons;
+	driver.displayPaths = params.displayPaths;
+	driver.annotationPoints.drawMode = params.drawMode;
+	driver.characterPoints.drawMode = params.drawMode;
+
 	tiles.registerPlugin( new MVTAnnotationsPlugin( {
 		overlay,
 		camera,
@@ -349,6 +352,12 @@ function initTiles() {
 
 	// controls
 	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+
+	// debug displays
+	const annotationsPlugin = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
+	annotationsPlugin.debug.occupancy.enabled = params.occupancyGrid;
+	annotationsPlugin.debug.hierarchy.enabled = params.tileHierarchy;
+	applyPathVisualization();
 
 }
 
@@ -419,6 +428,7 @@ function init() {
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
+	gui.add( params, 'terrainRGB' ).onChange( initTiles );
 
 	const debugFolder = gui.addFolder( 'Debug' );
 	debugFolder.add( params, 'occupancyGrid' ).onChange( v => {
@@ -426,16 +436,21 @@ function init() {
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.occupancy.enabled = v;
 
 	} );
-	debugFolder.add( params, 'annotationLines' ).onChange( v => {
-
-		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths.enabled = v;
-
-	} );
+	debugFolder.add( params, 'pathVisualization', [ 'OFF', 'NONE', 'ID', 'LEVEL', 'TILE', 'NAME', 'REJECTION' ] ).onChange( applyPathVisualization );
 	debugFolder.add( params, 'tileHierarchy' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.hierarchy.enabled = v;
 
 	} );
+
+}
+
+// apply the selected path debug display: hidden entirely or one of the overlay color modes
+function applyPathVisualization() {
+
+	const paths = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths;
+	paths.enabled = params.pathVisualization !== 'OFF';
+	paths.colorMode = paths.ColorMode[ params.pathVisualization ] ?? paths.ColorMode.NONE;
 
 }
 
@@ -535,9 +550,9 @@ function animate() {
 	controls.update();
 
 	// tiles update
+	camera.updateMatrixWorld();
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
-	camera.updateMatrixWorld();
 	tiles.update();
 
 	renderer.render( scene, camera );
