@@ -527,12 +527,22 @@ export class GlobeControls extends EnvironmentControls {
 			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( ellipsoidFrameInverse ).length();
 			_ellipsoid.radius.setScalar( pivotRadius );
 
-			// if we drag off the sphere then end the operation and follow through on the inertia
+			// If we drag off the sphere then clamp to the point on the horizon circle visible from
+			// the camera at the cursor's azimuth so the drag continues to track the cursor as
+			// closely as possible until the pointer is actually released.
 			if ( ! _ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
 
-				this.resetState();
-				this._updateInertia( deltaTime );
-				return;
+				// NOTE: this is finding the horizon tangent for a sphere and not the true ellipsoid
+				const { origin, direction } = raycaster.ray;
+
+				// axis from the globe center to the camera and the cursor direction about it
+				const axis = pivotDir.copy( origin ).normalize();
+				const azimuth = newPivotDir.copy( direction ).addScaledVector( axis, - axis.dot( direction ) ).normalize();
+
+				// the horizon circle sits along the axis at the tangent distance from the center
+				const cameraDistance = origin.length();
+				const horizonRadius = pivotRadius * Math.sqrt( Math.max( 1 - ( pivotRadius / cameraDistance ) ** 2, 0 ) );
+				_vec.copy( axis ).multiplyScalar( pivotRadius * pivotRadius / cameraDistance ).addScaledVector( azimuth, horizonRadius );
 
 			}
 
