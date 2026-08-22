@@ -8,7 +8,7 @@ import {
 	Ray,
 	Group,
 } from 'three';
-import { DRAG, ZOOM, FREE_ROTATE, EnvironmentControls, NONE } from './EnvironmentControls.js';
+import { DRAG, ZOOM, FREE_ROTATE, EnvironmentControls, NONE, ZOOM_DELTA_SCALAR } from './EnvironmentControls.js';
 import { makeRotateAroundPoint, adjustedPointerToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
@@ -659,7 +659,7 @@ export class GlobeControls extends EnvironmentControls {
 			// calculate zoom in a similar way to environment controls so
 			// the zoom speeds are comparable
 			const dist = this.getDistanceToCenter() - this._getMaxWorldRadius();
-			const scale = zoomDelta * dist * zoomSpeed * 0.0025;
+			const scale = zoomDelta * dist * zoomSpeed * ZOOM_DELTA_SCALAR;
 			const clampedScale = Math.max( scale, Math.min( this.getDistanceToCenter() - maxDistance, 0 ) );
 
 			// zoom out directly from the globe center

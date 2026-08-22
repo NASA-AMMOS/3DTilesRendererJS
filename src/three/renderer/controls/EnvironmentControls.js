@@ -59,9 +59,8 @@ const DOUBLE_TAP_INTERVAL = 300;
 const DOUBLE_TAP_DISTANCE = 30;
 const TAP_MOVE_DISTANCE = 5;
 
-// matches the zoom delta scalar applied in "_updateZoom" so the animated double tap zoom
-// amount can be derived from the target zoom scale
-const ZOOM_DELTA_SCALAR = 0.0025;
+// scales the zoom delta to a fraction of the distance to the zoom point
+export const ZOOM_DELTA_SCALAR = 0.0025;
 
 /**
  * Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
@@ -313,7 +312,6 @@ export class EnvironmentControls extends EventDispatcher {
 		this._doubleTapPoint = new Vector2();
 		this._lastTapTime = - Infinity;
 		this._lastTapPoint = new Vector2();
-		this._maxPointerCount = 0;
 
 		// always update the zoom target point in case the tiles are changing
 		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
@@ -432,11 +430,8 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker.addPointer( e );
 			this.needsUpdate = true;
 
-			// interrupt the double tap zoom animation and track the number of pointers used
-			// during this gesture so multi finger gestures are not detected as taps
+			// interrupt any running double tap zoom animation
 			this._cancelDoubleTapZoom();
-			this._maxPointerCount = pointerTracker.getPointerCount() === 1 ? 1 :
-				Math.max( this._maxPointerCount, pointerTracker.getPointerCount() );
 
 			// handle cases where we need to capture the pointer or
 			// reset state when we have too many pointers
@@ -654,8 +649,7 @@ export class EnvironmentControls extends EventDispatcher {
 			if (
 				this.enableDoubleTapZoom &&
 				pointerTracker.isPointerTouch() &&
-				pointerTracker.getPointerCount() === 1 &&
-				this._maxPointerCount === 1
+				pointerTracker.getPointerCount() === 1
 			) {
 
 				pointerTracker.getCenterPoint( _pointer );
@@ -1439,13 +1433,13 @@ export class EnvironmentControls extends EventDispatcher {
 				if ( scale < 0 ) {
 
 					const remainingDistance = Math.min( 0, dist - maxDistance );
-					scale = scale * dist * zoomSpeed * 0.0025;
+					scale = scale * dist * zoomSpeed * ZOOM_DELTA_SCALAR;
 					scale = Math.max( scale, remainingDistance );
 
 				} else {
 
 					const remainingDistance = Math.max( 0, dist - minDistance );
-					scale = scale * Math.max( dist - minDistance, 0 ) * zoomSpeed * 0.0025;
+					scale = scale * Math.max( dist - minDistance, 0 ) * zoomSpeed * ZOOM_DELTA_SCALAR;
 					scale = Math.min( scale, remainingDistance );
 
 				}
