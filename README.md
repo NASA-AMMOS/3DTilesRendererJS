@@ -83,6 +83,12 @@ Here is a reference to existing 3DTilesRendererJS integrations:
 - [Babylon.js Guide](https://doc.babylonjs.com/features/featuresDeepDive/geospatial/loading3dTiles/): Official documention on integrating 3DTilesRendererJS into your Babylon.js project.
 - [Community Plugins](https://github.com/NASA-AMMOS/3DTilesRendererJS/tree/master/src/three/plugins#community-plugins): Additional community-maintained threejs plugins for 3DTilesRendererJS.
 
+# Gotchas
+
+Some behaviors to be aware of when configuring the renderer:
+
+- **Cache limits are hard caps.** No new tiles load once the `LRUCache` reaches `maxSize` or `maxBytesSize`. If the tiles needed for the current view do not fit then coarser tiles are displayed and refinement stops. Monitor `lruCache.cachedBytes` and `lruCache.isFull()` and raise `maxBytesSize` or `errorTarget` when a view needs more detail than fits.
+
 # LICENSE
 
 The software is available under the [Apache V2.0 license](LICENSE).

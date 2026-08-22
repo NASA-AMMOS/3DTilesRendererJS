@@ -102,6 +102,14 @@ class LRUCache {
 		 */
 		this.autoMarkUnused = true;
 
+		/**
+		 * Total number of bytes tracked for the items currently in the cache. Can be used
+		 * alongside `maxBytesSize` and `isFull` to adjust settings as memory grows.
+		 * @type {number}
+		 * @readonly
+		 */
+		this.cachedBytes = 0;
+
 		// "itemSet" doubles as both the list of the full set of items currently
 		// stored in the cache (keys) as well as a map to the time the item was last
 		// used so it can be sorted appropriately.
@@ -110,7 +118,6 @@ class LRUCache {
 		this.usedSet = new Set();
 		this.callbacks = new Map();
 		this.unloadingHandle = - 1;
-		this.cachedBytes = 0;
 		this.bytesMap = new Map();
 		this.loadedSet = new Set();
 
