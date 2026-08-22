@@ -644,11 +644,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			// detect double taps on touch to zoom into the tapped point, only considering
-			// single finger gestures that have not moved past the tap threshold
+			// detect double clicks and taps to zoom into the clicked point, only considering
+			// primary button presses that have not moved past the tap threshold
 			if (
 				this.enableDoubleTapZoom &&
-				pointerTracker.isPointerTouch() &&
+				e.button === 0 &&
 				pointerTracker.getPointerCount() === 1
 			) {
 
@@ -753,26 +753,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 		};
 
-		const dblclickCallback = e => {
-
-			// exit early if the controls are disabled. Touch double taps are detected separately
-			// on pointer up and browsers do not synthesize this event since the pointer events
-			// are prevented.
-			if ( ! this.enabled || ! this.enableDoubleTapZoom ) {
-
-				return;
-
-			}
-
-			e.preventDefault();
-			this.pointerTracker.getAdjustedPointer( e, _pointer );
-			this._beginDoubleTapZoom( _pointer );
-
-		};
-
 		domElement.addEventListener( 'contextmenu', contextMenuCallback );
 		domElement.addEventListener( 'pointerdown', pointerdownCallback );
-		domElement.addEventListener( 'dblclick', dblclickCallback );
 		domElement.addEventListener( 'wheel', wheelCallback, { passive: false } );
 
 		// Register movement events on the root element so dragging does not break when dragging over other elements.
@@ -830,7 +812,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 			domElement.removeEventListener( 'contextmenu', contextMenuCallback );
 			domElement.removeEventListener( 'pointerdown', pointerdownCallback );
-			domElement.removeEventListener( 'dblclick', dblclickCallback );
 			domElement.removeEventListener( 'wheel', wheelCallback );
 
 			document.removeEventListener( 'pointermove', pointermoveCallback );
