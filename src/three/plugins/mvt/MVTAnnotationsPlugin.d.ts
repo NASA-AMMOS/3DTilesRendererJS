@@ -47,6 +47,8 @@ export class MVTAnnotationsPlugin {
 	camera: Camera | null;
 	driver: MVTAnnotationsDriver;
 	resolution: number;
+	maxSettleTimeMs: number;
+	maxOccupancyUpdateTimeMs: number;
 
 	readonly contentCache: object;
 

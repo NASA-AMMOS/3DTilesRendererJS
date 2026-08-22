@@ -327,6 +327,40 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	/**
+	 * Time budget in milliseconds per frame for settling annotations onto the tile geometry.
+	 * @type {number}
+	 * @default 1
+	 */
+	get maxSettleTimeMs() {
+
+		return this.settlingManager.maxSettleTimeMs;
+
+	}
+
+	set maxSettleTimeMs( v ) {
+
+		this.settlingManager.maxSettleTimeMs = v;
+
+	}
+
+	/**
+	 * Time budget in milliseconds per frame for the sliced occupancy layout pass.
+	 * @type {number}
+	 * @default 0.5
+	 */
+	get maxOccupancyUpdateTimeMs() {
+
+		return this.occupancy.maxUpdateTimeMs;
+
+	}
+
+	set maxOccupancyUpdateTimeMs( v ) {
+
+		this.occupancy.maxUpdateTimeMs = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields

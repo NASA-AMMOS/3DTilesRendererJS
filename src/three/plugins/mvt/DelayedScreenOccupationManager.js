@@ -72,6 +72,18 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get maxUpdateTimeMs() {
+
+		return this.manager.maxUpdateTimeMs;
+
+	}
+
+	set maxUpdateTimeMs( v ) {
+
+		this.manager.maxUpdateTimeMs = v;
+
+	}
+
 	get buffer() {
 
 		return this.manager.buffer;
