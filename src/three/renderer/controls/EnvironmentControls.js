@@ -220,7 +220,7 @@ export class EnvironmentControls extends EventDispatcher {
 		 * @type {number}
 		 * @default 0.5
 		 */
-		this.doubleTapZoomDuration = 0.5;
+		this.doubleTapZoomDuration = 0.25;
 
 		/**
 		 * Fallback plane used for drag/zoom when no scene geometry is hit.
