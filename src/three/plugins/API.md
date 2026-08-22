@@ -1204,6 +1204,24 @@ placement. Rendering is left entirely to the caller via the driver's `onPointsUp
 `onLabelsUpdate`.
 
 
+### .maxSettleTimeMs
+
+```js
+maxSettleTimeMs: number = 1
+```
+
+Time budget in milliseconds per frame for settling annotations onto the tile geometry.
+
+
+### .maxOccupancyUpdateTimeMs
+
+```js
+maxOccupancyUpdateTimeMs: number = 0.5
+```
+
+Time budget in milliseconds per frame for the sliced occupancy layout pass.
+
+
 ### .constructor
 
 ```js

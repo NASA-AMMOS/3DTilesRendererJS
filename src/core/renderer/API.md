@@ -379,7 +379,8 @@ Comparator used to sort the queued items of every origin queue.
 add(
 	url: string | null,
 	item: any,
-	callback: ( item: any ) => Promise<any> | any
+	callback: ( item: any ) => Promise<any> | any,
+	signal = null: AbortSignal | null
 ): Promise<any>
 ```
 
