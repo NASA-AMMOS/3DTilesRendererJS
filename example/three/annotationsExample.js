@@ -309,8 +309,8 @@ function initTiles() {
 	// Note: The source coop link can be very slow to load so it's recommended to load the data locally
 	// or host it on a faster server.
 	const overlay = new PMTilesOverlay( {
-		url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
-		// url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+		// url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
 	} );
 
 	// create the driver for rendering labels, icons
