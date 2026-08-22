@@ -1,4 +1,5 @@
 /** @import { WebGLRenderer } from 'three' */
+/** @import { DownloadPriorityQueue } from '3d-tiles-renderer/core' */
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 /** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
@@ -1376,6 +1377,30 @@ export class ImageOverlay {
 	get isPlanarProjection() {
 
 		return Boolean( this.frame );
+
+	}
+
+	/**
+	 * Download queue managing the overlay's concurrent image downloads per server origin.
+	 * @type {DownloadPriorityQueue}
+	 */
+	get downloadQueue() {
+
+		return this._downloadQueue;
+
+	}
+
+	set downloadQueue( v ) {
+
+		// @deprecated
+		if ( v instanceof PriorityQueue ) {
+
+			console.warn( 'ImageOverlay: "downloadQueue" is no longer valid as a PriorityQueue. Use a DownloadPriorityQueue, instead.' );
+			return;
+
+		}
+
+		this._downloadQueue = v;
 
 	}
 
