@@ -1,0 +1,39 @@
+name: Read size
+
+on:
+  pull_request:
+    branches: [ master ]
+
+# This workflow runs in a read-only environment so it is safe to check out the pull request code
+# here. The sizes are handed to the "Report size" workflow, which does the commenting.
+# Reference:
+# https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+permissions:
+  contents: read
+
+jobs:
+  read-size:
+    name: Measure bundle size
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci --prefer-offline
+
+    - name: Measure bundle size
+      run: |
+        node ./scripts/bundle-size.js sizes.json
+        echo '${{ github.event.pull_request.number }}' > pr-number.txt
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sizes
+        path: |
+          sizes.json
+          pr-number.txt

@@ -1,0 +1,70 @@
+name: Report size
+
+on:
+  workflow_run:
+    workflows: [ "Read size" ]
+    types: [ completed ]
+
+permissions:
+  contents: read
+
+jobs:
+  report-size:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    # This job can comment on the pull request, so it must not check out the pull request code. It
+    # only ever builds the base branch and reads the sizes measured by "Read size" as data.
+    # Reference:
+    # https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: sizes
+        path: pr-sizes
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ github.token }}
+
+    - name: Read PR number
+      id: pr
+      run: |
+        # the file is written by the workflow above, so only accept a plain number from it
+        NUMBER=$(tr -cd '0-9' < pr-sizes/pr-number.txt)
+        echo "number=$NUMBER" >> $GITHUB_OUTPUT
+
+    # this checks out the base branch, giving the "before" sizes
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci --prefer-offline
+
+    - name: Measure base bundle size
+      run: node ./scripts/bundle-size.js base-sizes.json
+
+    - name: Format comment
+      run: node ./scripts/bundle-size.js --report base-sizes.json pr-sizes/sizes.json > comment.md
+
+    - name: Find existing comment
+      uses: peter-evans/find-comment@v3
+      id: find-comment
+      with:
+        issue-number: ${{ steps.pr.outputs.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: Bundle size
+
+    - name: Comment on PR
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        issue-number: ${{ steps.pr.outputs.number }}
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        edit-mode: replace
+        body-path: comment.md
