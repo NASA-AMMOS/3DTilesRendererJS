@@ -480,6 +480,17 @@ autoMarkUnused: boolean = true
 If true, items are automatically marked as unused at the start of each eviction pass.
 
 
+### .cachedBytes
+
+```js
+readonly cachedBytes: number
+```
+
+Total number of bytes tracked for the items currently in the cache. Can be used
+alongside `maxBytesSize` and `isFull` to drive application-level decisions as
+memory use grows.
+
+
 ### .isFull
 
 ```js

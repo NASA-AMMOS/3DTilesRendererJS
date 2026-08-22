@@ -582,6 +582,33 @@ dampingFactor: number = 0.15
 Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting.
 
 
+### .enableDoubleTapZoom
+
+```js
+enableDoubleTapZoom: boolean = true
+```
+
+When true, double clicking or double tapping a point animates a zoom toward it.
+
+
+### .doubleTapZoomScale
+
+```js
+doubleTapZoomScale: number = 2
+```
+
+Factor to zoom in toward the clicked point on a double tap.
+
+
+### .doubleTapZoomDuration
+
+```js
+doubleTapZoomDuration: number = 0.5
+```
+
+Duration of the double tap zoom animation in seconds.
+
+
 ### .fallbackPlane
 
 ```js
