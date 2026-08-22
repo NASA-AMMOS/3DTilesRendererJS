@@ -3,11 +3,13 @@ import { MVTIconGlyphs } from './MVTIconGlyphs.js';
 import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
 
 export type MVTRaycastCallback = ( ray: Ray, lat: number, lon: number, target: Vector3 ) => boolean;
+export type MVTElevationSampleCallback = ( lat: number, lon: number ) => number | null;
 
 export class MVTAnnotationsDriver {
 
 	group: Group;
 	performSettleRaycast: MVTRaycastCallback | null;
+	sampleCartographicElevation: MVTElevationSampleCallback | null;
 
 	filterAnnotation( layer: string, properties: Record<string, unknown>, type: number ): boolean;
 	sortAnnotations( a: object, b: object ): number;

@@ -190,6 +190,15 @@ Base class for all image overlays. Provides the interface that `ImageOverlayPlug
 fetch, lock, and release overlay textures.
 
 
+### .downloadQueue
+
+```js
+downloadQueue: DownloadPriorityQueue
+```
+
+Download queue managing the overlay's concurrent image downloads per server origin.
+
+
 ### .constructor
 
 ```js
@@ -1098,6 +1107,18 @@ onto the tile geometry, letting the caller analyze the hits and return a better 
 Leave null to use the plugin's default raycasting.
 
 
+### .sampleCartographicElevation
+
+```js
+sampleCartographicElevation: ( lat: number, lon: number ) => number | null | null
+```
+
+Optional callback used to settle annotations by sampling elevations directly, which is
+much faster than raycasting. Takes precedence over any registered plugin providing
+"sampleCartographicElevation" while "performSettleRaycast" takes precedence over both.
+Leave null to use the plugin's default behavior.
+
+
 ### .filterAnnotation
 
 ```js
@@ -1868,6 +1889,16 @@ constructor(
 	}
 )
 ```
+
+### .sampleCartographicElevation
+
+```js
+sampleCartographicElevation( lat: number, lon: number ): number | null
+```
+
+Samples the loaded elevation data at the given cartographic point using the finest loaded
+texture covering it. The height scale is applied so the result matches the displaced surface.
+
 
 ## TerrariumMeshPlugin
 
