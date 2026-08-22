@@ -28,6 +28,9 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 	adjustHeight: boolean;
 	enableDamping: boolean;
 	dampingFactor: number;
+	enableDoubleTapZoom: boolean;
+	doubleTapZoomScale: number;
+	doubleTapZoomDuration: number;
 	useFallbackPlane: boolean;
 
 	fallbackPlane: Plane;

@@ -54,6 +54,15 @@ const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
 
+// double tap detection thresholds, with distances in pixels scaled by the device pixel ratio
+const DOUBLE_TAP_INTERVAL = 300;
+const DOUBLE_TAP_DISTANCE = 30;
+const TAP_MOVE_DISTANCE = 5;
+
+// matches the zoom delta scalar applied in "_updateZoom" so the animated double tap zoom
+// amount can be derived from the target zoom scale
+const ZOOM_DELTA_SCALAR = 0.0025;
+
 /**
  * Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
  * right-click-to-rotate, and optional damping/inertia. Works with any Three.js scene.
@@ -194,6 +203,27 @@ export class EnvironmentControls extends EventDispatcher {
 		this.dampingFactor = 0.15;
 
 		/**
+		 * When true, double clicking or double tapping a point animates a zoom toward it.
+		 * @type {boolean}
+		 * @default true
+		 */
+		this.enableDoubleTapZoom = true;
+
+		/**
+		 * Factor to zoom in toward the clicked point on a double tap.
+		 * @type {number}
+		 * @default 2
+		 */
+		this.doubleTapZoomScale = 2;
+
+		/**
+		 * Duration of the double tap zoom animation in seconds.
+		 * @type {number}
+		 * @default 0.5
+		 */
+		this.doubleTapZoomDuration = 0.5;
+
+		/**
 		 * Fallback plane used for drag/zoom when no scene geometry is hit.
 		 * @type {Plane}
 		 * @default new Plane( UP, 0 )
@@ -276,6 +306,14 @@ export class EnvironmentControls extends EventDispatcher {
 		this._upInitialized = false;
 		this._lastUsedState = NONE;
 		this._zoomPointWasSet = false;
+
+		// double tap zoom animation state
+		this._doubleTapZoomActive = false;
+		this._doubleTapZoomElapsed = 0;
+		this._doubleTapPoint = new Vector2();
+		this._lastTapTime = - Infinity;
+		this._lastTapPoint = new Vector2();
+		this._maxPointerCount = 0;
 
 		// always update the zoom target point in case the tiles are changing
 		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
@@ -393,6 +431,12 @@ export class EnvironmentControls extends EventDispatcher {
 			// init the pointer
 			pointerTracker.addPointer( e );
 			this.needsUpdate = true;
+
+			// interrupt the double tap zoom animation and track the number of pointers used
+			// during this gesture so multi finger gestures are not detected as taps
+			this._cancelDoubleTapZoom();
+			this._maxPointerCount = pointerTracker.getPointerCount() === 1 ? 1 :
+				Math.max( this._maxPointerCount, pointerTracker.getPointerCount() );
 
 			// handle cases where we need to capture the pointer or
 			// reset state when we have too many pointers
@@ -605,6 +649,40 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
+			// detect double taps on touch to zoom into the tapped point, only considering
+			// single finger gestures that have not moved past the tap threshold
+			if (
+				this.enableDoubleTapZoom &&
+				pointerTracker.isPointerTouch() &&
+				pointerTracker.getPointerCount() === 1 &&
+				this._maxPointerCount === 1
+			) {
+
+				pointerTracker.getCenterPoint( _pointer );
+				pointerTracker.getStartCenterPoint( _centerPoint );
+				if ( _pointer.distanceTo( _centerPoint ) < TAP_MOVE_DISTANCE * window.devicePixelRatio ) {
+
+					const time = performance.now();
+					if (
+						time - this._lastTapTime < DOUBLE_TAP_INTERVAL &&
+						_pointer.distanceTo( this._lastTapPoint ) < DOUBLE_TAP_DISTANCE * window.devicePixelRatio
+					) {
+
+						// avoid a third tap triggering another zoom
+						this._lastTapTime = - Infinity;
+						this._beginDoubleTapZoom( _pointer );
+
+					} else {
+
+						this._lastTapTime = time;
+						this._lastTapPoint.copy( _pointer );
+
+					}
+
+				}
+
+			}
+
 			pointerTracker.deletePointer( e );
 
 			if (
@@ -631,6 +709,9 @@ export class EnvironmentControls extends EventDispatcher {
 			}
 
 			e.preventDefault();
+
+			// interrupt any running double tap zoom so the wheel zoom is not compounded
+			this._cancelDoubleTapZoom();
 
 			const { pointerTracker } = this;
 			pointerTracker.setHoverEvent( e );
@@ -678,8 +759,26 @@ export class EnvironmentControls extends EventDispatcher {
 
 		};
 
+		const dblclickCallback = e => {
+
+			// exit early if the controls are disabled. Touch double taps are detected separately
+			// on pointer up and browsers do not synthesize this event since the pointer events
+			// are prevented.
+			if ( ! this.enabled || ! this.enableDoubleTapZoom ) {
+
+				return;
+
+			}
+
+			e.preventDefault();
+			this.pointerTracker.getAdjustedPointer( e, _pointer );
+			this._beginDoubleTapZoom( _pointer );
+
+		};
+
 		domElement.addEventListener( 'contextmenu', contextMenuCallback );
 		domElement.addEventListener( 'pointerdown', pointerdownCallback );
+		domElement.addEventListener( 'dblclick', dblclickCallback );
 		domElement.addEventListener( 'wheel', wheelCallback, { passive: false } );
 
 		// Register movement events on the root element so dragging does not break when dragging over other elements.
@@ -737,6 +836,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			domElement.removeEventListener( 'contextmenu', contextMenuCallback );
 			domElement.removeEventListener( 'pointerdown', pointerdownCallback );
+			domElement.removeEventListener( 'dblclick', dblclickCallback );
 			domElement.removeEventListener( 'wheel', wheelCallback );
 
 			document.removeEventListener( 'pointermove', pointermoveCallback );
@@ -933,6 +1033,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// we need to update the zoom point whenever we update in case the scene is animating or changing
 		this.zoomPointSet = false;
+
+		// drive the double tap zoom animation by feeding deltas through the standard zoom pipeline
+		this._updateDoubleTapZoom( deltaTime );
 
 		// update the actions
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
@@ -1369,6 +1472,91 @@ export class EnvironmentControls extends EventDispatcher {
 				}
 
 			}
+
+		}
+
+	}
+
+	// starts the double tap zoom animation toward the point at the given pixel coordinates
+	_beginDoubleTapZoom( point ) {
+
+		const { camera, raycaster, domElement } = this;
+
+		// find the point to zoom toward, doing nothing if no surface was hit
+		adjustedPointerToCoords( point, domElement, _centerPoint );
+		setRaycasterFromCamera( raycaster, _centerPoint, camera );
+
+		const hit = this._raycast( raycaster );
+		if ( hit === null ) {
+
+			return;
+
+		}
+
+		// aim the zoom machinery at the tapped point
+		this.zoomPoint.copy( hit.point );
+		this.zoomPointSet = true;
+		this.zoomDirection.copy( raycaster.ray.direction ).normalize();
+		this.zoomDirectionSet = true;
+
+		this._doubleTapPoint.copy( point );
+		this._doubleTapZoomActive = true;
+		this._doubleTapZoomElapsed = 0;
+		this.needsUpdate = true;
+		this.dispatchEvent( _startEvent );
+
+	}
+
+	// distributes the animated zoom over the frames as zoom deltas so the standard zoom logic
+	// applies, including distance limits, surface fixing, and globe orientation behavior
+	_updateDoubleTapZoom( deltaTime ) {
+
+		if ( ! this._doubleTapZoomActive ) {
+
+			return;
+
+		}
+
+		const { doubleTapZoomDuration, doubleTapZoomScale, zoomSpeed, pointerTracker } = this;
+
+		// the pointer tracker can be reset when the tap gesture ends so ensure the tapped point is
+		// available for deriving the zoom target while the animation runs
+		if ( pointerTracker.getLatestPoint( _pointer ) === null ) {
+
+			pointerTracker.hoverPosition.copy( this._doubleTapPoint );
+			pointerTracker.hoverSet = true;
+
+		}
+
+		// total zoom delta that scales the camera distance to the point by the configured factor,
+		// matching the exponential response of the wheel zoom
+		const totalDelta = Math.log( doubleTapZoomScale ) / ( ZOOM_DELTA_SCALAR * zoomSpeed );
+
+		// distribute the delta over the duration with ease-out timing
+		const easeOut = t => 1 - ( 1 - MathUtils.clamp( t, 0, 1 ) ) ** 3;
+		const prevAlpha = easeOut( this._doubleTapZoomElapsed / doubleTapZoomDuration );
+		this._doubleTapZoomElapsed += deltaTime;
+		const alpha = easeOut( this._doubleTapZoomElapsed / doubleTapZoomDuration );
+
+		this.zoomDelta += totalDelta * ( alpha - prevAlpha );
+		this.needsUpdate = true;
+
+		if ( this._doubleTapZoomElapsed >= doubleTapZoomDuration ) {
+
+			this._doubleTapZoomActive = false;
+			this.dispatchEvent( _endEvent );
+
+		}
+
+	}
+
+	// interrupts the double tap zoom animation when other camera input begins
+	_cancelDoubleTapZoom() {
+
+		if ( this._doubleTapZoomActive ) {
+
+			this._doubleTapZoomActive = false;
+			this.dispatchEvent( _endEvent );
 
 		}
 
