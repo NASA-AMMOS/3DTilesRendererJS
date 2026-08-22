@@ -53,6 +53,13 @@ function collectMeshes( object ) {
  */
 
 /**
+ * @callback MVTElevationSampleCallback
+ * @param {number} lat - Latitude of the sample, in radians.
+ * @param {number} lon - Longitude of the sample, in radians.
+ * @returns {number|null} The elevation at the point, or null when no data covers it.
+ */
+
+/**
  * Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
  * the methods to customize which features become annotations, their placement priority, per-character
  * sizing, the displayed text, and how visibility changes are rendered. By default all points of interest
@@ -93,6 +100,15 @@ export class MVTAnnotationsDriver {
 		 * @type {MVTRaycastCallback|null}
 		 */
 		this.performSettleRaycast = null;
+
+		/**
+		 * Optional callback used to settle annotations by sampling elevations directly, which is
+		 * much faster than raycasting. Takes precedence over any registered plugin providing
+		 * "sampleCartographicElevation" while "performSettleRaycast" takes precedence over both.
+		 * Leave null to use the plugin's default behavior.
+		 * @type {MVTElevationSampleCallback|null}
+		 */
+		this.sampleCartographicElevation = null;
 
 		this.version = 0;
 
@@ -311,6 +327,40 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	/**
+	 * Time budget in milliseconds per frame for settling annotations onto the tile geometry.
+	 * @type {number}
+	 * @default 1
+	 */
+	get maxSettleTimeMs() {
+
+		return this.settlingManager.maxSettleTimeMs;
+
+	}
+
+	set maxSettleTimeMs( v ) {
+
+		this.settlingManager.maxSettleTimeMs = v;
+
+	}
+
+	/**
+	 * Time budget in milliseconds per frame for the sliced occupancy layout pass.
+	 * @type {number}
+	 * @default 0.5
+	 */
+	get maxOccupancyUpdateTimeMs() {
+
+		return this.occupancy.maxUpdateTimeMs;
+
+	}
+
+	set maxOccupancyUpdateTimeMs( v ) {
+
+		this.occupancy.maxUpdateTimeMs = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -526,12 +576,15 @@ export class MVTAnnotationsPlugin {
 			// be done.
 			occupancy.needsUpdate = occupancy.needsUpdate || settlingManager.hasPendingWork;
 
-			// Cache the one plugin used for elevation sampling so the settling samples don't have to
+			// Cache the one object used for elevation sampling so the settling samples don't have to
 			// iterate over the plugins that may not provide the function. It's re-queried every frame
 			// so a removed plugin isn't kept around and plugins can be added and removed at any time.
+			// The driver's sampling function takes precedence over the registered plugins.
 			settlingManager.camera = camera;
 			settlingManager.performSettleRaycast = driver.performSettleRaycast;
-			settlingManager.elevationSource = tiles.plugins.find( plugin => plugin.sampleCartographicElevation ) || null;
+			settlingManager.elevationSource = driver.sampleCartographicElevation !== null ?
+				driver :
+				tiles.plugins.find( plugin => plugin.sampleCartographicElevation ) || null;
 			settlingManager.update();
 
 			// occupancy

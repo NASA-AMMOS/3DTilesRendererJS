@@ -9,9 +9,10 @@ const ColorMode = {
 	LEVEL: 2,
 	TILE: 3,
 	NAME: 4,
+	REJECTION: 5,
 };
 
-// anchor colors used when "colorAnchorsByRejection" is enabled
+// anchor colors used by ColorMode.REJECTION
 const REJECTION_COLORS = {
 	[ RejectionReason.NONE ]: 0xffffff,
 	[ RejectionReason.NOT_READY ]: 0x777777,
@@ -68,7 +69,6 @@ export class LineAnnotationOverlay {
 
 		this.enabled = false;
 		this.colorMode = ColorMode.NONE;
-		this.colorAnchorsByRejection = false;
 		this.displayLines = true;
 		this.displayAnchors = true;
 
@@ -177,7 +177,7 @@ export class LineAnnotationOverlay {
 			anchor.getPosition( _vector ).sub( _origin );
 			pointsPosAttr.setXYZ( offset, ..._vector );
 
-			if ( this.colorAnchorsByRejection ) {
+			if ( this.colorMode === ColorMode.REJECTION ) {
 
 				_col.set( REJECTION_COLORS[ anchor.rejectionReason ] ?? 0xffffff );
 

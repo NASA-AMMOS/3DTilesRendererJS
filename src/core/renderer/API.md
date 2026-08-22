@@ -826,6 +826,18 @@ readonly loadProgress: number
 Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 
 
+### .downloadQueue
+
+```js
+downloadQueue: DownloadPriorityQueue
+```
+
+Download queue managing concurrent tile downloads per server origin. Max jobs per origin
+defaults to `25`.
+
+> [!NOTE]
+> Cannot be replaced once `update()` has been called for the first time.
+
 ### .rootTileset
 
 ```js
@@ -869,17 +881,6 @@ lruCache: LRUCache
 ```
 
 LRU cache managing loaded tile lifecycle and memory eviction.
-
-> [!NOTE]
-> Cannot be replaced once `update()` has been called for the first time.
-
-### .downloadQueue
-
-```js
-downloadQueue: PriorityQueue
-```
-
-Priority queue controlling concurrent tile downloads. Max jobs defaults to `25`.
 
 > [!NOTE]
 > Cannot be replaced once `update()` has been called for the first time.

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.5.2] - Unreleased
 ### Added
 - TerrainRGBMeshPlugin, TerrariumMeshPlugin: Add support for terrarium and terrain rgb formats.
+- TilesRenderer: Dedicated queues for each host to avoid blocking on slow servers
+- RasterElevationSamplingPlugin: Add plugin to examples to rasterize tiles to a texture, sample elevations.
+- MVTAnnotationsPlugin: Add preload for MVT content if region bounding volume is available.
+- MVTAnnotationsPlugin: Add support for calling "sampleCartographicElevation" from a plugin to perform a fast altitude fetch.
+- MVTAnnotationsDrive: Add support for "sampleCartographicElevation"
 
 ### Fixed
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.

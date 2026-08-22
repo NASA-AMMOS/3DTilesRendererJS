@@ -400,6 +400,32 @@ export class TilesRendererBase {
 	}
 
 	/**
+	 * Download queue managing concurrent tile downloads per server origin. Max jobs per origin
+	 * defaults to `25`.
+	 * @note Cannot be replaced once `update()` has been called for the first time.
+	 * @type {DownloadPriorityQueue}
+	 */
+	get downloadQueue() {
+
+		return this._downloadQueue;
+
+	}
+
+	set downloadQueue( v ) {
+
+		// @deprecated
+		if ( v instanceof PriorityQueue ) {
+
+			console.warn( 'TilesRenderer: "downloadQueue" is no longer valid as a PriorityQueue. Use a DownloadPriorityQueue, instead.' );
+			return;
+
+		}
+
+		this._downloadQueue = v;
+
+	}
+
+	/**
 	 * @param {string} [url] - URL of the root tileset JSON to load.
 	 */
 	constructor( url = null ) {
@@ -451,11 +477,6 @@ export class TilesRendererBase {
 		 */
 		this.lruCache = DEFAULT_LRU_CACHE;
 
-		/**
-		 * Priority queue controlling concurrent tile downloads. Max jobs defaults to `25`.
-		 * @note Cannot be replaced once `update()` has been called for the first time.
-		 * @type {PriorityQueue}
-		 */
 		this.downloadQueue = DEFAULT_DOWNLOAD_QUEUE;
 
 		/**

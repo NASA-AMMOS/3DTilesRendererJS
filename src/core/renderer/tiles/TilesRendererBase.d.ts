@@ -1,10 +1,11 @@
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
+import { DownloadPriorityQueue } from '../utilities/DownloadPriorityQueue.js';
 import { Tile } from './Tile.js';
 import { Tileset } from './Tileset.js';
 
 export const DEFAULT_LRU_CACHE : LRUCache;
-export const DEFAULT_DOWNLOAD_QUEUE : PriorityQueue;
+export const DEFAULT_DOWNLOAD_QUEUE : DownloadPriorityQueue;
 export const DEFAULT_PARSE_QUEUE : PriorityQueue;
 export const DEFAULT_NODE_QUEUE : PriorityQueue;
 
@@ -44,7 +45,7 @@ export class TilesRendererBase<TEventMap extends TilesRendererBaseEventMap = Til
 
 	lruCache : LRUCache;
 	parseQueue : PriorityQueue;
-	downloadQueue : PriorityQueue;
+	downloadQueue : DownloadPriorityQueue;
 	processNodeQueue: PriorityQueue;
 
 	constructor( url?: string );

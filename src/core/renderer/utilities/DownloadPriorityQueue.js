@@ -48,6 +48,21 @@ export class DownloadPriorityQueue {
 
 	}
 
+	// @deprecated
+	get maxJobs() {
+
+		return this.maxJobsPerOrigin;
+
+	}
+
+	// @deprecated
+	set maxJobs( v ) {
+
+		console.warn( 'DownloadPriorityQueue: "maxJobs" is no longer valid and limits jobs per server origin. Use "maxJobsPerOrigin", instead.' );
+		this.maxJobsPerOrigin = v;
+
+	}
+
 	/**
 	 * Comparator used to sort the queued items of every origin queue.
 	 * @type {PriorityCallback|null}
