@@ -487,8 +487,7 @@ readonly cachedBytes: number
 ```
 
 Total number of bytes tracked for the items currently in the cache. Can be used
-alongside `maxBytesSize` and `isFull` to drive application-level decisions as
-memory use grows.
+alongside `maxBytesSize` and `isFull` to adjust settings as memory grows.
 
 
 ### .isFull
