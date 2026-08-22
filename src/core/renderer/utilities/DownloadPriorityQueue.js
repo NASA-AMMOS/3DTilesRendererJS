@@ -96,9 +96,10 @@ export class DownloadPriorityQueue {
 	 * @param {string|null} url - Url the item requests data from
 	 * @param {any} item
 	 * @param {ItemCallback} callback - Invoked with `item` when it is dequeued; may return a Promise
+	 * @param {AbortSignal|null} [signal=null] - Removes the item from the queue when aborted
 	 * @returns {Promise<any>}
 	 */
-	add( url, item, callback ) {
+	add( url, item, callback, signal = null ) {
 
 		// drop the queues for origins with no work left
 		this.originQueues.forEach( ( queue, key ) => {
@@ -130,7 +131,24 @@ export class DownloadPriorityQueue {
 		}
 
 		this._itemQueues.set( item, queue );
-		return queue.add( item, callback );
+		const promise = queue.add( item, callback );
+
+		// remove the item when the signal aborts so it does not linger in the queue
+		if ( signal !== null ) {
+
+			if ( signal.aborted ) {
+
+				this.remove( item );
+
+			} else {
+
+				signal.addEventListener( 'abort', () => this.remove( item ), { once: true } );
+
+			}
+
+		}
+
+		return promise;
 
 	}
 

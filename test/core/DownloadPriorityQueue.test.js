@@ -111,6 +111,45 @@ describe( 'DownloadPriorityQueue', () => {
 
 	} );
 
+	it( 'should remove queued items when their signal aborts.', async () => {
+
+		const queue = new DownloadPriorityQueue();
+
+		let thrown = null;
+		const item = {};
+		const controller = new AbortController();
+		const promise = queue
+			.add( 'https://a.com/1.png', item, () => new Promise( () => {} ), controller.signal )
+			.catch( err => thrown = err );
+
+		expect( queue.has( item ) ).toEqual( true );
+
+		controller.abort();
+		await promise;
+
+		expect( thrown.name ).toEqual( 'AbortError' );
+		expect( queue.has( item ) ).toEqual( false );
+
+	} );
+
+	it( 'should immediately remove items added with an aborted signal.', async () => {
+
+		const queue = new DownloadPriorityQueue();
+
+		let thrown = null;
+		const controller = new AbortController();
+		controller.abort();
+
+		const item = {};
+		await queue
+			.add( 'https://a.com/1.png', item, () => new Promise( () => {} ), controller.signal )
+			.catch( err => thrown = err );
+
+		expect( thrown.name ).toEqual( 'AbortError' );
+		expect( queue.has( item ) ).toEqual( false );
+
+	} );
+
 	it( 'should throw when an item is re-added with a different origin.', () => {
 
 		const queue = new DownloadPriorityQueue();
