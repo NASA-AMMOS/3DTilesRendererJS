@@ -117,8 +117,8 @@ function formatBytes( bytes, showSign = false ) {
 
 function report( basePath, prPath ) {
 
-	const base = JSON.parse( readFileSync( basePath, 'utf8' ) );
-	const pr = JSON.parse( readFileSync( prPath, 'utf8' ) );
+	const base = JSON.parse( readFileSync( basePath, 'utf8' ) ).sizes;
+	const pr = JSON.parse( readFileSync( prPath, 'utf8' ) ).sizes;
 
 	const rows = pr.map( after => {
 
@@ -162,7 +162,10 @@ if ( command === '--report' ) {
 
 	if ( command ) {
 
-		writeFileSync( command, JSON.stringify( results ) );
+		// the pull request number is stored alongside the sizes so the workflow that comments can
+		// find the pull request without checking out its code
+		const pr = args[ 0 ] ? Number( args[ 0 ] ) : null;
+		writeFileSync( command, JSON.stringify( { pr, sizes: results } ) );
 
 	} else {
 

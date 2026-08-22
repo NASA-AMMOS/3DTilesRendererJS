@@ -3,7 +3,8 @@ name: Report size
 on:
   workflow_run:
     workflows: [ "Read size" ]
-    types: [ completed ]
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -12,8 +13,8 @@ jobs:
   report-size:
     name: Comment on PR
     runs-on: ubuntu-latest
-    # This job can comment on the pull request, so it must not check out the pull request code. It
-    # only ever builds the base branch and reads the sizes measured by "Read size" as data.
+    # This job needs "pull-requests: write" permissions to be able to comment
+    # on the pull request. We can't checkout the PR code in this workflow.
     # Reference:
     # https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     permissions:
@@ -22,49 +23,69 @@ jobs:
     if: github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: sizes
-        path: pr-sizes
-        run-id: ${{ github.event.workflow_run.id }}
-        github-token: ${{ github.token }}
+      # Using actions/download-artifact doesn't work here
+      # https://github.com/actions/download-artifact/issues/60
+      - name: Download artifact
+        uses: actions/github-script@v9
+        id: download-artifact
+        with:
+          result-encoding: string
+          script: |
+            const fs = require('fs/promises');
 
-    - name: Read PR number
-      id: pr
-      run: |
-        # the file is written by the workflow above, so only accept a plain number from it
-        NUMBER=$(tr -cd '0-9' < pr-sizes/pr-number.txt)
-        echo "number=$NUMBER" >> $GITHUB_OUTPUT
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: context.payload.workflow_run.id,
+            });
+            const matchArtifact = artifacts.data.artifacts.find((artifact) => artifact.name === 'sizes');
+            const download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip',
+            });
 
-    # this checks out the base branch, giving the "before" sizes
-    - uses: actions/checkout@v4
+            await fs.writeFile('sizes.zip', Buffer.from(download.data));
+            await exec.exec('unzip sizes.zip');
+            const json = await fs.readFile('sizes.json', 'utf8');
+            return json;
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: 'npm'
-    - run: npm ci --prefer-offline
+      # This runs on the base branch of the PR, meaning "master"
+      - uses: actions/checkout@v4
 
-    - name: Measure base bundle size
-      run: node ./scripts/bundle-size.js base-sizes.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+      - run: npm ci --prefer-offline
 
-    - name: Format comment
-      run: node ./scripts/bundle-size.js --report base-sizes.json pr-sizes/sizes.json > comment.md
+      - name: Read base sizes
+        run: node ./scripts/bundle-size.js base-sizes.json
 
-    - name: Find existing comment
-      uses: peter-evans/find-comment@v3
-      id: find-comment
-      with:
-        issue-number: ${{ steps.pr.outputs.number }}
-        comment-author: 'github-actions[bot]'
-        body-includes: Bundle size
+      - name: Format comment
+        # It's important these are passed as env variables.
+        # https://securitylab.github.com/research/github-actions-untrusted-input/
+        env:
+          PR_SIZES: ${{ steps.download-artifact.outputs.result }}
+        run: |
+          # the checkout above wipes the workspace, so the sizes are written back out here
+          echo "$PR_SIZES" > pr-sizes.json
+          node ./scripts/bundle-size.js --report base-sizes.json pr-sizes.json > comment.md
 
-    - name: Comment on PR
-      uses: peter-evans/create-or-update-comment@v4
-      with:
-        issue-number: ${{ steps.pr.outputs.number }}
-        comment-id: ${{ steps.find-comment.outputs.comment-id }}
-        edit-mode: replace
-        body-path: comment.md
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ fromJSON(steps.download-artifact.outputs.result).pr }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Bundle size
+
+      - name: Comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ fromJSON(steps.download-artifact.outputs.result).pr }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body-path: comment.md
