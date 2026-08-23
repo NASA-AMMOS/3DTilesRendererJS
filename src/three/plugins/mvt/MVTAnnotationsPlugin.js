@@ -169,11 +169,12 @@ export class MVTAnnotationsDriver {
 	/**
 	 * Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
 	 * decides what is parsed once.
+	 * @param {string} layer - The MVT layer name the feature belongs to.
 	 * @param {Object} properties - The feature's property map.
 	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
 	 * @returns {boolean} True to display the annotation.
 	 */
-	isAnnotationEnabled( properties, type ) {
+	isAnnotationEnabled( layer, properties, type ) {
 
 		return true;
 
