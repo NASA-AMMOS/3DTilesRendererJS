@@ -1222,6 +1222,16 @@ maxOccupancyUpdateTimeMs: number = 0.5
 Time budget in milliseconds per frame for the sliced occupancy layout pass.
 
 
+### .horizonCutoff
+
+```js
+horizonCutoff: number = 0.1
+```
+
+Hides annotations once `dot( surface normal, direction to camera )` falls below this, removing
+those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
+
+
 ### .constructor
 
 ```js
