@@ -14,6 +14,7 @@ import { PointAnnotationManager } from './annotations/PointAnnotationManager.js'
 import { TextAnchorAnnotation } from './annotations/TextAnchorAnnotation.js';
 import { MVTIconGlyphs } from './MVTIconGlyphs.js';
 import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
+import { DeadlineTaskQueue } from './DeadlineTaskQueue.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -429,6 +430,8 @@ export class MVTAnnotationsPlugin {
 		this.tileLoadState = new Map();
 		this.vectorTileInfo = new Map();
 
+		this.toggleTileQueue = new DeadlineTaskQueue();
+
 		// debug overlays
 		this.debug = {
 			occupancy: new OccupancyGridOverlay( this.occupancy ),
@@ -456,6 +459,7 @@ export class MVTAnnotationsPlugin {
 			contentCache,
 			pointManager,
 			anchorManager,
+			toggleTileQueue,
 		} = this;
 
 		// init debug
@@ -576,6 +580,7 @@ export class MVTAnnotationsPlugin {
 
 			// update all sub managers
 			hierarchy.update();
+			toggleTileQueue.update();
 
 			// point annotations
 			pointManager.update();
@@ -653,11 +658,12 @@ export class MVTAnnotationsPlugin {
 
 			// if there's more work required the fire that we need to run during a subsequent frame and
 			// try to run during an idle callback.
-			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork ) {
+			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork || toggleTileQueue.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
 				requestIdleCallback( deadline => {
 
+					toggleTileQueue.update( deadline.timeRemaining() * 0.9 );
 					settlingManager.update( deadline.timeRemaining() * 0.9 );
 					occupancy.update( deadline.timeRemaining() * 0.9 );
 
@@ -673,9 +679,37 @@ export class MVTAnnotationsPlugin {
 
 		};
 
+		// queue the tile so the parsing is amortized rather than landing in the frame that toggled it
 		this._onVectorTileToggle = ( { x, y, level, visible } ) => {
 
 			tiles.dispatchEvent( { type: 'needs-update' } );
+
+			// "vectorTileInfo" holds the applied state
+			const key = `${ x }_${ y }_${ level }`;
+			if ( visible === this.vectorTileInfo.has( key ) ) {
+
+				toggleTileQueue.delete( key );
+
+			} else {
+
+				toggleTileQueue.add( key, { x, y, level, visible } );
+
+			}
+
+		};
+
+		this._onTileDownloadStart = ( { tile, url } ) => {
+
+			// skip external tileset files since they are not geometry tiles
+			if ( ! /\.json$/i.test( url ) && ! /\.subtree/i.test( url ) ) {
+
+				this._initTileRange( tile );
+
+			}
+
+		};
+
+		toggleTileQueue.callback = ( { x, y, level, visible } ) => {
 
 			const {
 				contentCache,
@@ -756,17 +790,6 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		this._onTileDownloadStart = ( { tile, url } ) => {
-
-			// skip external tileset files since they are not geometry tiles
-			if ( ! /\.json$/i.test( url ) && ! /\.subtree/i.test( url ) ) {
-
-				this._initTileRange( tile );
-
-			}
-
-		};
-
 		// register events
 		hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
@@ -791,13 +814,13 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
-		const { debug, tiles, hierarchy, tileLoadState } = this;
+		const { debug, tiles, hierarchy, driver, settlingManager, toggleTileQueue, tileLoadState } = this;
 		debug.occupancy.dispose();
 		debug.paths.dispose();
 
 		// unmount and dispose the driver's render group
-		tiles.group.remove( this.driver.group );
-		this.driver.dispose();
+		tiles.group.remove( driver.group );
+		driver.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -817,8 +840,10 @@ export class MVTAnnotationsPlugin {
 
 		} );
 
+		toggleTileQueue.clear();
+
 		// release the cached elevation sampling plugin
-		this.settlingManager.elevationSource = null;
+		settlingManager.elevationSource = null;
 
 	}
 
