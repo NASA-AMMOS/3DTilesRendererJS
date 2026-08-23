@@ -25,6 +25,9 @@ export class OccupancyAnnotation {
 		// whether the annotation is settled and ready to be displayed
 		this.ready = false;
 
+		// dot( surface normal, direction to camera ) below which the annotation is hidden
+		this.horizonCutoff = 0.1;
+
 		// screen pos used for sorting
 		this.screenPos = new Vector3();
 

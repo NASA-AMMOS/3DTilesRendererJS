@@ -35,6 +35,7 @@ export interface MVTAnnotationsPluginOptions {
 	camera?: Camera | null;
 	driver?: MVTAnnotationsDriver;
 	resolution?: number;
+	horizonCutoff?: number;
 
 }
 
@@ -47,6 +48,7 @@ export class MVTAnnotationsPlugin {
 	camera: Camera | null;
 	driver: MVTAnnotationsDriver;
 	resolution: number;
+	horizonCutoff: number;
 	maxSettleTimeMs: number;
 	maxOccupancyUpdateTimeMs: number;
 

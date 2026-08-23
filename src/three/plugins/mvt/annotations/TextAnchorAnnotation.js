@@ -22,6 +22,7 @@ export const RejectionReason = {
 	OCCUPANCY: 4,
 	SPACING: 5,
 	ANGLE: 6,
+	FACING: 7,
 };
 
 const _segIndices = [];
@@ -227,7 +228,7 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 	_layoutCharacters( handle, outputIndices, outputAlphas, force = false ) {
 
 		const { line, i0, i1, alpha } = this.getActiveReference();
-		const { cumulativeLen, screenPositions, totalTextWidth, characterWidths, characterRadius, text } = line;
+		const { cumulativeLen, screenPositions, facingRatios, totalTextWidth, characterWidths, characterRadius, text } = line;
 		const anchorOffset = MathUtils.lerp( cumulativeLen[ i0 ], cumulativeLen[ i1 ], alpha );
 		const flip = this._flippedTextDir;
 		this.valid = true;
@@ -323,10 +324,15 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 			const p1 = screenPositions[ segNext ];
 			_vec.lerpVectors( p0, p1, segAlpha );
 
-			// off-screen in depth, or colliding with an already-placed annotation
+			// off-screen in depth, near the horizon, or colliding with an already-placed annotation
 			if ( _vec.z < 0 || _vec.z > 1 ) {
 
 				this._reject( RejectionReason.DEPTH );
+				if ( ! force ) break;
+
+			} else if ( MathUtils.lerp( facingRatios[ seg ], facingRatios[ segNext ], segAlpha ) < line.horizonCutoff ) {
+
+				this._reject( RejectionReason.FACING );
 				if ( ! force ) break;
 
 			} else if ( handle.test( _vec.x, _vec.y, characterRadius ) ) {

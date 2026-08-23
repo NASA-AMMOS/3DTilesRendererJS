@@ -21,6 +21,7 @@ const REJECTION_COLORS = {
 	[ RejectionReason.OCCUPANCY ]: 0x00ffff,
 	[ RejectionReason.SPACING ]: 0xffff00,
 	[ RejectionReason.ANGLE ]: 0xff0000,
+	[ RejectionReason.FACING ]: 0xff00ff,
 };
 
 const _origin = /* @__PURE__ */ new Vector3();
