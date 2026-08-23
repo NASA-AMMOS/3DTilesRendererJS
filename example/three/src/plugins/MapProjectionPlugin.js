@@ -47,9 +47,9 @@ function toBoxArray( box, matrix ) {
 }
 
 /**
- * Flattens a globe-oriented tile set into a planar "Columbus view" by reprojecting it into a map
- * projection. Both the tile geometry and the tile bounding volumes are transformed so traversal,
- * culling, and screen space error continue to work in the flattened frame.
+ * Flattens a globe-oriented tile set by reprojecting it into a map projection. Both the tile
+ * geometry and the tile bounding volumes are transformed so traversal, culling, and screen space
+ * error continue to work in the flattened frame.
  *
  * The resulting frame is y-up with x running east and z running south, so it can be navigated
  * with the default `EnvironmentControls` settings. Positions are in projected meters and heights
@@ -58,7 +58,7 @@ function toBoxArray( box, matrix ) {
  * @param {Object} [options]
  * @param {'EPSG:3857'|'EPSG:4326'|'CRS:84'} [options.scheme='EPSG:3857'] The projection to flatten to.
  */
-export class ColumbusViewPlugin {
+export class MapProjectionPlugin {
 
 	constructor( options = {} ) {
 
@@ -66,7 +66,7 @@ export class ColumbusViewPlugin {
 			scheme = 'EPSG:3857',
 		} = options;
 
-		this.name = 'COLUMBUS_VIEW_PLUGIN';
+		this.name = 'MAP_PROJECTION_PLUGIN';
 		this.tiles = null;
 
 		this.projection = new ProjectionScheme( scheme );
@@ -168,8 +168,8 @@ export class ColumbusViewPlugin {
 		tile.geometricError *= scale;
 
 		// recorded so the amount of scaling applied to a tile can be inspected
-		tile.columbusErrorScale = scale;
-		tile.columbusRange = range;
+		tile.projectionErrorScale = scale;
+		tile.projectionRange = range;
 
 		// the renderer applies the tile transform to the bounding volume afterwards, so the box
 		// is stored in the tile local frame

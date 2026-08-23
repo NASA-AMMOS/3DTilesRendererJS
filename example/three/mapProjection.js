@@ -21,7 +21,7 @@ import {
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import Stats from 'three/addons/libs/stats.module.js';
-import { ColumbusViewPlugin } from './src/plugins/ColumbusViewPlugin.js';
+import { MapProjectionPlugin } from './src/plugins/MapProjectionPlugin.js';
 
 // the view is framed over lower Manhattan on load
 const INITIAL_LAT = 40.7128 * MathUtils.DEG2RAD;
@@ -57,7 +57,7 @@ animate();
 // lon rather than left where it was.
 function reload() {
 
-	const plugin = tiles?.getPluginByName( 'COLUMBUS_VIEW_PLUGIN' );
+	const plugin = tiles?.getPluginByName( 'MAP_PROJECTION_PLUGIN' );
 	const { x, y, z } = camera.position;
 
 	reinstantiateTiles( plugin ? plugin.unprojectPoint( x, y, z ) : null );
@@ -78,7 +78,7 @@ function reinstantiateTiles( cartographic = null ) {
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	// flatten the globe into the map projection. This is registered before the compression
 	// plugin so the rewritten positions and normals are what get compressed.
-	tiles.registerPlugin( new ColumbusViewPlugin( { scheme: params.scheme } ) );
+	tiles.registerPlugin( new MapProjectionPlugin( { scheme: params.scheme } ) );
 
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
@@ -107,7 +107,7 @@ function reinstantiateTiles( cartographic = null ) {
 // if none is given
 function frameView( cartographic = null ) {
 
-	const plugin = tiles.getPluginByName( 'COLUMBUS_VIEW_PLUGIN' );
+	const plugin = tiles.getPluginByName( 'MAP_PROJECTION_PLUGIN' );
 
 	if ( cartographic ) {
 
@@ -274,8 +274,8 @@ function updateHtml() {
 			maxGeometricError = tile.geometricError;
 
 			// how much of that error is the projection scaling, and over what latitudes
-			const scale = tile.columbusErrorScale ?? 1;
-			const range = tile.columbusRange;
+			const scale = tile.projectionErrorScale ?? 1;
+			const range = tile.projectionRange;
 			scaleStr =
 				` (raw ${ ( tile.geometricError / scale ).toFixed( 1 ) } x${ scale.toFixed( 2 ) }` +
 				( range ? `, lat ${ ( range[ 1 ] * MathUtils.RAD2DEG ).toFixed( 1 ) } to ` +
