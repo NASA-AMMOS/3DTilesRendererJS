@@ -76,8 +76,8 @@ function reinstantiateTiles( cartographic = null ) {
 
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
-	// flatten the globe into the map projection. This is registered before the compression
-	// plugin so the rewritten positions and normals are what get compressed.
+	// flatten the globe into the map projection. Ordering against the other plugins comes from the
+	// priority it sets, not from the order it is registered in here.
 	tiles.registerPlugin( new MapProjectionPlugin( { scheme: params.scheme } ) );
 
 	tiles.registerPlugin( new TileCompressionPlugin() );
@@ -256,41 +256,44 @@ function updateHtml() {
 
 	}
 
-	// the refinement decision itself. A tile splits when its error exceeds the error target, so if
-	// the largest visible error sits below the target then refinement stopped legitimately and the
-	// camera is simply too far away. If it sits above the target then something is blocking the
-	// traversal instead.
+	// the refinement decision itself. A tile splits when its error exceeds the error target, so an
+	// error below the target means refinement stopped legitimately and the camera is just far away,
+	// while one above it means something is blocking the traversal.
 	let maxDepth = - 1;
 	let maxError = 0;
-	let maxGeometricError = 0;
-	let scaleStr = '';
+	let worstTile = null;
 	visibleTiles.forEach( tile => {
 
 		maxDepth = Math.max( maxDepth, tile.internal.depth );
 		maxError = Math.max( maxError, tile.traversal.error );
 
-		if ( tile.geometricError > maxGeometricError ) {
+		if ( ! worstTile || tile.geometricError > worstTile.geometricError ) {
 
-			maxGeometricError = tile.geometricError;
-
-			// how much of that error is the projection scaling, and over what latitudes
-			const scale = tile.projectionErrorScale ?? 1;
-			const range = tile.projectionRange;
-			scaleStr =
-				` (raw ${ ( tile.geometricError / scale ).toFixed( 1 ) } x${ scale.toFixed( 2 ) }` +
-				( range ? `, lat ${ ( range[ 1 ] * MathUtils.RAD2DEG ).toFixed( 1 ) } to ` +
-					`${ ( range[ 3 ] * MathUtils.RAD2DEG ).toFixed( 1 ) }` : '' ) + ')';
+			worstTile = tile;
 
 		}
 
 	} );
 
+	// how much of the largest error is the projection scaling, and over what latitudes
+	let geomStr = 'GeomError: none';
+	if ( worstTile ) {
+
+		const scale = worstTile.projectionErrorScale ?? 1;
+		const [ , south, , north ] = worstTile.projectionRange ?? [ 0, NaN, 0, NaN ];
+		geomStr =
+			`GeomError: ${ worstTile.geometricError.toFixed( 1 ) } ` +
+			`(raw ${ ( worstTile.geometricError / scale ).toFixed( 1 ) } x${ scale.toFixed( 2 ) }, ` +
+			`lat ${ ( south * MathUtils.RAD2DEG ).toFixed( 1 ) } to ${ ( north * MathUtils.RAD2DEG ).toFixed( 1 ) })`;
+
+	}
+
 	const str =
 		`Queued: ${ tileStats.queued } Downloading: ${ tileStats.downloading } ` +
 		`Parsing: ${ tileStats.parsing } Loaded: ${ tileStats.loaded } Failed: ${ tileStats.failed }<br/>` +
 		`Visible: ${ visibleTiles.size } Active: ${ activeTiles.size }<br/>` +
-		`Depth: ${ maxDepth } MaxError: ${ maxError.toFixed( 1 ) } / ${ params.errorTarget } ` +
-		`GeomError: ${ maxGeometricError.toFixed( 1 ) }${ scaleStr }<br/>` +
+		`Depth: ${ maxDepth } MaxError: ${ maxError.toFixed( 1 ) } / ${ params.errorTarget }<br/>` +
+		`${ geomStr }<br/>` +
 		`Camera: ${ camera.position.toArray().map( v => v.toFixed( 0 ) ).join( ', ' ) }<br/>` +
 		`${ rootStr }`;
 

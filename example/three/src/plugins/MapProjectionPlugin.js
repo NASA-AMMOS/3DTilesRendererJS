@@ -1,19 +1,22 @@
-/** @import { TilesRenderer } from '3d-tiles-renderer/three' */
 import { Box3, MathUtils, Matrix3, Matrix4, Vector3 } from 'three';
 import { ProjectionScheme } from '../../../../src/three/plugins/images/utils/ProjectionScheme.js';
+import { getCartographicToMeterDerivative } from '../../../../src/three/plugins/images/utils/getCartographicToMeterDerivative.js';
 import { getMeshesCartographicRange } from '../../../../src/three/plugins/images/overlays/utils.js';
 
 // number of samples taken along each axis of a bounding volume when deriving the cartographic
 // range it covers. The tile surface is curved so the volume corners alone under sample it.
 const VOLUME_SAMPLES = 3;
 
+// evenly spaced sample positions running from one face of the volume to the opposite one
+const SAMPLE_OFFSETS = new Array( VOLUME_SAMPLES )
+	.fill()
+	.map( ( v, i ) => MathUtils.mapLinear( i, 0, VOLUME_SAMPLES - 1, - 1, 1 ) );
+
 // longitude is unstable within this distance of the poles
 const POLE_EPSILON = 1e-5;
 
-// Cap on how far the geometric error is scaled up. Every cartographic projection stretches without
-// bound as it approaches the poles, so the raw stretch factor runs to infinity there. Mercator
-// happens to self limit near 11 because its own bounds stop at ~85 degrees; equirectangular runs to
-// a true 90 and does not.
+// cap on the geometric error scaling below. Every projection stretches without bound at the poles,
+// so the raw factor runs to infinity there.
 const MAX_ERROR_SCALE = 16;
 
 const _matrix = /* @__PURE__ */ new Matrix4();
@@ -35,14 +38,14 @@ function toBoxArray( box, matrix ) {
 
 	box.getCenter( _center ).applyMatrix4( matrix );
 	box.getSize( _size ).multiplyScalar( 0.5 );
-
 	_rotation.setFromMatrix4( matrix );
 
-	const xAxis = _vec.set( _size.x, 0, 0 ).applyMatrix3( _rotation ).toArray();
-	const yAxis = _vec.set( 0, _size.y, 0 ).applyMatrix3( _rotation ).toArray();
-	const zAxis = _vec.set( 0, 0, _size.z ).applyMatrix3( _rotation ).toArray();
-
-	return [ ..._center.toArray(), ...xAxis, ...yAxis, ...zAxis ];
+	return [
+		..._center,
+		..._vec.set( _size.x, 0, 0 ).applyMatrix3( _rotation ),
+		..._vec.set( 0, _size.y, 0 ).applyMatrix3( _rotation ),
+		..._vec.set( 0, 0, _size.z ).applyMatrix3( _rotation ),
+	];
 
 }
 
@@ -67,19 +70,36 @@ export class MapProjectionPlugin {
 		} = options;
 
 		this.name = 'MAP_PROJECTION_PLUGIN';
+
+		// this rewrites every vertex, so it has to run before the plugins that consume the final
+		// geometry - compression and flattening at -100, batching and fading above that. Plugins
+		// that do cartographic math on loaded geometry, such as ImageOverlayPlugin, are not
+		// compatible at all: the geometry is no longer in the ellipsoid frame once this has run.
+		this.priority = - 200;
+
 		this.tiles = null;
 
 		this.projection = new ProjectionScheme( scheme );
 
-		// the width of the projected world in meters, derived from the ellipsoid on init
+		// dimensions of the projected world in meters, derived from the ellipsoid on init
 		this.worldWidth = 0;
+		this.worldHeight = 0;
 
 	}
 
 	init( tiles ) {
 
+		const { projection } = this;
 		this.tiles = tiles;
+
+		// the projection tile counts describe the aspect ratio of the projected world
 		this.worldWidth = 2 * Math.PI * tiles.ellipsoid.radius.x;
+		this.worldHeight = this.worldWidth * projection.tileCountY / projection.tileCountX;
+
+		// cached because "getBounds" allocates and this runs per vertex
+		const [ , minLat, , maxLat ] = projection.getBounds();
+		this.minLat = minLat;
+		this.maxLat = maxLat;
 
 	}
 
@@ -96,16 +116,11 @@ export class MapProjectionPlugin {
 	 */
 	projectPoint( lon, lat, height, target ) {
 
-		const { projection, worldWidth } = this;
-		const [ , minLat, , maxLat ] = projection.getBounds();
+		const { projection, worldWidth, worldHeight, minLat, maxLat } = this;
 
 		// mercator runs to infinity at the poles so the latitude is clamped into the valid range
-		const clampedLat = MathUtils.clamp( lat, minLat, maxLat );
 		const u = projection.convertLongitudeToNormalized( lon );
-		const v = projection.convertLatitudeToNormalized( clampedLat );
-
-		// the projection tile counts describe the aspect ratio of the projected world
-		const worldHeight = worldWidth * projection.tileCountY / projection.tileCountX;
+		const v = projection.convertLatitudeToNormalized( MathUtils.clamp( lat, minLat, maxLat ) );
 
 		target.x = ( u - 0.5 ) * worldWidth;
 		target.y = height;
@@ -127,8 +142,7 @@ export class MapProjectionPlugin {
 	 */
 	unprojectPoint( x, y, z, target = {} ) {
 
-		const { projection, worldWidth } = this;
-		const worldHeight = worldWidth * projection.tileCountY / projection.tileCountX;
+		const { projection, worldWidth, worldHeight } = this;
 
 		target.lon = projection.convertNormalizedToLongitude( x / worldWidth + 0.5 );
 		target.lat = projection.convertNormalizedToLatitude( - z / worldHeight + 0.5 );
@@ -164,10 +178,10 @@ export class MapProjectionPlugin {
 
 		// the projection stretches the surface, so scale the error to match in order to keep the
 		// amount of detail loaded consistent with the unprojected tile set
-		const scale = this._getScaleFactor( ( range[ 1 ] + range[ 3 ] ) / 2 );
+		const scale = this._getScaleFactor( ( range[ 1 ] + range[ 3 ] ) / 2, ( range[ 0 ] + range[ 2 ] ) / 2 );
 		tile.geometricError *= scale;
 
-		// recorded so the amount of scaling applied to a tile can be inspected
+		// recorded so the scaling applied to a tile can be inspected
 		tile.projectionErrorScale = scale;
 		tile.projectionRange = range;
 
@@ -177,16 +191,6 @@ export class MapProjectionPlugin {
 		_invMatrix.copy( _matrix ).invert();
 
 		tile.boundingVolume = { box: toBoxArray( _box, _invMatrix ) };
-
-	}
-
-	// returns the amount the projection stretches the surface at the given latitude
-	_getScaleFactor( lat ) {
-
-		const [ , minLat, , maxLat ] = this.projection.getBounds();
-		const clampedLat = MathUtils.clamp( lat, minLat, maxLat );
-
-		return Math.min( 1 / Math.cos( clampedLat ), MAX_ERROR_SCALE );
 
 	}
 
@@ -254,28 +258,45 @@ export class MapProjectionPlugin {
 
 		} );
 
-		// the vertices are positioned relative to the tile origin now, so any transforms in the
-		// loaded hierarchy have to be cleared
+		// every vertex is absolute within the tile now, so the loaded hierarchy is flattened and
+		// only the tile origin carries a transform
 		scene.traverse( c => {
 
-			if ( c !== scene ) {
-
-				c.position.setScalar( 0 );
-				c.quaternion.identity();
-				c.scale.setScalar( 1 );
-
-			}
+			c.position.setScalar( 0 );
+			c.quaternion.identity();
+			c.scale.setScalar( 1 );
 
 		} );
 
 		scene.position.copy( _center );
-		scene.quaternion.identity();
-		scene.scale.setScalar( 1 );
 		scene.updateMatrixWorld( true );
 
 		// the bounds derived in "preprocessNode" are an estimate based on the tile bounding
 		// volume, so they are replaced with the exact projected bounds of the geometry
 		tile.engineData.boundingVolume.setObbData( toBoxArray( _box, _identity ), _identity );
+
+	}
+
+	// returns the amount the projection stretches the surface at the given point, as the ratio of
+	// projected meters to real meters on the ellipsoid
+	_getScaleFactor( lat, lon ) {
+
+		const { projection, worldWidth, worldHeight, minLat, maxLat } = this;
+		const clampedLat = MathUtils.clamp( lat, minLat, maxLat );
+
+		// meters per radian on the ellipsoid
+		const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, clampedLat, lon );
+
+		// radians per normalized unit, which turns the world size into projected meters per radian
+		const lonFactor = projection.getLongitudeDerivativeAtNormalized( projection.convertLongitudeToNormalized( lon ) );
+		const latFactor = projection.getLatitudeDerivativeAtNormalized( projection.convertLatitudeToNormalized( clampedLat ) );
+
+		// the two axes stretch by different amounts outside of a conformal projection, so the
+		// larger of the two drives the error
+		const xScale = worldWidth / ( lonFactor * xDeriv );
+		const yScale = worldHeight / ( latFactor * yDeriv );
+
+		return Math.min( Math.max( xScale, yScale ), MAX_ERROR_SCALE );
 
 	}
 
@@ -295,10 +316,11 @@ export class MapProjectionPlugin {
 	}
 
 	// derives the cartographic range covered by a tile bounding volume, returning null if the
-	// volume type is not supported
+	// volume cannot be sampled
 	_getCartographicRange( boundingVolume, matrix ) {
 
-		const points = [];
+		const { ellipsoid } = this.tiles;
+
 		if ( 'region' in boundingVolume ) {
 
 			// regions are already cartographic
@@ -312,40 +334,14 @@ export class MapProjectionPlugin {
 			_axisY.fromArray( data, 6 );
 			_axisZ.fromArray( data, 9 );
 
-			// sample a grid across the volume rather than just the corners, since the tile
-			// surface is curved and the extreme lat / lon values can fall between them
-			for ( let x = 0; x < VOLUME_SAMPLES; x ++ ) {
-
-				for ( let y = 0; y < VOLUME_SAMPLES; y ++ ) {
-
-					for ( let z = 0; z < VOLUME_SAMPLES; z ++ ) {
-
-						const point = new Vector3().copy( _center );
-						point.addScaledVector( _axisX, MathUtils.mapLinear( x, 0, VOLUME_SAMPLES - 1, - 1, 1 ) );
-						point.addScaledVector( _axisY, MathUtils.mapLinear( y, 0, VOLUME_SAMPLES - 1, - 1, 1 ) );
-						point.addScaledVector( _axisZ, MathUtils.mapLinear( z, 0, VOLUME_SAMPLES - 1, - 1, 1 ) );
-
-						points.push( point );
-
-					}
-
-				}
-
-			}
-
 		} else if ( 'sphere' in boundingVolume ) {
 
+			// bounded as the cube around the sphere so the sampling below is shared
 			const [ x, y, z, radius ] = boundingVolume.sphere;
 			_center.set( x, y, z );
-
-			points.push( new Vector3().copy( _center ) );
-			for ( let i = 0; i < 3; i ++ ) {
-
-				_vec.setScalar( 0 ).setComponent( i, radius );
-				points.push( new Vector3().addVectors( _center, _vec ) );
-				points.push( new Vector3().subVectors( _center, _vec ) );
-
-			}
+			_axisX.set( radius, 0, 0 );
+			_axisY.set( 0, radius, 0 );
+			_axisZ.set( 0, 0, radius );
 
 		} else {
 
@@ -353,19 +349,9 @@ export class MapProjectionPlugin {
 
 		}
 
-		return this._getPointsCartographicRange( points, _center.clone(), matrix );
-
-	}
-
-	// converts a set of volume-local points into a cartographic range, unwrapping the longitude
-	// values around the volume center so a tile crossing the date line stays contiguous
-	_getPointsCartographicRange( points, volumeCenter, matrix ) {
-
-		const { ellipsoid } = this.tiles;
-
-		ellipsoid.getPositionToCartographic( volumeCenter.applyMatrix4( matrix ), _cart );
-
-		// fall back to 0 because the lat / lon are NaN for a point at the ellipsoid center
+		// the volume center anchors the date line unwrapping below. It falls back to 0 because the
+		// lat / lon are NaN for a point at the ellipsoid center.
+		ellipsoid.getPositionToCartographic( _vec.copy( _center ).applyMatrix4( matrix ), _cart );
 		const centerLon = _cart.lon || 0;
 
 		let minLon = Infinity;
@@ -375,59 +361,71 @@ export class MapProjectionPlugin {
 		let maxLat = - Infinity;
 		let maxHeight = - Infinity;
 
-		points.forEach( point => {
+		// sample a grid across the volume rather than just the corners, since the tile surface is
+		// curved and the extreme lat / lon values can fall between them
+		for ( const sx of SAMPLE_OFFSETS ) {
 
-			ellipsoid.getPositionToCartographic( point.applyMatrix4( matrix ), _cart );
+			for ( const sy of SAMPLE_OFFSETS ) {
 
-			const { lat, height } = _cart;
-			let { lon } = _cart;
+				for ( const sz of SAMPLE_OFFSETS ) {
 
-			// a sample at the center of the ellipsoid has no cartographic position. Volumes that
-			// span a large portion of the globe contain that point, so it is skipped here rather
-			// than poisoning the whole range with NaN.
-			if ( ! Number.isFinite( lat ) || ! Number.isFinite( lon ) || ! Number.isFinite( height ) ) {
+					_vec.copy( _center )
+						.addScaledVector( _axisX, sx )
+						.addScaledVector( _axisY, sy )
+						.addScaledVector( _axisZ, sz )
+						.applyMatrix4( matrix );
 
-				return;
+					ellipsoid.getPositionToCartographic( _vec, _cart );
+
+					const { lat, height } = _cart;
+					let { lon } = _cart;
+
+					// a sample at the center of the ellipsoid has no cartographic position, and
+					// volumes spanning much of the globe contain that point
+					if ( ! Number.isFinite( lat ) || ! Number.isFinite( lon ) || ! Number.isFinite( height ) ) {
+
+						continue;
+
+					}
+
+					// longitude is meaningless at the poles, so collapse it to the center value
+					// rather than growing the range across the whole globe
+					if ( Math.abs( Math.abs( lat ) - Math.PI / 2 ) < POLE_EPSILON ) {
+
+						lon = centerLon;
+
+					}
+
+					// keep the longitude on the same side of the date line as the center
+					if ( Math.abs( centerLon - lon ) > Math.PI ) {
+
+						lon += Math.sign( centerLon - lon ) * Math.PI * 2;
+
+					}
+
+					minLon = Math.min( minLon, lon );
+					maxLon = Math.max( maxLon, lon );
+
+					minLat = Math.min( minLat, lat );
+					maxLat = Math.max( maxLat, lat );
+
+					minHeight = Math.min( minHeight, height );
+					maxHeight = Math.max( maxHeight, height );
+
+				}
 
 			}
 
-			// the longitude is not meaningful at the poles, so collapse it to the center value
-			// to avoid growing the range across the whole globe
-			if ( Math.abs( Math.abs( lat ) - Math.PI / 2 ) < POLE_EPSILON ) {
+		}
 
-				lon = centerLon;
-
-			}
-
-			// unwrap the longitude so it stays on the same side of the date line as the center
-			if ( Math.abs( centerLon - lon ) > Math.PI ) {
-
-				lon += Math.sign( centerLon - lon ) * Math.PI * 2;
-
-			}
-
-			minLon = Math.min( minLon, lon );
-			maxLon = Math.max( maxLon, lon );
-
-			minLat = Math.min( minLat, lat );
-			maxLat = Math.max( maxLat, lat );
-
-			minHeight = Math.min( minHeight, height );
-			maxHeight = Math.max( maxHeight, height );
-
-		} );
-
-		// leave the tile alone if nothing usable came out of the volume
 		if ( minLon === Infinity ) {
 
 			return null;
 
 		}
 
-		// A volume that covers a large part of the globe cannot be sampled accurately - the
-		// extremes fall between the samples - so it is widened to the full range. Coarse tiles end
-		// up with loose bounds, which is only a culling cost, while tiles that project to a small
-		// patch keep tight ones.
+		// a volume covering a large part of the globe cannot be sampled accurately, since the
+		// extremes fall between the samples, so it is widened to the full range
 		if ( maxLon - minLon > Math.PI ) {
 
 			minLon = - Math.PI;
@@ -442,15 +440,12 @@ export class MapProjectionPlugin {
 
 		}
 
-		// The samples are points on the volume, so the heights they report only describe the
-		// volume surface and not how low the terrain inside it sits. Across a wide arc the surface
-		// curves away from those samples, leaving the floor of the range far above the ground, so
-		// it is dropped by the sagitta of the arc. This is fractions of a millimeter for a city
-		// block sized tile and the full radius for one that spans the globe.
-		const midLat = ( minLat + maxLat ) / 2;
-		const arc = Math.max( ( maxLon - minLon ) * Math.cos( midLat ), maxLat - minLat );
-		const halfAngle = Math.min( arc / 2, Math.PI / 2 );
-		minHeight -= this.tiles.ellipsoid.radius.x * ( 1 - Math.cos( halfAngle ) );
+		// the samples sit on the volume, so they describe its surface rather than how low the
+		// terrain inside dips. Across a wide arc the surface curves away from them, so the floor is
+		// dropped by the sagitta of that arc - sub millimeter for a city block, the full radius for
+		// a volume spanning the globe.
+		const arc = Math.max( ( maxLon - minLon ) * Math.cos( ( minLat + maxLat ) / 2 ), maxLat - minLat );
+		minHeight -= ellipsoid.radius.x * ( 1 - Math.cos( Math.min( arc / 2, Math.PI / 2 ) ) );
 
 		return [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ];
 
