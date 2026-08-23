@@ -361,6 +361,38 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	/**
+	 * Hides annotations once `dot( surface normal, direction to camera )` falls below this, removing
+	 * those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
+	 * @type {number}
+	 * @default 0.1
+	 */
+	get horizonCutoff() {
+
+		return this._horizonCutoff;
+
+	}
+
+	set horizonCutoff( value ) {
+
+		// gated so this can be assigned every frame without traversing the annotations
+		if ( value === this._horizonCutoff ) {
+
+			return;
+
+		}
+
+		this._horizonCutoff = value;
+
+		// TODO: A shared value for settings would be best here.
+		this.pointManager.points.forEach( point => point.horizonCutoff = value );
+		this.anchorManager.lines.forEach( line => line.horizonCutoff = value );
+
+		// the cutoff is applied during layout, so it has to be redone
+		this.occupancy.needsUpdate = true;
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -372,6 +404,7 @@ export class MVTAnnotationsPlugin {
 			camera = null,
 			driver = new DefaultMVTAnnotationsDriver(),
 			resolution = 50,
+			horizonCutoff = 0.1,
 		} = options;
 
 		// user settings
@@ -379,6 +412,7 @@ export class MVTAnnotationsPlugin {
 		this.camera = camera;
 		this.driver = driver;
 		this.resolution = resolution;
+		this._horizonCutoff = horizonCutoff;
 
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
@@ -673,6 +707,8 @@ export class MVTAnnotationsPlugin {
 				vectorTileInfo.set( key, { annotations } );
 
 				for ( const ann of annotations ) {
+
+					ann.horizonCutoff = this._horizonCutoff;
 
 					if ( ann instanceof LineAnnotation ) {
 

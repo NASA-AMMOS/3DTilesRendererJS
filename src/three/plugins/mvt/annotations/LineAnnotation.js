@@ -5,6 +5,9 @@ import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 // the body's radius so anchor density tracks real-world length on any ellipsoid.
 const ANCHOR_SPACING_METERS = 500000;
 
+const _delta = /* @__PURE__ */ new Vector3();
+const _normal = /* @__PURE__ */ new Vector3();
+
 // Share path annotation used for text anchors
 export class LineAnnotation extends OccupancyAnnotation {
 
@@ -48,6 +51,9 @@ export class LineAnnotation extends OccupancyAnnotation {
 		// screen positions, cumulative length used for calculating text layout
 		this.screenPositions = [];
 		this.cumulativeLen = [];
+
+		// per-sample dot( surface normal, direction to camera )
+		this.facingRatios = [];
 
 		// cache variables
 		this.cachedMatrix = new Matrix4();
@@ -97,6 +103,9 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		}
 
+		const { facingRatios } = this;
+		facingRatios.length = screenPositions.length;
+
 		for ( let i = 0, l = screenPositions.length; i < l; i ++ ) {
 
 			const position = positions[ i ];
@@ -109,6 +118,20 @@ export class LineAnnotation extends OccupancyAnnotation {
 			screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 			screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 			screenPos.z = MathUtils.mapLinear( screenPos.z, - 1, 1, 0, 1 );
+
+			// the sample sits on the surface, so its direction from the body center stands in for
+			// the normal. Matches the approximation in PointAnnotation.
+			if ( cameraPosition !== null && position.lengthSq() > 0 ) {
+
+				_delta.subVectors( cameraPosition, position ).normalize();
+				_normal.copy( position ).normalize();
+				facingRatios[ i ] = _normal.dot( _delta );
+
+			} else {
+
+				facingRatios[ i ] = 1;
+
+			}
 
 		}
 

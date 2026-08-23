@@ -2,9 +2,8 @@ import { Vector3, MathUtils } from 'three';
 import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
 const _delta = /* @__PURE__ */ new Vector3();
+const _normal = /* @__PURE__ */ new Vector3();
 
-// suppress annotations within ~6 degrees of the globe horizon
-const PERSPECTIVE_CULL_ANGLE = Math.acos( 0.1 );
 export class PointAnnotation extends OccupancyAnnotation {
 
 	constructor() {
@@ -17,7 +16,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 		this.radius = 28;
 
 		this.screenPos = new Vector3();
-		this._facingAngle = 0;
+		this._facingRatio = 1;
 
 	}
 
@@ -36,14 +35,15 @@ export class PointAnnotation extends OccupancyAnnotation {
 		// facing ratio: dot( surface normal, direction to camera )
 		// TODO: store geodetic normal on the item at creation time and use it here instead of
 		// normalize( position )
-		if ( cameraPosition !== null ) {
+		if ( cameraPosition !== null && position.lengthSq() > 0 ) {
 
-			_delta.subVectors( cameraPosition, position );
-			this._facingAngle = position.lengthSq() > 0 ? position.angleTo( _delta ) : 0;
+			_delta.subVectors( cameraPosition, position ).normalize();
+			_normal.copy( position ).normalize();
+			this._facingRatio = _normal.dot( _delta );
 
 		} else {
 
-			this._facingAngle = 0;
+			this._facingRatio = 1;
 
 		}
 
@@ -51,7 +51,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 	evaluate( handle ) {
 
-		const { screenPos, radius, _facingAngle } = this;
+		const { screenPos, radius, horizonCutoff, _facingRatio } = this;
 		if ( ! this.ready ) {
 
 			return false;
@@ -64,7 +64,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 		}
 
-		if ( _facingAngle > PERSPECTIVE_CULL_ANGLE ) {
+		if ( _facingRatio < horizonCutoff ) {
 
 			return false;
 
