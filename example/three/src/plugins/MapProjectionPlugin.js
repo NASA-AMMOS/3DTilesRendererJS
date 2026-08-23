@@ -178,12 +178,7 @@ export class MapProjectionPlugin {
 
 		// the projection stretches the surface, so scale the error to match in order to keep the
 		// amount of detail loaded consistent with the unprojected tile set
-		const scale = this._getScaleFactor( ( range[ 1 ] + range[ 3 ] ) / 2, ( range[ 0 ] + range[ 2 ] ) / 2 );
-		tile.geometricError *= scale;
-
-		// recorded so the scaling applied to a tile can be inspected
-		tile.projectionErrorScale = scale;
-		tile.projectionRange = range;
+		tile.geometricError *= this._getScaleFactor( ( range[ 1 ] + range[ 3 ] ) / 2, ( range[ 0 ] + range[ 2 ] ) / 2 );
 
 		// the renderer applies the tile transform to the bounding volume afterwards, so the box
 		// is stored in the tile local frame

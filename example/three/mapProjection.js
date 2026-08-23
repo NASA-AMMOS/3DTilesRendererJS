@@ -4,14 +4,13 @@ import {
 } from '3d-tiles-renderer';
 import {
 	CesiumIonAuthPlugin,
-	DebugTilesPlugin,
 	GLTFExtensionsPlugin,
 	TileCompressionPlugin,
+	TilesFadePlugin,
 	UnloadTilesPlugin,
 	UpdateOnChangePlugin,
 } from '3d-tiles-renderer/plugins';
 import {
-	Box3,
 	MathUtils,
 	PerspectiveCamera,
 	Scene,
@@ -28,22 +27,14 @@ const INITIAL_LAT = 40.7128 * MathUtils.DEG2RAD;
 const INITIAL_LON = - 74.0060 * MathUtils.DEG2RAD;
 const INITIAL_HEIGHT = 800;
 
-let camera, controls, scene, renderer, tiles, stats, statsContainer;
+let camera, controls, scene, renderer, tiles, stats;
 
 const _target = new Vector3();
-const _box = new Box3();
 
 const params = {
 
 	scheme: 'EPSG:3857',
 	errorTarget: 24,
-
-	enableDebug: true,
-	displayBoxBounds: true,
-	displayParentBounds: false,
-	colorMode: DebugTilesPlugin.ColorModes.NONE,
-	boundsColorMode: DebugTilesPlugin.ColorModes.NONE,
-	unlit: false,
 
 	reload: reload,
 
@@ -83,14 +74,9 @@ function reinstantiateTiles( cartographic = null ) {
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new UnloadTilesPlugin() );
+	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		dracoLoader: new DRACOLoader(),
-	} ) );
-
-	// the bounds helpers are drawn from the reprojected bounding volumes, so they show where the
-	// renderer thinks each tile lives in the flattened frame
-	tiles.registerPlugin( new DebugTilesPlugin( {
-		displayBoxBounds: params.displayBoxBounds,
 	} ) );
 
 	// the plugin produces a y-up frame so the group needs no rotation
@@ -175,19 +161,6 @@ function init() {
 	} );
 	gui.add( params, 'reload' );
 
-	const debug = gui.addFolder( 'Debug Options' );
-	debug.add( params, 'enableDebug' );
-	debug.add( params, 'displayBoxBounds' );
-	debug.add( params, 'displayParentBounds' );
-	debug.add( params, 'colorMode', DebugTilesPlugin.ColorModes );
-	debug.add( params, 'boundsColorMode', DebugTilesPlugin.ColorModes );
-	debug.add( params, 'unlit' );
-	debug.open();
-
-	// tile counts, to distinguish tiles failing to load from tiles landing somewhere unexpected
-	statsContainer = document.createElement( 'div' );
-	document.getElementById( 'info' ).appendChild( statsContainer );
-
 	// stats
 	stats = new Stats();
 	stats.showPanel( 0 );
@@ -220,89 +193,12 @@ function animate() {
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 	tiles.errorTarget = params.errorTarget;
-
-	const debugPlugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
-	debugPlugin.enabled = params.enableDebug;
-	debugPlugin.displayBoxBounds = params.displayBoxBounds;
-	debugPlugin.displayParentBounds = params.displayParentBounds;
-	debugPlugin.colorMode = parseFloat( params.colorMode );
-	debugPlugin.boundsColorMode = parseFloat( params.boundsColorMode );
-	debugPlugin.unlit = params.unlit;
-
 	tiles.update();
 
 	renderer.render( scene, camera );
 	stats.update();
 
-	updateHtml();
-
-}
-
-function updateHtml() {
-
-	const { stats: tileStats, visibleTiles, activeTiles } = tiles;
-
-	// where the camera sits relative to the tiles, so a placement problem is visible even when
-	// nothing is on screen
-	const root = tiles.root?.engineData?.boundingVolume;
-	let rootStr = 'root: none';
-	if ( root ) {
-
-		root.getAABB( _box );
-		rootStr = _box.isEmpty() ? 'root: empty bounds' :
-			`root x [ ${ _box.min.x.toFixed( 0 ) }, ${ _box.max.x.toFixed( 0 ) } ] ` +
-			`y [ ${ _box.min.y.toFixed( 0 ) }, ${ _box.max.y.toFixed( 0 ) } ] ` +
-			`z [ ${ _box.min.z.toFixed( 0 ) }, ${ _box.max.z.toFixed( 0 ) } ]`;
-
-	}
-
-	// the refinement decision itself. A tile splits when its error exceeds the error target, so an
-	// error below the target means refinement stopped legitimately and the camera is just far away,
-	// while one above it means something is blocking the traversal.
-	let maxDepth = - 1;
-	let maxError = 0;
-	let worstTile = null;
-	visibleTiles.forEach( tile => {
-
-		maxDepth = Math.max( maxDepth, tile.internal.depth );
-		maxError = Math.max( maxError, tile.traversal.error );
-
-		if ( ! worstTile || tile.geometricError > worstTile.geometricError ) {
-
-			worstTile = tile;
-
-		}
-
-	} );
-
-	// how much of the largest error is the projection scaling, and over what latitudes
-	let geomStr = 'GeomError: none';
-	if ( worstTile ) {
-
-		const scale = worstTile.projectionErrorScale ?? 1;
-		const [ , south, , north ] = worstTile.projectionRange ?? [ 0, NaN, 0, NaN ];
-		geomStr =
-			`GeomError: ${ worstTile.geometricError.toFixed( 1 ) } ` +
-			`(raw ${ ( worstTile.geometricError / scale ).toFixed( 1 ) } x${ scale.toFixed( 2 ) }, ` +
-			`lat ${ ( south * MathUtils.RAD2DEG ).toFixed( 1 ) } to ${ ( north * MathUtils.RAD2DEG ).toFixed( 1 ) })`;
-
-	}
-
-	const str =
-		`Queued: ${ tileStats.queued } Downloading: ${ tileStats.downloading } ` +
-		`Parsing: ${ tileStats.parsing } Loaded: ${ tileStats.loaded } Failed: ${ tileStats.failed }<br/>` +
-		`Visible: ${ visibleTiles.size } Active: ${ activeTiles.size }<br/>` +
-		`Depth: ${ maxDepth } MaxError: ${ maxError.toFixed( 1 ) } / ${ params.errorTarget }<br/>` +
-		`${ geomStr }<br/>` +
-		`Camera: ${ camera.position.toArray().map( v => v.toFixed( 0 ) ).join( ', ' ) }<br/>` +
-		`${ rootStr }`;
-
-	if ( statsContainer.innerHTML !== str ) {
-
-		statsContainer.innerHTML = str;
-
-	}
-
 	document.getElementById( 'credits' ).innerText = tiles.getAttributions()[ 0 ]?.value || '';
 
 }
+
