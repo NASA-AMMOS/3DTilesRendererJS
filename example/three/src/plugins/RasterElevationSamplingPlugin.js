@@ -4,7 +4,6 @@ import {
 	BufferGeometry,
 	Color,
 	DoubleSide,
-	FloatType,
 	MathUtils,
 	Matrix4,
 	Mesh,
@@ -116,10 +115,20 @@ function createRasterMaterial() {
 			}
 		`,
 		fragmentShader: /* glsl */`
+			uniform vec2 heightRange;
 			varying float vHeight;
 			void main() {
 
-				gl_FragColor = vec4( vHeight, 0.0, 0.0, 1.0 );
+				// packed into 24 bits across RGB so the target can be RGBA8, which is renderable and
+				// readable everywhere without float texture support. Alpha marks the texel as covered.
+				float normalized = clamp( ( vHeight - heightRange.x ) / ( heightRange.y - heightRange.x ), 0.0, 1.0 );
+				float packed = floor( normalized * 16777215.0 );
+
+				float r = floor( packed / 65536.0 );
+				float g = floor( mod( packed, 65536.0 ) / 256.0 );
+				float b = mod( packed, 256.0 );
+
+				gl_FragColor = vec4( r / 255.0, g / 255.0, b / 255.0, 1.0 );
 
 			}
 		`,
@@ -498,7 +507,6 @@ export class RasterElevationSamplingPlugin {
 		// rasterize the heights, saving and restoring the renderer state
 		const target = new WebGLRenderTarget( resolution, resolution, {
 			format: RGBAFormat,
-			type: FloatType,
 			minFilter: NearestFilter,
 			magFilter: NearestFilter,
 			generateMipmaps: false,
@@ -524,7 +532,7 @@ export class RasterElevationSamplingPlugin {
 
 		// read the raster back before the tile is considered processed so every displayed tile can
 		// be sampled immediately
-		const buffer = new Float32Array( resolution * resolution * 4 );
+		const buffer = new Uint8Array( resolution * resolution * 4 );
 		try {
 
 			await renderer.readRenderTargetPixelsAsync( target, 0, 0, resolution, resolution, buffer );
@@ -544,10 +552,15 @@ export class RasterElevationSamplingPlugin {
 
 		}
 
+		// unpack the 24 bit heights written by the raster shader
+		const heightScale = ( maxHeight > minHeight ? maxHeight - minHeight : 1 ) / 16777215;
 		const grid = new Float32Array( resolution * resolution );
 		for ( let i = 0, l = grid.length; i < l; i ++ ) {
 
-			grid[ i ] = buffer[ 4 * i + 3 ] > 0.5 ? buffer[ 4 * i ] : NO_DATA;
+			const o = 4 * i;
+			grid[ i ] = buffer[ o + 3 ] > 127 ?
+				minHeight + ( buffer[ o ] * 65536 + buffer[ o + 1 ] * 256 + buffer[ o + 2 ] ) * heightScale :
+				NO_DATA;
 
 		}
 
