@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTAnnotationsDrive: Add support for "sampleCartographicElevation".
 - PriorityQueue: Add support for passing an abort signal for an object.
 - MVTAnnotationsPlugin: Expose "maxSettleTimeMs" and "maxOccupancyUpdateTimeMs" for adjusting processing time.
+- MVTAnnotationsPlugin: Add "horizonCutoff" to trim annotations at a distance.
 
 ### Fixed
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
