@@ -117,6 +117,7 @@ const params = {
 	displayIcons: true,
 	displayPaths: true,
 	horizonCutoff: 0.1,
+	errorFalloff: 0,
 	terrainRGB: false,
 
 	occupancyGrid: false,
@@ -433,6 +434,12 @@ function init() {
 	gui.add( params, 'horizonCutoff', 0, 0.75, 0.01 ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).horizonCutoff = v;
+
+	} );
+	gui.add( params, 'errorFalloff', 0, 50 ).onChange( v => {
+
+		tiles.errorFalloff = v;
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
 	gui.add( params, 'terrainRGB' ).onChange( initTiles );

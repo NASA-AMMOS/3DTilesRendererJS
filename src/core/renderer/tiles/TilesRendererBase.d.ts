@@ -33,6 +33,8 @@ export class TilesRendererBase<TEventMap extends TilesRendererBaseEventMap = Til
 	readonly activeTiles : Set<Tile>;
 
 	errorTarget : number;
+	errorFalloff : number;
+	errorFalloffDensity : number;
 	displayActiveTiles : boolean;
 	maxDepth : number;
 	loadSiblings : boolean;
