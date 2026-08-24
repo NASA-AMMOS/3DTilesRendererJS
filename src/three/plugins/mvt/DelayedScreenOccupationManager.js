@@ -243,9 +243,6 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 				added.delete( item );
 				item.onHidden();
 
-				// reset so hidden items no longer participate in the persistence sort
-				item.visibleDuration = Infinity;
-
 			} else {
 
 				_hideTimers.set( item, next );
@@ -304,9 +301,6 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 			removed.add( item );
 			added.delete( item );
 			item.onHidden();
-
-			// reset so hidden items no longer participate in the persistence sort
-			item.visibleDuration = Infinity;
 
 		}
 
