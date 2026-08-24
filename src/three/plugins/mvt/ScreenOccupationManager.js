@@ -398,11 +398,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 			}
 
 			// sort by the precomputed priorities ( atomic - a single sort can't be sliced )
-			// TODO: temporary, logs the sort timing
-			const sortStart = performance.now();
 			items.sort( sortCompare );
-			const sortTime = performance.now() - sortStart;
-			console.log( `ScreenOccupationManager: sorted ${ items.length } annotations in ${ sortTime.toFixed( 2 ) }ms` );
 
 			if ( this._deadlineExpired() ) {
 
