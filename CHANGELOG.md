@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
 - MVTAnnotationsPlugin: Adjust plugin to prefetch vector tile content.
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom jumping when zooming into different points when using touch.
+- MVTAnnotationsPlugin: Fix case that could stall annotation processing and loading.
 
 ### Changed
 - MVTAnnotationsPlugin: Deprecated `sortAnnotations` function in favor of `getAnnotationRank`.
