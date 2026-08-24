@@ -296,8 +296,7 @@ function subsamplePath( points, spacing ) {
 
 }
 
-// parse a single line feature into line annotations, one per line fragment. "tileBounds" and
-// "range" are the tile's normalized and cartographic bounds from "tiling.getTileBounds"
+// parse a single line feature into line annotations, one per line fragment
 export function parseLineFeature( feature, layerName, level, tileBounds, range, tiling, ellipsoid, target = [] ) {
 
 	// anchor spacing in radians, derived from the fixed real-world distance and the body's radius so
