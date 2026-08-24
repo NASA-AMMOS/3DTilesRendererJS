@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - RasterElevationSamplingPlugin: Add plugin to examples to rasterize tiles to a texture, sample elevations.
 - MVTAnnotationsPlugin: Add preload for MVT content if region bounding volume is available.
 - MVTAnnotationsPlugin: Add support for calling "sampleCartographicElevation" from a plugin to perform a fast altitude fetch.
-- MVTAnnotationsDrive: Add support for "sampleCartographicElevation".
+- MVTAnnotationsDriver: Add support for "sampleCartographicElevation".
 - PriorityQueue: Add support for passing an abort signal for an object.
 - MVTAnnotationsPlugin: Expose "maxSettleTimeMs" and "maxOccupancyUpdateTimeMs" for adjusting processing time.
 - MVTAnnotationsPlugin: Add "horizonCutoff" to trim annotations at a distance.
