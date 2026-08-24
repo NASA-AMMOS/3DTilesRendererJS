@@ -796,8 +796,6 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				vectorTileInfo.set( key, { annotations } );
-
 				// registration runs uninterrupted so a cancellation can't strand partially
 				// registered annotations
 				for ( const ann of annotations ) {
@@ -822,6 +820,10 @@ export class MVTAnnotationsPlugin {
 
 				// add the anchors
 				anchorManager.addLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
+
+				// this MUST happen last with no yields after - the toggle queue cancellation logic
+				// reads this key to tell whether the tile has been fully applied.
+				vectorTileInfo.set( key, { annotations } );
 
 			} else {
 
