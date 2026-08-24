@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PriorityQueue: Add support for passing an abort signal for an object.
 - MVTAnnotationsPlugin: Expose "maxSettleTimeMs" and "maxOccupancyUpdateTimeMs" for adjusting processing time.
 - MVTAnnotationsPlugin: Add "horizonCutoff" to trim annotations at a distance.
+- TileRenderer: Add a set of experimental error falloff parameters.
 
 ### Fixed
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
