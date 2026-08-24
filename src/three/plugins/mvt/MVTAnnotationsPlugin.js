@@ -16,6 +16,9 @@ import { MVTIconGlyphs } from './MVTIconGlyphs.js';
 import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
 import { DeadlineTaskQueue } from './DeadlineTaskQueue.js';
 
+// maximum driver-provided annotation rank in the packed sort value
+const MAX_ANNOTATION_RANK = 4095;
+
 const _matrix = /* @__PURE__ */ new Matrix4();
 
 // provide all meshes in the scene
@@ -514,9 +517,9 @@ export class MVTAnnotationsPlugin {
 			const visible = occupancy.visible.has( item ) ? 0 : 1;
 
 			// user-provided rank
-			const rank = Math.min( Math.max( Math.floor( this.driver.getAnnotationRank( item ) ), 0 ), 4095 );
+			const rank = Math.min( Math.max( Math.floor( this.driver.getAnnotationRank( item ) ), 0 ), MAX_ANNOTATION_RANK );
 
-			return visible * 4096 + rank;
+			return visible * ( MAX_ANNOTATION_RANK + 1 ) + rank;
 
 		};
 
