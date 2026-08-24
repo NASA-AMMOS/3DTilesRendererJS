@@ -1159,7 +1159,7 @@ The string a line / road annotation should display for the given feature.
 ### .isAnnotationEnabled
 
 ```js
-isAnnotationEnabled( properties: Object, type: number ): boolean
+isAnnotationEnabled( layer: string, properties: Object, type: number ): boolean
 ```
 
 Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
@@ -1930,7 +1930,7 @@ texture covering it. The height scale is applied so the result matches the displ
 
 ## TerrariumMeshPlugin
 
-[TerrainRGBMeshPlugin](#terrainrgbmeshplugin) for the Terrarium encoding.
+[TerrainRGBMeshPlugin](TerrainRGBMeshPlugin) for the Terrarium encoding.
 
 
 ## TileCompressionPlugin
