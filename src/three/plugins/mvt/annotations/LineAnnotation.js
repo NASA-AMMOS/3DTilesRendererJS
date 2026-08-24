@@ -8,6 +8,9 @@ const ANCHOR_SPACING_METERS = 500000;
 const _delta = /* @__PURE__ */ new Vector3();
 const _normal = /* @__PURE__ */ new Vector3();
 
+// reused parse buffer holding interleaved x / y sample pairs
+const _subsampledPoints = [];
+
 // Share path annotation used for text anchors
 export class LineAnnotation extends OccupancyAnnotation {
 
@@ -266,14 +269,15 @@ export class LineAnnotation extends OccupancyAnnotation {
 // Densify a polyline in tile coordinate space so no gap between consecutive samples
 // exceeds "spacing", preserving the original vertices. "spacing" is constant in tile
 // space, the geographic sample density scales with the tile's LoD automatically.
-function subsamplePath( points, spacing ) {
+// Writes interleaved x / y pairs into "target" to avoid allocating an object per sample.
+function subsamplePath( points, spacing, target ) {
 
-	const result = [];
+	target.length = 0;
 	for ( let i = 0, l = points.length - 1; i < l; i ++ ) {
 
 		const p0 = points[ i ];
 		const p1 = points[ i + 1 ];
-		result.push( p0 );
+		target.push( p0.x, p0.y );
 
 		const dx = p1.x - p0.x;
 		const dy = p1.y - p0.y;
@@ -282,17 +286,18 @@ function subsamplePath( points, spacing ) {
 		for ( let s = 1; s < steps; s ++ ) {
 
 			const t = s / steps;
-			result.push( {
-				x: MathUtils.lerp( p0.x, p1.x, t ),
-				y: MathUtils.lerp( p0.y, p1.y, t ),
-			} );
+			target.push(
+				MathUtils.lerp( p0.x, p1.x, t ),
+				MathUtils.lerp( p0.y, p1.y, t ),
+			);
 
 		}
 
 	}
 
-	result.push( points[ points.length - 1 ] );
-	return result;
+	const last = points[ points.length - 1 ];
+	target.push( last.x, last.y );
+	return target;
 
 }
 
@@ -307,7 +312,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, ellipsoid
 	const subsampleFraction = 1 / 64;
 	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
-	const { flipY } = tiling;
+	const { flipY, projection } = tiling;
 
 	const range = tiling.getTileBounds( x, y, level, false, false );
 	for ( const layerName in vectorTile.layers ) {
@@ -354,7 +359,7 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, ellipsoid
 
 		for ( const seg of segments ) {
 
-			const subSampledPoints = subsamplePath( seg.points, spacing );
+			const subSampledPoints = subsamplePath( seg.points, spacing, _subsampledPoints );
 
 			// init the annotation
 			const annotation = new LineAnnotation();
@@ -365,11 +370,11 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, ellipsoid
 			annotation.range = range;
 
 			// construct the lat / lon points
-			for ( const point of subSampledPoints ) {
+			for ( let i = 0, l = subSampledPoints.length; i < l; i += 2 ) {
 
 				// tile Y=0 is geographic north; with flipY the V axis increases northward
-				const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
-				const vf = point.y / extent;
+				const u = MathUtils.lerp( tMinX, tMaxX, subSampledPoints[ i ] / extent );
+				const vf = subSampledPoints[ i + 1 ] / extent;
 
 				// TODO: is this not already accounted for in the toCartographicPoint? Is this supposed to
 				// just be ALWAYS true? This seems to be a flip of the internal content rather than the
@@ -378,7 +383,8 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, ellipsoid
 					? MathUtils.lerp( tMaxY, tMinY, vf )
 					: MathUtils.lerp( tMinY, tMaxY, vf );
 
-				const [ lon, lat ] = tiling.toCartographicPoint( u, v );
+				const lon = projection.convertNormalizedToLongitude( u );
+				const lat = projection.convertNormalizedToLatitude( v );
 				annotation.lon.push( lon );
 				annotation.lat.push( lat );
 				annotation.positions.push( new Vector3() );

@@ -13,6 +13,7 @@ const SETTLE_THRESHOLD_BASE_LEVEL = 16;
 
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _hit = /* @__PURE__ */ new Vector3();
+const _hits = [];
 
 // check if the given raycaster intersects the provided frustum shape
 function rayIntersectsFrustum( raycaster, frustum ) {
@@ -224,10 +225,11 @@ export class SettlingManager {
 
 		} else {
 
-			const hits = _raycaster.intersectObject( tiles.group );
-			if ( hits.length > 0 ) {
+			_hits.length = 0;
+			_raycaster.intersectObject( tiles.group, true, _hits );
+			if ( _hits.length > 0 ) {
 
-				_hit.copy( hits[ 0 ].point );
+				_hit.copy( _hits[ 0 ].point );
 				hit = true;
 
 			}

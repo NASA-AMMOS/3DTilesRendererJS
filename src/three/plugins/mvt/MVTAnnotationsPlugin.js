@@ -741,12 +741,14 @@ export class MVTAnnotationsPlugin {
 				parseLineAnnotations( vectorTile, x, y, level, tiling, tiles.ellipsoid, _filterAnnotation, annotations );
 				vectorTileInfo.set( key, { annotations } );
 
+				const lines = [];
 				for ( const ann of annotations ) {
 
 					ann.horizonCutoff = this._horizonCutoff;
 
 					if ( ann instanceof LineAnnotation ) {
 
+						lines.push( ann );
 						settlingManager.register( ann );
 						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
 						ann.text = driver.getText( ann.properties );
@@ -762,17 +764,19 @@ export class MVTAnnotationsPlugin {
 				}
 
 				// add the anchors
-				anchorManager.addLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
+				anchorManager.addLines( lines );
 
 			} else {
 
 				const { annotations } = vectorTileInfo.get( key );
 				vectorTileInfo.delete( key );
 
+				const lines = [];
 				for ( const item of annotations ) {
 
 					if ( item instanceof LineAnnotation ) {
 
+						lines.push( item );
 						settlingManager.unregister( item );
 
 					} else {
@@ -784,7 +788,7 @@ export class MVTAnnotationsPlugin {
 				}
 
 				// remove the anchors
-				anchorManager.deleteLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
+				anchorManager.deleteLines( lines );
 
 			}
 
