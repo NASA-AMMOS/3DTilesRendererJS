@@ -11,19 +11,28 @@ export class DeadlineTaskQueue {
 	constructor() {
 
 		/**
-		 * Called with each item as it comes off the queue.
+		 * Generator function called with each item as it comes off the queue and a function
+		 * reporting whether the time budget is spent, so it can yield to pause until the
+		 * next update.
 		 * @type {Function}
 		 */
-		this.callback = () => {};
+		this.callback = function* () {};
 
 		this.maxUpdateTimeMs = 1;
 
 		this._queue = new Map();
 
+		// key -> in-flight iterator for items paused mid-callback
+		this._tasks = new Map();
+		this._deadline = 0;
+		this._isDeadlineComplete = () => performance.now() >= this._deadline;
+
 	}
 
 	add( key, item ) {
 
+		// drop any in-flight task so the new item is processed from the start
+		this._tasks.delete( key );
 		this._queue.set( key, item );
 
 	}
@@ -31,21 +40,35 @@ export class DeadlineTaskQueue {
 	delete( key ) {
 
 		this._queue.delete( key );
+		this._tasks.delete( key );
 
 	}
 
-	// an item is never interrupted, so one always runs
+	// a task step is never interrupted, so one always runs
 	update( ms = this.maxUpdateTimeMs ) {
 
-		const { _queue, callback } = this;
-		const deadline = performance.now() + ms;
+		const { _queue, _tasks, _isDeadlineComplete } = this;
+		this._deadline = performance.now() + ms;
 
 		for ( const [ key, item ] of _queue ) {
 
-			_queue.delete( key );
-			callback( item );
+			// resume the in-flight task or start a new one
+			let task = _tasks.get( key );
+			if ( ! task ) {
 
-			if ( performance.now() >= deadline ) {
+				task = this.callback( item, _isDeadlineComplete );
+				_tasks.set( key, task );
+
+			}
+
+			if ( task.next().done ) {
+
+				_queue.delete( key );
+				_tasks.delete( key );
+
+			}
+
+			if ( _isDeadlineComplete() ) {
 
 				break;
 
@@ -58,6 +81,7 @@ export class DeadlineTaskQueue {
 	clear() {
 
 		this._queue.clear();
+		this._tasks.clear();
 
 	}
 

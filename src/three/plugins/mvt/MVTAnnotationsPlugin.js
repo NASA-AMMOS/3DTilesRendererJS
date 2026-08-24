@@ -6,9 +6,9 @@ import { SettlingManager } from './SettlingManager.js';
 import { TextAnchorManager } from './TextAnchorManager.js';
 import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
 import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
-import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
+import { LineAnnotation, parseLineFeature } from './annotations/LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
-import { parsePointAnnotations } from './annotations/PointAnnotation.js';
+import { parsePointFeature } from './annotations/PointAnnotation.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
 import { TextAnchorAnnotation } from './annotations/TextAnchorAnnotation.js';
@@ -364,6 +364,23 @@ export class MVTAnnotationsPlugin {
 	}
 
 	/**
+	 * Time budget in milliseconds per frame for parsing toggled vector tiles into annotations.
+	 * @type {number}
+	 * @default 1
+	 */
+	get maxParseTimeMs() {
+
+		return this.toggleTileQueue.maxUpdateTimeMs;
+
+	}
+
+	set maxParseTimeMs( v ) {
+
+		this.toggleTileQueue.maxUpdateTimeMs = v;
+
+	}
+
+	/**
 	 * Hides annotations once `dot( surface normal, direction to camera )` falls below this, removing
 	 * those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
 	 * @type {number}
@@ -709,7 +726,7 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		toggleTileQueue.callback = ( { x, y, level, visible } ) => {
+		toggleTileQueue.callback = function* ( { x, y, level, visible }, isDeadlineComplete ) {
 
 			const {
 				contentCache,
@@ -735,12 +752,52 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				// parse the icon annotations
+				// parse the annotations one feature at a time so each is only decoded once
 				const annotations = [];
-				parsePointAnnotations( vectorTile, x, y, level, tiling, _filterAnnotation, annotations );
-				parseLineAnnotations( vectorTile, x, y, level, tiling, tiles.ellipsoid, _filterAnnotation, annotations );
-				vectorTileInfo.set( key, { annotations } );
+				const tileBounds = tiling.getTileBounds( x, y, level, true, false );
+				const range = tiling.getTileBounds( x, y, level, false, false );
+				for ( const layerName in vectorTile.layers ) {
 
+					const layer = vectorTile.layers[ layerName ];
+					for ( let i = 0; i < layer.length; i ++ ) {
+
+						// pause between features once the time budget is spent
+						if ( isDeadlineComplete() ) {
+
+							yield;
+
+						}
+
+						const feature = layer.feature( i );
+						const { type } = feature;
+						if ( type !== 1 && type !== 2 ) {
+
+							continue;
+
+						}
+
+						if ( ! _filterAnnotation( layerName, feature.properties, type ) ) {
+
+							continue;
+
+						}
+
+						if ( type === 1 ) {
+
+							parsePointFeature( feature, layerName, level, tileBounds, tiling, annotations );
+
+						} else {
+
+							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, annotations );
+
+						}
+
+					}
+
+				}
+
+				// registration runs uninterrupted so a cancellation can't strand partially
+				// registered annotations
 				const lines = [];
 				for ( const ann of annotations ) {
 
@@ -765,6 +822,10 @@ export class MVTAnnotationsPlugin {
 
 				// add the anchors
 				anchorManager.addLines( lines );
+
+				// this MUST happen last with no yields after - the toggle queue cancellation logic
+				// reads this key to tell whether the tile has been fully applied.
+				vectorTileInfo.set( key, { annotations } );
 
 			} else {
 
@@ -792,7 +853,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-		};
+		}.bind( this );
 
 		// register events
 		hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );

@@ -546,6 +546,31 @@ export class TilesRendererBase {
 		this.errorTarget = 16.0;
 
 		/**
+		 * Maximum screen-space error in pixels subtracted from distant tiles. Set to 0 to disable.
+		 * Comparable to Cesium's "dynamicScreenSpaceError" settings.
+		 *
+		 * `error -= errorFalloff * ( 1 - e ^ -( distance * errorFalloffDensity )² )`
+		 *
+		 * > [!WARN]
+		 * > Experimental and may change.
+		 * @type {number}
+		 * @default 0
+		 */
+		this.errorFalloff = 0;
+
+		/**
+		 * Distance scale for the "errorFalloff" curve, in inverse meters. Larger values affect
+		 * tiles closer to the camera.
+		 * Comparable to Cesium's "dynamicScreenSpaceError" settings.
+		 *
+		 * > [!WARN]
+		 * > Experimental and may change.
+		 * @type {number}
+		 * @default 2e-4
+		 */
+		this.errorFalloffDensity = 2e-4;
+
+		/**
 		 * "Active tiles" are those that are loaded and available but not necessarily visible.
 		 * These tiles are useful for raycasting off-camera or for casting shadows. Active tiles
 		 * not currently in a camera frustum are removed from the scene as an optimization.
@@ -940,6 +965,17 @@ export class TilesRendererBase {
 
 		// calculate camera view error
 		this.calculateTileViewError( tile, target );
+
+		// reduce the error of distant tiles along a fog-style curve so they refine less
+		// aggressively, mirroring Cesium's "dynamicScreenSpaceError" behavior
+		// TODO: this uses the aggregated error and distance rather than per-camera / volume values
+		const { errorFalloff, errorFalloffDensity } = this;
+		if ( errorFalloff > 0 && Number.isFinite( target.distanceFromCamera ) ) {
+
+			const falloff = target.distanceFromCamera * errorFalloffDensity;
+			target.error -= errorFalloff * ( 1 - Math.exp( - falloff * falloff ) );
+
+		}
 
 		// TODO: this logic is extremely complex. It may be more simple to have the plugin
 		// return a "should mask" field that indicates its "false" values should be respected

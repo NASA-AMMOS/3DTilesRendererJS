@@ -949,6 +949,35 @@ not render if they are below this level of screen-space error. See the
 of the 3D Tiles specification for more information.
 
 
+### .errorFalloff
+
+```js
+errorFalloff: number = 0
+```
+
+Maximum screen-space error in pixels subtracted from distant tiles. Set to 0 to disable.
+Comparable to Cesium's "dynamicScreenSpaceError" settings.
+
+`error -= errorFalloff * ( 1 - e ^ -( distance * errorFalloffDensity )² )`
+
+> [!WARN]
+> Experimental and may change.
+
+
+### .errorFalloffDensity
+
+```js
+errorFalloffDensity: number = 2e-4
+```
+
+Distance scale for the "errorFalloff" curve, in inverse meters. Larger values affect
+tiles closer to the camera.
+Comparable to Cesium's "dynamicScreenSpaceError" settings.
+
+> [!WARN]
+> Experimental and may change.
+
+
 ### .displayActiveTiles
 
 ```js

@@ -46,6 +46,7 @@ const params = {
 	useFadePlugin: true,
 	displayTopoLines: false,
 	errorTarget: 20,
+	errorFalloff: 0,
 
 	reload: reinstantiateTiles,
 
@@ -184,6 +185,11 @@ function init() {
 	mapsOptions.add( params, 'loadAncestors' ).listen();
 	mapsOptions.add( params, 'loadSiblings' ).listen();
 	mapsOptions.add( params, 'errorTarget', 5, 100, 1 ).onChange( () => {
+
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+	mapsOptions.add( params, 'errorFalloff', 0, 50 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
@@ -368,6 +374,7 @@ function animate() {
 	// update tiles
 	camera.updateMatrixWorld();
 	tiles.errorTarget = params.errorTarget;
+	tiles.errorFalloff = params.errorFalloff;
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.loadAncestors = params.loadAncestors;
 	tiles.update();
