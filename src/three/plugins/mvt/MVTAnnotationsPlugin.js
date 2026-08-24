@@ -506,8 +506,9 @@ export class MVTAnnotationsPlugin {
 
 		// init occupancy
 		// pack the sort priorities into a single value so the sort is a cheap numeric comparison:
-		// visible(1) + rank(12) + lod(5) + persistence(13) + screenY(12) = 43 bits
-		occupancy.sortCallback = item => {
+		// visible(1) + rank(12) = 13 bits. Ties fall through to the occupation manager's built-in
+		// comparisons
+		occupancy.sortValueCallback = item => {
 
 			// currently visible items are prioritized first
 			const visible = occupancy.visible.has( item ) ? 0 : 1;
@@ -515,18 +516,7 @@ export class MVTAnnotationsPlugin {
 			// user-provided rank
 			const rank = Math.min( Math.max( Math.floor( this.driver.getAnnotationRank( item ) ), 0 ), 4095 );
 
-			// higher lods are placed first
-			const lod = 31 - Math.min( Math.max( item.lodLevel, 0 ), 31 );
-
-			// items displayed earlier are placed first for visual stability, with items displayed
-			// over 5 seconds ago treated equally
-			const duration = item.visibleDuration;
-			const persistence = visible === 0 && duration < 5000 ? Math.ceil( 5000 - duration ) : 0;
-
-			// items lower on the screen are placed first
-			const screenY = 4095 - Math.min( Math.max( Math.floor( 4096 * item.screenPos.y / occupancy.resolution.height ), 0 ), 4095 );
-
-			return ( ( ( visible * 4096 + rank ) * 32 + lod ) * 8192 + persistence ) * 4096 + screenY;
+			return visible * 4096 + rank;
 
 		};
 
