@@ -364,6 +364,23 @@ export class MVTAnnotationsPlugin {
 	}
 
 	/**
+	 * Time budget in milliseconds per frame for parsing toggled vector tiles into annotations.
+	 * @type {number}
+	 * @default 1
+	 */
+	get maxParseTimeMs() {
+
+		return this.toggleTileQueue.maxUpdateTimeMs;
+
+	}
+
+	set maxParseTimeMs( v ) {
+
+		this.toggleTileQueue.maxUpdateTimeMs = v;
+
+	}
+
+	/**
 	 * Hides annotations once `dot( surface normal, direction to camera )` falls below this, removing
 	 * those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
 	 * @type {number}
