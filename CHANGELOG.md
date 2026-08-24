@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TileRenderer: Add a set of experimental error falloff parameters.
 - MVTAnnotationsPlugin: Spread tile annotation parsing out among multiple frames with an exposed "maxParseTimeMs" setting.
 - MVTAnnotationsPlugin: Add a `getAnnotationRank` in place of `sortAnnotations`
+- MVTAnnotationsPlugin: Add a `useIdleCallback` option.
 
 ### Fixed
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
