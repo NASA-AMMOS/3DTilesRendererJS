@@ -1930,7 +1930,7 @@ texture covering it. The height scale is applied so the result matches the displ
 
 ## TerrariumMeshPlugin
 
-[TerrainRGBMeshPlugin](TerrainRGBMeshPlugin) for the Terrarium encoding.
+[TerrainRGBMeshPlugin](#terrainrgbmeshplugin) for the Terrarium encoding.
 
 
 ## TileCompressionPlugin
