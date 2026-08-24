@@ -17,12 +17,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTAnnotationsPlugin: Add "horizonCutoff" to trim annotations at a distance.
 - TileRenderer: Add a set of experimental error falloff parameters.
 - MVTAnnotationsPlugin: Spread tile annotation parsing out among multiple frames with an exposed "maxParseTimeMs" setting.
+- MVTAnnotationsPlugin: Add a `getAnnotationRank` in place of `sortAnnotations`
 
 ### Fixed
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
 - GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
 - MVTAnnotationsPlugin: Adjust plugin to prefetch vector tile content.
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom jumping when zooming into different points when using touch.
+
+### Changed
+- MVTAnnotationsPlugin: Deprecated `sortAnnotations` function in favor of `getAnnotationRank`.
 
 ## [0.5.1] - 2026.08.07
 ### Added
