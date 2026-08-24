@@ -28,9 +28,13 @@ function sortCompare( a, b ) {
 
 		return a.visibleTime < b.visibleTime ? - 1 : 1;
 
-	} else {
+	} else if ( b.screenPos.y !== a.screenPos.y ) {
 
 		return b.screenPos.y - a.screenPos.y;
+
+	} else {
+
+		return a.id > b.id ? 1 : - 1;
 
 	}
 

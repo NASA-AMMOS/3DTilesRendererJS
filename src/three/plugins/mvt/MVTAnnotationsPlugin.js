@@ -505,9 +505,9 @@ export class MVTAnnotationsPlugin {
 		}
 
 		// init occupancy
-		// pack the sort priorities into a single value so the sort is a cheap numeric comparison:
-		// visible(1) + rank(12) = 13 bits. Ties fall through to the occupation manager's built-in
-		// comparisons
+		// pack the sort priorities into a single value so the sort is a cheap numeric comparison.
+		// TODO: The visibility flag and rank could be pre-assigned so this could just be converted to
+		// a simple comparison cascade rather than a packed value.
 		occupancy.sortValueCallback = item => {
 
 			// currently visible items are prioritized first
