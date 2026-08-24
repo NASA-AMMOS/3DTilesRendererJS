@@ -709,7 +709,7 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		toggleTileQueue.callback = ( { x, y, level, visible } ) => {
+		toggleTileQueue.callback = function* ( { x, y, level, visible }, isDeadlineComplete ) {
 
 			const {
 				contentCache,
@@ -744,6 +744,13 @@ export class MVTAnnotationsPlugin {
 					const layer = vectorTile.layers[ layerName ];
 					for ( let i = 0; i < layer.length; i ++ ) {
 
+						// pause between features once the time budget is spent
+						if ( isDeadlineComplete() ) {
+
+							yield;
+
+						}
+
 						const feature = layer.feature( i );
 						const { type } = feature;
 						if ( type !== 1 && type !== 2 ) {
@@ -774,6 +781,8 @@ export class MVTAnnotationsPlugin {
 
 				vectorTileInfo.set( key, { annotations } );
 
+				// registration runs uninterrupted so a cancellation can't strand partially
+				// registered annotations
 				for ( const ann of annotations ) {
 
 					ann.horizonCutoff = this._horizonCutoff;
@@ -821,7 +830,7 @@ export class MVTAnnotationsPlugin {
 
 			}
 
-		};
+		}.bind( this );
 
 		// register events
 		hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
