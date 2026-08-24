@@ -134,7 +134,7 @@ export class MVTAnnotationsDriver {
 	 * @param {Object} annotation - The annotation to prioritize.
 	 * @returns {number} The placement priority.
 	 */
-	sortAnnotations( annotation ) {
+	getAnnotationRank( annotation ) {
 
 		return annotation.properties[ 'rank' ] ?? Infinity;
 
@@ -497,6 +497,13 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		// TODO: remove after a deprecation period
+		if ( this.driver.sortAnnotations ) {
+
+			console.warn( 'MVTAnnotationsDriver: "sortAnnotations" has been deprecated. Implement "getAnnotationRank" instead.' );
+
+		}
+
 		// init occupancy
 		// pack the sort priorities into a single value so the sort is a cheap numeric comparison:
 		// visible(1) + rank(12) + lod(5) + persistence(13) + screenY(12) = 43 bits
@@ -506,7 +513,7 @@ export class MVTAnnotationsPlugin {
 			const visible = occupancy.visible.has( item ) ? 0 : 1;
 
 			// user-provided rank
-			const rank = Math.min( Math.max( Math.floor( this.driver.sortAnnotations( item ) ), 0 ), 4095 );
+			const rank = Math.min( Math.max( Math.floor( this.driver.getAnnotationRank( item ) ), 0 ), 4095 );
 
 			// higher lods are placed first
 			const lod = 31 - Math.min( Math.max( item.lodLevel, 0 ), 31 );
