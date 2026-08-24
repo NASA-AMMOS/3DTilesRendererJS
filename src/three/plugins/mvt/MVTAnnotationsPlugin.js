@@ -129,17 +129,14 @@ export class MVTAnnotationsDriver {
 	}
 
 	/**
-	 * Relative placement priority between two annotations, following the `Array.prototype.sort`
-	 * contract. Lower values sort first, are placed first, and win collisions.
-	 * @param {Object} a - The first annotation.
-	 * @param {Object} b - The second annotation.
-	 * @returns {number} Negative if `a` precedes `b`, positive if it follows, `0` if equal.
+	 * Placement priority for an annotation. Lower values are placed first and win collisions.
+	 * Values are clamped to the [ 0, 4095 ] integer range.
+	 * @param {Object} annotation - The annotation to prioritize.
+	 * @returns {number} The placement priority.
 	 */
-	sortAnnotations( a, b ) {
+	getAnnotationRank( annotation ) {
 
-		const rankA = a.properties[ 'rank' ] ?? 1e10;
-		const rankB = b.properties[ 'rank' ] ?? 1e10;
-		return rankA - rankB;
+		return annotation.properties[ 'rank' ] ?? Infinity;
 
 	}
 
@@ -500,49 +497,26 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		// TODO: remove after a deprecation period
+		if ( this.driver.sortAnnotations ) {
+
+			console.warn( 'MVTAnnotationsDriver: "sortAnnotations" has been deprecated. Implement "getAnnotationRank" instead.' );
+
+		}
+
 		// init occupancy
-		occupancy.sortCallback = ( a, b ) => {
+		// pack the sort priorities into a single value so the sort is a cheap numeric comparison.
+		// TODO: The visibility flag and rank could be pre-assigned so this could just be converted to
+		// a simple comparison cascade rather than a packed value.
+		occupancy.sortValueCallback = item => {
 
-			// visibility is prioritized first
-			const aVis = occupancy.visible.has( a );
-			const bVis = occupancy.visible.has( b );
-			if ( aVis !== bVis ) {
+			// currently visible items are prioritized first
+			const visible = occupancy.visible.has( item ) ? 0 : 1;
 
-				return aVis ? - 1 : 1;
+			// user-provided rank
+			const rank = Math.min( Math.max( Math.floor( this.driver.getAnnotationRank( item ) ), 0 ), 4095 );
 
-			}
-
-			const sort = this.driver.sortAnnotations( a, b );
-			if ( sort !== 0 ) {
-
-				// user sort
-				return sort;
-
-			} else if ( a.lodLevel !== b.lodLevel ) {
-
-				// lod sort
-				return b.lodLevel - a.lodLevel;
-
-			}
-
-			// if both items have been around for awhile (5 seconds) then just
-			// just fall through to other sort mechanisms.
-			const shortDuration = a.visibleDuration < 5000 || b.visibleDuration < 5000;
-			if ( aVis && shortDuration && a.visibleTime !== b.visibleTime ) {
-
-				// persistence sort for visual stability
-				return a.visibleTime < b.visibleTime ? - 1 : 1;
-
-			} else if ( b.screenPos.y !== a.screenPos.y ) {
-
-				// distance up the screen
-				return b.screenPos.y - a.screenPos.y;
-
-			} else {
-
-				return a.id > b.id ? 1 : - 1;
-
-			}
+			return visible * 4096 + rank;
 
 		};
 

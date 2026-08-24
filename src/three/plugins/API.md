@@ -1128,14 +1128,14 @@ filterAnnotation( layer: string, properties: Object, type: number ): boolean
 Whether an MVT feature should be included as an annotation.
 
 
-### .sortAnnotations
+### .getAnnotationRank
 
 ```js
-sortAnnotations( a: Object, b: Object ): number
+getAnnotationRank( annotation: Object ): number
 ```
 
-Relative placement priority between two annotations, following the `Array.prototype.sort`
-contract. Lower values sort first, are placed first, and win collisions.
+Placement priority for an annotation. Lower values are placed first and win collisions.
+Values are clamped to the [ 0, 4095 ] integer range.
 
 
 ### .measureChar
