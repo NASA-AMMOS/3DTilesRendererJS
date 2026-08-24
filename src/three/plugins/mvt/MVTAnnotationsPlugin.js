@@ -669,6 +669,11 @@ export class MVTAnnotationsPlugin {
 					this._idleCallbackHandle = requestIdleCallback( deadline => {
 
 						this._idleCallbackHandle = - 1;
+
+						// mark the occupancy manager as needing an update if there is settling work to
+						// be done.
+						occupancy.needsUpdate = occupancy.needsUpdate || settlingManager.hasPendingWork;
+
 						toggleTileQueue.update( deadline.timeRemaining() * 0.9 );
 						settlingManager.update( deadline.timeRemaining() * 0.9 );
 						occupancy.update( deadline.timeRemaining() * 0.9 );
