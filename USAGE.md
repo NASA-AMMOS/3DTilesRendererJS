@@ -106,7 +106,7 @@ scene.add( tilesRenderer2.group );
 
 ## Adding DRACO Decompression Support
 
-Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures. Alternatively the [GLTFExtensionsPlugin](./src/plugins/README.md#gltfextensionsplugin) can be used to simplify the setup.
+Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures. Alternatively the [GLTFExtensionsPlugin](./src/three/plugins/API.md#gltfextensionsplugin) can be used to simplify the setup.
 
 ```js
 
