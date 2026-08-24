@@ -296,8 +296,9 @@ function subsamplePath( points, spacing ) {
 
 }
 
-// parse a single line feature into line annotations, one per line fragment
-export function parseLineFeature( feature, layerName, x, y, level, tiling, ellipsoid, target = [] ) {
+// parse a single line feature into line annotations, one per line fragment. "tileBounds" and
+// "range" are the tile's normalized and cartographic bounds from "tiling.getTileBounds"
+export function parseLineFeature( feature, layerName, level, tileBounds, range, tiling, ellipsoid, target = [] ) {
 
 	// anchor spacing in radians, derived from the fixed real-world distance and the body's radius so
 	// density tracks real-world length independent of the ellipsoid.
@@ -305,10 +306,9 @@ export function parseLineFeature( feature, layerName, x, y, level, tiling, ellip
 	// tile width below
 	const anchorSpacing = ANCHOR_SPACING_METERS / ellipsoid.radius.x;
 	const subsampleFraction = 1 / 64;
-	const [ tMinX, tMinY, tMaxX, tMaxY ] = tiling.getTileBounds( x, y, level, true, false );
+	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 	const { flipY } = tiling;
 
-	const range = tiling.getTileBounds( x, y, level, false, false );
 	const extent = feature.extent;
 	const spacing = extent * subsampleFraction;
 

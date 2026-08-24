@@ -84,9 +84,9 @@ export class PointAnnotation extends OccupancyAnnotation {
 }
 
 // parse a single point feature into point annotations
-export function parsePointFeature( feature, layerName, x, y, level, tiling, target = [] ) {
+export function parsePointFeature( feature, layerName, level, tileBounds, tiling, target = [] ) {
 
-	const [ tMinX, tMinY, tMaxX, tMaxY ] = tiling.getTileBounds( x, y, level, true, false );
+	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 	const extent = feature.extent;
 
 	// retrieve the geometry
