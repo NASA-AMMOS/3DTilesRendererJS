@@ -1159,7 +1159,7 @@ The string a line / road annotation should display for the given feature.
 ### .isAnnotationEnabled
 
 ```js
-isAnnotationEnabled( properties: Object, type: number ): boolean
+isAnnotationEnabled( layer: string, properties: Object, type: number ): boolean
 ```
 
 Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
@@ -1220,6 +1220,15 @@ maxOccupancyUpdateTimeMs: number = 0.5
 ```
 
 Time budget in milliseconds per frame for the sliced occupancy layout pass.
+
+
+### .maxParseTimeMs
+
+```js
+maxParseTimeMs: number = 1
+```
+
+Time budget in milliseconds per frame for parsing toggled vector tiles into annotations.
 
 
 ### .horizonCutoff

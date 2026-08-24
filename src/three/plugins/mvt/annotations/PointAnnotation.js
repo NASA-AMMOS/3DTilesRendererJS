@@ -83,60 +83,38 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 }
 
-export function parsePointAnnotations( vectorTile, x, y, level, tiling, filter, target = [] ) {
+// parse a single point feature into point annotations
+export function parsePointFeature( feature, layerName, level, tileBounds, tiling, target = [] ) {
 
-	const [ tMinX, tMinY, tMaxX, tMaxY ] = tiling.getTileBounds( x, y, level, true, false );
-	for ( const layerName in vectorTile.layers ) {
+	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
+	const extent = feature.extent;
 
-		const layer = vectorTile.layers[ layerName ];
-		const extent = layer.extent;
+	// retrieve the geometry
+	const geometry = feature.loadGeometry();
+	for ( const [ point ] of geometry ) {
 
-		for ( let i = 0; i < layer.length; i ++ ) {
+		const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
+		// tile Y=0 is geographic north; with flipY the V axis increases northward
+		// so we invert vf when flipY is set
+		const vf = point.y / extent;
+		const v = tiling.flipY
+			? MathUtils.lerp( tMaxY, tMinY, vf )
+			: MathUtils.lerp( tMinY, tMaxY, vf );
 
-			// process only points
-			const feature = layer.feature( i );
-			if ( feature.type !== 1 ) {
+		const [ lon, lat ] = tiling.toCartographicPoint( u, v );
 
-				continue;
+		const item = new PointAnnotation();
+		// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
+		// across all zoom levels — stable and unique for cross-LoD annotation replacement.
+		// TODO: is this id always guaranteed to be unique and consistent across LoDs?
+		item.id = `${ layerName }:${ feature.id }`;
+		item.layer = layerName;
+		item.properties = feature.properties;
+		item.lat = lat;
+		item.lon = lon;
+		item.lodLevel = level;
 
-			}
-
-			if ( ! filter( layerName, feature.properties, feature.type ) ) {
-
-				continue;
-
-			}
-
-			// retrieve the geometry
-			const geometry = feature.loadGeometry();
-			for ( const [ point ] of geometry ) {
-
-				const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
-				// tile Y=0 is geographic north; with flipY the V axis increases northward
-				// so we invert vf when flipY is set
-				const vf = point.y / extent;
-				const v = tiling.flipY
-					? MathUtils.lerp( tMaxY, tMinY, vf )
-					: MathUtils.lerp( tMinY, tMaxY, vf );
-
-				const [ lon, lat ] = tiling.toCartographicPoint( u, v );
-
-				const item = new PointAnnotation();
-				// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
-				// across all zoom levels — stable and unique for cross-LoD annotation replacement.
-				// TODO: is this id always guaranteed to be unique and consistent across LoDs?
-				item.id = `${ layerName }:${ feature.id }`;
-				item.layer = layerName;
-				item.properties = feature.properties;
-				item.lat = lat;
-				item.lon = lon;
-				item.lodLevel = level;
-
-				target.push( item );
-
-			}
-
-		}
+		target.push( item );
 
 	}
 
