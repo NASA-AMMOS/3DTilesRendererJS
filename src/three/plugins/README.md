@@ -4,7 +4,7 @@ Plugins and extensions for the 3D Tiles renderer.
 
 See the [API reference](./API.md) for full class and method documentation.
 
-# Community Plugins
+# Community Plugins & Integrations
 
 #### [3D-Tiles-RendererJS-3DGS-Plugin](https://github.com/WilliamLiu-1997/3D-Tiles-RendererJS-3DGS-Plugin)
 
@@ -17,6 +17,10 @@ Plugin to add Cesium 3D Tiles Styling specification support.
 #### [3dtilesrenderer-outline-plugin](https://github.com/bertt/3dtilesrenderer-outline-plugin)
 
 Plugin to add support for `CESIUM_primitive_outline` glTF extension.
+
+#### [maplibre-gl-3d-tiles](https://github.com/opengeos/maplibre-gl-3d-tiles)
+
+Package for integrating 3d-tiles-renderer with MapLibre.
 
 # Use
 
