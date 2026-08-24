@@ -87,6 +87,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 export function parsePointFeature( feature, layerName, level, tileBounds, tiling, target = [] ) {
 
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
+	const { projection } = tiling;
 	const extent = feature.extent;
 
 	// retrieve the geometry
@@ -101,7 +102,8 @@ export function parsePointFeature( feature, layerName, level, tileBounds, tiling
 			? MathUtils.lerp( tMaxY, tMinY, vf )
 			: MathUtils.lerp( tMinY, tMaxY, vf );
 
-		const [ lon, lat ] = tiling.toCartographicPoint( u, v );
+		const lon = projection.convertNormalizedToLongitude( u );
+		const lat = projection.convertNormalizedToLatitude( v );
 
 		const item = new PointAnnotation();
 		// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler

@@ -798,12 +798,14 @@ export class MVTAnnotationsPlugin {
 
 				// registration runs uninterrupted so a cancellation can't strand partially
 				// registered annotations
+				const lines = [];
 				for ( const ann of annotations ) {
 
 					ann.horizonCutoff = this._horizonCutoff;
 
 					if ( ann instanceof LineAnnotation ) {
 
+						lines.push( ann );
 						settlingManager.register( ann );
 						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
 						ann.text = driver.getText( ann.properties );
@@ -819,7 +821,7 @@ export class MVTAnnotationsPlugin {
 				}
 
 				// add the anchors
-				anchorManager.addLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
+				anchorManager.addLines( lines );
 
 				// this MUST happen last with no yields after - the toggle queue cancellation logic
 				// reads this key to tell whether the tile has been fully applied.
@@ -830,10 +832,12 @@ export class MVTAnnotationsPlugin {
 				const { annotations } = vectorTileInfo.get( key );
 				vectorTileInfo.delete( key );
 
+				const lines = [];
 				for ( const item of annotations ) {
 
 					if ( item instanceof LineAnnotation ) {
 
+						lines.push( item );
 						settlingManager.unregister( item );
 
 					} else {
@@ -845,7 +849,7 @@ export class MVTAnnotationsPlugin {
 				}
 
 				// remove the anchors
-				anchorManager.deleteLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
+				anchorManager.deleteLines( lines );
 
 			}
 
