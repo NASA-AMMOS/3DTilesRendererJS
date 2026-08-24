@@ -31,6 +31,9 @@ export class OccupancyAnnotation {
 		// screen pos used for sorting
 		this.screenPos = new Vector3();
 
+		// packed sort priority computed by the manager's sortCallback, lower placed first
+		this.sortValue = 0;
+
 		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
 		this.visible = false;
@@ -143,6 +146,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			},
 		};
+		// returns a numeric sort priority for an item, lower placed first
 		this.sortCallback = () => 0;
 
 	}
@@ -342,13 +346,14 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			}
 
-			// transform items to screen space
+			// transform items to screen space and compute their sort priorities
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 				const item = items[ i ];
 				if ( item.enabled ) {
 
 					item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
+					item.sortValue = sortCallback( item );
 
 				}
 
@@ -361,8 +366,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			}
 
-			// sort the items ( atomic - a single sort can't be sliced )
-			items.sort( sortCallback );
+			// sort by the precomputed priorities ( atomic - a single sort can't be sliced )
+			items.sort( ( a, b ) => a.sortValue - b.sortValue );
 
 			if ( this._deadlineExpired() ) {
 
