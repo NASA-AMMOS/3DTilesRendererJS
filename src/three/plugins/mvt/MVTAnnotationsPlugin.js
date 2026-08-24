@@ -424,6 +424,7 @@ export class MVTAnnotationsPlugin {
 			driver = new DefaultMVTAnnotationsDriver(),
 			resolution = 50,
 			horizonCutoff = 0.1,
+			useIdleCallback = true,
 		} = options;
 
 		// user settings
@@ -432,6 +433,14 @@ export class MVTAnnotationsPlugin {
 		this.driver = driver;
 		this.resolution = resolution;
 		this._horizonCutoff = horizonCutoff;
+
+		/**
+		 * Whether pending annotation work is additionally processed in idle callbacks between frames.
+		 * @type {boolean}
+		 * @default true
+		 */
+		this.useIdleCallback = useIdleCallback;
+		this._idleCallbackHandle = - 1;
 
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
@@ -651,17 +660,22 @@ export class MVTAnnotationsPlugin {
 			occupancy.reset();
 
 			// if there's more work required the fire that we need to run during a subsequent frame and
-			// try to run during an idle callback.
+			// try to run during an idle callback, queueing at most one at a time.
 			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork || toggleTileQueue.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
-				requestIdleCallback( deadline => {
+				if ( this.useIdleCallback && this._idleCallbackHandle === - 1 ) {
 
-					toggleTileQueue.update( deadline.timeRemaining() * 0.9 );
-					settlingManager.update( deadline.timeRemaining() * 0.9 );
-					occupancy.update( deadline.timeRemaining() * 0.9 );
+					this._idleCallbackHandle = requestIdleCallback( deadline => {
 
-				} );
+						this._idleCallbackHandle = - 1;
+						toggleTileQueue.update( deadline.timeRemaining() * 0.9 );
+						settlingManager.update( deadline.timeRemaining() * 0.9 );
+						occupancy.update( deadline.timeRemaining() * 0.9 );
+
+					} );
+
+				}
 
 			}
 
@@ -883,6 +897,14 @@ export class MVTAnnotationsPlugin {
 		} );
 
 		toggleTileQueue.clear();
+
+		// cancel any pending idle callback so it can't run against the disposed plugin
+		if ( this._idleCallbackHandle !== - 1 ) {
+
+			cancelIdleCallback( this._idleCallbackHandle );
+			this._idleCallbackHandle = - 1;
+
+		}
 
 		// release the cached elevation sampling plugin
 		settlingManager.elevationSource = null;

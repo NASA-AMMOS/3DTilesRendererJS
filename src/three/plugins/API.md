@@ -1241,6 +1241,15 @@ Hides annotations once `dot( surface normal, direction to camera )` falls below 
 those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
 
 
+### .useIdleCallback
+
+```js
+useIdleCallback: boolean = true
+```
+
+Whether pending annotation work is additionally processed in idle callbacks between frames.
+
+
 ### .constructor
 
 ```js
