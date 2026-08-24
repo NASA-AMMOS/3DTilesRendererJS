@@ -6,9 +6,9 @@ import { SettlingManager } from './SettlingManager.js';
 import { TextAnchorManager } from './TextAnchorManager.js';
 import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
 import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
-import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
+import { LineAnnotation, parseLineFeature } from './annotations/LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
-import { parsePointAnnotations } from './annotations/PointAnnotation.js';
+import { parsePointFeature } from './annotations/PointAnnotation.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
 import { TextAnchorAnnotation } from './annotations/TextAnchorAnnotation.js';
@@ -735,10 +735,44 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				// parse the icon annotations
+				// parse the annotations in a single pass so each feature is only decoded once,
+				// one feature at a time so the work can be sliced in the future
 				const annotations = [];
-				parsePointAnnotations( vectorTile, x, y, level, tiling, _filterAnnotation, annotations );
-				parseLineAnnotations( vectorTile, x, y, level, tiling, tiles.ellipsoid, _filterAnnotation, annotations );
+				for ( const layerName in vectorTile.layers ) {
+
+					const layer = vectorTile.layers[ layerName ];
+					for ( let i = 0; i < layer.length; i ++ ) {
+
+						const feature = layer.feature( i );
+						const { type } = feature;
+
+						// process only point and line features that match the filter
+						if ( type !== 1 && type !== 2 ) {
+
+							continue;
+
+						}
+
+						if ( ! _filterAnnotation( layerName, feature.properties, type ) ) {
+
+							continue;
+
+						}
+
+						if ( type === 1 ) {
+
+							parsePointFeature( feature, layerName, x, y, level, tiling, annotations );
+
+						} else {
+
+							parseLineFeature( feature, layerName, x, y, level, tiling, tiles.ellipsoid, annotations );
+
+						}
+
+					}
+
+				}
+
 				vectorTileInfo.set( key, { annotations } );
 
 				for ( const ann of annotations ) {
