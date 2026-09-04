@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTAnnotationsPlugin: Add a `useIdleCallback` option.
 
 ### Fixed
+- TilesRenderer, TilesFadePlugin: Keep fading-out tiles parented to the tiles renderer group until they are hidden.
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
 - GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
 - MVTAnnotationsPlugin: Adjust plugin to prefetch vector tile content.
