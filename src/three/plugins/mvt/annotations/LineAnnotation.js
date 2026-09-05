@@ -5,6 +5,12 @@ import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 // the body's radius so anchor density tracks real-world length on any ellipsoid.
 const ANCHOR_SPACING_METERS = 500000;
 
+const _delta = /* @__PURE__ */ new Vector3();
+const _normal = /* @__PURE__ */ new Vector3();
+
+// reused parse buffer holding interleaved x / y sample pairs
+const _subsampledPoints = [];
+
 // Share path annotation used for text anchors
 export class LineAnnotation extends OccupancyAnnotation {
 
@@ -48,6 +54,9 @@ export class LineAnnotation extends OccupancyAnnotation {
 		// screen positions, cumulative length used for calculating text layout
 		this.screenPositions = [];
 		this.cumulativeLen = [];
+
+		// per-sample dot( surface normal, direction to camera )
+		this.facingRatios = [];
 
 		// cache variables
 		this.cachedMatrix = new Matrix4();
@@ -97,6 +106,9 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		}
 
+		const { facingRatios } = this;
+		facingRatios.length = screenPositions.length;
+
 		for ( let i = 0, l = screenPositions.length; i < l; i ++ ) {
 
 			const position = positions[ i ];
@@ -109,6 +121,20 @@ export class LineAnnotation extends OccupancyAnnotation {
 			screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
 			screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 			screenPos.z = MathUtils.mapLinear( screenPos.z, - 1, 1, 0, 1 );
+
+			// the sample sits on the surface, so its direction from the body center stands in for
+			// the normal. Matches the approximation in PointAnnotation.
+			if ( cameraPosition !== null && position.lengthSq() > 0 ) {
+
+				_delta.subVectors( cameraPosition, position ).normalize();
+				_normal.copy( position ).normalize();
+				facingRatios[ i ] = _normal.dot( _delta );
+
+			} else {
+
+				facingRatios[ i ] = 1;
+
+			}
 
 		}
 
@@ -243,14 +269,15 @@ export class LineAnnotation extends OccupancyAnnotation {
 // Densify a polyline in tile coordinate space so no gap between consecutive samples
 // exceeds "spacing", preserving the original vertices. "spacing" is constant in tile
 // space, the geographic sample density scales with the tile's LoD automatically.
-function subsamplePath( points, spacing ) {
+// Writes interleaved x / y pairs into "target" to avoid allocating an object per sample.
+function subsamplePath( points, spacing, target ) {
 
-	const result = [];
+	target.length = 0;
 	for ( let i = 0, l = points.length - 1; i < l; i ++ ) {
 
 		const p0 = points[ i ];
 		const p1 = points[ i + 1 ];
-		result.push( p0 );
+		target.push( p0.x, p0.y );
 
 		const dx = p1.x - p0.x;
 		const dy = p1.y - p0.y;
@@ -259,22 +286,23 @@ function subsamplePath( points, spacing ) {
 		for ( let s = 1; s < steps; s ++ ) {
 
 			const t = s / steps;
-			result.push( {
-				x: MathUtils.lerp( p0.x, p1.x, t ),
-				y: MathUtils.lerp( p0.y, p1.y, t ),
-			} );
+			target.push(
+				MathUtils.lerp( p0.x, p1.x, t ),
+				MathUtils.lerp( p0.y, p1.y, t ),
+			);
 
 		}
 
 	}
 
-	result.push( points[ points.length - 1 ] );
-	return result;
+	const last = points[ points.length - 1 ];
+	target.push( last.x, last.y );
+	return target;
 
 }
 
-// parse the vector tile geometry into line annotations
-export function parseLineAnnotations( vectorTile, x, y, level, tiling, ellipsoid, filter, target = [] ) {
+// parse a single line feature into line annotations, one per line fragment
+export function parseLineFeature( feature, layerName, level, tileBounds, range, tiling, ellipsoid, target = [] ) {
 
 	// anchor spacing in radians, derived from the fixed real-world distance and the body's radius so
 	// density tracks real-world length independent of the ellipsoid.
@@ -282,93 +310,54 @@ export function parseLineAnnotations( vectorTile, x, y, level, tiling, ellipsoid
 	// tile width below
 	const anchorSpacing = ANCHOR_SPACING_METERS / ellipsoid.radius.x;
 	const subsampleFraction = 1 / 64;
-	const tileBounds = tiling.getTileBounds( x, y, level, true, false );
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
-	const { flipY } = tiling;
+	const { flipY, projection } = tiling;
 
-	const range = tiling.getTileBounds( x, y, level, false, false );
-	for ( const layerName in vectorTile.layers ) {
+	const extent = feature.extent;
+	const spacing = extent * subsampleFraction;
 
-		const layer = vectorTile.layers[ layerName ];
-		const extent = layer.extent;
-		const spacing = extent * subsampleFraction;
+	// feature.id is the OSM element id preserved across LoDs — the paths's stable key
+	const id = `${ layerName }:${ feature.properties.name || feature.id }`;
+	const geometry = feature.loadGeometry();
+	for ( const line of geometry ) {
 
-		// collect every line fragment in the layer in tile coordinate space
-		const segments = [];
-		for ( let i = 0; i < layer.length; i ++ ) {
+		const subSampledPoints = subsamplePath( line, spacing, _subsampledPoints );
 
-			const feature = layer.feature( i );
+		// init the annotation
+		const annotation = new LineAnnotation();
+		annotation.id = id;
+		annotation.layer = layerName;
+		annotation.properties = feature.properties;
+		annotation.lodLevel = level;
+		annotation.range = range;
 
-			// skip non-line features
-			if ( feature.type !== 2 ) {
+		// construct the lat / lon points
+		for ( let i = 0, l = subSampledPoints.length; i < l; i += 2 ) {
 
-				continue;
+			// tile Y=0 is geographic north; with flipY the V axis increases northward
+			const u = MathUtils.lerp( tMinX, tMaxX, subSampledPoints[ i ] / extent );
+			const vf = subSampledPoints[ i + 1 ] / extent;
 
-			}
+			// TODO: is this not already accounted for in the toCartographicPoint? Is this supposed to
+			// just be ALWAYS true? This seems to be a flip of the internal content rather than the
+			// overall tiling?
+			const v = flipY
+				? MathUtils.lerp( tMaxY, tMinY, vf )
+				: MathUtils.lerp( tMinY, tMaxY, vf );
 
-			// skip lines that don't match the filter
-			if ( ! filter( layerName, feature.properties, feature.type ) ) {
-
-				continue;
-
-			}
-
-			// feature.id is the OSM element id preserved across LoDs — the paths's stable key
-			const id = `${ layerName }:${ feature.properties.name || feature.id }`;
-			const geometry = feature.loadGeometry();
-			for ( const line of geometry ) {
-
-				segments.push( {
-					key: id,
-					id,
-					properties: feature.properties,
-					points: line,
-				} );
-
-			}
+			const lon = projection.convertNormalizedToLongitude( u );
+			const lat = projection.convertNormalizedToLatitude( v );
+			annotation.lon.push( lon );
+			annotation.lat.push( lat );
+			annotation.positions.push( new Vector3() );
 
 		}
 
-		for ( const seg of segments ) {
+		// construct the anchors
+		annotation.generateAnchors( anchorSpacing * ( range[ 2 ] - range[ 0 ] ) );
 
-			const subSampledPoints = subsamplePath( seg.points, spacing );
-
-			// init the annotation
-			const annotation = new LineAnnotation();
-			annotation.id = seg.id;
-			annotation.layer = layerName;
-			annotation.properties = seg.properties;
-			annotation.lodLevel = level;
-			annotation.range = range;
-
-			// construct the lat / lon points
-			for ( const point of subSampledPoints ) {
-
-				// tile Y=0 is geographic north; with flipY the V axis increases northward
-				const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
-				const vf = point.y / extent;
-
-				// TODO: is this not already accounted for in the toCartographicPoint? Is this supposed to
-				// just be ALWAYS true? This seems to be a flip of the internal content rather than the
-				// overall tiling?
-				const v = flipY
-					? MathUtils.lerp( tMaxY, tMinY, vf )
-					: MathUtils.lerp( tMinY, tMaxY, vf );
-
-				const [ lon, lat ] = tiling.toCartographicPoint( u, v );
-				annotation.lon.push( lon );
-				annotation.lat.push( lat );
-				annotation.positions.push( new Vector3() );
-
-			}
-
-			// construct the anchors
-			annotation.generateAnchors( anchorSpacing * ( range[ 2 ] - range[ 0 ] ) );
-
-			// append the annotation
-			target.push( annotation );
-
-		}
+		// append the annotation
+		target.push( annotation );
 
 	}
 

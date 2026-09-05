@@ -4,22 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.5.2] - Unreleased
+## [0.5.2] - 2026.08.24
 ### Added
 - TerrainRGBMeshPlugin, TerrariumMeshPlugin: Add support for terrarium and terrain rgb formats.
 - TilesRenderer: Dedicated queues for each host to avoid blocking on slow servers
 - RasterElevationSamplingPlugin: Add plugin to examples to rasterize tiles to a texture, sample elevations.
 - MVTAnnotationsPlugin: Add preload for MVT content if region bounding volume is available.
 - MVTAnnotationsPlugin: Add support for calling "sampleCartographicElevation" from a plugin to perform a fast altitude fetch.
-- MVTAnnotationsDrive: Add support for "sampleCartographicElevation".
+- MVTAnnotationsDriver: Add support for "sampleCartographicElevation".
 - PriorityQueue: Add support for passing an abort signal for an object.
 - MVTAnnotationsPlugin: Expose "maxSettleTimeMs" and "maxOccupancyUpdateTimeMs" for adjusting processing time.
+- MVTAnnotationsPlugin: Add "horizonCutoff" to trim annotations at a distance.
+- TileRenderer: Add a set of experimental error falloff parameters.
+- MVTAnnotationsPlugin: Spread tile annotation parsing out among multiple frames with an exposed "maxParseTimeMs" setting.
+- MVTAnnotationsPlugin: Add a `getAnnotationRank` in place of `sortAnnotations`
+- MVTAnnotationsPlugin: Add a `useIdleCallback` option.
 
 ### Fixed
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
 - GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
 - MVTAnnotationsPlugin: Adjust plugin to prefetch vector tile content.
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom jumping when zooming into different points when using touch.
+- MVTAnnotationsPlugin: Fix case that could stall annotation processing and loading.
+
+### Changed
+- MVTAnnotationsPlugin: Deprecated `sortAnnotations` function in favor of `getAnnotationRank`.
 
 ## [0.5.1] - 2026.08.07
 ### Added

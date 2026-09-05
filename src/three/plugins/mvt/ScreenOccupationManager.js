@@ -6,6 +6,40 @@ const _dummyHandle = {
 	mark: () => false,
 };
 
+// items displayed longer than this participate equally in the persistence sort
+const PERSISTENCE_DURATION_MS = 5000;
+
+// Compare by the packed priority value first, then fall through to the built-in comparisons:
+// higher lods, longer-displayed items, then items lower on the screen are placed first
+function sortCompare( a, b ) {
+
+	if ( a.sortValue !== b.sortValue ) {
+
+		return a.sortValue - b.sortValue;
+
+	} else if ( a.lodLevel !== b.lodLevel ) {
+
+		return b.lodLevel - a.lodLevel;
+
+	} else if (
+		a.visibleTime !== b.visibleTime &&
+		( a.visibleDuration < PERSISTENCE_DURATION_MS || b.visibleDuration < PERSISTENCE_DURATION_MS )
+	) {
+
+		return a.visibleTime < b.visibleTime ? - 1 : 1;
+
+	} else if ( b.screenPos.y !== a.screenPos.y ) {
+
+		return b.screenPos.y - a.screenPos.y;
+
+	} else {
+
+		return a.id > b.id ? 1 : - 1;
+
+	}
+
+}
+
 export class OccupancyAnnotation {
 
 	constructor() {
@@ -25,8 +59,14 @@ export class OccupancyAnnotation {
 		// whether the annotation is settled and ready to be displayed
 		this.ready = false;
 
+		// dot( surface normal, direction to camera ) below which the annotation is hidden
+		this.horizonCutoff = 0.1;
+
 		// screen pos used for sorting
 		this.screenPos = new Vector3();
+
+		// packed sort priority computed by the manager's sortValueCallback, lower placed first
+		this.sortValue = 0;
 
 		this.visibleDuration = Infinity;
 		this.visibleTime = Infinity;
@@ -140,7 +180,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			},
 		};
-		this.sortCallback = () => 0;
+		// returns a numeric sort priority for an item, lower placed first. Ties fall through to
+		// the built-in lod, persistence, and screen position comparisons
+		this.sortValueCallback = () => 0;
 
 	}
 
@@ -289,7 +331,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 				size,
 				added,
 				handle,
-				sortCallback,
+				sortValueCallback,
 				buffer,
 				items,
 				_lastMatrix,
@@ -339,13 +381,14 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			}
 
-			// transform items to screen space
+			// transform items to screen space and compute their sort priorities
 			for ( let i = 0, l = items.length; i < l; i ++ ) {
 
 				const item = items[ i ];
 				if ( item.enabled ) {
 
 					item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
+					item.sortValue = sortValueCallback( item );
 
 				}
 
@@ -358,8 +401,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 
 			}
 
-			// sort the items ( atomic - a single sort can't be sliced )
-			items.sort( sortCallback );
+			// sort by the precomputed priorities ( atomic - a single sort can't be sliced )
+			items.sort( sortCompare );
 
 			if ( this._deadlineExpired() ) {
 

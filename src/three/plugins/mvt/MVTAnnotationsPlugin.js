@@ -6,14 +6,18 @@ import { SettlingManager } from './SettlingManager.js';
 import { TextAnchorManager } from './TextAnchorManager.js';
 import { OccupancyGridOverlay } from './debug/OccupancyGridOverlay.js';
 import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
-import { LineAnnotation, parseLineAnnotations } from './annotations/LineAnnotation.js';
+import { LineAnnotation, parseLineFeature } from './annotations/LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
-import { parsePointAnnotations } from './annotations/PointAnnotation.js';
+import { parsePointFeature } from './annotations/PointAnnotation.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
 import { TextAnchorAnnotation } from './annotations/TextAnchorAnnotation.js';
 import { MVTIconGlyphs } from './MVTIconGlyphs.js';
 import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
+import { DeadlineTaskQueue } from './DeadlineTaskQueue.js';
+
+// maximum driver-provided annotation rank in the packed sort value
+const MAX_ANNOTATION_RANK = 4095;
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -128,17 +132,14 @@ export class MVTAnnotationsDriver {
 	}
 
 	/**
-	 * Relative placement priority between two annotations, following the `Array.prototype.sort`
-	 * contract. Lower values sort first, are placed first, and win collisions.
-	 * @param {Object} a - The first annotation.
-	 * @param {Object} b - The second annotation.
-	 * @returns {number} Negative if `a` precedes `b`, positive if it follows, `0` if equal.
+	 * Placement priority for an annotation. Lower values are placed first and win collisions.
+	 * Values are clamped to the [ 0, 4095 ] integer range.
+	 * @param {Object} annotation - The annotation to prioritize.
+	 * @returns {number} The placement priority.
 	 */
-	sortAnnotations( a, b ) {
+	getAnnotationRank( annotation ) {
 
-		const rankA = a.properties[ 'rank' ] ?? 1e10;
-		const rankB = b.properties[ 'rank' ] ?? 1e10;
-		return rankA - rankB;
+		return annotation.properties[ 'rank' ] ?? Infinity;
 
 	}
 
@@ -169,11 +170,12 @@ export class MVTAnnotationsDriver {
 	/**
 	 * Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
 	 * decides what is parsed once.
+	 * @param {string} layer - The MVT layer name the feature belongs to.
 	 * @param {Object} properties - The feature's property map.
 	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
 	 * @returns {boolean} True to display the annotation.
 	 */
-	isAnnotationEnabled( properties, type ) {
+	isAnnotationEnabled( layer, properties, type ) {
 
 		return true;
 
@@ -361,6 +363,55 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	/**
+	 * Time budget in milliseconds per frame for parsing toggled vector tiles into annotations.
+	 * @type {number}
+	 * @default 1
+	 */
+	get maxParseTimeMs() {
+
+		return this.toggleTileQueue.maxUpdateTimeMs;
+
+	}
+
+	set maxParseTimeMs( v ) {
+
+		this.toggleTileQueue.maxUpdateTimeMs = v;
+
+	}
+
+	/**
+	 * Hides annotations once `dot( surface normal, direction to camera )` falls below this, removing
+	 * those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
+	 * @type {number}
+	 * @default 0.1
+	 */
+	get horizonCutoff() {
+
+		return this._horizonCutoff;
+
+	}
+
+	set horizonCutoff( value ) {
+
+		// gated so this can be assigned every frame without traversing the annotations
+		if ( value === this._horizonCutoff ) {
+
+			return;
+
+		}
+
+		this._horizonCutoff = value;
+
+		// TODO: A shared value for settings would be best here.
+		this.pointManager.points.forEach( point => point.horizonCutoff = value );
+		this.anchorManager.lines.forEach( line => line.horizonCutoff = value );
+
+		// the cutoff is applied during layout, so it has to be redone
+		this.occupancy.needsUpdate = true;
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -372,6 +423,8 @@ export class MVTAnnotationsPlugin {
 			camera = null,
 			driver = new DefaultMVTAnnotationsDriver(),
 			resolution = 50,
+			horizonCutoff = 0.1,
+			useIdleCallback = true,
 		} = options;
 
 		// user settings
@@ -379,6 +432,15 @@ export class MVTAnnotationsPlugin {
 		this.camera = camera;
 		this.driver = driver;
 		this.resolution = resolution;
+		this._horizonCutoff = horizonCutoff;
+
+		/**
+		 * Whether pending annotation work is additionally processed in idle callbacks between frames.
+		 * @type {boolean}
+		 * @default true
+		 */
+		this.useIdleCallback = useIdleCallback;
+		this._idleCallbackHandle = - 1;
 
 		// annotations call these live each frame so driver changes take effect immediately
 		this._measureChar = char => this.driver.measureChar( char );
@@ -393,6 +455,8 @@ export class MVTAnnotationsPlugin {
 		this.settlingManager = new SettlingManager();
 		this.tileLoadState = new Map();
 		this.vectorTileInfo = new Map();
+
+		this.toggleTileQueue = new DeadlineTaskQueue();
 
 		// debug overlays
 		this.debug = {
@@ -421,6 +485,7 @@ export class MVTAnnotationsPlugin {
 			contentCache,
 			pointManager,
 			anchorManager,
+			toggleTileQueue,
 		} = this;
 
 		// init debug
@@ -444,49 +509,26 @@ export class MVTAnnotationsPlugin {
 
 		}
 
+		// TODO: remove after a deprecation period
+		if ( this.driver.sortAnnotations ) {
+
+			console.warn( 'MVTAnnotationsDriver: "sortAnnotations" has been deprecated. Implement "getAnnotationRank" instead.' );
+
+		}
+
 		// init occupancy
-		occupancy.sortCallback = ( a, b ) => {
+		// pack the sort priorities into a single value so the sort is a cheap numeric comparison.
+		// TODO: The visibility flag and rank could be pre-assigned so this could just be converted to
+		// a simple comparison cascade rather than a packed value.
+		occupancy.sortValueCallback = item => {
 
-			// visibility is prioritized first
-			const aVis = occupancy.visible.has( a );
-			const bVis = occupancy.visible.has( b );
-			if ( aVis !== bVis ) {
+			// currently visible items are prioritized first
+			const visible = occupancy.visible.has( item ) ? 0 : 1;
 
-				return aVis ? - 1 : 1;
+			// user-provided rank
+			const rank = Math.min( Math.max( Math.floor( this.driver.getAnnotationRank( item ) ), 0 ), MAX_ANNOTATION_RANK );
 
-			}
-
-			const sort = this.driver.sortAnnotations( a, b );
-			if ( sort !== 0 ) {
-
-				// user sort
-				return sort;
-
-			} else if ( a.lodLevel !== b.lodLevel ) {
-
-				// lod sort
-				return b.lodLevel - a.lodLevel;
-
-			}
-
-			// if both items have been around for awhile (5 seconds) then just
-			// just fall through to other sort mechanisms.
-			const shortDuration = a.visibleDuration < 5000 || b.visibleDuration < 5000;
-			if ( aVis && shortDuration && a.visibleTime !== b.visibleTime ) {
-
-				// persistence sort for visual stability
-				return a.visibleTime < b.visibleTime ? - 1 : 1;
-
-			} else if ( b.screenPos.y !== a.screenPos.y ) {
-
-				// distance up the screen
-				return b.screenPos.y - a.screenPos.y;
-
-			} else {
-
-				return a.id > b.id ? 1 : - 1;
-
-			}
+			return visible * ( MAX_ANNOTATION_RANK + 1 ) + rank;
 
 		};
 
@@ -541,6 +583,7 @@ export class MVTAnnotationsPlugin {
 
 			// update all sub managers
 			hierarchy.update();
+			toggleTileQueue.update();
 
 			// point annotations
 			pointManager.update();
@@ -617,16 +660,27 @@ export class MVTAnnotationsPlugin {
 			occupancy.reset();
 
 			// if there's more work required the fire that we need to run during a subsequent frame and
-			// try to run during an idle callback.
-			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork ) {
+			// try to run during an idle callback, queueing at most one at a time.
+			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork || toggleTileQueue.hasPendingWork ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
-				requestIdleCallback( deadline => {
+				if ( this.useIdleCallback && this._idleCallbackHandle === - 1 ) {
 
-					settlingManager.update( deadline.timeRemaining() * 0.9 );
-					occupancy.update( deadline.timeRemaining() * 0.9 );
+					this._idleCallbackHandle = requestIdleCallback( deadline => {
 
-				} );
+						this._idleCallbackHandle = - 1;
+
+						// mark the occupancy manager as needing an update if there is settling work to
+						// be done.
+						occupancy.needsUpdate = occupancy.needsUpdate || settlingManager.hasPendingWork;
+
+						toggleTileQueue.update( deadline.timeRemaining() * 0.9 );
+						settlingManager.update( deadline.timeRemaining() * 0.9 );
+						occupancy.update( deadline.timeRemaining() * 0.9 );
+
+					} );
+
+				}
 
 			}
 
@@ -638,9 +692,37 @@ export class MVTAnnotationsPlugin {
 
 		};
 
+		// queue the tile so the parsing is amortized rather than landing in the frame that toggled it
 		this._onVectorTileToggle = ( { x, y, level, visible } ) => {
 
 			tiles.dispatchEvent( { type: 'needs-update' } );
+
+			// "vectorTileInfo" holds the applied state
+			const key = `${ x }_${ y }_${ level }`;
+			if ( visible === this.vectorTileInfo.has( key ) ) {
+
+				toggleTileQueue.delete( key );
+
+			} else {
+
+				toggleTileQueue.add( key, { x, y, level, visible } );
+
+			}
+
+		};
+
+		this._onTileDownloadStart = ( { tile, url } ) => {
+
+			// skip external tileset files since they are not geometry tiles
+			if ( ! /\.json$/i.test( url ) && ! /\.subtree/i.test( url ) ) {
+
+				this._initTileRange( tile );
+
+			}
+
+		};
+
+		toggleTileQueue.callback = function* ( { x, y, level, visible }, isDeadlineComplete ) {
 
 			const {
 				contentCache,
@@ -666,16 +748,60 @@ export class MVTAnnotationsPlugin {
 
 				}
 
-				// parse the icon annotations
+				// parse the annotations one feature at a time so each is only decoded once
 				const annotations = [];
-				parsePointAnnotations( vectorTile, x, y, level, tiling, _filterAnnotation, annotations );
-				parseLineAnnotations( vectorTile, x, y, level, tiling, tiles.ellipsoid, _filterAnnotation, annotations );
-				vectorTileInfo.set( key, { annotations } );
+				const tileBounds = tiling.getTileBounds( x, y, level, true, false );
+				const range = tiling.getTileBounds( x, y, level, false, false );
+				for ( const layerName in vectorTile.layers ) {
 
+					const layer = vectorTile.layers[ layerName ];
+					for ( let i = 0; i < layer.length; i ++ ) {
+
+						// pause between features once the time budget is spent
+						if ( isDeadlineComplete() ) {
+
+							yield;
+
+						}
+
+						const feature = layer.feature( i );
+						const { type } = feature;
+						if ( type !== 1 && type !== 2 ) {
+
+							continue;
+
+						}
+
+						if ( ! _filterAnnotation( layerName, feature.properties, type ) ) {
+
+							continue;
+
+						}
+
+						if ( type === 1 ) {
+
+							parsePointFeature( feature, layerName, level, tileBounds, tiling, annotations );
+
+						} else {
+
+							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, annotations );
+
+						}
+
+					}
+
+				}
+
+				// registration runs uninterrupted so a cancellation can't strand partially
+				// registered annotations
+				const lines = [];
 				for ( const ann of annotations ) {
+
+					ann.horizonCutoff = this._horizonCutoff;
 
 					if ( ann instanceof LineAnnotation ) {
 
+						lines.push( ann );
 						settlingManager.register( ann );
 						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
 						ann.text = driver.getText( ann.properties );
@@ -691,17 +817,23 @@ export class MVTAnnotationsPlugin {
 				}
 
 				// add the anchors
-				anchorManager.addLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
+				anchorManager.addLines( lines );
+
+				// this MUST happen last with no yields after - the toggle queue cancellation logic
+				// reads this key to tell whether the tile has been fully applied.
+				vectorTileInfo.set( key, { annotations } );
 
 			} else {
 
 				const { annotations } = vectorTileInfo.get( key );
 				vectorTileInfo.delete( key );
 
+				const lines = [];
 				for ( const item of annotations ) {
 
 					if ( item instanceof LineAnnotation ) {
 
+						lines.push( item );
 						settlingManager.unregister( item );
 
 					} else {
@@ -713,22 +845,11 @@ export class MVTAnnotationsPlugin {
 				}
 
 				// remove the anchors
-				anchorManager.deleteLines( annotations.filter( ann => ann instanceof LineAnnotation ) );
+				anchorManager.deleteLines( lines );
 
 			}
 
-		};
-
-		this._onTileDownloadStart = ( { tile, url } ) => {
-
-			// skip external tileset files since they are not geometry tiles
-			if ( ! /\.json$/i.test( url ) && ! /\.subtree/i.test( url ) ) {
-
-				this._initTileRange( tile );
-
-			}
-
-		};
+		}.bind( this );
 
 		// register events
 		hierarchy.addEventListener( 'toggle', this._onVectorTileToggle );
@@ -754,13 +875,13 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
-		const { debug, tiles, hierarchy, tileLoadState } = this;
+		const { debug, tiles, hierarchy, driver, settlingManager, toggleTileQueue, tileLoadState } = this;
 		debug.occupancy.dispose();
 		debug.paths.dispose();
 
 		// unmount and dispose the driver's render group
-		tiles.group.remove( this.driver.group );
-		this.driver.dispose();
+		tiles.group.remove( driver.group );
+		driver.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -780,8 +901,18 @@ export class MVTAnnotationsPlugin {
 
 		} );
 
+		toggleTileQueue.clear();
+
+		// cancel any pending idle callback so it can't run against the disposed plugin
+		if ( this._idleCallbackHandle !== - 1 ) {
+
+			cancelIdleCallback( this._idleCallbackHandle );
+			this._idleCallbackHandle = - 1;
+
+		}
+
 		// release the cached elevation sampling plugin
-		this.settlingManager.elevationSource = null;
+		settlingManager.elevationSource = null;
 
 	}
 

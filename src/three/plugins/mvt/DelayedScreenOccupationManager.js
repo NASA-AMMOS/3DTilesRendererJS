@@ -60,15 +60,15 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
-	get sortCallback() {
+	get sortValueCallback() {
 
-		return this.manager.sortCallback;
+		return this.manager.sortValueCallback;
 
 	}
 
-	set sortCallback( v ) {
+	set sortValueCallback( v ) {
 
-		this.manager.sortCallback = v;
+		this.manager.sortValueCallback = v;
 
 	}
 

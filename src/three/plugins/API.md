@@ -1128,14 +1128,14 @@ filterAnnotation( layer: string, properties: Object, type: number ): boolean
 Whether an MVT feature should be included as an annotation.
 
 
-### .sortAnnotations
+### .getAnnotationRank
 
 ```js
-sortAnnotations( a: Object, b: Object ): number
+getAnnotationRank( annotation: Object ): number
 ```
 
-Relative placement priority between two annotations, following the `Array.prototype.sort`
-contract. Lower values sort first, are placed first, and win collisions.
+Placement priority for an annotation. Lower values are placed first and win collisions.
+Values are clamped to the [ 0, 4095 ] integer range.
 
 
 ### .measureChar
@@ -1159,7 +1159,7 @@ The string a line / road annotation should display for the given feature.
 ### .isAnnotationEnabled
 
 ```js
-isAnnotationEnabled( properties: Object, type: number ): boolean
+isAnnotationEnabled( layer: string, properties: Object, type: number ): boolean
 ```
 
 Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
@@ -1220,6 +1220,34 @@ maxOccupancyUpdateTimeMs: number = 0.5
 ```
 
 Time budget in milliseconds per frame for the sliced occupancy layout pass.
+
+
+### .maxParseTimeMs
+
+```js
+maxParseTimeMs: number = 1
+```
+
+Time budget in milliseconds per frame for parsing toggled vector tiles into annotations.
+
+
+### .horizonCutoff
+
+```js
+horizonCutoff: number = 0.1
+```
+
+Hides annotations once `dot( surface normal, direction to camera )` falls below this, removing
+those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
+
+
+### .useIdleCallback
+
+```js
+useIdleCallback: boolean = true
+```
+
+Whether pending annotation work is additionally processed in idle callbacks between frames.
 
 
 ### .constructor

@@ -12,7 +12,7 @@ export class MVTAnnotationsDriver {
 	sampleCartographicElevation: MVTElevationSampleCallback | null;
 
 	filterAnnotation( layer: string, properties: Record<string, unknown>, type: number ): boolean;
-	sortAnnotations( a: object, b: object ): number;
+	getAnnotationRank( annotation: object ): number;
 	measureChar( char: string ): number;
 	getText( properties: Record<string, unknown> ): string;
 	isAnnotationEnabled( layer: string, properties: Record<string, unknown>, type: number ): boolean;
@@ -35,6 +35,7 @@ export interface MVTAnnotationsPluginOptions {
 	camera?: Camera | null;
 	driver?: MVTAnnotationsDriver;
 	resolution?: number;
+	horizonCutoff?: number;
 
 }
 
@@ -47,6 +48,7 @@ export class MVTAnnotationsPlugin {
 	camera: Camera | null;
 	driver: MVTAnnotationsDriver;
 	resolution: number;
+	horizonCutoff: number;
 	maxSettleTimeMs: number;
 	maxOccupancyUpdateTimeMs: number;
 
