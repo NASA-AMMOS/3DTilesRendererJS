@@ -319,7 +319,10 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
  * vector tile level to load. This is equivalent to "resolution" value in ImageOverlayPlugin
  * used to drive loaded levels of detail for the overlays. Lower values load coarser tiles with
  * fewer annotations, independently of the shared overlay's own resolution. Set to null to use
- * the overlay resolution. Cannot be changed once initialized.
+ * the overlay resolution.
+ * @param {boolean} [options.mountGroup=true] - Whether the driver's render group is mounted
+ * under "tiles.group" on init. Set to false to add and update the group manually, eg to render
+ * annotations in a separate pass.
  */
 export class MVTAnnotationsPlugin {
 
@@ -412,6 +415,65 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	/**
+	 * Target resolution used when selecting the vector tile level to load. Lower values load
+	 * coarser tiles with fewer annotations. Set to null to use the overlay resolution.
+	 * @type {number|null}
+	 * @default 50
+	 */
+	get resolution() {
+
+		return this._resolution;
+
+	}
+
+	set resolution( value ) {
+
+		if ( value === this._resolution ) {
+
+			return;
+
+		}
+
+		// the hierarchy ref-counts marks by the level derived from the resolution, so unmark
+		// every tile at the old value before re-marking at the new one
+		const { tiles, tileLoadState } = this;
+		if ( tiles !== null ) {
+
+			tileLoadState.forEach( ( range, tile ) => {
+
+				if ( tiles.visibleTiles.has( tile ) ) {
+
+					this._markVectorTile( tile, false );
+
+				}
+
+				this._prefetchVectorTile( tile, false );
+
+			} );
+
+		}
+
+		this._resolution = value;
+
+		if ( tiles !== null ) {
+
+			tileLoadState.forEach( ( range, tile ) => {
+
+				this._prefetchVectorTile( tile, true );
+
+				if ( tiles.visibleTiles.has( tile ) ) {
+
+					this._markVectorTile( tile, true );
+
+				}
+
+			} );
+
+		}
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -425,14 +487,23 @@ export class MVTAnnotationsPlugin {
 			resolution = 50,
 			horizonCutoff = 0.1,
 			useIdleCallback = true,
+			mountGroup = true,
 		} = options;
 
 		// user settings
 		this.overlay = overlay;
 		this.camera = camera;
 		this.driver = driver;
-		this.resolution = resolution;
+		this.tiles = null;
+		this._resolution = resolution;
 		this._horizonCutoff = horizonCutoff;
+
+		/**
+		 * Whether the driver's render group is mounted under "tiles.group" on init.
+		 * @type {boolean}
+		 * @default true
+		 */
+		this.mountGroup = mountGroup;
 
 		/**
 		 * Whether pending annotation work is additionally processed in idle callbacks between frames.
@@ -473,8 +544,12 @@ export class MVTAnnotationsPlugin {
 		this.tiles = tiles;
 
 		// mount the driver's render group under the tile group
-		tiles.group.add( this.driver.group );
-		this.driver.group.updateMatrixWorld();
+		if ( this.mountGroup ) {
+
+			tiles.group.add( this.driver.group );
+			this.driver.group.updateMatrixWorld();
+
+		}
 
 		const {
 			overlay,
@@ -880,7 +955,12 @@ export class MVTAnnotationsPlugin {
 		debug.paths.dispose();
 
 		// unmount and dispose the driver's render group
-		tiles.group.remove( driver.group );
+		if ( this.mountGroup ) {
+
+			tiles.group.remove( driver.group );
+
+		}
+
 		driver.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
