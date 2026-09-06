@@ -124,4 +124,28 @@ describe( 'ProjectionScheme', () => {
 
 	} );
 
+	it( 'should write the point conversions into the provided target.', () => {
+
+		const scheme = new ProjectionScheme( 'EPSG:4326' );
+		const target = [ 0, 0 ];
+
+		expect( scheme.toNormalizedPoint( 0, 0, target ) ).toBe( target );
+		expect( target ).toEqual( [ 0.5, 0.5 ] );
+
+		expect( scheme.toCartographicPoint( 0.5, 0.5, target ) ).toBe( target );
+		expect( target ).toEqual( [ 0, 0 ] );
+
+	} );
+
+	it( 'should round trip points through the mercator point functions.', () => {
+
+		const scheme = new ProjectionScheme( 'EPSG:3857' );
+		const [ lon, lat ] = scheme.toCartographicPoint( 0.3, 0.7 );
+		const [ u, v ] = scheme.toNormalizedPoint( lon, lat );
+
+		expect( u ).toBeCloseTo( 0.3, 12 );
+		expect( v ).toBeCloseTo( 0.7, 12 );
+
+	} );
+
 } );

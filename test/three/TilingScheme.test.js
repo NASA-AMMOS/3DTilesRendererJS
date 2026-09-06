@@ -55,6 +55,17 @@ describe( 'TilingScheme', () => {
 
 	} );
 
+	it( 'should report a tile that only touches the content bounds edge as not existing.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.generateLevels( 3, 2, 1 );
+		scheme.setContentBounds( 0, 0, 0.5, 1 );
+
+		expect( scheme.getTileExists( 0, 0, 0 ) ).toBe( true );
+		expect( scheme.getTileExists( 1, 0, 0 ) ).toBe( false );
+
+	} );
+
 	it( 'should report only the tiles that exist in a given range.', () => {
 
 		const scheme = new TilingScheme();
