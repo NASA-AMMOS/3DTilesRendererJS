@@ -31,6 +31,11 @@ const _axisX = /* @__PURE__ */ new Vector3();
 const _axisY = /* @__PURE__ */ new Vector3();
 const _axisZ = /* @__PURE__ */ new Vector3();
 const _cart = {};
+const _point = [ 0, 0 ];
+const _derivOrigin = /* @__PURE__ */ new Vector3();
+
+// cartographic step used to derive the projection stretch numerically
+const DERIVATIVE_EPSILON = 1e-5;
 
 // converts an axis aligned box into the "box" bounding volume array format, expressed in the
 // frame described by the given matrix
@@ -59,7 +64,7 @@ function toBoxArray( box, matrix ) {
  * are left unscaled.
  *
  * @param {Object} [options]
- * @param {'EPSG:3857'|'EPSG:4326'|'CRS:84'} [options.scheme='EPSG:3857'] The projection to flatten to.
+ * @param {'EPSG:3857'|'EPSG:4326'|'CRS:84'|'EPSG:8857'} [options.scheme='EPSG:3857'] The projection to flatten to.
  */
 export class MapProjectionPlugin {
 
@@ -92,9 +97,10 @@ export class MapProjectionPlugin {
 		const { projection } = this;
 		this.tiles = tiles;
 
-		// the projection tile counts describe the aspect ratio of the projected world
-		this.worldWidth = 2 * Math.PI * tiles.ellipsoid.radius.x;
-		this.worldHeight = this.worldWidth * projection.tileCountY / projection.tileCountX;
+		// dimensions of the projected world, scaled from the unit sphere extents by the radius
+		const [ extentX, extentY ] = projection.getProjectedExtents();
+		this.worldWidth = extentX * tiles.ellipsoid.radius.x;
+		this.worldHeight = extentY * tiles.ellipsoid.radius.x;
 
 		// cached because "getBounds" allocates and this runs per vertex
 		const [ , minLat, , maxLat ] = projection.getBounds();
@@ -119,8 +125,7 @@ export class MapProjectionPlugin {
 		const { projection, worldWidth, worldHeight, minLat, maxLat } = this;
 
 		// mercator runs to infinity at the poles so the latitude is clamped into the valid range
-		const u = projection.convertLongitudeToNormalized( lon );
-		const v = projection.convertLatitudeToNormalized( MathUtils.clamp( lat, minLat, maxLat ) );
+		const [ u, v ] = projection.toNormalizedPoint( lon, MathUtils.clamp( lat, minLat, maxLat ), _point );
 
 		target.x = ( u - 0.5 ) * worldWidth;
 		target.y = height;
@@ -144,8 +149,9 @@ export class MapProjectionPlugin {
 
 		const { projection, worldWidth, worldHeight } = this;
 
-		target.lon = projection.convertNormalizedToLongitude( x / worldWidth + 0.5 );
-		target.lat = projection.convertNormalizedToLatitude( - z / worldHeight + 0.5 );
+		const [ lon, lat ] = projection.toCartographicPoint( x / worldWidth + 0.5, - z / worldHeight + 0.5, _point );
+		target.lon = lon;
+		target.lat = lat;
 		target.height = y;
 
 		return target;
@@ -276,20 +282,23 @@ export class MapProjectionPlugin {
 	// projected meters to real meters on the ellipsoid
 	_getScaleFactor( lat, lon ) {
 
-		const { projection, worldWidth, worldHeight, minLat, maxLat } = this;
+		const { minLat, maxLat } = this;
 		const clampedLat = MathUtils.clamp( lat, minLat, maxLat );
 
 		// meters per radian on the ellipsoid
 		const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, clampedLat, lon );
 
-		// radians per normalized unit, which turns the world size into projected meters per radian
-		const lonFactor = projection.getLongitudeDerivativeAtNormalized( projection.convertLongitudeToNormalized( lon ) );
-		const latFactor = projection.getLatitudeDerivativeAtNormalized( projection.convertLatitudeToNormalized( clampedLat ) );
+		// projected meters per cartographic radian along each axis, derived numerically so
+		// non-separable projections are handled. The latitude step runs inward at the bounds.
+		const latStep = clampedLat + DERIVATIVE_EPSILON > maxLat ? - DERIVATIVE_EPSILON : DERIVATIVE_EPSILON;
+		this.projectPoint( lon, clampedLat, 0, _derivOrigin );
+		const lonStretch = this.projectPoint( lon + DERIVATIVE_EPSILON, clampedLat, 0, _vec ).distanceTo( _derivOrigin ) / DERIVATIVE_EPSILON;
+		const latStretch = this.projectPoint( lon, clampedLat + latStep, 0, _vec ).distanceTo( _derivOrigin ) / DERIVATIVE_EPSILON;
 
 		// the two axes stretch by different amounts outside of a conformal projection, so the
 		// larger of the two drives the error
-		const xScale = worldWidth / ( lonFactor * xDeriv );
-		const yScale = worldHeight / ( latFactor * yDeriv );
+		const xScale = lonStretch / xDeriv;
+		const yScale = latStretch / yDeriv;
 
 		return Math.min( Math.max( xScale, yScale ), MAX_ERROR_SCALE );
 
@@ -300,11 +309,21 @@ export class MapProjectionPlugin {
 
 		const [ west, south, east, north, minHeight, maxHeight ] = range;
 
-		// the projection is separable and monotonic in longitude and latitude, so the opposing
-		// corners of the patch bound the projected result
+		// the projections are monotonic along each axis between the corners, so they bound the
+		// projected result - except pseudocylindrical projections are widest at the equator, so
+		// that row is included when the patch spans it
 		target.makeEmpty();
 		target.expandByPoint( this.projectPoint( west, south, minHeight, _vec ) );
+		target.expandByPoint( this.projectPoint( east, south, minHeight, _vec ) );
+		target.expandByPoint( this.projectPoint( west, north, maxHeight, _vec ) );
 		target.expandByPoint( this.projectPoint( east, north, maxHeight, _vec ) );
+
+		if ( south < 0 && north > 0 ) {
+
+			target.expandByPoint( this.projectPoint( west, 0, minHeight, _vec ) );
+			target.expandByPoint( this.projectPoint( east, 0, maxHeight, _vec ) );
+
+		}
 
 		return target;
 

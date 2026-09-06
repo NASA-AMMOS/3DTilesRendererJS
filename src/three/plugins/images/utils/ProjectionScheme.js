@@ -1,5 +1,63 @@
 import { MathUtils } from 'three';
 
+// Equal Earth projection polynomial coefficients ( Šavrič, Patterson, Jenny 2018 )
+const EE_A1 = 1.340264;
+const EE_A2 = - 0.081106;
+const EE_A3 = 0.000893;
+const EE_A4 = 0.003796;
+const EE_M = Math.sqrt( 3 ) / 2;
+const EE_NEWTON_EPSILON = 1e-12;
+const EE_NEWTON_ITERATIONS = 12;
+
+// forward equal earth projection of a cartographic point on the unit sphere
+function equalEarthProject( lon, lat, target ) {
+
+	const t = Math.asin( EE_M * Math.sin( lat ) );
+	const t2 = t * t;
+	const t6 = t2 * t2 * t2;
+	target[ 0 ] = lon * Math.cos( t ) / ( EE_M * ( EE_A1 + 3 * EE_A2 * t2 + t6 * ( 7 * EE_A3 + 9 * EE_A4 * t2 ) ) );
+	target[ 1 ] = t * ( EE_A1 + EE_A2 * t2 + t6 * ( EE_A3 + EE_A4 * t2 ) );
+
+	return target;
+
+}
+
+// inverse equal earth projection, solving the parametric latitude with newton iteration
+function equalEarthUnproject( x, y, target ) {
+
+	let t = y;
+	let t2 = t * t;
+	let t6 = t2 * t2 * t2;
+	for ( let i = 0; i < EE_NEWTON_ITERATIONS; i ++ ) {
+
+		const fy = t * ( EE_A1 + EE_A2 * t2 + t6 * ( EE_A3 + EE_A4 * t2 ) ) - y;
+		const fpy = EE_A1 + 3 * EE_A2 * t2 + t6 * ( 7 * EE_A3 + 9 * EE_A4 * t2 );
+		const delta = fy / fpy;
+		t -= delta;
+		t2 = t * t;
+		t6 = t2 * t2 * t2;
+
+		if ( Math.abs( delta ) < EE_NEWTON_EPSILON ) {
+
+			break;
+
+		}
+
+	}
+
+	target[ 0 ] = EE_M * x * ( EE_A1 + 3 * EE_A2 * t2 + t6 * ( 7 * EE_A3 + 9 * EE_A4 * t2 ) ) / Math.cos( t );
+	target[ 1 ] = Math.asin( Math.sin( t ) / EE_M );
+
+	return target;
+
+}
+
+// extents of the projected equal earth plane on the unit sphere
+const EE_MAX_X = equalEarthProject( Math.PI, 0, [ 0, 0 ] )[ 0 ];
+const EE_MAX_Y = equalEarthProject( 0, Math.PI / 2, [ 0, 0 ] )[ 1 ];
+
+const _point = [ 0, 0 ];
+
 // Class for storing and querying a certain projection scheme for an image and converting
 // between the [0, 1] image range to cartographic longitude / latitude values.
 export class ProjectionScheme {
@@ -44,6 +102,12 @@ export class ProjectionScheme {
 				this.tileCountY = 1;
 				break;
 
+			// equal earth
+			case 'EPSG:8857':
+				this.tileCountX = 1;
+				this.tileCountY = 1;
+				break;
+
 			case 'none':
 				this.tileCountX = 1;
 				this.tileCountY = 1;
@@ -56,71 +120,29 @@ export class ProjectionScheme {
 
 	}
 
+	// The per-axis conversions are evaluated through the point functions along the projection's
+	// central axes. Non-separable schemes are only exact through the point functions.
 	convertNormalizedToLatitude( v ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return v;
-
-		} else if ( this.isMercator ) {
-
-			// https://gis.stackexchange.com/questions/447421/convert-a-point-on-a-flat-2d-web-mercator-map-image-to-a-coordinate
-			const ratio = MathUtils.mapLinear( v, 0, 1, - 1, 1 );
-			return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
-
-		} else {
-
-			return MathUtils.mapLinear( v, 0, 1, - Math.PI / 2, Math.PI / 2 );
-
-		}
+		return this.toCartographicPoint( 0.5, v, _point )[ 1 ];
 
 	}
 
 	convertNormalizedToLongitude( v ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return v;
-
-		} else {
-
-			return MathUtils.mapLinear( v, 0, 1, - Math.PI, Math.PI );
-
-		}
+		return this.toCartographicPoint( v, 0.5, _point )[ 0 ];
 
 	}
 
 	convertLatitudeToNormalized( lat ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return lat;
-
-		} else if ( this.isMercator ) {
-
-			// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
-			const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( lat / 2 ) ) );
-			return ( 1 / 2 ) + ( 1 * mercatorN / ( 2 * Math.PI ) );
-
-		} else {
-
-			return MathUtils.mapLinear( lat, - Math.PI / 2, Math.PI / 2, 0, 1 );
-
-		}
+		return this.toNormalizedPoint( 0, lat, _point )[ 1 ];
 
 	}
 
 	convertLongitudeToNormalized( lon ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return lon;
-
-		} else {
-
-			return ( lon + Math.PI ) / ( 2 * Math.PI );
-
-		}
+		return this.toNormalizedPoint( lon, 0, _point )[ 0 ];
 
 	}
 
@@ -186,13 +208,39 @@ export class ProjectionScheme {
 
 	}
 
-	toNormalizedPoint( x, y ) {
+	toNormalizedPoint( x, y, target = [ 0, 0 ] ) {
 
-		const result = [ x, y ];
-		result[ 0 ] = this.convertLongitudeToNormalized( result[ 0 ] );
-		result[ 1 ] = this.convertLatitudeToNormalized( result[ 1 ] );
+		switch ( this.scheme ) {
 
-		return result;
+			case 'none':
+				target[ 0 ] = x;
+				target[ 1 ] = y;
+				break;
+
+			case 'EPSG:3857': {
+
+				// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
+				const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( y / 2 ) ) );
+				target[ 0 ] = ( x + Math.PI ) / ( 2 * Math.PI );
+				target[ 1 ] = ( 1 / 2 ) + ( 1 * mercatorN / ( 2 * Math.PI ) );
+				break;
+
+			}
+
+			case 'EPSG:8857':
+				equalEarthProject( x, y, target );
+				target[ 0 ] = MathUtils.mapLinear( target[ 0 ], - EE_MAX_X, EE_MAX_X, 0, 1 );
+				target[ 1 ] = MathUtils.mapLinear( target[ 1 ], - EE_MAX_Y, EE_MAX_Y, 0, 1 );
+				break;
+
+			// equirect
+			default:
+				target[ 0 ] = ( x + Math.PI ) / ( 2 * Math.PI );
+				target[ 1 ] = MathUtils.mapLinear( y, - Math.PI / 2, Math.PI / 2, 0, 1 );
+
+		}
+
+		return target;
 
 	}
 
@@ -205,13 +253,41 @@ export class ProjectionScheme {
 
 	}
 
-	toCartographicPoint( x, y ) {
+	toCartographicPoint( x, y, target = [ 0, 0 ] ) {
 
-		const result = [ x, y ];
-		result[ 0 ] = this.convertNormalizedToLongitude( result[ 0 ] );
-		result[ 1 ] = this.convertNormalizedToLatitude( result[ 1 ] );
+		switch ( this.scheme ) {
 
-		return result;
+			case 'none':
+				target[ 0 ] = x;
+				target[ 1 ] = y;
+				break;
+
+			case 'EPSG:3857': {
+
+				// https://gis.stackexchange.com/questions/447421/convert-a-point-on-a-flat-2d-web-mercator-map-image-to-a-coordinate
+				const ratio = MathUtils.mapLinear( y, 0, 1, - 1, 1 );
+				target[ 0 ] = MathUtils.mapLinear( x, 0, 1, - Math.PI, Math.PI );
+				target[ 1 ] = 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
+				break;
+
+			}
+
+			case 'EPSG:8857':
+				equalEarthUnproject(
+					MathUtils.mapLinear( x, 0, 1, - EE_MAX_X, EE_MAX_X ),
+					MathUtils.mapLinear( y, 0, 1, - EE_MAX_Y, EE_MAX_Y ),
+					target,
+				);
+				break;
+
+			// equirect
+			default:
+				target[ 0 ] = MathUtils.mapLinear( x, 0, 1, - Math.PI, Math.PI );
+				target[ 1 ] = MathUtils.mapLinear( y, 0, 1, - Math.PI / 2, Math.PI / 2 );
+
+		}
+
+		return target;
 
 	}
 
@@ -221,6 +297,27 @@ export class ProjectionScheme {
 			...this.toCartographicPoint( range[ 0 ], range[ 1 ] ),
 			...this.toCartographicPoint( range[ 2 ], range[ 3 ] ),
 		];
+
+	}
+
+	// span of the projected plane over the projection bounds for a unit sphere, in projection units
+	getProjectedExtents() {
+
+		switch ( this.scheme ) {
+
+			case 'EPSG:8857':
+				return [ 2 * EE_MAX_X, 2 * EE_MAX_Y ];
+
+			case 'EPSG:3857':
+				return [ 2 * Math.PI, 2 * Math.PI ];
+
+			case 'none':
+				return [ 1, 1 ];
+
+			default:
+				return [ 2 * Math.PI, Math.PI ];
+
+		}
 
 	}
 

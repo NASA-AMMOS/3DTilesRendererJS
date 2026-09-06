@@ -153,7 +153,7 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 
-	gui.add( params, 'scheme', [ 'EPSG:3857', 'EPSG:4326' ] ).name( 'projection' ).onChange( reload );
+	gui.add( params, 'scheme', [ 'EPSG:3857', 'EPSG:4326', 'EPSG:8857' ] ).name( 'projection' ).onChange( reload );
 	gui.add( params, 'errorTarget', 5, 100, 1 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
