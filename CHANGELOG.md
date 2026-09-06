@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
+- GlobeControls: Adjust the globe controls to use stable orientation during rotation.
 
 ### Fixed
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
