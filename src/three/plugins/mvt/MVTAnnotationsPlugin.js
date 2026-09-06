@@ -92,7 +92,9 @@ export class MVTAnnotationsDriver {
 
 		/**
 		 * Render group for the driver's own three.js objects. The plugin mounts it under
-		 * `tiles.group` on `init` and removes it on `dispose`; add any objects the driver draws to it.
+		 * `tiles.group` on `init` unless it has already been parented elsewhere, eg to render
+		 * annotations in a separate pass, and removes it on `dispose`; add any objects the
+		 * driver draws to it.
 		 * @type {Group}
 		 */
 		this.group = new Group();
@@ -319,7 +321,7 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
  * vector tile level to load. This is equivalent to "resolution" value in ImageOverlayPlugin
  * used to drive loaded levels of detail for the overlays. Lower values load coarser tiles with
  * fewer annotations, independently of the shared overlay's own resolution. Set to null to use
- * the overlay resolution. Cannot be changed once initialized.
+ * the overlay resolution.
  */
 export class MVTAnnotationsPlugin {
 
@@ -412,6 +414,65 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	/**
+	 * Target resolution used when selecting the vector tile level to load. Lower values load
+	 * coarser tiles with fewer annotations. Set to null to use the overlay resolution.
+	 * @type {number|null}
+	 * @default 50
+	 */
+	get resolution() {
+
+		return this._resolution;
+
+	}
+
+	set resolution( value ) {
+
+		if ( value === this._resolution ) {
+
+			return;
+
+		}
+
+		// TODO: track the acquired level per tile so this can become a generic "reload"
+		// unmark every tile at the old resolution before re-marking at the new one
+		const { tiles, tileLoadState } = this;
+		if ( tiles !== null ) {
+
+			tileLoadState.forEach( ( range, tile ) => {
+
+				if ( tiles.visibleTiles.has( tile ) ) {
+
+					this._markVectorTile( tile, false );
+
+				}
+
+				this._prefetchVectorTile( tile, false );
+
+			} );
+
+		}
+
+		this._resolution = value;
+
+		if ( tiles !== null ) {
+
+			tileLoadState.forEach( ( range, tile ) => {
+
+				this._prefetchVectorTile( tile, true );
+
+				if ( tiles.visibleTiles.has( tile ) ) {
+
+					this._markVectorTile( tile, true );
+
+				}
+
+			} );
+
+		}
+
+	}
+
 	constructor( options = {} ) {
 
 		// plugin fields
@@ -431,7 +492,8 @@ export class MVTAnnotationsPlugin {
 		this.overlay = overlay;
 		this.camera = camera;
 		this.driver = driver;
-		this.resolution = resolution;
+		this.tiles = null;
+		this._resolution = resolution;
 		this._horizonCutoff = horizonCutoff;
 
 		/**
@@ -472,9 +534,14 @@ export class MVTAnnotationsPlugin {
 		// init
 		this.tiles = tiles;
 
-		// mount the driver's render group under the tile group
-		tiles.group.add( this.driver.group );
-		this.driver.group.updateMatrixWorld();
+		// mount the driver's render group under the tile group unless the user has already
+		// parented it elsewhere
+		if ( this.driver.group.parent === null ) {
+
+			tiles.group.add( this.driver.group );
+			this.driver.group.updateMatrixWorld();
+
+		}
 
 		const {
 			overlay,
@@ -880,7 +947,7 @@ export class MVTAnnotationsPlugin {
 		debug.paths.dispose();
 
 		// unmount and dispose the driver's render group
-		tiles.group.remove( driver.group );
+		driver.group.removeFromParent();
 		driver.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );

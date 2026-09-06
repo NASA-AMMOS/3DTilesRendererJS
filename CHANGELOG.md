@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
+
+### Fixed
+- MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
+
+### Changed
+- MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
+
 ## [0.5.2] - 2026.08.24
 ### Added
 - TerrainRGBMeshPlugin, TerrariumMeshPlugin: Add support for terrarium and terrain rgb formats.

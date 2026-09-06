@@ -11,6 +11,9 @@ const _normal = /* @__PURE__ */ new Vector3();
 // reused parse buffer holding interleaved x / y sample pairs
 const _subsampledPoints = [];
 
+// incrementing id assigned to features with no name or id
+let _unnamedFeatureId = 0;
+
 // Share path annotation used for text anchors
 export class LineAnnotation extends OccupancyAnnotation {
 
@@ -316,8 +319,9 @@ export function parseLineFeature( feature, layerName, level, tileBounds, range, 
 	const extent = feature.extent;
 	const spacing = extent * subsampleFraction;
 
-	// feature.id is the OSM element id preserved across LoDs — the paths's stable key
-	const id = `${ layerName }:${ feature.properties.name || feature.id }`;
+	// feature.id is the OSM element id preserved across LoDs, making it the path's stable key.
+	// Unnamed features fall back to a unique id so they are not merged.
+	const id = `${ layerName }:${ feature.properties.name || feature.id || `unnamed_${ _unnamedFeatureId ++ }` }`;
 	const geometry = feature.loadGeometry();
 	for ( const line of geometry ) {
 

@@ -36,6 +36,7 @@ export interface MVTAnnotationsPluginOptions {
 	driver?: MVTAnnotationsDriver;
 	resolution?: number;
 	horizonCutoff?: number;
+	useIdleCallback?: boolean;
 
 }
 
@@ -49,8 +50,10 @@ export class MVTAnnotationsPlugin {
 	driver: MVTAnnotationsDriver;
 	resolution: number;
 	horizonCutoff: number;
+	useIdleCallback: boolean;
 	maxSettleTimeMs: number;
 	maxOccupancyUpdateTimeMs: number;
+	maxParseTimeMs: number;
 
 	readonly contentCache: object;
 
