@@ -103,7 +103,7 @@ export function parsePointFeature( feature, layerName, level, tileBounds, tiling
 			? MathUtils.lerp( tMaxY, tMinY, vf )
 			: MathUtils.lerp( tMinY, tMaxY, vf );
 
-		const [ lon, lat ] = projection.toCartographicPoint( u, v, _point );
+		const [ lon, lat ] = projection.fromNormalizedToCartographic( u, v, _point );
 
 		const item = new PointAnnotation();
 		// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler

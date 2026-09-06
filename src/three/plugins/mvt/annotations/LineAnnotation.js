@@ -343,14 +343,14 @@ export function parseLineFeature( feature, layerName, level, tileBounds, range, 
 			const u = MathUtils.lerp( tMinX, tMaxX, subSampledPoints[ i ] / extent );
 			const vf = subSampledPoints[ i + 1 ] / extent;
 
-			// TODO: is this not already accounted for in the toCartographicPoint? Is this supposed to
+			// TODO: is this not already accounted for in the fromNormalizedToCartographic? Is this supposed to
 			// just be ALWAYS true? This seems to be a flip of the internal content rather than the
 			// overall tiling?
 			const v = flipY
 				? MathUtils.lerp( tMaxY, tMinY, vf )
 				: MathUtils.lerp( tMinY, tMaxY, vf );
 
-			const [ lon, lat ] = projection.toCartographicPoint( u, v, _point );
+			const [ lon, lat ] = projection.fromNormalizedToCartographic( u, v, _point );
 			annotation.lon.push( lon );
 			annotation.lat.push( lat );
 			annotation.positions.push( new Vector3() );

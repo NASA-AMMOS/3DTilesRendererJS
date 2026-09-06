@@ -437,7 +437,7 @@ export class TerrainRGBMeshPlugin {
 		}
 
 		const { projection } = tiling;
-		const [ nx, ny ] = projection.toNormalizedPoint( lon, lat, _point );
+		const [ nx, ny ] = projection.fromCartographicToNormalized( lon, lat, _point );
 
 		for ( let level = this._maxSourceLevel; level >= 0; level -= EXTRA_LEVELS ) {
 
@@ -578,7 +578,7 @@ export class TerrainRGBMeshPlugin {
 			const vNorm = 1 - row / MESH_SIZE;
 
 			// convert the plane position to lat / lon
-			const cart = projection.toCartographicPoint(
+			const cart = projection.fromNormalizedToCartographic(
 				MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ),
 				MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ),
 				_point,
@@ -607,7 +607,7 @@ export class TerrainRGBMeshPlugin {
 			// as much as possible at low LoDs.
 			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
 
-				const latLimit = projection.toCartographicPoint( 0.5, 1, _point )[ 1 ];
+				const latLimit = projection.fromNormalizedToCartographic( 0.5, 1, _point )[ 1 ];
 				const vStep = 1 / MESH_SIZE;
 				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
 				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
@@ -628,7 +628,7 @@ export class TerrainRGBMeshPlugin {
 
 			// derive uvs from the final adjusted lat / lon, mapped into the elevation texture's
 			// subview so they sample the correct portion of the texture directly
-			const [ normU, normV ] = projection.toNormalizedPoint( lon, lat, _point );
+			const [ normU, normV ] = projection.fromCartographicToNormalized( lon, lat, _point );
 			const u = MathUtils.mapLinear( normU, minU, maxU, 0, 1 );
 			const v = MathUtils.mapLinear( normV, minV, maxV, 0, 1 );
 			const tu = MathUtils.mapLinear( u, 0, 1, tu0, tu1 );
@@ -957,7 +957,7 @@ export class TerrainRGBMeshPlugin {
 			// find the most bowed point of the latitude range since the amount that latitude changes is
 			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
-			const midV = projection.toNormalizedPoint( 0, midLat, _point )[ 1 ];
+			const midV = projection.fromCartographicToNormalized( 0, midLat, _point )[ 1 ];
 			const [ lonFactor, latFactor ] = projection.getDerivativeAtNormalizedPoint( minU, midV, _point );
 
 			// calculate the size of a pixel on the surface

@@ -28,7 +28,7 @@ function correctTupleUnits( tuple, crs ) {
 	// TODO: consolidate this Mercator-units with WMTSLoader / move a helper onto ProjectionScheme?
 	if ( isWebMercator( crs ) ) {
 
-		mercatorProjection.toCartographicPoint(
+		mercatorProjection.fromNormalizedToCartographic(
 			0.5 + tuple[ 0 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ),
 			0.5 + tuple[ 1 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ),
 			tuple,
