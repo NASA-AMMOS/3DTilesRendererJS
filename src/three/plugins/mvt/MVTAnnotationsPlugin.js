@@ -92,7 +92,9 @@ export class MVTAnnotationsDriver {
 
 		/**
 		 * Render group for the driver's own three.js objects. The plugin mounts it under
-		 * `tiles.group` on `init` and removes it on `dispose`; add any objects the driver draws to it.
+		 * `tiles.group` on `init` unless it has already been parented elsewhere, eg to render
+		 * annotations in a separate pass, and removes it on `dispose`; add any objects the
+		 * driver draws to it.
 		 * @type {Group}
 		 */
 		this.group = new Group();
@@ -945,7 +947,7 @@ export class MVTAnnotationsPlugin {
 		debug.paths.dispose();
 
 		// unmount and dispose the driver's render group
-		tiles.group.remove( driver.group );
+		driver.group.removeFromParent();
 		driver.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
