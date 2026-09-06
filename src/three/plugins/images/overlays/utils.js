@@ -3,13 +3,16 @@ import { Vector3, Matrix4, MathUtils } from 'three';
 // iterates over all present tiles in the given tileset at the given level in the given range
 export function forEachTileInBounds( range, level, tiling, callback ) {
 
-	// pull the bounds in a bit to avoid loading unnecessary tiles. 1e-8 was chosen since smaller values
-	// are not larger enough and cause extra tiles to load in cases where 1-to-1 tile-to-image should occur
+	// Pull the bounds in a bit so a range that matches a tile exactly does not load
+	// neighboring tiles. The epsilon is scaled to the queried range span so it stays
+	// sub-pixel in composed overlay textures at deep tile levels.
 	let [ minLon, minLat, maxLon, maxLat ] = range;
-	minLat += 1e-8;
-	minLon += 1e-8;
-	maxLat -= 1e-8;
-	maxLon -= 1e-8;
+	const epsX = ( maxLon - minLon ) * 1e-4;
+	const epsY = ( maxLat - minLat ) * 1e-4;
+	minLat += epsY;
+	minLon += epsX;
+	maxLat -= epsY;
+	maxLon -= epsX;
 
 	const clampedLevel = Math.max( Math.min( level, tiling.maxLevel ), tiling.minLevel );
 	const [ minX, minY, maxX, maxY ] = tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, clampedLevel, true );
