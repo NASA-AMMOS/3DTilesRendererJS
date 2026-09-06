@@ -320,8 +320,6 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
  * used to drive loaded levels of detail for the overlays. Lower values load coarser tiles with
  * fewer annotations, independently of the shared overlay's own resolution. Set to null to use
  * the overlay resolution.
- * @param {boolean} [options.mountGroup=true] - Whether the driver's render group is mounted
- * under "tiles.group" on init. Set to false to add and update the group manually.
  */
 export class MVTAnnotationsPlugin {
 
@@ -486,7 +484,6 @@ export class MVTAnnotationsPlugin {
 			resolution = 50,
 			horizonCutoff = 0.1,
 			useIdleCallback = true,
-			mountGroup = true,
 		} = options;
 
 		// user settings
@@ -496,13 +493,6 @@ export class MVTAnnotationsPlugin {
 		this.tiles = null;
 		this._resolution = resolution;
 		this._horizonCutoff = horizonCutoff;
-
-		/**
-		 * Whether the driver's render group is mounted under "tiles.group" on init.
-		 * @type {boolean}
-		 * @default true
-		 */
-		this.mountGroup = mountGroup;
 
 		/**
 		 * Whether pending annotation work is additionally processed in idle callbacks between frames.
@@ -542,8 +532,9 @@ export class MVTAnnotationsPlugin {
 		// init
 		this.tiles = tiles;
 
-		// mount the driver's render group under the tile group
-		if ( this.mountGroup ) {
+		// mount the driver's render group under the tile group unless the user has already
+		// parented it elsewhere
+		if ( this.driver.group.parent === null ) {
 
 			tiles.group.add( this.driver.group );
 			this.driver.group.updateMatrixWorld();
@@ -954,12 +945,7 @@ export class MVTAnnotationsPlugin {
 		debug.paths.dispose();
 
 		// unmount and dispose the driver's render group
-		if ( this.mountGroup ) {
-
-			tiles.group.remove( driver.group );
-
-		}
-
+		tiles.group.remove( driver.group );
 		driver.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
