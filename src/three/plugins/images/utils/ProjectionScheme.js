@@ -2,14 +2,8 @@ import { MathUtils } from 'three';
 
 const DERIVATIVE_EPSILON = 1e-5;
 
-// central difference of a normalized-to-cartographic conversion, sampling inward at the bounds
-function getNormalizedDerivative( value, convert ) {
-
-	const minV = Math.max( value - DERIVATIVE_EPSILON, 0 );
-	const maxV = Math.min( value + DERIVATIVE_EPSILON, 1 );
-	return Math.abs( convert( maxV ) - convert( minV ) ) / ( maxV - minV );
-
-}
+const _point = [ 0, 0 ];
+const _derivPoint = [ 0, 0 ];
 
 // Class for storing and querying a certain projection scheme for an image and converting
 // between the [0, 1] image range to cartographic longitude / latitude values.
@@ -67,83 +61,64 @@ export class ProjectionScheme {
 
 	}
 
+	// The per-axis conversions are evaluated through the point functions along the projection's
+	// central axes. Non-separable schemes are only exact through the point functions.
+	// TODO: remove these single-axis functions in favor of the point functions
 	convertNormalizedToLatitude( v ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return v;
-
-		} else if ( this.isMercator ) {
-
-			// https://gis.stackexchange.com/questions/447421/convert-a-point-on-a-flat-2d-web-mercator-map-image-to-a-coordinate
-			const ratio = MathUtils.mapLinear( v, 0, 1, - 1, 1 );
-			return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
-
-		} else {
-
-			return MathUtils.mapLinear( v, 0, 1, - Math.PI / 2, Math.PI / 2 );
-
-		}
+		return this.toCartographicPoint( 0.5, v, _point )[ 1 ];
 
 	}
 
 	convertNormalizedToLongitude( v ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return v;
-
-		} else {
-
-			return MathUtils.mapLinear( v, 0, 1, - Math.PI, Math.PI );
-
-		}
+		return this.toCartographicPoint( v, 0.5, _point )[ 0 ];
 
 	}
 
 	convertLatitudeToNormalized( lat ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return lat;
-
-		} else if ( this.isMercator ) {
-
-			// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
-			const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( lat / 2 ) ) );
-			return ( 1 / 2 ) + ( 1 * mercatorN / ( 2 * Math.PI ) );
-
-		} else {
-
-			return MathUtils.mapLinear( lat, - Math.PI / 2, Math.PI / 2, 0, 1 );
-
-		}
+		return this.toNormalizedPoint( 0, lat, _point )[ 1 ];
 
 	}
 
 	convertLongitudeToNormalized( lon ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return lon;
-
-		} else {
-
-			return ( lon + Math.PI ) / ( 2 * Math.PI );
-
-		}
+		return this.toNormalizedPoint( lon, 0, _point )[ 0 ];
 
 	}
 
+	// per-axis derivative of the cartographic values at the given normalized point, evaluated
+	// with a central difference sampling inward at the bounds
+	getDerivativeAtNormalizedPoint( x, y, target = [ 0, 0 ] ) {
+
+		const minX = Math.max( x - DERIVATIVE_EPSILON, 0 );
+		const maxX = Math.min( x + DERIVATIVE_EPSILON, 1 );
+		const minY = Math.max( y - DERIVATIVE_EPSILON, 0 );
+		const maxY = Math.min( y + DERIVATIVE_EPSILON, 1 );
+
+		const lon0 = this.toCartographicPoint( minX, y, _derivPoint )[ 0 ];
+		const lon1 = this.toCartographicPoint( maxX, y, _derivPoint )[ 0 ];
+		target[ 0 ] = Math.abs( lon1 - lon0 ) / ( maxX - minX );
+
+		const lat0 = this.toCartographicPoint( x, minY, _derivPoint )[ 1 ];
+		const lat1 = this.toCartographicPoint( x, maxY, _derivPoint )[ 1 ];
+		target[ 1 ] = Math.abs( lat1 - lat0 ) / ( maxY - minY );
+
+		return target;
+
+	}
+
+	// TODO: remove these single-axis functions in favor of "getDerivativeAtNormalizedPoint"
 	getLongitudeDerivativeAtNormalized( value ) {
 
-		return getNormalizedDerivative( value, v => this.convertNormalizedToLongitude( v ) );
+		return this.getDerivativeAtNormalizedPoint( value, 0.5, _point )[ 0 ];
 
 	}
 
 	getLatitudeDerivativeAtNormalized( value ) {
 
-		return getNormalizedDerivative( value, v => this.convertNormalizedToLatitude( v ) );
+		return this.getDerivativeAtNormalizedPoint( 0.5, value, _point )[ 1 ];
 
 	}
 
@@ -166,8 +141,29 @@ export class ProjectionScheme {
 
 	toNormalizedPoint( x, y, target = [ 0, 0 ] ) {
 
-		target[ 0 ] = this.convertLongitudeToNormalized( x );
-		target[ 1 ] = this.convertLatitudeToNormalized( y );
+		switch ( this.scheme ) {
+
+			case 'none':
+				target[ 0 ] = x;
+				target[ 1 ] = y;
+				break;
+
+			case 'EPSG:3857': {
+
+				// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
+				const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( y / 2 ) ) );
+				target[ 0 ] = ( x + Math.PI ) / ( 2 * Math.PI );
+				target[ 1 ] = ( 1 / 2 ) + ( 1 * mercatorN / ( 2 * Math.PI ) );
+				break;
+
+			}
+
+			// equirect
+			default:
+				target[ 0 ] = ( x + Math.PI ) / ( 2 * Math.PI );
+				target[ 1 ] = MathUtils.mapLinear( y, - Math.PI / 2, Math.PI / 2, 0, 1 );
+
+		}
 
 		return target;
 
@@ -184,8 +180,29 @@ export class ProjectionScheme {
 
 	toCartographicPoint( x, y, target = [ 0, 0 ] ) {
 
-		target[ 0 ] = this.convertNormalizedToLongitude( x );
-		target[ 1 ] = this.convertNormalizedToLatitude( y );
+		switch ( this.scheme ) {
+
+			case 'none':
+				target[ 0 ] = x;
+				target[ 1 ] = y;
+				break;
+
+			case 'EPSG:3857': {
+
+				// https://gis.stackexchange.com/questions/447421/convert-a-point-on-a-flat-2d-web-mercator-map-image-to-a-coordinate
+				const ratio = MathUtils.mapLinear( y, 0, 1, - 1, 1 );
+				target[ 0 ] = MathUtils.mapLinear( x, 0, 1, - Math.PI, Math.PI );
+				target[ 1 ] = 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
+				break;
+
+			}
+
+			// equirect
+			default:
+				target[ 0 ] = MathUtils.mapLinear( x, 0, 1, - Math.PI, Math.PI );
+				target[ 1 ] = MathUtils.mapLinear( y, 0, 1, - Math.PI / 2, Math.PI / 2 );
+
+		}
 
 		return target;
 
@@ -197,6 +214,24 @@ export class ProjectionScheme {
 			...this.toCartographicPoint( range[ 0 ], range[ 1 ] ),
 			...this.toCartographicPoint( range[ 2 ], range[ 3 ] ),
 		];
+
+	}
+
+	// span of the projected plane over the projection bounds for a unit sphere, in projection units
+	getProjectedExtents() {
+
+		switch ( this.scheme ) {
+
+			case 'EPSG:3857':
+				return [ 2 * Math.PI, 2 * Math.PI ];
+
+			case 'none':
+				return [ 1, 1 ];
+
+			default:
+				return [ 2 * Math.PI, Math.PI ];
+
+		}
 
 	}
 
