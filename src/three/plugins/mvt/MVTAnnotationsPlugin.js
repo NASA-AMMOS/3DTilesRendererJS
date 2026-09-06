@@ -1024,7 +1024,7 @@ export class MVTAnnotationsPlugin {
 		// TODO: why are we passing range vs region here?
 		scene.updateMatrixWorld();
 		const meshes = collectMeshes( scene );
-		const { range } = getMeshesCartographicRange( meshes, tiles.ellipsoid, _matrix, overlay.projection );
+		const { range } = getMeshesCartographicRange( meshes, tiles.surface, _matrix, overlay.projection );
 
 		// TODO: why not process here?
 		this.tileLoadState.set( tile, range );

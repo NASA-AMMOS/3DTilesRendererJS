@@ -6,6 +6,7 @@ export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
 import { TilingScheme } from './utils/TilingScheme.js';
 import { ProjectionScheme } from './utils/ProjectionScheme.js';
+import { ProjectedSurface } from './utils/ProjectedSurface.js';
 
 const MIN_LON_VERTS = 30;
 const MIN_LAT_VERTS = 15;
@@ -87,6 +88,23 @@ export class GeneratedSurfacePlugin {
 		} else {
 
 			this._tiling = this._createDefaultTiling();
+
+		}
+
+		// register the surface describing the flattened geometry so image overlays and other
+		// consumers can map between cartographic values and the planar frame
+		const { projection } = this._tiling;
+		if ( projection.isCartographic && ! this._useEllipsoid() ) {
+
+			const surface = new ProjectedSurface( projection );
+			surface.scale.set( this._tiling.aspectRatio, 1 );
+			if ( this.center ) {
+
+				surface.offset.set( - this._tiling.aspectRatio / 2, - 0.5 );
+
+			}
+
+			this.tiles.surface = surface;
 
 		}
 
@@ -191,7 +209,15 @@ export class GeneratedSurfacePlugin {
 
 	dispose() {
 
-		this.tiles.forEachLoadedModel( ( scene, tile ) => {
+		// restore the default surface if this plugin assigned a flattened one
+		const { tiles } = this;
+		if ( tiles.surface.isProjectedSurface ) {
+
+			tiles.surface = tiles.ellipsoid;
+
+		}
+
+		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			this.disposeTile( tile );
 
@@ -219,19 +245,7 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		if ( this._useEllipsoid() ) {
-
-			return this.tiles.ellipsoid.getPositionToCartographic( position, target );
-
-		}
-
-		const { center } = this;
-		const normX = position.x / tiling.aspectRatio + ( center ? 0.5 : 0 );
-		const normY = position.y + ( center ? 0.5 : 0 );
-		const [ lon, lat ] = projection.toCartographicPoint( normX, normY, _point );
-		target.lat = lat;
-		target.lon = lon;
-		return target;
+		return this.tiles.surface.getPositionToCartographic( position, target );
 
 	}
 
@@ -254,18 +268,7 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		if ( this._useEllipsoid() ) {
-
-			return this.tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, target );
-
-		}
-
-		const { center } = this;
-		const [ normX, normY ] = projection.toNormalizedPoint( lon, lat, _point );
-		target.x = ( normX - ( center ? 0.5 : 0 ) ) * tiling.aspectRatio;
-		target.y = normY - ( center ? 0.5 : 0 );
-		target.z = 0;
-		return target;
+		return this.tiles.surface.getCartographicToPosition( lat, lon, 0, target );
 
 	}
 

@@ -114,6 +114,19 @@ export class TilesRenderer extends TilesRendererBase {
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
 		/**
+		 * The surface definition used to map between cartographic values and the tile geometry
+		 * in the local frame of `TilesRenderer.group`. Defaults to the ellipsoid and may be
+		 * reassigned by plugins that flatten or reproject the tile geometry so image overlays
+		 * and other consumers can map onto the displayed shape.
+		 * TODO: non-cartographic content (eg tiled images, unit-radius 3DTILES_ellipsoid bodies)
+		 * still reports the ellipsoid here even though no meaningful mapping exists - this case
+		 * needs to be handled, eg by setting the field to null and guarding consumers.
+		 * @type {Object}
+		 * @default this.ellipsoid
+		 */
+		this.surface = this.ellipsoid;
+
+		/**
 		 * Array of cameras registered with this renderer.
 		 * @type {Camera[]}
 		 */

@@ -546,7 +546,7 @@ export class ImageOverlayPlugin {
 
 				} else {
 
-					tiles.ellipsoid.getPositionToNormal( centerTarget, _normal );
+					tiles.surface.getPositionToNormal( centerTarget, _normal );
 					if ( _normal.length() < 1e-6 ) {
 
 						_normal.set( 1, 0, 0 );
@@ -1044,7 +1044,7 @@ export class ImageOverlayPlugin {
 		}
 
 		const { tiles, overlayInfo, tileControllers } = this;
-		const { ellipsoid } = tiles;
+		const { surface } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
 
@@ -1109,7 +1109,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection, info.range ) );
+			( { range, uvs } = getMeshesCartographicRange( meshes, surface, _matrix, projection, info.range ) );
 			heightInRange = true;
 
 		}
