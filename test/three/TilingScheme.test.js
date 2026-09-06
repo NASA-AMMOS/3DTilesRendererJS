@@ -55,6 +55,17 @@ describe( 'TilingScheme', () => {
 
 	} );
 
+	it( 'should report a tile that only touches the content bounds edge as not existing.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.generateLevels( 3, 2, 1 );
+		scheme.setContentBounds( 0, 0, 0.5, 1 );
+
+		expect( scheme.getTileExists( 0, 0, 0 ) ).toBe( true );
+		expect( scheme.getTileExists( 1, 0, 0 ) ).toBe( false );
+
+	} );
+
 	it( 'should report only the tiles that exist in a given range.', () => {
 
 		const scheme = new TilingScheme();
@@ -164,14 +175,14 @@ describe( 'TilingScheme', () => {
 			tileBounds: [ 0.5, 0.5, 1.5, 1.5 ],
 		} );
 
-		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 0 ) ).toEqual( [ 0, 0, 0, 0 ] );
+		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
 		expect( scheme.getTilesInRange( 0, 0, 0.75, 0.75, 0 ) ).toEqual( [ 0, 0, 1, 1 ] );
 		expect( scheme.getTilesInRange( 0, 0, 1, 1, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
 		expect( scheme.getTilesInRange( 0.5, 0.5, 1, 1, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
 		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
 
 		scheme.flipY = true;
-		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 0 ) ).toEqual( [ 0, 3, 0, 3 ] );
+		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
 		expect( scheme.getTilesInRange( 0, 0, 0.75, 0.75, 0 ) ).toEqual( [ 0, 2, 1, 3 ] );
 		expect( scheme.getTilesInRange( 0.5, 0.5, 1, 1, 0 ) ).toEqual( [ 0, 1, 2, 3 ] );
 		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 1, 2, 3 ] );

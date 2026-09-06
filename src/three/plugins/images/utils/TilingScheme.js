@@ -1,6 +1,8 @@
 import { MathUtils } from 'three';
 import { ProjectionScheme } from './ProjectionScheme.js';
 
+const _point = [ 0, 0 ];
+
 function doBoundsIntersect( a, b ) {
 
 	const [ aMinX, aMinY, aMaxX, aMaxY ] = a;
@@ -191,7 +193,7 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			[ bx, by ] = this.toNormalizedPoint( bx, by );
+			[ bx, by ] = this.toNormalizedPoint( bx, by, _point );
 
 		}
 
@@ -237,7 +239,7 @@ export class TilingScheme {
 
 			}
 
-			if ( ! doBoundsIntersect( range, contentBounds ) ) {
+			if ( ! doBoundsIntersect( range, tileBounds ) ) {
 
 				return [ 0, 0, - 1, - 1 ];
 
@@ -276,29 +278,25 @@ export class TilingScheme {
 
 	getTileExists( x, y, level ) {
 
-		const [ rminx, rminy, rmaxx, rmaxy ] = this.contentBounds;
-		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
+		const tileBounds = this.getTileBounds( x, y, level );
+		const [ tminx, tminy, tmaxx, tmaxy ] = tileBounds;
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
-		// TODO: is supporting "just touch" correct?
-		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
+		return ! isDegenerate && doBoundsIntersect( tileBounds, this.contentBounds );
 
 	}
 
 	getContentBounds( normalized = false ) {
 
-		const { projection } = this;
-		const bounds = [ ...this.contentBounds ];
 		if ( normalized ) {
 
-			bounds[ 0 ] = projection.convertLongitudeToNormalized( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertLatitudeToNormalized( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertLongitudeToNormalized( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertLatitudeToNormalized( bounds[ 3 ] );
+			return this.toNormalizedRange( this.contentBounds );
+
+		} else {
+
+			return [ ...this.contentBounds ];
 
 		}
-
-		return bounds;
 
 	}
 
@@ -318,7 +316,7 @@ export class TilingScheme {
 
 	getTileBounds( x, y, level, normalized = false, clamp = true ) {
 
-		const { flipY, pixelOverlap, projection } = this;
+		const { flipY, pixelOverlap } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, tileBounds } = this.getLevel( level );
 
 		let tileLeft = tilePixelWidth * x - pixelOverlap;
@@ -369,10 +367,7 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			bounds[ 0 ] = projection.convertNormalizedToLongitude( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertNormalizedToLatitude( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertNormalizedToLongitude( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertNormalizedToLatitude( bounds[ 3 ] );
+			bounds = this.toCartographicRange( bounds );
 
 		}
 
@@ -380,9 +375,9 @@ export class TilingScheme {
 
 	}
 
-	toNormalizedPoint( x, y ) {
+	toNormalizedPoint( x, y, target ) {
 
-		return this.projection.toNormalizedPoint( x, y );
+		return this.projection.toNormalizedPoint( x, y, target );
 
 	}
 
@@ -392,9 +387,9 @@ export class TilingScheme {
 
 	}
 
-	toCartographicPoint( x, y ) {
+	toCartographicPoint( x, y, target ) {
 
-		return this.projection.toCartographicPoint( x, y );
+		return this.projection.toCartographicPoint( x, y, target );
 
 	}
 
