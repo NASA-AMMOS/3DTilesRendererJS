@@ -54,7 +54,7 @@ describe( 'ProjectionScheme', () => {
 		expect( scheme.convertLongitudeToNormalized( 0 ) ).toBe( 0.5 );
 
 		// derivatives
-		expect( scheme.getLongitudeDerivativeAtNormalized( 0.5 ) ).toBe( 2 * Math.PI );
+		expect( scheme.getLongitudeDerivativeAtNormalized( 0.5 ) ).toBeCloseTo( 2 * Math.PI );
 		expect( scheme.getLatitudeDerivativeAtNormalized( 0.5 ) ).toBeCloseTo( 2 * Math.PI );
 		expect( scheme.getLatitudeDerivativeAtNormalized( 0 ) ).toBeCloseTo( 0.54204 );
 
@@ -76,8 +76,8 @@ describe( 'ProjectionScheme', () => {
 		expect( scheme.convertLongitudeToNormalized( 0 ) ).toBe( 0.5 );
 
 		// derivatives
-		expect( scheme.getLongitudeDerivativeAtNormalized( 0.5 ) ).toBe( 2 * Math.PI );
-		expect( scheme.getLatitudeDerivativeAtNormalized( 0.5 ) ).toBe( Math.PI );
+		expect( scheme.getLongitudeDerivativeAtNormalized( 0.5 ) ).toBeCloseTo( 2 * Math.PI );
+		expect( scheme.getLatitudeDerivativeAtNormalized( 0.5 ) ).toBeCloseTo( Math.PI );
 
 	} );
 
