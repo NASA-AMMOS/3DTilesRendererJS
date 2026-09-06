@@ -1,5 +1,16 @@
 import { MathUtils } from 'three';
 
+const DERIVATIVE_EPSILON = 1e-5;
+
+// central difference of a normalized-to-cartographic conversion, sampling inward at the bounds
+function getNormalizedDerivative( value, convert ) {
+
+	const minV = Math.max( value - DERIVATIVE_EPSILON, 0 );
+	const maxV = Math.min( value + DERIVATIVE_EPSILON, 1 );
+	return Math.abs( convert( maxV ) - convert( minV ) ) / ( maxV - minV );
+
+}
+
 // Class for storing and querying a certain projection scheme for an image and converting
 // between the [0, 1] image range to cartographic longitude / latitude values.
 export class ProjectionScheme {
@@ -126,46 +137,13 @@ export class ProjectionScheme {
 
 	getLongitudeDerivativeAtNormalized( value ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return 1;
-
-		} else {
-
-			return 2 * Math.PI;
-
-		}
+		return getNormalizedDerivative( value, v => this.convertNormalizedToLongitude( v ) );
 
 	}
 
 	getLatitudeDerivativeAtNormalized( value ) {
 
-		if ( this.scheme === 'none' ) {
-
-			return 1;
-
-		} else {
-
-			const EPS = 1e-5;
-			let yp = value - EPS;
-			if ( yp < 0 ) {
-
-				yp = value + EPS;
-
-			}
-
-			if ( this.isMercator ) {
-
-				// TODO: why is this 2 * Math.PI rather than Math.PI?
-				return Math.abs( this.convertNormalizedToLatitude( value ) - this.convertNormalizedToLatitude( yp ) ) / EPS;
-
-			} else {
-
-				return Math.PI;
-
-			}
-
-		}
+		return getNormalizedDerivative( value, v => this.convertNormalizedToLatitude( v ) );
 
 	}
 
