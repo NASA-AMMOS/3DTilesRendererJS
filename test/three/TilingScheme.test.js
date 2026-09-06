@@ -87,8 +87,8 @@ describe( 'TilingScheme', () => {
 
 		expect( scheme.getContentBounds() ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
 		expect( scheme.getContentBounds( true ) ).toEqual( [ 0, 0, 1, 1 ] );
-		expect( scheme.toNormalizedPoint( - Math.PI, - Math.PI / 2 ) ).toEqual( [ 0, 0 ] );
-		expect( scheme.toNormalizedPoint( 0, 0 ) ).toEqual( [ 0.5, 0.5 ] );
+		expect( scheme.fromCartographicToNormalized( - Math.PI, - Math.PI / 2 ) ).toEqual( [ 0, 0 ] );
+		expect( scheme.fromCartographicToNormalized( 0, 0 ) ).toEqual( [ 0.5, 0.5 ] );
 
 	} );
 
@@ -264,11 +264,11 @@ describe( 'TilingScheme', () => {
 		scheme.setProjection( new ProjectionScheme() );
 		scheme.setContentBounds( 0, 0, Math.PI, Math.PI / 2 );
 
-		expect( scheme.toCartographicRange( [ 0, 0, 1, 1 ] ) ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
-		expect( scheme.toCartographicRange( [ 0.5, 0.5, 1, 1 ] ) ).toEqual( [ 0, 0, Math.PI, Math.PI / 2 ] );
+		expect( scheme.fromNormalizedToCartographicRange( [ 0, 0, 1, 1 ] ) ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
+		expect( scheme.fromNormalizedToCartographicRange( [ 0.5, 0.5, 1, 1 ] ) ).toEqual( [ 0, 0, Math.PI, Math.PI / 2 ] );
 
-		expect( scheme.toNormalizedRange( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] ) ).toEqual( [ 0, 0, 1, 1 ] );
-		expect( scheme.toNormalizedRange( [ 0, 0, Math.PI, Math.PI / 2 ] ) ).toEqual( [ 0.5, 0.5, 1, 1 ] );
+		expect( scheme.fromCartographicToNormalizedRange( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.fromCartographicToNormalizedRange( [ 0, 0, Math.PI, Math.PI / 2 ] ) ).toEqual( [ 0.5, 0.5, 1, 1 ] );
 
 	} );
 
