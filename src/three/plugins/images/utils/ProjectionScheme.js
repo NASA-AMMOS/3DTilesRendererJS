@@ -164,13 +164,12 @@ export class ProjectionScheme {
 
 	}
 
-	toNormalizedPoint( x, y ) {
+	toNormalizedPoint( x, y, target = [ 0, 0 ] ) {
 
-		const result = [ x, y ];
-		result[ 0 ] = this.convertLongitudeToNormalized( result[ 0 ] );
-		result[ 1 ] = this.convertLatitudeToNormalized( result[ 1 ] );
+		target[ 0 ] = this.convertLongitudeToNormalized( x );
+		target[ 1 ] = this.convertLatitudeToNormalized( y );
 
-		return result;
+		return target;
 
 	}
 
@@ -183,13 +182,12 @@ export class ProjectionScheme {
 
 	}
 
-	toCartographicPoint( x, y ) {
+	toCartographicPoint( x, y, target = [ 0, 0 ] ) {
 
-		const result = [ x, y ];
-		result[ 0 ] = this.convertNormalizedToLongitude( result[ 0 ] );
-		result[ 1 ] = this.convertNormalizedToLatitude( result[ 1 ] );
+		target[ 0 ] = this.convertNormalizedToLongitude( x );
+		target[ 1 ] = this.convertNormalizedToLatitude( y );
 
-		return result;
+		return target;
 
 	}
 

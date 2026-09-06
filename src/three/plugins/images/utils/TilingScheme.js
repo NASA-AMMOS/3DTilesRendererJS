@@ -1,6 +1,8 @@
 import { MathUtils } from 'three';
 import { ProjectionScheme } from './ProjectionScheme.js';
 
+const _point = [ 0, 0 ];
+
 function doBoundsIntersect( a, b ) {
 
 	const [ aMinX, aMinY, aMaxX, aMaxY ] = a;
@@ -191,7 +193,7 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			[ bx, by ] = this.toNormalizedPoint( bx, by );
+			[ bx, by ] = this.toNormalizedPoint( bx, by, _point );
 
 		}
 
@@ -373,9 +375,9 @@ export class TilingScheme {
 
 	}
 
-	toNormalizedPoint( x, y ) {
+	toNormalizedPoint( x, y, target ) {
 
-		return this.projection.toNormalizedPoint( x, y );
+		return this.projection.toNormalizedPoint( x, y, target );
 
 	}
 
@@ -385,9 +387,9 @@ export class TilingScheme {
 
 	}
 
-	toCartographicPoint( x, y ) {
+	toCartographicPoint( x, y, target ) {
 
-		return this.projection.toCartographicPoint( x, y );
+		return this.projection.toCartographicPoint( x, y, target );
 
 	}
 
