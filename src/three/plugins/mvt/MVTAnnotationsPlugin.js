@@ -321,8 +321,7 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
  * fewer annotations, independently of the shared overlay's own resolution. Set to null to use
  * the overlay resolution.
  * @param {boolean} [options.mountGroup=true] - Whether the driver's render group is mounted
- * under "tiles.group" on init. Set to false to add and update the group manually, eg to render
- * annotations in a separate pass.
+ * under "tiles.group" on init. Set to false to add and update the group manually.
  */
 export class MVTAnnotationsPlugin {
 
@@ -435,8 +434,8 @@ export class MVTAnnotationsPlugin {
 
 		}
 
-		// the hierarchy ref-counts marks by the level derived from the resolution, so unmark
-		// every tile at the old value before re-marking at the new one
+		// TODO: track the acquired level per tile so this can become a generic "reload"
+		// unmark every tile at the old resolution before re-marking at the new one
 		const { tiles, tileLoadState } = this;
 		if ( tiles !== null ) {
 

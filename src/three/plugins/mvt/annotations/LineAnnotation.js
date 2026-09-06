@@ -319,8 +319,8 @@ export function parseLineFeature( feature, layerName, level, tileBounds, range, 
 	const extent = feature.extent;
 	const spacing = extent * subsampleFraction;
 
-	// feature.id is the OSM element id preserved across LoDs — the paths's stable key. Features
-	// with no name or id fall back to a unique id so they are not merged together.
+	// feature.id is the OSM element id preserved across LoDs, making it the path's stable key.
+	// Unnamed features fall back to a unique id so they are not merged.
 	const id = `${ layerName }:${ feature.properties.name || feature.id || `unnamed_${ _unnamedFeatureId ++ }` }`;
 	const geometry = feature.loadGeometry();
 	for ( const line of geometry ) {
