@@ -22,6 +22,7 @@ const _forward = /* @__PURE__ */ new Vector3();
 const _targetRight = /* @__PURE__ */ new Vector3();
 const _globalUp = /* @__PURE__ */ new Vector3();
 const _quaternion = /* @__PURE__ */ new Quaternion();
+const _quaternion2 = /* @__PURE__ */ new Quaternion();
 const _zoomPointUp = /* @__PURE__ */ new Vector3();
 const _toCenter = /* @__PURE__ */ new Vector3();
 const _ray = /* @__PURE__ */ new Ray();
@@ -76,6 +77,12 @@ export class GlobeControls extends EnvironmentControls {
 		this._dragMode = 0;
 		this._rotationMode = 0;
 		this.maxZoom = 0.01;
+
+		// camera pose at the start of a drag used as the reference for path-independent
+		// "arcball" rotation, along with the total rotation applied relative to it
+		this._dragBaselineMatrix = new Matrix4();
+		this._dragBaselineRotation = new Quaternion();
+		this._dragBaselineSet = false;
 
 		/**
 		 * Fraction of the near plane distance added as a buffer.
@@ -340,6 +347,7 @@ export class GlobeControls extends EnvironmentControls {
 		super.setState( ...args );
 		this._dragMode = 0;
 		this._rotationMode = 0;
+		this._dragBaselineSet = false;
 
 	}
 
@@ -457,6 +465,9 @@ export class GlobeControls extends EnvironmentControls {
 		const didFly = super._updateFlight( deltaTime );
 		if ( didFly ) {
 
+			// the camera is moving outside of the drag logic so the drag baseline must be re-captured
+			this._dragBaselineSet = false;
+
 			// prevent flying past the point where the globe would be too small, just like mouse zoom.
 			const maxDistance = this._getMaxPerspectiveDistance();
 			const distToCenter = this.getDistanceToCenter();
@@ -514,10 +525,27 @@ export class GlobeControls extends EnvironmentControls {
 			const pivotDir = _pos;
 			const newPivotDir = _targetRight;
 
-			// get the pointer and ray
+			// Capture the camera pose at the start of the drag. The total rotation from the
+			// initial grab direction to the current cursor direction is applied to this
+			// baseline pose every frame ("arcball" style) so the drag is path-independent
+			// and the globe does not accumulate roll when the cursor is moved in a loop.
+			// The baseline is invalidated when another interaction moves the camera mid-drag.
+			if ( ! this._dragBaselineSet ) {
+
+				this._dragBaselineMatrix.copy( camera.matrixWorld );
+				this._dragBaselineRotation.identity();
+				this._dragBaselineSet = true;
+
+			}
+
+			// get the pointer and cast the ray from the baseline camera pose so the mapping
+			// from cursor position to globe surface is stable for the duration of the drag
 			pointerTracker.getCenterPoint( _pointer );
 			adjustedPointerToCoords( _pointer, domElement, _pointer );
+			_invMatrix.copy( camera.matrixWorld );
+			camera.matrixWorld.copy( this._dragBaselineMatrix );
 			setRaycasterFromCamera( raycaster, _pointer, camera );
+			camera.matrixWorld.copy( _invMatrix );
 
 			// transform to ellipsoid frame
 			raycaster.ray.applyMatrix4( ellipsoidFrameInverse );
@@ -553,12 +581,16 @@ export class GlobeControls extends EnvironmentControls {
 			pivotDir.subVectors( pivotPoint, _center ).normalize();
 			newPivotDir.subVectors( _vec, _center ).normalize();
 
-			// construct the rotation
+			// construct the total rotation relative to the baseline pose
 			_quaternion.setFromUnitVectors( newPivotDir, pivotDir );
-			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
 
-			// apply the rotation
-			camera.matrixWorld.premultiply( _rotMatrix );
+			// derive the frame-to-frame rotation for inertia before updating the baseline rotation
+			_quaternion2.copy( this._dragBaselineRotation ).invert().premultiply( _quaternion );
+			this._dragBaselineRotation.copy( _quaternion );
+
+			// apply the total rotation to the baseline camera pose
+			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+			camera.matrixWorld.copy( this._dragBaselineMatrix ).premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
@@ -567,7 +599,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			} else {
 
-				this.globeInertia.copy( _quaternion );
+				this.globeInertia.copy( _quaternion2 );
 				this.globeInertiaFactor = 1 / deltaTime;
 				this.inertiaStableFrames = 0;
 
@@ -617,6 +649,9 @@ export class GlobeControls extends EnvironmentControls {
 		this.dragInertia.set( 0, 0, 0 );
 		this.globeInertia.identity();
 		this.globeInertiaFactor = 0;
+
+		// the camera is moving outside of the drag logic so the drag baseline must be re-captured
+		this._dragBaselineSet = false;
 
 		// used to scale the tilt transitions based on zoom intensity
 		const deltaAlpha = MathUtils.clamp( MathUtils.mapLinear( Math.abs( zoomDelta ), 0, 20, 0, 1 ), 0, 1 );
