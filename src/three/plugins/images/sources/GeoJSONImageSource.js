@@ -98,12 +98,9 @@ export class GeoJSONImageSource extends RegionImageSource {
 		// the range is given in normalized projection space, so it has to be unprojected before it
 		// can be compared against the content bounds
 		const { projection } = this;
-		const boundsDeg = [
-			projection.convertNormalizedToLongitude( minX ) * MathUtils.RAD2DEG,
-			projection.convertNormalizedToLatitude( minY ) * MathUtils.RAD2DEG,
-			projection.convertNormalizedToLongitude( maxX ) * MathUtils.RAD2DEG,
-			projection.convertNormalizedToLatitude( maxY ) * MathUtils.RAD2DEG,
-		];
+		const boundsDeg = projection
+			.toCartographicRange( [ minX, minY, maxX, maxY ] )
+			.map( v => v * MathUtils.RAD2DEG );
 		return this._boundsIntersectBounds( boundsDeg, this.contentBounds );
 
 	}
@@ -199,10 +196,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		canvas.height = resolution;
 
 		// Convert normalized range to degrees for rendering
-		const minLonRad = projection.convertNormalizedToLongitude( minX );
-		const minLatRad = projection.convertNormalizedToLatitude( minY );
-		const maxLonRad = projection.convertNormalizedToLongitude( maxX );
-		const maxLatRad = projection.convertNormalizedToLatitude( maxY );
+		const [ minLonRad, minLatRad, maxLonRad, maxLatRad ] = projection.toCartographicRange( [ minX, minY, maxX, maxY ] );
 		const regionBoundsDeg = [
 			minLonRad * MathUtils.RAD2DEG,
 			minLatRad * MathUtils.RAD2DEG,
