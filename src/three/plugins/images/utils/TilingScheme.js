@@ -286,18 +286,15 @@ export class TilingScheme {
 
 	getContentBounds( normalized = false ) {
 
-		const { projection } = this;
-		const bounds = [ ...this.contentBounds ];
 		if ( normalized ) {
 
-			bounds[ 0 ] = projection.convertLongitudeToNormalized( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertLatitudeToNormalized( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertLongitudeToNormalized( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertLatitudeToNormalized( bounds[ 3 ] );
+			return this.toNormalizedRange( this.contentBounds );
+
+		} else {
+
+			return [ ...this.contentBounds ];
 
 		}
-
-		return bounds;
 
 	}
 
@@ -317,7 +314,7 @@ export class TilingScheme {
 
 	getTileBounds( x, y, level, normalized = false, clamp = true ) {
 
-		const { flipY, pixelOverlap, projection } = this;
+		const { flipY, pixelOverlap } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, tileBounds } = this.getLevel( level );
 
 		let tileLeft = tilePixelWidth * x - pixelOverlap;
@@ -368,10 +365,7 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			bounds[ 0 ] = projection.convertNormalizedToLongitude( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertNormalizedToLatitude( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertNormalizedToLongitude( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertNormalizedToLatitude( bounds[ 3 ] );
+			bounds = this.toCartographicRange( bounds );
 
 		}
 
