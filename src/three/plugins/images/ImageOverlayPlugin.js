@@ -28,6 +28,7 @@ const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
+const ORIGINAL_GEOMETRIC_ERROR = Symbol( 'ORIGINAL_GEOMETRIC_ERROR' );
 
 const PROCESS_QUEUE = /* @__PURE__ */ new PriorityQueue();
 PROCESS_QUEUE.maxJobs = 10;
@@ -282,6 +283,13 @@ export class ImageOverlayPlugin {
 		tile.refine = tile[ ORIGINAL_REFINE ];
 		delete tile[ ORIGINAL_REFINE ];
 		delete tile[ SPLIT_HASH ];
+
+		if ( ORIGINAL_GEOMETRIC_ERROR in tile ) {
+
+			tile.geometricError = tile[ ORIGINAL_GEOMETRIC_ERROR ];
+			delete tile[ ORIGINAL_GEOMETRIC_ERROR ];
+
+		}
 
 	}
 
@@ -655,6 +663,20 @@ export class ImageOverlayPlugin {
 			} );
 
 		} );
+
+		// The tile's overlays are composited into textures "resolution" texels across, so one
+		// texel spans roughly the content size divided by that resolution. Raise the tile's
+		// error to at least that value while split children exist so traversal keeps entering
+		// and selecting them (children are only traversed while the parent error exceeds the
+		// error target), and restore it when the splits are removed. Each split child inherits
+		// half, and "shouldSplit" stops the recursion at the overlays' max level (#1636).
+		if ( ! ( ORIGINAL_GEOMETRIC_ERROR in tile ) ) {
+
+			const texelError = _box.setFromObject( clone ).getSize( _vec ).length() / this.resolution;
+			tile[ ORIGINAL_GEOMETRIC_ERROR ] = tile.geometricError;
+			tile.geometricError = Math.max( tile.geometricError, texelError );
+
+		}
 
 		// run the clipping operations by performing every permutation of sides
 		// defined by the split directions
