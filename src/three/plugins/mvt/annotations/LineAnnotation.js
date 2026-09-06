@@ -10,6 +10,7 @@ const _normal = /* @__PURE__ */ new Vector3();
 
 // reused parse buffer holding interleaved x / y sample pairs
 const _subsampledPoints = [];
+const _point = [ 0, 0 ];
 
 // incrementing id assigned to features with no name or id
 let _unnamedFeatureId = 0;
@@ -349,8 +350,7 @@ export function parseLineFeature( feature, layerName, level, tileBounds, range, 
 				? MathUtils.lerp( tMaxY, tMinY, vf )
 				: MathUtils.lerp( tMinY, tMaxY, vf );
 
-			const lon = projection.convertNormalizedToLongitude( u );
-			const lat = projection.convertNormalizedToLatitude( v );
+			const [ lon, lat ] = projection.toCartographicPoint( u, v, _point );
 			annotation.lon.push( lon );
 			annotation.lat.push( lat );
 			annotation.positions.push( new Vector3() );

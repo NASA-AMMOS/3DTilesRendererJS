@@ -17,6 +17,7 @@ const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
+const _point = [ 0, 0 ];
 
 /**
  * Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
@@ -227,8 +228,9 @@ export class GeneratedSurfacePlugin {
 		const { center } = this;
 		const normX = position.x / tiling.aspectRatio + ( center ? 0.5 : 0 );
 		const normY = position.y + ( center ? 0.5 : 0 );
-		target.lat = projection.convertNormalizedToLatitude( normY );
-		target.lon = projection.convertNormalizedToLongitude( normX );
+		const [ lon, lat ] = projection.toCartographicPoint( normX, normY, _point );
+		target.lat = lat;
+		target.lon = lon;
 		return target;
 
 	}
@@ -259,8 +261,7 @@ export class GeneratedSurfacePlugin {
 		}
 
 		const { center } = this;
-		const normX = projection.convertLongitudeToNormalized( lon );
-		const normY = projection.convertLatitudeToNormalized( lat );
+		const [ normX, normY ] = projection.toNormalizedPoint( lon, lat, _point );
 		target.x = ( normX - ( center ? 0.5 : 0 ) ) * tiling.aspectRatio;
 		target.y = normY - ( center ? 0.5 : 0 );
 		target.z = 0;
@@ -350,8 +351,13 @@ export class GeneratedSurfacePlugin {
 			const vNorm = 1 - ( innerRow - 1 ) / latVerts;
 
 			// convert the plane position to lat / lon
-			const lon = projection.convertNormalizedToLongitude( MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ) );
-			let lat = projection.convertNormalizedToLatitude( MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ) );
+			const cart = projection.toCartographicPoint(
+				MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ),
+				MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ),
+				_point,
+			);
+			const lon = cart[ 0 ];
+			let lat = cart[ 1 ];
 
 			// snap edges to poles for Mercator to avoid seams
 			if ( projection.isMercator && endCaps ) {
@@ -374,7 +380,7 @@ export class GeneratedSurfacePlugin {
 			// as much as possible at low LoDs.
 			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
 
-				const latLimit = projection.convertNormalizedToLatitude( 1 );
+				const latLimit = projection.toCartographicPoint( 0.5, 1, _point )[ 1 ];
 				const vStep = 1 / latVerts;
 				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
 				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
@@ -404,8 +410,9 @@ export class GeneratedSurfacePlugin {
 			}
 
 			// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
-			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
-			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
+			const [ normU, normV ] = projection.toNormalizedPoint( lon, lat, _point );
+			const u = MathUtils.mapLinear( normU, minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
+			const v = MathUtils.mapLinear( normV, minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
 
 			// update the geometry
 			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
@@ -588,9 +595,8 @@ export class GeneratedSurfacePlugin {
 			// find the most bowed point of the latitude range since the amount that latitude changes is
 			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
-			const midV = projection.convertLatitudeToNormalized( midLat );
-			const lonFactor = projection.getLongitudeDerivativeAtNormalized( minU );
-			const latFactor = projection.getLatitudeDerivativeAtNormalized( midV );
+			const midV = projection.toNormalizedPoint( 0, midLat, _point )[ 1 ];
+			const [ lonFactor, latFactor ] = projection.getDerivativeAtNormalizedPoint( minU, midV, _point );
 
 			// calculate the size of a pixel on the surface
 			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );

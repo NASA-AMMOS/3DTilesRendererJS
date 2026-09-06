@@ -38,6 +38,7 @@ const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
 const _hits = [];
+const _point = [ 0, 0 ];
 
 // shared scratch mesh for raycasting displaced vertices since all tiles use the same vertex layout
 let _raycastMesh = null;
@@ -436,8 +437,7 @@ export class TerrainRGBMeshPlugin {
 		}
 
 		const { projection } = tiling;
-		const nx = projection.convertLongitudeToNormalized( lon );
-		const ny = projection.convertLatitudeToNormalized( lat );
+		const [ nx, ny ] = projection.toNormalizedPoint( lon, lat, _point );
 
 		for ( let level = this._maxSourceLevel; level >= 0; level -= EXTRA_LEVELS ) {
 
@@ -578,8 +578,13 @@ export class TerrainRGBMeshPlugin {
 			const vNorm = 1 - row / MESH_SIZE;
 
 			// convert the plane position to lat / lon
-			const lon = projection.convertNormalizedToLongitude( MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ) );
-			let lat = projection.convertNormalizedToLatitude( MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ) );
+			const cart = projection.toCartographicPoint(
+				MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ),
+				MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ),
+				_point,
+			);
+			const lon = cart[ 0 ];
+			let lat = cart[ 1 ];
 
 			// snap edges to poles for Mercator to avoid seams
 			if ( projection.isMercator && endCaps ) {
@@ -602,7 +607,7 @@ export class TerrainRGBMeshPlugin {
 			// as much as possible at low LoDs.
 			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
 
-				const latLimit = projection.convertNormalizedToLatitude( 1 );
+				const latLimit = projection.toCartographicPoint( 0.5, 1, _point )[ 1 ];
 				const vStep = 1 / MESH_SIZE;
 				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
 				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
@@ -623,8 +628,9 @@ export class TerrainRGBMeshPlugin {
 
 			// derive uvs from the final adjusted lat / lon, mapped into the elevation texture's
 			// subview so they sample the correct portion of the texture directly
-			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
-			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
+			const [ normU, normV ] = projection.toNormalizedPoint( lon, lat, _point );
+			const u = MathUtils.mapLinear( normU, minU, maxU, 0, 1 );
+			const v = MathUtils.mapLinear( normV, minV, maxV, 0, 1 );
 			const tu = MathUtils.mapLinear( u, 0, 1, tu0, tu1 );
 			const tv = MathUtils.mapLinear( v, 0, 1, tv0, tv1 );
 
@@ -951,9 +957,8 @@ export class TerrainRGBMeshPlugin {
 			// find the most bowed point of the latitude range since the amount that latitude changes is
 			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
-			const midV = projection.convertLatitudeToNormalized( midLat );
-			const lonFactor = projection.getLongitudeDerivativeAtNormalized( minU );
-			const latFactor = projection.getLatitudeDerivativeAtNormalized( midV );
+			const midV = projection.toNormalizedPoint( 0, midLat, _point )[ 1 ];
+			const [ lonFactor, latFactor ] = projection.getDerivativeAtNormalizedPoint( minU, midV, _point );
 
 			// calculate the size of a pixel on the surface
 			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
