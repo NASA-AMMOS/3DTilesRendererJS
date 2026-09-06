@@ -847,11 +847,11 @@ export class MVTAnnotationsPlugin {
 
 						if ( type === 1 ) {
 
-							parsePointFeature( feature, layerName, level, tileBounds, tiling, annotations );
+							parsePointFeature( feature, layerName, level, tileBounds, tiling, tiles.surface, annotations );
 
 						} else {
 
-							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, annotations );
+							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, tiles.surface, annotations );
 
 						}
 

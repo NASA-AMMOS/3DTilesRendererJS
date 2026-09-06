@@ -52,6 +52,9 @@ export class LineAnnotation extends OccupancyAnnotation {
 		// per-sample settled positions in tiles.group local space, filled during settling
 		this.positions = [];
 
+		// per-sample surface normals as interleaved x / y / z values, filled during parsing
+		this.normals = [];
+
 		// anchors placed along the path, each { i0, i1, alpha, lat, lon, ref }
 		this.anchorPositions = [];
 
@@ -110,7 +113,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 		}
 
-		const { facingRatios } = this;
+		const { facingRatios, normals } = this;
 		facingRatios.length = screenPositions.length;
 
 		for ( let i = 0, l = screenPositions.length; i < l; i ++ ) {
@@ -126,9 +129,15 @@ export class LineAnnotation extends OccupancyAnnotation {
 			screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 			screenPos.z = MathUtils.mapLinear( screenPos.z, - 1, 1, 0, 1 );
 
-			// the sample sits on the surface, so its direction from the body center stands in for
-			// the normal. Matches the approximation in PointAnnotation.
-			if ( cameraPosition !== null && position.lengthSq() > 0 ) {
+			// use the surface normal stored at parse time, falling back to the direction from
+			// the body center for samples without one. Matches PointAnnotation.
+			if ( cameraPosition !== null && normals.length >= ( i + 1 ) * 3 ) {
+
+				_delta.subVectors( cameraPosition, position ).normalize();
+				_normal.fromArray( normals, i * 3 );
+				facingRatios[ i ] = _normal.dot( _delta );
+
+			} else if ( cameraPosition !== null && position.lengthSq() > 0 ) {
 
 				_delta.subVectors( cameraPosition, position ).normalize();
 				_normal.copy( position ).normalize();
@@ -306,7 +315,7 @@ function subsamplePath( points, spacing, target ) {
 }
 
 // parse a single line feature into line annotations, one per line fragment
-export function parseLineFeature( feature, layerName, level, tileBounds, range, tiling, ellipsoid, target = [] ) {
+export function parseLineFeature( feature, layerName, level, tileBounds, range, tiling, ellipsoid, surface, target = [] ) {
 
 	// anchor spacing in radians, derived from the fixed real-world distance and the body's radius so
 	// density tracks real-world length independent of the ellipsoid.
@@ -354,6 +363,9 @@ export function parseLineFeature( feature, layerName, level, tileBounds, range, 
 			annotation.lon.push( lon );
 			annotation.lat.push( lat );
 			annotation.positions.push( new Vector3() );
+
+			surface.getCartographicToNormal( lat, lon, _normal );
+			annotation.normals.push( _normal.x, _normal.y, _normal.z );
 
 		}
 
