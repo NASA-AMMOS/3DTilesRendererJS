@@ -1023,7 +1023,7 @@ export class ImageOverlayPlugin {
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
 				let range = [ minLon, minLat, maxLon, maxLat ];
 				range = overlay.projection.clampToBounds( range );
-				range = overlay.projection.toNormalizedRange( range );
+				range = overlay.projection.fromCartographicToNormalizedRange( range );
 
 				info.range = range;
 				overlay.lockTextureSafe( range );

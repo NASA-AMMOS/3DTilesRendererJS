@@ -151,7 +151,7 @@ export function getMeshesCartographicRange( meshes, surface, meshToSurfaceMatrix
 		if ( normalizedRange === null ) {
 
 			normalizedRange = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
-			normalizedRange = projection.toNormalizedRange( normalizedRange );
+			normalizedRange = projection.fromCartographicToNormalizedRange( normalizedRange );
 
 		}
 
@@ -165,7 +165,7 @@ export function getMeshesCartographicRange( meshes, surface, meshToSurfaceMatrix
 				const lat = uv[ i + 1 ];
 				const h = uv[ i + 2 ];
 
-				let [ u, v ] = projection.toNormalizedPoint( lon, lat );
+				let [ u, v ] = projection.fromCartographicToNormalized( lon, lat );
 				u = MathUtils.clamp( u, 0, 1 );
 				v = MathUtils.clamp( v, 0, 1 );
 				uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );

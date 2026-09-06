@@ -193,13 +193,13 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			[ bx, by ] = this.toNormalizedPoint( bx, by, _point );
+			[ bx, by ] = this.fromCartographicToNormalized( bx, by, _point );
 
 		}
 
 		if ( tileBounds ) {
 
-			const normalizedBounds = this.toNormalizedRange( tileBounds );
+			const normalizedBounds = this.fromCartographicToNormalizedRange( tileBounds );
 			bx = MathUtils.mapLinear( bx, normalizedBounds[ 0 ], normalizedBounds[ 2 ], 0, 1 );
 			by = MathUtils.mapLinear( by, normalizedBounds[ 1 ], normalizedBounds[ 3 ], 0, 1 );
 
@@ -235,7 +235,7 @@ export class TilingScheme {
 
 			if ( normalized ) {
 
-				tileBounds = this.toNormalizedRange( tileBounds );
+				tileBounds = this.fromCartographicToNormalizedRange( tileBounds );
 
 			}
 
@@ -290,7 +290,7 @@ export class TilingScheme {
 
 		if ( normalized ) {
 
-			return this.toNormalizedRange( this.contentBounds );
+			return this.fromCartographicToNormalizedRange( this.contentBounds );
 
 		} else {
 
@@ -351,7 +351,7 @@ export class TilingScheme {
 		let bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
 		if ( tileBounds ) {
 
-			const normBounds = this.toNormalizedRange( tileBounds );
+			const normBounds = this.fromCartographicToNormalizedRange( tileBounds );
 			bounds[ 0 ] = MathUtils.mapLinear( bounds[ 0 ], 0, 1, normBounds[ 0 ], normBounds[ 2 ] );
 			bounds[ 2 ] = MathUtils.mapLinear( bounds[ 2 ], 0, 1, normBounds[ 0 ], normBounds[ 2 ] );
 			bounds[ 1 ] = MathUtils.mapLinear( bounds[ 1 ], 0, 1, normBounds[ 1 ], normBounds[ 3 ] );
@@ -367,7 +367,7 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			bounds = this.toCartographicRange( bounds );
+			bounds = this.fromNormalizedToCartographicRange( bounds );
 
 		}
 
@@ -375,27 +375,27 @@ export class TilingScheme {
 
 	}
 
-	toNormalizedPoint( x, y, target ) {
+	fromCartographicToNormalized( x, y, target ) {
 
-		return this.projection.toNormalizedPoint( x, y, target );
-
-	}
-
-	toNormalizedRange( range ) {
-
-		return this.projection.toNormalizedRange( range );
+		return this.projection.fromCartographicToNormalized( x, y, target );
 
 	}
 
-	toCartographicPoint( x, y, target ) {
+	fromCartographicToNormalizedRange( range ) {
 
-		return this.projection.toCartographicPoint( x, y, target );
+		return this.projection.fromCartographicToNormalizedRange( range );
 
 	}
 
-	toCartographicRange( range ) {
+	fromNormalizedToCartographic( x, y, target ) {
 
-		return this.projection.toCartographicRange( range );
+		return this.projection.fromNormalizedToCartographic( x, y, target );
+
+	}
+
+	fromNormalizedToCartographicRange( range ) {
+
+		return this.projection.fromNormalizedToCartographicRange( range );
 
 	}
 

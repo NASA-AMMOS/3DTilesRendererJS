@@ -23,7 +23,7 @@ export class ProjectedSurface {
 	getCartographicToPosition( lat, lon, height, target ) {
 
 		const { projection, scale, offset } = this;
-		const [ u, v ] = projection.toNormalizedPoint( lon, lat, _point );
+		const [ u, v ] = projection.fromCartographicToNormalized( lon, lat, _point );
 		return target.set( u * scale.x + offset.x, v * scale.y + offset.y, height );
 
 	}
@@ -33,7 +33,7 @@ export class ProjectedSurface {
 		const { projection, scale, offset } = this;
 		const u = ( pos.x - offset.x ) / scale.x;
 		const v = ( pos.y - offset.y ) / scale.y;
-		const [ lon, lat ] = projection.toCartographicPoint( u, v, _point );
+		const [ lon, lat ] = projection.fromNormalizedToCartographic( u, v, _point );
 		target.lon = lon;
 		target.lat = lat;
 		target.height = pos.z;
