@@ -1093,7 +1093,9 @@ group: Group
 ```
 
 Render group for the driver's own three.js objects. The plugin mounts it under
-`tiles.group` on `init` and removes it on `dispose`; add any objects the driver draws to it.
+`tiles.group` on `init` unless it has already been parented elsewhere, eg to render
+annotations in a separate pass, and removes it on `dispose`; add any objects the
+driver draws to it.
 
 
 ### .performSettleRaycast
@@ -1241,6 +1243,16 @@ Hides annotations once `dot( surface normal, direction to camera )` falls below 
 those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
 
 
+### .resolution
+
+```js
+resolution: number | null = 50
+```
+
+Target resolution used when selecting the vector tile level to load. Lower values load
+coarser tiles with fewer annotations. Set to null to use the overlay resolution.
+
+
 ### .useIdleCallback
 
 ```js
@@ -1273,7 +1285,6 @@ constructor(
 		// the overlays. Lower values load coarser tiles with fewer
 		// annotations, independently of the shared overlay's own
 		// resolution. Set to null to use the overlay resolution.
-		// Cannot be changed once initialized.
 		resolution = 50: number | null,
 	}
 )
