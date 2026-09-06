@@ -954,14 +954,14 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( scene ) {
 
 			// an active scene is parented to the group so its world matrix is included for raycasting
-			// or other spatial queries while active. A tile is never visible while inactive, so an
-			// inactive scene is always fully detached.
+			// or other spatial queries while active. A tile can remain visible while inactive during
+			// a fade out, so only detach it once it is both inactive and hidden.
 			if ( active ) {
 
 				scene.parent = this.group;
 				scene.updateMatrixWorld( true );
 
-			} else {
+			} else if ( ! this.visibleTiles.has( tile ) ) {
 
 				scene.parent = null;
 
