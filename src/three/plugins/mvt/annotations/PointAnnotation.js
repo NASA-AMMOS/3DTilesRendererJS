@@ -3,6 +3,7 @@ import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
 
 const _delta = /* @__PURE__ */ new Vector3();
 const _normal = /* @__PURE__ */ new Vector3();
+const _point = [ 0, 0 ];
 
 export class PointAnnotation extends OccupancyAnnotation {
 
@@ -102,8 +103,7 @@ export function parsePointFeature( feature, layerName, level, tileBounds, tiling
 			? MathUtils.lerp( tMaxY, tMinY, vf )
 			: MathUtils.lerp( tMinY, tMaxY, vf );
 
-		const lon = projection.convertNormalizedToLongitude( u );
-		const lat = projection.convertNormalizedToLatitude( v );
+		const [ lon, lat ] = projection.fromNormalizedToCartographic( u, v, _point );
 
 		const item = new PointAnnotation();
 		// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler

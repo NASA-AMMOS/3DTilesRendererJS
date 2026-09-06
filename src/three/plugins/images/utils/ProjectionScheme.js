@@ -61,33 +61,6 @@ export class ProjectionScheme {
 
 	}
 
-	// The per-axis conversions are evaluated through the point functions along the projection's
-	// central axes. Non-separable schemes are only exact through the point functions.
-	// TODO: remove these single-axis functions in favor of the point functions
-	convertNormalizedToLatitude( v ) {
-
-		return this.toCartographicPoint( 0.5, v, _point )[ 1 ];
-
-	}
-
-	convertNormalizedToLongitude( v ) {
-
-		return this.toCartographicPoint( v, 0.5, _point )[ 0 ];
-
-	}
-
-	convertLatitudeToNormalized( lat ) {
-
-		return this.toNormalizedPoint( 0, lat, _point )[ 1 ];
-
-	}
-
-	convertLongitudeToNormalized( lon ) {
-
-		return this.toNormalizedPoint( lon, 0, _point )[ 0 ];
-
-	}
-
 	// per-axis derivative of the cartographic values at the given normalized point, evaluated
 	// with a central difference sampling inward at the bounds
 	getDerivativeAtNormalizedPoint( x, y, target = [ 0, 0 ] ) {
@@ -97,28 +70,15 @@ export class ProjectionScheme {
 		const minY = Math.max( y - DERIVATIVE_EPSILON, 0 );
 		const maxY = Math.min( y + DERIVATIVE_EPSILON, 1 );
 
-		const lon0 = this.toCartographicPoint( minX, y, _derivPoint )[ 0 ];
-		const lon1 = this.toCartographicPoint( maxX, y, _derivPoint )[ 0 ];
+		const lon0 = this.fromNormalizedToCartographic( minX, y, _derivPoint )[ 0 ];
+		const lon1 = this.fromNormalizedToCartographic( maxX, y, _derivPoint )[ 0 ];
 		target[ 0 ] = Math.abs( lon1 - lon0 ) / ( maxX - minX );
 
-		const lat0 = this.toCartographicPoint( x, minY, _derivPoint )[ 1 ];
-		const lat1 = this.toCartographicPoint( x, maxY, _derivPoint )[ 1 ];
+		const lat0 = this.fromNormalizedToCartographic( x, minY, _derivPoint )[ 1 ];
+		const lat1 = this.fromNormalizedToCartographic( x, maxY, _derivPoint )[ 1 ];
 		target[ 1 ] = Math.abs( lat1 - lat0 ) / ( maxY - minY );
 
 		return target;
-
-	}
-
-	// TODO: remove these single-axis functions in favor of "getDerivativeAtNormalizedPoint"
-	getLongitudeDerivativeAtNormalized( value ) {
-
-		return this.getDerivativeAtNormalizedPoint( value, 0.5, _point )[ 0 ];
-
-	}
-
-	getLatitudeDerivativeAtNormalized( value ) {
-
-		return this.getDerivativeAtNormalizedPoint( 0.5, value, _point )[ 1 ];
 
 	}
 
@@ -130,16 +90,17 @@ export class ProjectionScheme {
 
 		} else {
 
+			// evaluated along the central axes so non-separable schemes report their full extent
 			return [
-				this.convertNormalizedToLongitude( 0 ), this.convertNormalizedToLatitude( 0 ),
-				this.convertNormalizedToLongitude( 1 ), this.convertNormalizedToLatitude( 1 ),
+				this.fromNormalizedToCartographic( 0, 0.5, _point )[ 0 ], this.fromNormalizedToCartographic( 0.5, 0, _point )[ 1 ],
+				this.fromNormalizedToCartographic( 1, 0.5, _point )[ 0 ], this.fromNormalizedToCartographic( 0.5, 1, _point )[ 1 ],
 			];
 
 		}
 
 	}
 
-	toNormalizedPoint( x, y, target = [ 0, 0 ] ) {
+	fromCartographicToNormalized( x, y, target = [ 0, 0 ] ) {
 
 		switch ( this.scheme ) {
 
@@ -169,16 +130,16 @@ export class ProjectionScheme {
 
 	}
 
-	toNormalizedRange( range ) {
+	fromCartographicToNormalizedRange( range ) {
 
 		return [
-			...this.toNormalizedPoint( range[ 0 ], range[ 1 ] ),
-			...this.toNormalizedPoint( range[ 2 ], range[ 3 ] ),
+			...this.fromCartographicToNormalized( range[ 0 ], range[ 1 ] ),
+			...this.fromCartographicToNormalized( range[ 2 ], range[ 3 ] ),
 		];
 
 	}
 
-	toCartographicPoint( x, y, target = [ 0, 0 ] ) {
+	fromNormalizedToCartographic( x, y, target = [ 0, 0 ] ) {
 
 		switch ( this.scheme ) {
 
@@ -208,11 +169,11 @@ export class ProjectionScheme {
 
 	}
 
-	toCartographicRange( range ) {
+	fromNormalizedToCartographicRange( range ) {
 
 		return [
-			...this.toCartographicPoint( range[ 0 ], range[ 1 ] ),
-			...this.toCartographicPoint( range[ 2 ], range[ 3 ] ),
+			...this.fromNormalizedToCartographic( range[ 0 ], range[ 1 ] ),
+			...this.fromNormalizedToCartographic( range[ 2 ], range[ 3 ] ),
 		];
 
 	}
