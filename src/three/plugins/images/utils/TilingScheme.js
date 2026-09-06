@@ -237,7 +237,7 @@ export class TilingScheme {
 
 			}
 
-			if ( ! doBoundsIntersect( range, contentBounds ) ) {
+			if ( ! doBoundsIntersect( range, tileBounds ) ) {
 
 				return [ 0, 0, - 1, - 1 ];
 
@@ -276,12 +276,11 @@ export class TilingScheme {
 
 	getTileExists( x, y, level ) {
 
-		const [ rminx, rminy, rmaxx, rmaxy ] = this.contentBounds;
-		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
+		const tileBounds = this.getTileBounds( x, y, level );
+		const [ tminx, tminy, tmaxx, tmaxy ] = tileBounds;
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
-		// TODO: is supporting "just touch" correct?
-		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
+		return ! isDegenerate && doBoundsIntersect( tileBounds, this.contentBounds );
 
 	}
 
