@@ -12,6 +12,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 		super();
 
 		this.position = new Vector3();
+		this.normal = new Vector3();
 		this.lat = 0;
 		this.lon = 0;
 		this.radius = 28;
@@ -33,13 +34,22 @@ export class PointAnnotation extends OccupancyAnnotation {
 		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 		screenPos.z = ( screenPos.z < - 1 || screenPos.z > 1 ) ? 1 : 0;
 
-		// facing ratio: dot( surface normal, direction to camera )
-		// TODO: store geodetic normal on the item at creation time and use it here instead of
-		// normalize( position )
-		if ( cameraPosition !== null && position.lengthSq() > 0 ) {
+		// facing ratio: dot( surface normal, direction to camera ). Fall back to the direction
+		// from the body center for items created without a normal assigned.
+		const { normal } = this;
+		if ( cameraPosition !== null && ( normal.lengthSq() > 0 || position.lengthSq() > 0 ) ) {
 
 			_delta.subVectors( cameraPosition, position ).normalize();
-			_normal.copy( position ).normalize();
+			if ( normal.lengthSq() > 0 ) {
+
+				_normal.copy( normal );
+
+			} else {
+
+				_normal.copy( position ).normalize();
+
+			}
+
 			this._facingRatio = _normal.dot( _delta );
 
 		} else {
@@ -85,7 +95,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 }
 
 // parse a single point feature into point annotations
-export function parsePointFeature( feature, layerName, level, tileBounds, tiling, target = [] ) {
+export function parsePointFeature( feature, layerName, level, tileBounds, tiling, surface, target = [] ) {
 
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 	const { projection } = tiling;
@@ -115,6 +125,7 @@ export function parsePointFeature( feature, layerName, level, tileBounds, tiling
 		item.lat = lat;
 		item.lon = lon;
 		item.lodLevel = level;
+		surface.getCartographicToNormal( lat, lon, item.normal );
 
 		target.push( item );
 

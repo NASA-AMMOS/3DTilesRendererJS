@@ -181,8 +181,8 @@ export class SettlingManager {
 		const { tiles } = this;
 		const { origin, direction } = raycaster.ray;
 
-		tiles.ellipsoid.getCartographicToPosition( lat, lon, 1e8, origin );
-		tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, direction );
+		tiles.surface.getCartographicToPosition( lat, lon, 1e8, origin );
+		tiles.surface.getCartographicToPosition( lat, lon, 0, direction );
 		direction.sub( origin ).normalize();
 
 		raycaster.far = 2 * 1e8;
@@ -194,12 +194,12 @@ export class SettlingManager {
 
 		const { tiles, performSettleRaycast, elevationSource } = this;
 
-		// sample the elevation directly when a source is available, settling to the ellipsoid
-		// surface when no data covers the point just as a missed raycast does
+		// sample the elevation directly when a source is available, settling to the surface
+		// when no data covers the point just as a missed raycast does
 		if ( performSettleRaycast === null && elevationSource !== null ) {
 
 			const height = elevationSource.sampleCartographicElevation( lat, lon );
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, height !== null ? height : 0, _hit );
+			tiles.surface.getCartographicToPosition( lat, lon, height !== null ? height : 0, _hit );
 			if ( _hit.distanceTo( target ) > threshold ) {
 
 				target.copy( _hit );
@@ -244,7 +244,7 @@ export class SettlingManager {
 		} else {
 
 			// TODO: we are still seeing some points slip through tile gaps - should we hide them in this case?
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _hit );
+			tiles.surface.getCartographicToPosition( lat, lon, 0, _hit );
 
 		}
 
