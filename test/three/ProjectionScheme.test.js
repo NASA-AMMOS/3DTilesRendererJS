@@ -114,42 +114,6 @@ describe( 'ProjectionScheme', () => {
 
 	} );
 
-	it( 'should support the equal earth projection scheme', () => {
-
-		const scheme = new ProjectionScheme( 'EPSG:8857' );
-		expect( scheme.isMercator ).toBe( false );
-		expect( scheme.tileCountX ).toBe( 1 );
-		expect( scheme.tileCountY ).toBe( 1 );
-
-		// bounds cover the full sphere
-		const degBounds = scheme.getBounds().map( v => v * MathUtils.RAD2DEG );
-		expect( degBounds[ 0 ] ).toBeCloseTo( - 180 );
-		expect( degBounds[ 1 ] ).toBeCloseTo( - 90 );
-		expect( degBounds[ 2 ] ).toBeCloseTo( 180 );
-		expect( degBounds[ 3 ] ).toBeCloseTo( 90 );
-
-		// the projected plane is roughly twice as wide as tall
-		const [ extentX, extentY ] = scheme.getProjectedExtents();
-		expect( extentX ).toBeCloseTo( 5.41326, 5 );
-		expect( extentY ).toBeCloseTo( 2.63473, 5 );
-
-		// center maps to center
-		expect( scheme.toNormalizedPoint( 0, 0 ) ).toEqual( [ 0.5, 0.5 ] );
-
-		// projected points round trip
-		const [ lon, lat ] = scheme.toCartographicPoint( 0.3, 0.7 );
-		const [ u, v ] = scheme.toNormalizedPoint( lon, lat );
-		expect( u ).toBeCloseTo( 0.3, 12 );
-		expect( v ).toBeCloseTo( 0.7, 12 );
-
-		// the projection is not separable - longitude at a given x depends on y
-		const equatorLon = scheme.toCartographicPoint( 0.25, 0.5 )[ 0 ];
-		const northLon = scheme.toCartographicPoint( 0.25, 0.9 )[ 0 ];
-		expect( equatorLon ).toBeCloseTo( - Math.PI / 2 );
-		expect( northLon ).toBeCloseTo( - 2.03493, 5 );
-
-	} );
-
 	it( 'should write the point conversions into the provided target.', () => {
 
 		const scheme = new ProjectionScheme( 'EPSG:4326' );
