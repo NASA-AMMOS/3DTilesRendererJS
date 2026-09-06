@@ -24,6 +24,7 @@ const params = {
 	errorTarget: 1,
 	planar: false,
 	drape: false,
+	projection: 'source',
 	overlay: 'OpenStreetMap',
 
 };
@@ -61,6 +62,7 @@ function init() {
 	const gui = new GUI();
 	gui.add( params, 'planar' ).onChange( initTiles );
 	gui.add( params, 'drape' ).onChange( initTiles );
+	gui.add( params, 'projection', [ 'source', 'EPSG:4326', 'EPSG:8857' ] ).onChange( initTiles );
 	gui.add( params, 'overlay', [ 'OpenStreetMap', 'Sentinel-2' ] ).onChange( initTiles );
 	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
 
@@ -98,6 +100,7 @@ function initTiles() {
 	surfacePlugin = new GeneratedSurfacePlugin( {
 		overlay,
 		shape: params.planar ? 'planar' : 'ellipsoid',
+		projection: params.projection === 'source' ? null : params.projection,
 		applyOverlayTexture: ! params.drape,
 	} );
 	tiles.registerPlugin( surfacePlugin );

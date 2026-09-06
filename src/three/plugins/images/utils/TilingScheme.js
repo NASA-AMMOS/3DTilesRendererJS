@@ -3,6 +3,45 @@ import { ProjectionScheme } from './ProjectionScheme.js';
 
 const _point = [ 0, 0 ];
 
+// Convert a normalized rect to the cartographic bounds that contain it. Non-separable
+// projections vary in width across rows so the corners alone are not sufficient - sample both
+// corner rows and the widest, central row when the rect straddles it.
+function convertNormalizedBoundsToCartographic( projection, bounds, target ) {
+
+	const [ minU, minV, maxU, maxV ] = bounds;
+	const rows = [ minV, maxV ];
+	if ( minV < 0.5 && maxV > 0.5 ) {
+
+		rows.push( 0.5 );
+
+	}
+
+	let minLon = Infinity;
+	let minLat = Infinity;
+	let maxLon = - Infinity;
+	let maxLat = - Infinity;
+	for ( const v of rows ) {
+
+		for ( const u of [ minU, maxU ] ) {
+
+			const [ lon, lat ] = projection.toCartographicPoint( u, v, _point );
+			minLon = Math.min( minLon, lon );
+			maxLon = Math.max( maxLon, lon );
+			minLat = Math.min( minLat, lat );
+			maxLat = Math.max( maxLat, lat );
+
+		}
+
+	}
+
+	target[ 0 ] = minLon;
+	target[ 1 ] = minLat;
+	target[ 2 ] = maxLon;
+	target[ 3 ] = maxLat;
+	return target;
+
+}
+
 function doBoundsIntersect( a, b ) {
 
 	const [ aMinX, aMinY, aMaxX, aMaxY ] = a;
@@ -367,7 +406,7 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			bounds = this.toCartographicRange( bounds );
+			bounds = convertNormalizedBoundsToCartographic( this.projection, bounds, bounds );
 
 		}
 

@@ -11,6 +11,7 @@ import { ProjectedSurface } from './utils/ProjectedSurface.js';
 const MIN_LON_VERTS = 30;
 const MIN_LAT_VERTS = 15;
 const DEFAULT_LEVELS = 20;
+const PLANAR_SEGMENTS = 64;
 
 const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
 const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
@@ -32,6 +33,9 @@ const _point = [ 0, 0 ];
  * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from. When `applyOverlayTexture` is enabled, also used to texture the generated tile meshes.
  * @param {string} [options.shape='ellipsoid'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
  *   meaningful for cartographic sources.
+ * @param {string|null} [options.projection=null] Optional projection scheme name overriding the
+ *   one derived from the overlay so content can be displayed in a different projection than it
+ *   is stored in. Experimental.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
@@ -44,6 +48,7 @@ export class GeneratedSurfacePlugin {
 		const {
 			overlay = null,
 			shape = 'ellipsoid',
+			projection = null,
 			endCaps = true,
 			center = true,
 			useRecommendedSettings = true,
@@ -55,6 +60,7 @@ export class GeneratedSurfacePlugin {
 
 		this.overlay = overlay;
 		this.shape = shape;
+		this.projection = projection;
 		this.endCaps = endCaps;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
@@ -88,6 +94,23 @@ export class GeneratedSurfacePlugin {
 		} else {
 
 			this._tiling = this._createDefaultTiling();
+
+		}
+
+		// TODO: temporary option for testing display projections that differ from the source
+		// overlay - this should be formalized alongside the "surface" field
+		if ( this.projection !== null ) {
+
+			const projection = new ProjectionScheme( this.projection );
+			const tiling = new TilingScheme();
+			tiling.setProjection( projection );
+
+			// size the levels so the pixel aspect matches the projected plane extents
+			const [ extentX, extentY ] = projection.getProjectedExtents();
+			const pixelHeight = 256 * 2 ** ( DEFAULT_LEVELS - 1 );
+			const pixelWidth = Math.round( pixelHeight * extentX / extentY );
+			tiling.generateLevels( DEFAULT_LEVELS, 1, 1, { pixelWidth, pixelHeight } );
+			this._tiling = tiling;
 
 		}
 
@@ -297,12 +320,46 @@ export class GeneratedSurfacePlugin {
 
 		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
 		// when rendering.
-		const geometry = new PlaneGeometry( 2 * sx, 2 * sy );
+		const { center, _tiling: tiling } = this;
+		const { projection } = tiling;
+		const geometry = new PlaneGeometry( 2 * sx, 2 * sy, PLANAR_SEGMENTS, PLANAR_SEGMENTS );
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.set( x, y, z );
 
+		// snap vertices that fall outside the projection outline onto the boundary so the plane
+		// takes the shape of the projected map rather than its bounding rectangle
+		if ( projection.isCartographic ) {
+
+			const aspect = tiling.aspectRatio;
+			const centerOffset = center ? 0.5 : 0;
+			const { position, uv } = geometry.attributes;
+			for ( let i = 0; i < position.count; i ++ ) {
+
+				const u = ( position.getX( i ) + x ) / aspect + centerOffset;
+				const v = position.getY( i ) + y + centerOffset;
+
+				// the outline at this row spans the longitude range of the projection
+				const lat = projection.toCartographicPoint( 0.5, v, _point )[ 1 ];
+				const minU = projection.toNormalizedPoint( - Math.PI, lat, _point )[ 0 ];
+				const maxU = projection.toNormalizedPoint( Math.PI, lat, _point )[ 0 ];
+				const clampedU = MathUtils.clamp( u, minU, maxU );
+				if ( clampedU !== u ) {
+
+					position.setX( i, ( clampedU - centerOffset ) * aspect - x );
+					uv.setX( i, MathUtils.mapLinear(
+						clampedU,
+						( x - sx ) / aspect + centerOffset, ( x + sx ) / aspect + centerOffset,
+						0, 1,
+					) );
+
+				}
+
+			}
+
+		}
+
 		// adjust the uvs so only the relevant texture portion is visible
-		const uvRange = this._tiling.getTileContentUVBounds( tx, ty, level );
+		const uvRange = tiling.getTileContentUVBounds( tx, ty, level );
 		const { uv } = geometry.attributes;
 		for ( let i = 0; i < uv.count; i ++ ) {
 
