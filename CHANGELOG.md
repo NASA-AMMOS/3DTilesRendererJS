@@ -11,9 +11,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
+- MVTAnnotationsPlugin: Fix a crash when a tile visibility event is dispatched after the tile has been disposed.
+- MVTGlyphs: Fix "update" throwing when called before the glyphs have been rendered for the first time.
+- MVTGlyphAtlasTexture: Fix "drawChar" centering glyphs using the previously assigned canvas font.
+- MVTGlyphAtlasTexture: Fix SVG icon outlines rendering at half the width of text outlines for the same "strokeWidth".
 
 ### Changed
 - MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
+- MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
 
 ## [0.5.2] - 2026.08.24
 ### Added
