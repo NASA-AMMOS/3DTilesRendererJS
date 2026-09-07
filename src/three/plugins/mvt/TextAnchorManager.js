@@ -186,55 +186,47 @@ export class TextAnchorManager {
 
 	}
 
+	// remove paths; anchors left with no associated paths are dropped
 	deleteLines( lines ) {
+
+		const { _anchorsById, _linesById } = this;
 
 		// refresh each affected anchor's active reference once after the whole batch is
 		// detached rather than once per removed line
 		const touched = new Set();
-		lines.forEach( line => this._detachLine( line, touched ) );
-		touched.forEach( anchor => anchor.updateActiveReference() );
+		lines.forEach( line => {
 
-	}
+			const id = line.id;
 
-	// remove a path; anchors left with no associated paths are dropped
-	deleteLine( line ) {
+			_linesById.get( id ).delete( line );
+			this.lines.delete( line );
+			if ( _linesById.get( id ).size === 0 ) {
 
-		const touched = new Set();
-		this._detachLine( line, touched );
-		touched.forEach( anchor => anchor.updateActiveReference() );
-
-	}
-
-	_detachLine( line, touched ) {
-
-		const { _anchorsById, _linesById } = this;
-		const id = line.id;
-
-		_linesById.get( id ).delete( line );
-		this.lines.delete( line );
-		if ( _linesById.get( id ).size === 0 ) {
-
-			_linesById.delete( id );
-
-		}
-
-		const existingAnchors = _anchorsById.get( id );
-		if ( ! existingAnchors ) {
-
-			// this can happen if a line has no anchors added
-			return;
-
-		}
-
-		existingAnchors.forEach( anchor => {
-
-			if ( anchor.detachLine( line ) ) {
-
-				touched.add( anchor );
+				_linesById.delete( id );
 
 			}
 
+			const existingAnchors = _anchorsById.get( id );
+			if ( ! existingAnchors ) {
+
+				// this can happen if a line has no anchors added
+				return;
+
+			}
+
+			existingAnchors.forEach( anchor => {
+
+				if ( anchor.removeLine( line ) ) {
+
+					touched.add( anchor );
+
+				}
+
+			} );
+
 		} );
+
+		touched.forEach( anchor => anchor.updateActiveReference() );
 
 	}
 

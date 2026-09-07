@@ -601,9 +601,9 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	// remove references to the line without refreshing the active reference, returning whether
-	// any reference was removed. Used for batched removal where the refresh runs once at the end.
-	detachLine( line ) {
+	// Remove references to the line, returning whether any reference was removed. The caller
+	// refreshes the active reference once a batch of removals completes.
+	removeLine( line ) {
 
 		const { referencePaths } = this;
 		let removed = false;
@@ -620,16 +620,6 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 		}
 
 		return removed;
-
-	}
-
-	removeLine( line ) {
-
-		if ( this.detachLine( line ) ) {
-
-			this.updateActiveReference();
-
-		}
 
 	}
 
