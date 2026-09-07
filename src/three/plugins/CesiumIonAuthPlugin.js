@@ -32,7 +32,7 @@ export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 				} else if ( type === 'IMAGERY' && tiles.getPluginByName( 'GENERATED_SURFACE_PLUGIN' ) === null ) {
 
 					const overlay = new TMSTilesOverlay( { url: tiles.rootURL } );
-					tiles.registerPlugin( new GeneratedSurfacePlugin( { shape: 'ellipsoid', overlay } ) );
+					tiles.registerPlugin( new GeneratedSurfacePlugin( { projection: 'ellipsoid', overlay } ) );
 
 				} else {
 
