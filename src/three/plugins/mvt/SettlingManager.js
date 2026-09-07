@@ -3,17 +3,18 @@ import { LineAnnotation } from './annotations/LineAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
 
-// minimum distance in tiles.group local space a re-cast sample must move before it is committed,
-// so incidental terrain refinement doesn't jitter an already-settled path. The threshold is scaled
-// by LoD assuming 16 levels.
-// TODO: this strategy could probably be adjusted to not rely on a fixed LoD maximum or such a large
-// base value (~65,000m).
-const SETTLE_POSITION_THRESHOLD = 1;
-const SETTLE_THRESHOLD_BASE_LEVEL = 16;
+// Minimum distance in tiles.group local space a re-cast sample must move before it is committed,
+// so incidental terrain refinement doesn't jitter an already-settled path. The threshold is
+// measured as a fraction of the item's tile world size on the surface so it adapts to the scale
+// and distortion of the rendered surface. The ratio matches a one meter threshold for a level 16
+// tile on earth.
+const SETTLE_THRESHOLD_TILE_RATIO = 1.6e-3;
 
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _hit = /* @__PURE__ */ new Vector3();
 const _hits = [];
+const _spanStart = /* @__PURE__ */ new Vector3();
+const _spanEnd = /* @__PURE__ */ new Vector3();
 
 // check if the given raycaster intersects the provided frustum shape
 function rayIntersectsFrustum( raycaster, frustum ) {
@@ -172,6 +173,24 @@ export class SettlingManager {
 	_deadlineExpired() {
 
 		return performance.now() >= this._deadline;
+
+	}
+
+	// measure the apparent world span of the item's tile at its location on the surface and
+	// derive the commit threshold as a fraction of it
+	_getSettleThreshold( item ) {
+
+		const { surface } = this.tiles;
+		const isLine = item instanceof LineAnnotation;
+		const lat = isLine ? item.lat[ 0 ] : item.lat;
+		const lon = isLine ? item.lon[ 0 ] : item.lon;
+
+		const lonSpan = 2 * Math.PI / 2 ** item.lodLevel;
+		const lonEnd = lon + lonSpan <= Math.PI ? lon + lonSpan : lon - lonSpan;
+		surface.getCartographicToPosition( lat, lon, 0, _spanStart );
+		surface.getCartographicToPosition( lat, lonEnd, 0, _spanEnd );
+
+		return SETTLE_THRESHOLD_TILE_RATIO * _spanStart.distanceTo( _spanEnd );
 
 	}
 
@@ -410,9 +429,9 @@ export class SettlingManager {
 
 	*_settleItem( item ) {
 
-		// commit threshold scales with the item's LoD, so coarser paths tolerate larger
+		// commit threshold scales with the item's tile size, so coarser paths tolerate larger
 		// changes before they update
-		const threshold = SETTLE_POSITION_THRESHOLD * 2 ** ( SETTLE_THRESHOLD_BASE_LEVEL - item.lodLevel );
+		const threshold = this._getSettleThreshold( item );
 
 		// TODO: add "settling" logic on the classes themselves?
 		if ( item instanceof LineAnnotation ) {
