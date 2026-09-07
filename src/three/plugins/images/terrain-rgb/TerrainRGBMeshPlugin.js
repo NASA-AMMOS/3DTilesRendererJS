@@ -123,14 +123,30 @@ function sampleGrid( grid, tu, tv ) {
  *   `applyOverlayTexture` is enabled.
  * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.
  * @param {boolean} [options.unlit=false] Render the tiles without lighting or terrain normals.
- * @param {('ellipsoid'|'planar')} [options.shape='ellipsoid'] Surface shape.
- * @param {string|null} [options.projection=null] Optional display projection scheme name used to
- *   lay out the planar geometry, so content can be displayed in a different projection than it
- *   is stored in. The tiling always comes from the data source.
+ * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] The displayed surface shape:
+ *   `'ellipsoid'` for globe geometry, `'source'` for a plane in the data's source projection, or a
+ *   projection scheme name for a plane in a different projection than the content is stored in. The
+ *   tiling always comes from the data source.
+ * @param {('ellipsoid'|'planar')} [options.shape] Deprecated: use `projection` instead.
  * @param {boolean} [options.endCaps=true] Snap poles to ±90° lat.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
  */
 export class TerrainRGBMeshPlugin {
+
+	// Deprecated: use "projection" instead
+	get shape() {
+
+		console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+		return this.projection === 'ellipsoid' ? 'ellipsoid' : 'planar';
+
+	}
+
+	set shape( v ) {
+
+		console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+		this.projection = v === 'planar' ? 'source' : 'ellipsoid';
+
+	}
 
 	get heightScale() {
 
@@ -159,7 +175,7 @@ export class TerrainRGBMeshPlugin {
 			overlay = null,
 			applyOverlayTexture = false,
 			unlit = false,
-			shape = 'ellipsoid',
+			shape = null,
 			projection = null,
 			endCaps = true,
 			useRecommendedSettings = true,
@@ -175,8 +191,18 @@ export class TerrainRGBMeshPlugin {
 		this.overlay = overlay;
 		this.applyOverlayTexture = applyOverlayTexture;
 		this.unlit = unlit;
-		this.shape = shape;
-		this.projection = projection;
+		this.projection = projection ?? 'ellipsoid';
+		if ( shape !== null ) {
+
+			console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+			if ( projection === null ) {
+
+				this.projection = shape === 'planar' ? 'source' : 'ellipsoid';
+
+			}
+
+		}
+
 		this.endCaps = endCaps;
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.heightScale = heightScale;
@@ -238,9 +264,10 @@ export class TerrainRGBMeshPlugin {
 
 		// The tiling always comes from the data source. The surface embeds the display projection's
 		// normalized space in the local frame and all planar geometry flows through it.
-		const displayProjection = this.projection !== null
-			? new ProjectionScheme( this.projection )
-			: this._tiling.projection;
+		const { projection } = this;
+		const displayProjection = projection === 'ellipsoid' || projection === 'source'
+			? this._tiling.projection
+			: new ProjectionScheme( projection );
 
 		let planeAspect;
 		if ( displayProjection.isCartographic ) {
@@ -566,7 +593,7 @@ export class TerrainRGBMeshPlugin {
 	// whether the plugin is loading as an ellipsoid or not
 	_useEllipsoid() {
 
-		return this._tiling.projection.isCartographic && this.shape === 'ellipsoid';
+		return this._tiling.projection.isCartographic && this.projection === 'ellipsoid';
 
 	}
 

@@ -55,7 +55,7 @@ function init() {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new GeneratedSurfacePlugin( {
-		shape: 'ellipsoid',
+		projection: 'ellipsoid',
 	} ) );
 	tiles.registerPlugin( new ImageOverlayPlugin( {
 		overlays: [ overlay ],

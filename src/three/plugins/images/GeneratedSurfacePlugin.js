@@ -27,15 +27,15 @@ const _point = [ 0, 0 ];
  *
  * The tiling scheme and projection are derived from a provided overlay.
  * If the source's projection is cartographic (any EPSG scheme), the plugin supports
- * both planar and ellipsoidal geometry via the `shape` option.
+ * both planar and ellipsoidal geometry via the `projection` option.
  *
  * @param {Object} [options]
  * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from. When `applyOverlayTexture` is enabled, also used to texture the generated tile meshes.
- * @param {string} [options.shape='ellipsoid'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
- *   meaningful for cartographic sources.
- * @param {string|null} [options.projection=null] Optional display projection scheme name used to
- *   lay out the planar geometry, so content can be displayed in a different projection than it
- *   is stored in. The tiling always comes from the data source.
+ * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] The displayed surface shape:
+ *   `'ellipsoid'` for globe geometry, `'source'` for a plane in the data's source projection, or a
+ *   projection scheme name for a plane in a different projection than the content is stored in. The
+ *   tiling always comes from the data source. Only meaningful for cartographic sources.
+ * @param {string} [options.shape] Deprecated: use `projection` instead.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
@@ -43,11 +43,26 @@ const _point = [ 0, 0 ];
  */
 export class GeneratedSurfacePlugin {
 
+	// Deprecated: use "projection" instead
+	get shape() {
+
+		console.warn( 'GeneratedSurfacePlugin: "shape" is deprecated. Use "projection" instead.' );
+		return this.projection === 'ellipsoid' ? 'ellipsoid' : 'planar';
+
+	}
+
+	set shape( v ) {
+
+		console.warn( 'GeneratedSurfacePlugin: "shape" is deprecated. Use "projection" instead.' );
+		this.projection = v === 'planar' ? 'source' : 'ellipsoid';
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
 			overlay = null,
-			shape = 'ellipsoid',
+			shape = null,
 			projection = null,
 			endCaps = true,
 			center = true,
@@ -59,8 +74,18 @@ export class GeneratedSurfacePlugin {
 		this.tiles = null;
 
 		this.overlay = overlay;
-		this.shape = shape;
-		this.projection = projection;
+		this.projection = projection ?? 'ellipsoid';
+		if ( shape !== null ) {
+
+			console.warn( 'GeneratedSurfacePlugin: "shape" is deprecated. Use "projection" instead.' );
+			if ( projection === null ) {
+
+				this.projection = shape === 'planar' ? 'source' : 'ellipsoid';
+
+			}
+
+		}
+
 		this.endCaps = endCaps;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
@@ -100,9 +125,10 @@ export class GeneratedSurfacePlugin {
 
 		// The tiling always comes from the data source. The surface embeds the display projection's
 		// normalized space in the local frame and all planar geometry flows through it.
-		const displayProjection = this.projection !== null
-			? new ProjectionScheme( this.projection )
-			: this._tiling.projection;
+		const { projection } = this;
+		const displayProjection = projection === 'ellipsoid' || projection === 'source'
+			? this._tiling.projection
+			: new ProjectionScheme( projection );
 
 		let planeAspect;
 		if ( displayProjection.isCartographic ) {
@@ -301,7 +327,7 @@ export class GeneratedSurfacePlugin {
 	// whether the plugin is loading as an ellipsoid or not
 	_useEllipsoid() {
 
-		return this._tiling.projection.isCartographic && this.shape === 'ellipsoid';
+		return this._tiling.projection.isCartographic && this.projection === 'ellipsoid';
 
 	}
 
@@ -723,7 +749,7 @@ export class GeneratedSurfacePlugin {
 	_createDefaultTiling() {
 
 		const tiling = new TilingScheme();
-		if ( this.shape === 'ellipsoid' ) {
+		if ( this.projection === 'ellipsoid' ) {
 
 			const projection = new ProjectionScheme( 'EPSG:3857' );
 			tiling.setProjection( projection );
