@@ -24,6 +24,18 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get flatSurface() {
+
+		return this.manager.flatSurface;
+
+	}
+
+	set flatSurface( v ) {
+
+		this.manager.flatSurface = v;
+
+	}
+
 	get resolution() {
 
 		return this.manager.resolution;

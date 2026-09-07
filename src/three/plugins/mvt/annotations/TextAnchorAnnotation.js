@@ -412,11 +412,11 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	updateTransform( matrix, resolution, cameraPosition ) {
+	updateTransform( matrix, resolution, cameraPosition, flatSurface = false ) {
 
 		// update the screen positions for shared line
 		this.updateActiveReference();
-		this.getActiveReference().line.updateTransform( matrix, resolution, cameraPosition );
+		this.getActiveReference().line.updateTransform( matrix, resolution, cameraPosition, flatSurface );
 
 	}
 
