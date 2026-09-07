@@ -208,7 +208,6 @@ export class TerrainRGBMeshPlugin {
 		this._gridCache = new GridCache( this );
 		this._tiling = null;
 		this._maxSourceLevel = - 1;
-		this._surface = null;
 
 	}
 
@@ -266,27 +265,16 @@ export class TerrainRGBMeshPlugin {
 			? this._tiling.projection
 			: new ProjectionScheme( projection );
 
-		let planeAspect;
-		if ( displayProjection.isCartographic ) {
-
-			const [ extentX, extentY ] = displayProjection.getProjectedExtents();
-			planeAspect = extentX / extentY;
-
-		} else {
-
-			planeAspect = this._tiling.aspectRatio;
-
-		}
-
-		const surface = new ProjectedSurface( displayProjection );
-		surface.scale.set( planeAspect, 1 );
-		surface.offset.set( - planeAspect / 2, - 0.5 );
-		this._surface = surface;
+		const [ extentX, extentY ] = displayProjection.getProjectedExtents();
+		const planeAspect = extentX / extentY;
 
 		// register the surface so image overlays and other consumers can map between cartographic
 		// values and the planar frame
-		if ( displayProjection.isCartographic && ! this._useEllipsoid() ) {
+		if ( ! this._useEllipsoid() ) {
 
+			const surface = new ProjectedSurface( displayProjection );
+			surface.scale.set( planeAspect, 1 );
+			surface.offset.set( - planeAspect / 2, - 0.5 );
 			this.tiles.surface = surface;
 
 		}
@@ -801,7 +789,8 @@ export class TerrainRGBMeshPlugin {
 	// maps a point in the tiling's normalized space onto the flattened plane through the surface
 	_normalizedToPlane( nu, nv, target ) {
 
-		const { _surface: surface, _tiling: tiling } = this;
+		const { surface } = this.tiles;
+		const { _tiling: tiling } = this;
 		const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
 		let cappedLat = lat;
 
@@ -1085,7 +1074,7 @@ export class TerrainRGBMeshPlugin {
 
 			// Size of one pixel in world space. The tile contents span the surface scale.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			const { scale } = this._surface;
+			const { scale } = this.tiles.surface;
 			geometricError = Math.max( scale.x / pixelWidth, scale.y / pixelHeight );
 
 		}
