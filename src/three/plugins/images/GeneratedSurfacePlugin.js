@@ -389,8 +389,17 @@ export class GeneratedSurfacePlugin {
 		// snap the edges of a pole-limited tiling to the poles so the map is not cut off there
 		if ( endCaps && _tiling.projection.isMercator ) {
 
-			if ( nv === 1 ) cappedLat = Math.PI / 2;
-			if ( nv === 0 ) cappedLat = - Math.PI / 2;
+			if ( nv === 1 ) {
+
+				cappedLat = Math.PI / 2;
+
+			}
+
+			if ( nv === 0 ) {
+
+				cappedLat = - Math.PI / 2;
+
+			}
 
 		}
 
@@ -595,8 +604,17 @@ export class GeneratedSurfacePlugin {
 
 			if ( endCaps ) {
 
-				if ( normalizedBounds[ 3 ] === 1 ) cartBounds[ 3 ] = Math.PI / 2;
-				if ( normalizedBounds[ 1 ] === 0 ) cartBounds[ 1 ] = - Math.PI / 2;
+				if ( normalizedBounds[ 3 ] === 1 ) {
+
+					cartBounds[ 3 ] = Math.PI / 2;
+
+				}
+
+				if ( normalizedBounds[ 1 ] === 0 ) {
+
+					cartBounds[ 1 ] = - Math.PI / 2;
+
+				}
 
 			}
 
