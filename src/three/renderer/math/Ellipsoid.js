@@ -54,6 +54,12 @@ export class Ellipsoid {
 	constructor( x = 1, y = 1, z = 1 ) {
 
 		/**
+		 * Flag indicating that this is an ellipsoid surface.
+		 * @type {boolean}
+		 */
+		this.isEllipsoid = true;
+
+		/**
 		 * Optional name for this ellipsoid instance.
 		 * @type {string}
 		 */

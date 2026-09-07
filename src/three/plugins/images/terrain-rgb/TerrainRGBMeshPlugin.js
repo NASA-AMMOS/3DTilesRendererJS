@@ -270,7 +270,7 @@ export class TerrainRGBMeshPlugin {
 
 		// register the surface so image overlays and other consumers can map between cartographic
 		// values and the planar frame
-		if ( ! this._useEllipsoid() ) {
+		if ( this.projection !== 'ellipsoid' ) {
 
 			const surface = new ProjectedSurface( displayProjection );
 			surface.scale.set( planeAspect, 1 );
@@ -557,17 +557,9 @@ export class TerrainRGBMeshPlugin {
 
 	dispose() {
 
-		// restore the default surface if this plugin assigned a flattened one
-		const { tiles } = this;
-		if ( tiles.surface.isProjectedSurface ) {
-
-			tiles.surface = tiles.ellipsoid;
-
-		}
-
 		// Every tile locks its grid once and releases it once, so the cache empties itself. Grids
 		// locked by in-flight parses are released by their abort handling once they settle.
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			this.disposeTile( tile );
 
@@ -578,7 +570,7 @@ export class TerrainRGBMeshPlugin {
 	// whether the plugin is loading as an ellipsoid or not
 	_useEllipsoid() {
 
-		return this._tiling.projection.isCartographic && this.projection === 'ellipsoid';
+		return Boolean( this.tiles.surface.isEllipsoid );
 
 	}
 
