@@ -645,6 +645,7 @@ export class MVTAnnotationsPlugin {
 
 				tiles.getResolution( camera, occupancy.resolution );
 				occupancy.matrix.copy( tiles.group.matrixWorld );
+				occupancy.useEllipsoidSurface = Boolean( tiles.surface.isEllipsoid );
 
 			}
 
@@ -847,11 +848,11 @@ export class MVTAnnotationsPlugin {
 
 						if ( type === 1 ) {
 
-							parsePointFeature( feature, layerName, level, tileBounds, tiling, tiles.surface, annotations );
+							parsePointFeature( feature, layerName, level, tileBounds, tiling, annotations );
 
 						} else {
 
-							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, tiles.surface, annotations );
+							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, annotations );
 
 						}
 
@@ -1074,7 +1075,15 @@ export class MVTAnnotationsPlugin {
 
 	_markVectorTile( tile, state ) {
 
+		// A disposed tile can still receive a deferred visibility event from the fade plugin
+		// after "disposeTile" has removed its range.
 		const range = this.tileLoadState.get( tile );
+		if ( range === undefined ) {
+
+			return;
+
+		}
+
 		this._forEachTileInBounds( range, ( x, y, l ) => {
 
 			this.hierarchy.setTargetState( x, y, l, state );

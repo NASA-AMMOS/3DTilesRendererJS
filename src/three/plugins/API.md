@@ -785,7 +785,7 @@ image overlay data.
 
 The tiling scheme and projection are derived from a provided overlay.
 If the source's projection is cartographic (any EPSG scheme), the plugin supports
-both planar and ellipsoidal geometry via the `shape` option.
+both planar and ellipsoidal geometry via the `projection` option.
 
 
 ### .constructor
@@ -798,9 +798,13 @@ constructor(
 		// generated tile meshes.
 		overlay = null: ImageOverlay,
 
-		// Geometry shape: `'planar'` or `'ellipsoid'`. Only  
-		// meaningful for cartographic sources.
-		shape = 'ellipsoid': string,
+		// Display the tiles on the   ellipsoid, on a plane in the
+		// source projection, or on a plane in the named projection
+		// scheme.
+		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
+
+		// Deprecated: use `projection` instead.
+		shape?: string,
 
 		// For Mercator ellipsoid mode, snap poles to ±90° lat.
 		endCaps = true: boolean,
@@ -1461,7 +1465,7 @@ drawSVG(
 		// CSS stroke color, or null to skip stroke.
 		strokeStyle = null: string | null,
 
-		// Stroke width in SVG user units before scaling.
+		// Visible stroke width in atlas pixels.
 		strokeWidth = 1: number,
 
 		// Fraction of the slot size the icon occupies (0–1).
@@ -1935,8 +1939,13 @@ constructor(
 		// Render the tiles without lighting or terrain normals.
 		unlit = false: boolean,
 
-		// Surface shape.
-		shape = 'ellipsoid': 'ellipsoid' | 'planar',
+		// Display the tiles on the   ellipsoid, on a plane in the
+		// source projection, or on a plane in the named projection
+		// scheme.
+		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
+
+		// Deprecated: use `projection` instead.
+		shape?: 'ellipsoid' | 'planar',
 
 		// Snap poles to ±90° lat.
 		endCaps = true: boolean,

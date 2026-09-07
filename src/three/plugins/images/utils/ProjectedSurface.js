@@ -22,15 +22,27 @@ export class ProjectedSurface {
 
 	getCartographicToPosition( lat, lon, height, target ) {
 
-		const { projection, scale, offset } = this;
+		const { projection } = this;
+		if ( ! projection.isCartographic ) {
+
+			throw new Error( 'ProjectedSurface: The projection is not cartographic.' );
+
+		}
+
 		const [ u, v ] = projection.fromCartographicToNormalized( lon, lat, _point );
-		return target.set( u * scale.x + offset.x, v * scale.y + offset.y, height );
+		return this.getNormalizedToPosition( u, v, height, target );
 
 	}
 
 	getPositionToCartographic( pos, target ) {
 
 		const { projection, scale, offset } = this;
+		if ( ! projection.isCartographic ) {
+
+			throw new Error( 'ProjectedSurface: The projection is not cartographic.' );
+
+		}
+
 		const u = ( pos.x - offset.x ) / scale.x;
 		const v = ( pos.y - offset.y ) / scale.y;
 		const [ lon, lat ] = projection.fromNormalizedToCartographic( u, v, _point );
@@ -38,6 +50,14 @@ export class ProjectedSurface {
 		target.lat = lat;
 		target.height = pos.z;
 		return target;
+
+	}
+
+	// maps the projection's normalized coordinates into the local frame
+	getNormalizedToPosition( u, v, height, target ) {
+
+		const { scale, offset } = this;
+		return target.set( u * scale.x + offset.x, v * scale.y + offset.y, height );
 
 	}
 

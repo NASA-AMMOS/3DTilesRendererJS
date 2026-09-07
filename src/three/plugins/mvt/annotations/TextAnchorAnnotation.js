@@ -412,11 +412,11 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
-	updateTransform( matrix, resolution, cameraPosition ) {
+	updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface = true ) {
 
 		// update the screen positions for shared line
 		this.updateActiveReference();
-		this.getActiveReference().line.updateTransform( matrix, resolution, cameraPosition );
+		this.getActiveReference().line.updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface );
 
 	}
 
@@ -601,21 +601,25 @@ export class TextAnchorAnnotation extends OccupancyAnnotation {
 
 	}
 
+	// Remove references to the line, returning whether any reference was removed. The caller
+	// refreshes the active reference once a batch of removals completes.
 	removeLine( line ) {
 
 		const { referencePaths } = this;
+		let removed = false;
 		for ( let i = 0; i < referencePaths.length; i ++ ) {
 
 			if ( referencePaths[ i ].line === line ) {
 
 				referencePaths.splice( i, 1 );
 				i --;
+				removed = true;
 
 			}
 
 		}
 
-		this.updateActiveReference();
+		return removed;
 
 	}
 

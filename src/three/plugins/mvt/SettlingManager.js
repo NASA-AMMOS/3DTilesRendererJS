@@ -3,11 +3,9 @@ import { LineAnnotation } from './annotations/LineAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
 
-// Minimum distance in tiles.group local space a re-cast sample must move before it is committed,
-// so incidental terrain refinement doesn't jitter an already-settled path. The threshold is
-// measured as a fraction of the item's tile world size on the surface so it adapts to the scale
-// and distortion of the rendered surface. The ratio matches a one meter threshold for a level 16
-// tile on earth.
+// Minimum distance a re-cast sample must move before it is committed so terrain refinement
+// doesn't jitter settled paths. Measured as a fraction of the item's tile world size so it
+// adapts to the surface scale; the ratio matches one meter for a level 16 tile on earth.
 const SETTLE_THRESHOLD_TILE_RATIO = 1.6e-3;
 
 const _raycaster = /* @__PURE__ */ new Raycaster();
@@ -185,7 +183,7 @@ export class SettlingManager {
 		const lat = isLine ? item.lat[ 0 ] : item.lat;
 		const lon = isLine ? item.lon[ 0 ] : item.lon;
 
-		const lonSpan = 2 * Math.PI / 2 ** item.lodLevel;
+		const lonSpan = 2 * Math.PI / ( 2 ** item.lodLevel );
 		const lonEnd = lon + lonSpan <= Math.PI ? lon + lonSpan : lon - lonSpan;
 		surface.getCartographicToPosition( lat, lon, 0, _spanStart );
 		surface.getCartographicToPosition( lat, lonEnd, 0, _spanEnd );

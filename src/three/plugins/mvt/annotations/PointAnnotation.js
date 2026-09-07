@@ -12,7 +12,6 @@ export class PointAnnotation extends OccupancyAnnotation {
 		super();
 
 		this.position = new Vector3();
-		this.normal = new Vector3();
 		this.lat = 0;
 		this.lon = 0;
 		this.radius = 28;
@@ -22,7 +21,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 	}
 
-	updateTransform( matrix, resolution, cameraPosition ) {
+	updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface = true ) {
 
 		const { position, screenPos } = this;
 
@@ -34,19 +33,18 @@ export class PointAnnotation extends OccupancyAnnotation {
 		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 		screenPos.z = ( screenPos.z < - 1 || screenPos.z > 1 ) ? 1 : 0;
 
-		// facing ratio: dot( surface normal, direction to camera ). Fall back to the direction
-		// from the body center for items created without a normal assigned.
-		const { normal } = this;
-		if ( cameraPosition !== null && ( normal.lengthSq() > 0 || position.lengthSq() > 0 ) ) {
+		// facing ratio: dot( surface normal, direction to camera ), approximating the normal as
+		// up on a flattened surface and as the direction from the body center on an ellipsoid
+		if ( cameraPosition !== null && ( ! useEllipsoidSurface || position.lengthSq() > 0 ) ) {
 
 			_delta.subVectors( cameraPosition, position ).normalize();
-			if ( normal.lengthSq() > 0 ) {
+			if ( useEllipsoidSurface ) {
 
-				_normal.copy( normal );
+				_normal.copy( position ).normalize();
 
 			} else {
 
-				_normal.copy( position ).normalize();
+				_normal.set( 0, 0, 1 );
 
 			}
 
@@ -95,7 +93,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 }
 
 // parse a single point feature into point annotations
-export function parsePointFeature( feature, layerName, level, tileBounds, tiling, surface, target = [] ) {
+export function parsePointFeature( feature, layerName, level, tileBounds, tiling, target = [] ) {
 
 	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 	const { projection } = tiling;
@@ -125,7 +123,6 @@ export function parsePointFeature( feature, layerName, level, tileBounds, tiling
 		item.lat = lat;
 		item.lon = lon;
 		item.lodLevel = level;
-		surface.getCartographicToNormal( lat, lon, item.normal );
 
 		target.push( item );
 
