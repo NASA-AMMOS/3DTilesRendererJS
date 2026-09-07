@@ -782,12 +782,12 @@ export class TerrainRGBMeshPlugin {
 	_normalizedToPlane( nu, nv, target ) {
 
 		const { surface } = this.tiles;
-		const { _tiling: tiling } = this;
-		const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
+		const { _tiling } = this;
+		const [ lon, lat ] = _tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
 		let cappedLat = lat;
 
 		// snap the edges of a pole-limited tiling to the poles so the map is not cut off there
-		if ( this.endCaps && tiling.projection.isMercator ) {
+		if ( this.endCaps && _tiling.projection.isMercator ) {
 
 			if ( nv === 1 ) cappedLat = Math.PI / 2;
 			if ( nv === 0 ) cappedLat = - Math.PI / 2;

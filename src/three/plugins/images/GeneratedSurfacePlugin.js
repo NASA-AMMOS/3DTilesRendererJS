@@ -323,10 +323,10 @@ export class GeneratedSurfacePlugin {
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		const { _tiling: tiling } = this;
+		const { _tiling } = this;
 
-		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( tx, ty, level, true, true );
-		const uvRange = tiling.getTileContentUVBounds( tx, ty, level );
+		const [ minU, minV, maxU, maxV ] = _tiling.getTileBounds( tx, ty, level, true, true );
+		const uvRange = _tiling.getTileContentUVBounds( tx, ty, level );
 
 		// lay the grid vertices out over the tile's normalized rect and transform them by the
 		// display projection so the tiles take the shape of the projected map
@@ -375,19 +375,19 @@ export class GeneratedSurfacePlugin {
 	_normalizedToPlane( nu, nv, target ) {
 
 		const { surface } = this.tiles;
-		const { _tiling: tiling } = this;
-		if ( ! tiling.projection.isCartographic ) {
+		const { _tiling } = this;
+		if ( ! _tiling.projection.isCartographic ) {
 
 			// non-cartographic sources map directly onto the plane
 			return surface.getNormalizedToPosition( nu, nv, 0, target );
 
 		}
 
-		const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
+		const [ lon, lat ] = _tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
 		let cappedLat = lat;
 
 		// snap the edges of a pole-limited tiling to the poles so the map is not cut off there
-		if ( this.endCaps && tiling.projection.isMercator ) {
+		if ( this.endCaps && _tiling.projection.isMercator ) {
 
 			if ( nv === 1 ) cappedLat = Math.PI / 2;
 			if ( nv === 0 ) cappedLat = - Math.PI / 2;
