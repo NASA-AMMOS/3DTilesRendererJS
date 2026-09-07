@@ -89,7 +89,6 @@ export class GeneratedSurfacePlugin {
 		this.applyOverlayTexture = applyOverlayTexture;
 
 		this._tiling = null;
-		this._surface = null;
 
 	}
 
@@ -139,19 +138,17 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		const surface = new ProjectedSurface( displayProjection );
-		surface.scale.set( planeAspect, 1 );
-		if ( this.center ) {
-
-			surface.offset.set( - planeAspect / 2, - 0.5 );
-
-		}
-
-		this._surface = surface;
-
 		// register the surface so image overlays and other consumers can map between cartographic
 		// values and the planar frame
-		if ( displayProjection.isCartographic && ! this._useEllipsoid() ) {
+		if ( ! this._useEllipsoid() ) {
+
+			const surface = new ProjectedSurface( displayProjection );
+			surface.scale.set( planeAspect, 1 );
+			if ( this.center ) {
+
+				surface.offset.set( - planeAspect / 2, - 0.5 );
+
+			}
 
 			this.tiles.surface = surface;
 
@@ -384,7 +381,15 @@ export class GeneratedSurfacePlugin {
 	// maps a point in the tiling's normalized space onto the flattened plane through the surface
 	_normalizedToPlane( nu, nv, target ) {
 
-		const { _surface: surface, _tiling: tiling } = this;
+		const { surface } = this.tiles;
+		const { _tiling: tiling } = this;
+		if ( ! tiling.projection.isCartographic ) {
+
+			// non-cartographic sources map directly onto the plane
+			return surface.getNormalizedToPosition( nu, nv, 0, target );
+
+		}
+
 		const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
 		let cappedLat = lat;
 
@@ -696,7 +701,7 @@ export class GeneratedSurfacePlugin {
 
 			// Size of one pixel in world space. The tile contents span the surface scale.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			const { scale } = this._surface;
+			const { scale } = this.tiles.surface;
 			geometricError = Math.max( scale.x / pixelWidth, scale.y / pixelHeight );
 
 		}
