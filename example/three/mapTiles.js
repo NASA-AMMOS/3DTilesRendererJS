@@ -6,9 +6,11 @@ import {
 	Vector2,
 	Matrix4,
 	MathUtils,
+	AmbientLight,
+	DirectionalLight,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, ImageOverlayPlugin, XYZTilesOverlay, CesiumIonOverlay, PMTilesOverlay, DebugTilesPlugin, MVTAnnotationsPlugin } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, TerrainRGBMeshPlugin, ImageOverlayPlugin, XYZTilesOverlay, CesiumIonOverlay, PMTilesOverlay, DebugTilesPlugin, MVTAnnotationsPlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { ExampleAnnotationsDriver } from './src/ExampleAnnotationsDriver.js';
 
@@ -33,11 +35,18 @@ const raycaster = new Raycaster();
 const mouse = new Vector2();
 const coordsEl = document.getElementById( 'coords' );
 
+const EARTH_RADIUS = 6378137;
+
+// meters-to-world factor for the planar shape, derived from the display projection on load
+let planarHeightScale = 1;
+
 const params = {
 
 	errorTarget: 1,
 	planar: true,
+	terrain: true,
 	drape: true,
+	heightScale: 1,
 	projection: 'EPSG:8857',
 	overlay: 'Protomaps',
 
@@ -59,8 +68,16 @@ function init() {
 	// scene
 	scene = new Scene();
 
+	// lights for the displaced terrain material
+	const ambientLight = new AmbientLight( 0xffffff, 1.0 );
+	scene.add( ambientLight );
+
+	const directionalLight = new DirectionalLight( 0xffffff, 2.5 );
+	directionalLight.position.set( 1, 2, 3 );
+	scene.add( directionalLight );
+
 	// set up cameras and ortho / perspective transition
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.0001, 10000 );
 
 	initTiles();
 
@@ -72,7 +89,17 @@ function init() {
 	// gui initialization
 	const gui = new GUI();
 	gui.add( params, 'planar' ).onChange( initTiles );
+	gui.add( params, 'terrain' ).onChange( initTiles );
 	gui.add( params, 'drape' ).onChange( initTiles );
+	gui.add( params, 'heightScale', 0, 10 ).onChange( v => {
+
+		if ( params.terrain ) {
+
+			surfacePlugin.heightScale = params.planar ? v * planarHeightScale : v;
+
+		}
+
+	} );
 	gui.add( params, 'projection', [ 'source', 'EPSG:4326', 'EPSG:8857' ] ).onChange( initTiles );
 	gui.add( params, 'overlay', [ 'Protomaps', 'OpenStreetMap', 'Sentinel-2' ] ).onChange( initTiles );
 	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
@@ -125,19 +152,58 @@ function initTiles() {
 	// tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: true, displayParentBounds: true, colorMode: DebugTilesPlugin.ColorModes.RANDOM_COLOR, unlit: true }) );
 	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	surfacePlugin = new GeneratedSurfacePlugin( {
-		overlay,
-		shape: params.planar ? 'planar' : 'ellipsoid',
-		projection: params.projection === 'source' ? null : params.projection,
-		applyOverlayTexture: ! params.drape,
-	} );
+	if ( params.terrain ) {
+
+		// terrain tiles displaced by Terrain-RGB elevation data, with the overlay applied to the
+		// lit tile materials directly for a hill-shaded look
+		surfacePlugin = new TerrainRGBMeshPlugin( {
+			url: 'https://terrain.reearth.land/mapterhorn-egm08/mapbox/elevation/{z}/{x}/{y}.png',
+			tileDimension: 512,
+			maxZoom: 14,
+			shape: params.planar ? 'planar' : 'ellipsoid',
+			projection: params.projection === 'source' ? null : params.projection,
+			overlay,
+			applyOverlayTexture: true,
+		} );
+
+		if ( params.planar ) {
+
+			// scale the meter elevations into the planar world, where one unit spans the height
+			// of the projected map
+			tiles.addEventListener( 'load-root-tileset', () => {
+
+				const [ , extentY ] = tiles.surface.projection.getProjectedExtents();
+				planarHeightScale = 1 / ( extentY * EARTH_RADIUS );
+				surfacePlugin.heightScale = params.heightScale * planarHeightScale;
+
+			} );
+
+		} else {
+
+			surfacePlugin.heightScale = params.heightScale;
+
+		}
+
+	} else {
+
+		surfacePlugin = new GeneratedSurfacePlugin( {
+			overlay,
+			shape: params.planar ? 'planar' : 'ellipsoid',
+			projection: params.projection === 'source' ? null : params.projection,
+			applyOverlayTexture: ! params.drape,
+		} );
+
+	}
+
 	tiles.registerPlugin( surfacePlugin );
 
-	if ( params.drape ) {
+	if ( ! params.terrain && params.drape ) {
 
 		// drape the overlay via the image overlay plugin so it maps through "tiles.surface"
 		// rather than being applied to the generated tile textures directly
-		tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], resolution: 512 } ) );
+		const imageOverlayPlugin = new ImageOverlayPlugin( { overlays: [ overlay ], resolution: 512 } );
+		tiles.registerPlugin( imageOverlayPlugin );
+		imageOverlayPlugin.processQueue.maxJobs = 20;
 
 	}
 
@@ -145,21 +211,23 @@ function initTiles() {
 
 		// road and point annotations parsed from the same vector data
 		const driver = new ExampleAnnotationsDriver();
-		if ( params.planar ) {
+		if ( params.planar && ! params.terrain ) {
 
 			// the flattened plane has no elevation, so annotations settle directly onto the
-			// surface without raycasting the tile geometry
+			// surface without raycasting the tile geometry. With terrain the plugin's elevation
+			// sampling is used instead.
 			driver.sampleCartographicElevation = () => 0;
 
 		}
 
-		tiles.registerPlugin( new MVTAnnotationsPlugin( { overlay, camera, driver, resolution: 50 } ) );
+		tiles.registerPlugin( new MVTAnnotationsPlugin( { overlay, camera, driver, resolution: 100 } ) );
 
 	}
 
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;
-	tiles.parseQueue.maxJobs = 3;
+	tiles.parseQueue.maxJobs = 6;
+	tiles.downloadQueue.maxJobsPerOrigin = 40;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 	window.TILES = tiles;
@@ -235,7 +303,7 @@ function onMouseMove( e ) {
 		toLocalMat.copy( tiles.group.matrixWorld ).invert();
 		hits[ 0 ].point.applyMatrix4( toLocalMat );
 
-		const cart = surfacePlugin.getCartographicFromPosition( hits[ 0 ].point );
+		const cart = tiles.surface.getPositionToCartographic( hits[ 0 ].point, {} );
 		const lat = MathUtils.radToDeg( cart.lat ).toFixed( 2 );
 		const lon = MathUtils.radToDeg( cart.lon ).toFixed( 2 );
 		coordsEl.textContent = `${ lat }°  ${ lon }°`;
