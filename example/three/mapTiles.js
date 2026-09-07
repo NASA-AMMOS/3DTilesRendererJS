@@ -160,8 +160,7 @@ function initTiles() {
 			url: 'https://terrain.reearth.land/mapterhorn-egm08/mapbox/elevation/{z}/{x}/{y}.png',
 			tileDimension: 512,
 			maxZoom: 14,
-			shape: params.planar ? 'planar' : 'ellipsoid',
-			projection: params.projection === 'source' ? null : params.projection,
+			projection: params.planar ? params.projection : 'ellipsoid',
 			overlay,
 			applyOverlayTexture: true,
 		} );
@@ -188,8 +187,7 @@ function initTiles() {
 
 		surfacePlugin = new GeneratedSurfacePlugin( {
 			overlay,
-			shape: params.planar ? 'planar' : 'ellipsoid',
-			projection: params.projection === 'source' ? null : params.projection,
+			projection: params.planar ? params.projection : 'ellipsoid',
 			applyOverlayTexture: ! params.drape,
 		} );
 

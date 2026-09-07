@@ -112,6 +112,9 @@ export class ScreenOccupationManager extends EventDispatcher {
 		this.camera = null;
 		this.matrix = new Matrix4();
 
+		// whether the annotations sit on an ellipsoid surface rather than a flattened one
+		this.useEllipsoidSurface = true;
+
 		// time budget per frame for the sliced update pass
 		this.maxUpdateTimeMs = 0.5;
 
@@ -387,7 +390,7 @@ export class ScreenOccupationManager extends EventDispatcher {
 				const item = items[ i ];
 				if ( item.enabled ) {
 
-					item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
+					item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos, this.useEllipsoidSurface );
 					item.sortValue = sortValueCallback( item );
 
 				}
@@ -468,8 +471,8 @@ export class ScreenOccupationManager extends EventDispatcher {
 	// is fresh.
 	refreshLayout( item ) {
 
-		const { resolution, _ndcMatrix, _cameraLocalPos } = this;
-		item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos );
+		const { resolution, _ndcMatrix, _cameraLocalPos, useEllipsoidSurface } = this;
+		item.updateTransform( _ndcMatrix, resolution, _cameraLocalPos, useEllipsoidSurface );
 		item.evaluate( _dummyHandle, true );
 
 	}

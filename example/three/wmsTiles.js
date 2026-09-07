@@ -121,7 +121,7 @@ function rebuildTiles() {
 			styles: params.styles,
 			version: capabilities.version,
 		} ),
-		shape: 'ellipsoid',
+		projection: 'ellipsoid',
 		applyOverlayTexture: true,
 	} ) );
 
