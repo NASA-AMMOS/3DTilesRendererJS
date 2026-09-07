@@ -33,7 +33,6 @@ const _point = [ 0, 0 ];
  * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from. When `applyOverlayTexture` is enabled, also used to texture the generated tile meshes.
  * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] Display the tiles on the
  *   ellipsoid, on a plane in the source projection, or on a plane in the named projection scheme.
- * @param {string} [options.shape] Deprecated: use `projection` instead.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.

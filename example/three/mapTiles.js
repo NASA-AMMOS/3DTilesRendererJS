@@ -8,7 +8,7 @@ import {
 	MathUtils,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, ImageOverlayPlugin, XYZTilesOverlay, CesiumIonOverlay } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, XYZTilesOverlay, CesiumIonOverlay } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer;
@@ -23,7 +23,6 @@ const params = {
 
 	errorTarget: 1,
 	planar: false,
-	drape: false,
 	overlay: 'OpenStreetMap',
 
 };
@@ -60,7 +59,6 @@ function init() {
 	// gui initialization
 	const gui = new GUI();
 	gui.add( params, 'planar' ).onChange( initTiles );
-	gui.add( params, 'drape' ).onChange( initTiles );
 	gui.add( params, 'overlay', [ 'OpenStreetMap', 'Sentinel-2' ] ).onChange( initTiles );
 	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
 
@@ -97,18 +95,10 @@ function initTiles() {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	surfacePlugin = new GeneratedSurfacePlugin( {
 		overlay,
-		projection: params.planar ? 'source' : 'ellipsoid',
-		applyOverlayTexture: ! params.drape,
+		shape: params.planar ? 'planar' : 'ellipsoid',
+		applyOverlayTexture: true,
 	} );
 	tiles.registerPlugin( surfacePlugin );
-
-	if ( params.drape ) {
-
-		// drape the overlay via the image overlay plugin so it maps through "tiles.surface"
-		// rather than being applied to the generated tile textures directly
-		tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ] } ) );
-
-	}
 
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;

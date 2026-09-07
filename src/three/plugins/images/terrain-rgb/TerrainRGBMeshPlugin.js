@@ -125,7 +125,6 @@ function sampleGrid( grid, tu, tv ) {
  * @param {boolean} [options.unlit=false] Render the tiles without lighting or terrain normals.
  * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] Display the tiles on the
  *   ellipsoid, on a plane in the source projection, or on a plane in the named projection scheme.
- * @param {('ellipsoid'|'planar')} [options.shape] Deprecated: use `projection` instead.
  * @param {boolean} [options.endCaps=true] Snap poles to ±90° lat.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
  */
