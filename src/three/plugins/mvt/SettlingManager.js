@@ -183,7 +183,7 @@ export class SettlingManager {
 		const lat = isLine ? item.lat[ 0 ] : item.lat;
 		const lon = isLine ? item.lon[ 0 ] : item.lon;
 
-		const lonSpan = 2 * Math.PI / 2 ** item.lodLevel;
+		const lonSpan = 2 * Math.PI / ( 2 ** item.lodLevel );
 		const lonEnd = lon + lonSpan <= Math.PI ? lon + lonSpan : lon - lonSpan;
 		surface.getCartographicToPosition( lat, lon, 0, _spanStart );
 		surface.getCartographicToPosition( lat, lonEnd, 0, _spanEnd );
