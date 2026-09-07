@@ -696,9 +696,8 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// Drop the skirt vertices from their source vertices along the surface normal. Edge gaps
-		// come from neighboring levels sampling the elevation at different resolutions, so the
-		// mismatch is bounded by the tile's local elevation variation rather than the geometric error.
+		// drop the skirt vertices along the surface normal, far enough to cover the height
+		// mismatches with neighboring levels, which are bounded by the tile's elevation range
 		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * this._heightScale;
 		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
 
@@ -733,9 +732,8 @@ export class TerrainRGBMeshPlugin {
 		const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
 		const mesh = new Mesh( geometry, this.unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
 
-		// lay the vertices out over the tile's normalized rect transformed by the surface,
-		// mapping the uvs into the texture subview and tracking the raw elevation range. Skirt
-		// vertices carry copies of their source vertex uvs so they are laid out identically.
+		// lay the vertices out on the plane through the surface, mapping the uvs into the texture
+		// subview and tracking the elevation range. Skirt vertices share their source vertex uvs.
 		const { position, uv } = geometry.attributes;
 		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		let minHeight = Infinity;
@@ -761,9 +759,8 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// Drop the skirt vertices below their source vertices. Edge gaps come from neighboring
-		// levels sampling the elevation at different resolutions, so the mismatch is bounded by
-		// the tile's local elevation variation rather than the geometric error.
+		// drop the skirt vertices below their source vertices, far enough to cover the height
+		// mismatches with neighboring levels, which are bounded by the tile's elevation range
 		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * this._heightScale;
 		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
 
@@ -796,11 +793,9 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// Writes the tile's elevation range onto its bounding volume: the measured range once its
-	// elevation data has loaded, or the fixed conservative range before then. The range is padded
-	// by the geometric error since it covers the expected deviation from the true surface,
-	// enclosing detail that finer levels can add, and the low bound is dropped further by the
-	// elevation variation to enclose the skirts.
+	// Writes the tile's elevation range onto its bounding volume: the measured range once the
+	// elevation data has loaded, or the fixed conservative range before then. The range is
+	// padded by the geometric error and the low bound dropped further to enclose the skirts.
 	_updateBoundingVolume( tile ) {
 
 		const scale = this._heightScale;

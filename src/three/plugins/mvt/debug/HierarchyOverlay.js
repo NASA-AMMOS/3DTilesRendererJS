@@ -9,8 +9,7 @@ const ColorMode = {
 	TILE: 2,
 };
 
-// height range of the displayed region volumes in meters on the earth ellipsoid, where the
-// band is placed near the typical terrain height so it hugs the surface
+// height range of the displayed region volumes in meters, placed near typical terrain height
 const REGION_MIN_HEIGHT = 600;
 const REGION_MAX_HEIGHT = 700;
 

@@ -1018,9 +1018,8 @@ export class ImageOverlayPlugin {
 
 			} else {
 
-				// Use the tile's region bounding volume or a plugin-provided cartographic range so
-				// exactly the content covering the tile is loaded, clamped to the extents of the
-				// overlay image.
+				// mark the tiles covering the tile's cartographic range to preload, clamped to
+				// the extents of the overlay image
 				const cartRange = tile.boundingVolume.region ??
 					this.tiles.invokeOnePlugin( plugin => plugin.getTileCartographicRange && plugin.getTileCartographicRange( tile ) );
 

@@ -344,9 +344,8 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	// Reports the exact cartographic range covered by a generated planar tile so consumers like
-	// image overlays can load precisely the content that maps onto it. Ellipsoid tiles carry
-	// region bounding volumes that provide the same information.
+	// Returns the cartographic range covered by a generated planar tile. Ellipsoid tiles carry
+	// the same information in their region bounding volumes.
 	getTileCartographicRange( tile ) {
 
 		if ( this._useEllipsoid() || ! this._tiling.projection.isCartographic || ! ( TILE_LEVEL in tile ) ) {
