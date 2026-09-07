@@ -188,12 +188,24 @@ export class TextAnchorManager {
 
 	deleteLines( lines ) {
 
-		lines.forEach( line => this.deleteLine( line ) );
+		// refresh each affected anchor's active reference once after the whole batch is
+		// detached rather than once per removed line
+		const touched = new Set();
+		lines.forEach( line => this._detachLine( line, touched ) );
+		touched.forEach( anchor => anchor.updateActiveReference() );
 
 	}
 
 	// remove a path; anchors left with no associated paths are dropped
 	deleteLine( line ) {
+
+		const touched = new Set();
+		this._detachLine( line, touched );
+		touched.forEach( anchor => anchor.updateActiveReference() );
+
+	}
+
+	_detachLine( line, touched ) {
 
 		const { _anchorsById, _linesById } = this;
 		const id = line.id;
@@ -216,7 +228,11 @@ export class TextAnchorManager {
 
 		existingAnchors.forEach( anchor => {
 
-			anchor.removeLine( line );
+			if ( anchor.detachLine( line ) ) {
+
+				touched.add( anchor );
+
+			}
 
 		} );
 
