@@ -80,7 +80,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 	}
 
 	// update screen space points and cumulative values for text placement
-	updateTransform( matrix, resolution, cameraPosition, flatSurface = false ) {
+	updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface = true ) {
 
 		const {
 			positions,
@@ -128,16 +128,16 @@ export class LineAnnotation extends OccupancyAnnotation {
 
 			// approximate the surface normal as up on a flattened surface and as the direction
 			// from the body center on an ellipsoid. Matches PointAnnotation.
-			if ( cameraPosition !== null && ( flatSurface || position.lengthSq() > 0 ) ) {
+			if ( cameraPosition !== null && ( ! useEllipsoidSurface || position.lengthSq() > 0 ) ) {
 
 				_delta.subVectors( cameraPosition, position ).normalize();
-				if ( flatSurface ) {
+				if ( useEllipsoidSurface ) {
 
-					_normal.set( 0, 0, 1 );
+					_normal.copy( position ).normalize();
 
 				} else {
 
-					_normal.copy( position ).normalize();
+					_normal.set( 0, 0, 1 );
 
 				}
 

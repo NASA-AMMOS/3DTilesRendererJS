@@ -21,7 +21,7 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 	}
 
-	updateTransform( matrix, resolution, cameraPosition, flatSurface = false ) {
+	updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface = true ) {
 
 		const { position, screenPos } = this;
 
@@ -35,16 +35,16 @@ export class PointAnnotation extends OccupancyAnnotation {
 
 		// facing ratio: dot( surface normal, direction to camera ), approximating the normal as
 		// up on a flattened surface and as the direction from the body center on an ellipsoid
-		if ( cameraPosition !== null && ( flatSurface || position.lengthSq() > 0 ) ) {
+		if ( cameraPosition !== null && ( ! useEllipsoidSurface || position.lengthSq() > 0 ) ) {
 
 			_delta.subVectors( cameraPosition, position ).normalize();
-			if ( flatSurface ) {
+			if ( useEllipsoidSurface ) {
 
-				_normal.set( 0, 0, 1 );
+				_normal.copy( position ).normalize();
 
 			} else {
 
-				_normal.copy( position ).normalize();
+				_normal.set( 0, 0, 1 );
 
 			}
 

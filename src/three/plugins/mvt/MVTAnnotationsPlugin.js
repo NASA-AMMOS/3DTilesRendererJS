@@ -645,7 +645,7 @@ export class MVTAnnotationsPlugin {
 
 				tiles.getResolution( camera, occupancy.resolution );
 				occupancy.matrix.copy( tiles.group.matrixWorld );
-				occupancy.flatSurface = ! tiles.surface.isEllipsoid;
+				occupancy.useEllipsoidSurface = Boolean( tiles.surface.isEllipsoid );
 
 			}
 
