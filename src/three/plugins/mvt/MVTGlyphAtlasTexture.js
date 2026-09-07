@@ -157,7 +157,7 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 			const cy = y + h / 2;
 
 			// center the glyph by its ink bounding box width
-			const m = this.measureChar( char );
+			const m = this.measureChar( char, font );
 			const drawX = cx - ( m.actualBoundingBoxRight + m.actualBoundingBoxLeft ) / 2;
 			const drawY = cy + h / 4;
 
