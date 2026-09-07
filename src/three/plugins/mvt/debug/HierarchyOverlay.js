@@ -1,5 +1,4 @@
-import { Group, Box3, Box3Helper, BoxGeometry, Mesh, MeshBasicMaterial, Vector3 } from 'three';
-import { EllipsoidRegion } from '3d-tiles-renderer/three';
+import { Group } from 'three';
 import { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from '../../objects/EllipsoidRegionHelper.js';
 import { ColorManager } from './ColorManager.js';
 
@@ -13,13 +12,9 @@ const ColorMode = {
 const REGION_MIN_HEIGHT = 600;
 const REGION_MAX_HEIGHT = 700;
 
-// height range used on flattened surfaces where the ground sits exactly at zero
+// height range in meters used on flattened surfaces where the ground sits exactly at zero
 const PLANAR_REGION_MIN_HEIGHT = 10;
 const PLANAR_REGION_MAX_HEIGHT = 50;
-
-const _min = /* @__PURE__ */ new Vector3();
-const _max = /* @__PURE__ */ new Vector3();
-const _box = /* @__PURE__ */ new Box3();
 
 export class HierarchyOverlay {
 
@@ -44,52 +39,34 @@ export class HierarchyOverlay {
 			const key = `${ x }_${ y }_${ level }`;
 			if ( visible ) {
 
-				const { ellipsoid, surface, group } = this.tiles;
-				const [ minLon, minLat, maxLon, maxLat ] = this.tiling.getTileBounds( x, y, level, false, false );
+				const { tiles, tiling } = this;
+				const { surface, group } = tiles;
+				const [ minLon, minLat, maxLon, maxLat ] = tiling.getTileBounds( x, y, level, false, false );
 
-				let lineHelper, meshHelper;
-				if ( surface.isProjectedSurface ) {
+				// scale the meter heights into world units on a flattened surface
+				const heightScale = surface.isEllipsoid ? 1 : surface.scale.x / ( 2 * Math.PI * tiles.ellipsoid.radius.x );
 
-					// the tile bounds form an axis-aligned box on a flattened surface, with the
-					// display heights scaled from meters to the world size of the plane
-					const heightScale = surface.scale.x / ( 2 * Math.PI * ellipsoid.radius.x );
-					surface.getCartographicToPosition( minLat, minLon, PLANAR_REGION_MIN_HEIGHT * heightScale, _min );
-					surface.getCartographicToPosition( maxLat, maxLon, PLANAR_REGION_MAX_HEIGHT * heightScale, _max );
-					_box.makeEmpty();
-					_box.expandByPoint( _min );
-					_box.expandByPoint( _max );
+				// TODO: it may be better to implement a true helper class for this later.
+				// region-like adapter so the helpers generate the volume through the surface
+				const region = {
+					latStart: minLat, latEnd: maxLat,
+					lonStart: minLon, lonEnd: maxLon,
+					heightStart: ( surface.isEllipsoid ? REGION_MIN_HEIGHT : PLANAR_REGION_MIN_HEIGHT ) * heightScale,
+					heightEnd: ( surface.isEllipsoid ? REGION_MAX_HEIGHT : PLANAR_REGION_MAX_HEIGHT ) * heightScale,
+					getCartographicToPosition: ( lat, lon, height, target ) => surface.getCartographicToPosition( lat, lon, height, target ),
+					getCartographicToNormal: ( lat, lon, target ) => surface.getCartographicToNormal( lat, lon, target ),
+				};
 
-					lineHelper = new Box3Helper( _box.clone() );
-					lineHelper.material.depthWrite = false;
-					lineHelper.material.depthTest = false;
-					lineHelper.material.transparent = true;
+				const lineHelper = new EllipsoidRegionLineHelper( region );
+				const meshHelper = new EllipsoidRegionHelper( region );
 
-					meshHelper = new Mesh(
-						new BoxGeometry( ..._box.getSize( _min ).toArray() ),
-						new MeshBasicMaterial( { transparent: true, opacity: 0.1, depthWrite: false } ),
-					);
-					_box.getCenter( meshHelper.position );
-					meshHelper.dispose = () => {
+				lineHelper.material.depthWrite = false;
+				lineHelper.material.depthTest = false;
+				lineHelper.material.transparent = true;
 
-						meshHelper.geometry.dispose();
-						meshHelper.material.dispose();
-
-					};
-
-				} else {
-
-					const region = new EllipsoidRegion( ...ellipsoid.radius, minLat, maxLat, minLon, maxLon, REGION_MIN_HEIGHT, REGION_MAX_HEIGHT );
-					lineHelper = new EllipsoidRegionLineHelper( region );
-					lineHelper.material.depthWrite = false;
-					lineHelper.material.depthTest = false;
-					lineHelper.material.transparent = true;
-
-					meshHelper = new EllipsoidRegionHelper( region );
-					meshHelper.material.transparent = true;
-					meshHelper.material.opacity = 0.1;
-					meshHelper.material.depthWrite = false;
-
-				}
+				meshHelper.material.transparent = true;
+				meshHelper.material.opacity = 0.1;
+				meshHelper.material.depthWrite = false;
 
 				const groupHelper = new Group();
 				groupHelper.add( lineHelper, meshHelper );
