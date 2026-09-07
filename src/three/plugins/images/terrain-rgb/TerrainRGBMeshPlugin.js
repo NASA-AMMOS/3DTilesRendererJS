@@ -123,10 +123,8 @@ function sampleGrid( grid, tu, tv ) {
  *   `applyOverlayTexture` is enabled.
  * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.
  * @param {boolean} [options.unlit=false] Render the tiles without lighting or terrain normals.
- * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] The displayed surface shape:
- *   `'ellipsoid'` for globe geometry, `'source'` for a plane in the data's source projection, or a
- *   projection scheme name for a plane in a different projection than the content is stored in. The
- *   tiling always comes from the data source.
+ * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] Display the tiles on the
+ *   ellipsoid, on a plane in the source projection, or on a plane in the named projection scheme.
  * @param {('ellipsoid'|'planar')} [options.shape] Deprecated: use `projection` instead.
  * @param {boolean} [options.endCaps=true] Snap poles to ±90° lat.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.

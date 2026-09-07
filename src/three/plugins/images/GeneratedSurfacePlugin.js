@@ -31,10 +31,8 @@ const _point = [ 0, 0 ];
  *
  * @param {Object} [options]
  * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from. When `applyOverlayTexture` is enabled, also used to texture the generated tile meshes.
- * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] The displayed surface shape:
- *   `'ellipsoid'` for globe geometry, `'source'` for a plane in the data's source projection, or a
- *   projection scheme name for a plane in a different projection than the content is stored in. The
- *   tiling always comes from the data source. Only meaningful for cartographic sources.
+ * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] Display the tiles on the
+ *   ellipsoid, on a plane in the source projection, or on a plane in the named projection scheme.
  * @param {string} [options.shape] Deprecated: use `projection` instead.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
