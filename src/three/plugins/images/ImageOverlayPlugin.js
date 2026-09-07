@@ -728,7 +728,7 @@ export class ImageOverlayPlugin {
 			const boundingVolume = {};
 			if ( tile.boundingVolume.region ) {
 
-				boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.ellipsoid ).region;
+				boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.surface ).region;
 
 			}
 
