@@ -186,39 +186,47 @@ export class TextAnchorManager {
 
 	}
 
+	// remove paths; anchors left with no associated paths are dropped
 	deleteLines( lines ) {
 
-		lines.forEach( line => this.deleteLine( line ) );
-
-	}
-
-	// remove a path; anchors left with no associated paths are dropped
-	deleteLine( line ) {
-
 		const { _anchorsById, _linesById } = this;
-		const id = line.id;
 
-		_linesById.get( id ).delete( line );
-		this.lines.delete( line );
-		if ( _linesById.get( id ).size === 0 ) {
+		// refresh each affected anchor's active reference once after the whole batch is
+		// detached rather than once per removed line
+		const touched = new Set();
+		lines.forEach( line => {
 
-			_linesById.delete( id );
+			const id = line.id;
 
-		}
+			_linesById.get( id ).delete( line );
+			this.lines.delete( line );
+			if ( _linesById.get( id ).size === 0 ) {
 
-		const existingAnchors = _anchorsById.get( id );
-		if ( ! existingAnchors ) {
+				_linesById.delete( id );
 
-			// this can happen if a line has no anchors added
-			return;
+			}
 
-		}
+			const existingAnchors = _anchorsById.get( id );
+			if ( ! existingAnchors ) {
 
-		existingAnchors.forEach( anchor => {
+				// this can happen if a line has no anchors added
+				return;
 
-			anchor.removeLine( line );
+			}
+
+			existingAnchors.forEach( anchor => {
+
+				if ( anchor.removeLine( line ) ) {
+
+					touched.add( anchor );
+
+				}
+
+			} );
 
 		} );
+
+		touched.forEach( anchor => anchor.updateActiveReference() );
 
 	}
 
