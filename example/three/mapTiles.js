@@ -8,8 +8,22 @@ import {
 	MathUtils,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, ImageOverlayPlugin, XYZTilesOverlay, CesiumIonOverlay } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, ImageOverlayPlugin, XYZTilesOverlay, CesiumIonOverlay, PMTilesOverlay, DebugTilesPlugin, MVTAnnotationsPlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { ExampleAnnotationsDriver } from './src/ExampleAnnotationsDriver.js';
+
+// Protomaps "Light" theme — from protomaps/basemaps flavors.ts
+const MVT_LAYERS = {
+	earth: { fill: '#e2dfda', order: 0 },
+	water: { fill: '#80deea', order: 1 },
+	landcover: { fill: '#c4e7d2', order: 2 },
+	landuse: { fill: '#cfddd5', order: 3 },
+	natural: { fill: '#e2e0d7', order: 4 },
+	buildings: { fill: '#cccccc', order: 5 },
+	roads: { stroke: '#ebebeb', order: 6 },
+	transit: { stroke: '#a7b1b3', order: 7 },
+	boundaries: { stroke: '#adadad', order: 8 },
+};
 
 let controls, scene, renderer;
 let tiles, camera, surfacePlugin;
@@ -22,18 +36,14 @@ const coordsEl = document.getElementById( 'coords' );
 const params = {
 
 	errorTarget: 1,
-	planar: false,
-	drape: false,
-	projection: 'source',
-	overlay: 'OpenStreetMap',
+	planar: true,
+	drape: true,
+	projection: 'EPSG:8857',
+	overlay: 'Protomaps',
 
 };
 
-// throttled render function
-const scheduleRender = throttle( render );
-
 init();
-render();
 
 function init() {
 
@@ -42,6 +52,7 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x111111 );
+	renderer.setAnimationLoop( render );
 
 	document.body.appendChild( renderer.domElement );
 
@@ -63,11 +74,10 @@ function init() {
 	gui.add( params, 'planar' ).onChange( initTiles );
 	gui.add( params, 'drape' ).onChange( initTiles );
 	gui.add( params, 'projection', [ 'source', 'EPSG:4326', 'EPSG:8857' ] ).onChange( initTiles );
-	gui.add( params, 'overlay', [ 'OpenStreetMap', 'Sentinel-2' ] ).onChange( initTiles );
+	gui.add( params, 'overlay', [ 'Protomaps', 'OpenStreetMap', 'Sentinel-2' ] ).onChange( initTiles );
 	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
-		scheduleRender();
 
 	} );
 
@@ -89,12 +99,30 @@ function initTiles() {
 
 	}
 
-	const overlay = params.overlay === 'Sentinel-2'
-		? new CesiumIonOverlay( { assetId: 3954, apiToken: import.meta.env.VITE_ION_KEY } )
-		: new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } );
+	let overlay;
+	if ( params.overlay === 'Sentinel-2' ) {
+
+		overlay = new CesiumIonOverlay( { assetId: 3954, apiToken: import.meta.env.VITE_ION_KEY } );
+
+	} else if ( params.overlay === 'Protomaps' ) {
+
+		// vector MVT data rendered to tile textures via the style callback. The source coop
+		// link can be very slow so the data is loaded locally.
+		// url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+		overlay = new PMTilesOverlay( {
+			url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
+			getStyle: layerName => MVT_LAYERS[ layerName ] ?? null,
+		} );
+
+	} else {
+
+		overlay = new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } );
+
+	}
 
 	// tiles
 	tiles = new TilesRenderer();
+	// tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: true, displayParentBounds: true, colorMode: DebugTilesPlugin.ColorModes.RANDOM_COLOR, unlit: true }) );
 	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	surfacePlugin = new GeneratedSurfacePlugin( {
@@ -109,7 +137,23 @@ function initTiles() {
 
 		// drape the overlay via the image overlay plugin so it maps through "tiles.surface"
 		// rather than being applied to the generated tile textures directly
-		tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ] } ) );
+		tiles.registerPlugin( new ImageOverlayPlugin( { overlays: [ overlay ], resolution: 512 } ) );
+
+	}
+
+	if ( params.overlay === 'Protomaps' ) {
+
+		// road and point annotations parsed from the same vector data
+		const driver = new ExampleAnnotationsDriver();
+		if ( params.planar ) {
+
+			// the flattened plane has no elevation, so annotations settle directly onto the
+			// surface without raycasting the tile geometry
+			driver.sampleCartographicElevation = () => 0;
+
+		}
+
+		tiles.registerPlugin( new MVTAnnotationsPlugin( { overlay, camera, driver, resolution: 50 } ) );
 
 	}
 
@@ -153,14 +197,6 @@ function initTiles() {
 
 	}
 
-	// listen to events to call render() on change
-	controls.addEventListener( 'change', scheduleRender );
-	controls.addEventListener( 'end', scheduleRender );
-	tiles.addEventListener( 'needs-render', scheduleRender );
-	tiles.addEventListener( 'needs-update', scheduleRender );
-
-	render();
-
 }
 
 function onWindowResize() {
@@ -170,8 +206,6 @@ function onWindowResize() {
 	camera.updateProjectionMatrix();
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
-	scheduleRender();
 
 }
 
@@ -211,26 +245,5 @@ function onMouseMove( e ) {
 		coordsEl.textContent = '';
 
 	}
-
-}
-
-function throttle( callback ) {
-
-	let scheduled = false;
-	return () => {
-
-		if ( ! scheduled ) {
-
-			scheduled = true;
-			requestAnimationFrame( () => {
-
-				scheduled = false;
-				callback();
-
-			} );
-
-		}
-
-	};
 
 }
