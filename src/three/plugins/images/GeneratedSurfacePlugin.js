@@ -11,7 +11,6 @@ import { ProjectedSurface } from './utils/ProjectedSurface.js';
 const MIN_LON_VERTS = 30;
 const MIN_LAT_VERTS = 15;
 const DEFAULT_LEVELS = 20;
-const PLANAR_SEGMENTS = 64;
 
 const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
 const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
@@ -167,17 +166,7 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		let res;
-		const { surface } = this.tiles;
-		if ( surface.isEllipsoid ) {
-
-			res = this._createEllipsoidMesh( tile );
-
-		} else {
-
-			res = this._createPlanarMesh( tile );
-
-		}
+		const res = this._createSurfaceMesh( tile );
 
 		const { overlay, applyOverlayTexture } = this;
 		if ( overlay && applyOverlayTexture ) {
@@ -265,146 +254,26 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	/**
-	 * Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
-	 * to the target object.
-	 * @param {Vector3} position - World-space position. For ellipsoid surfaces this is a
-	 * 3D point on the surface; for planar surfaces it is a 2D point in the plane.
-	 * @param {{ lat: number, lon: number }} [target={}] - Optional target object to write results into.
-	 * @returns {{ lat: number, lon: number }} The cartographic coordinates in radians.
-	 * @throws {Error} If the tiling projection is not cartographic.
-	 */
+	// Deprecated: use "TilesRenderer.surface" instead
 	getCartographicFromPosition( position, target = {} ) {
 
-		const { _tiling: tiling } = this;
-		const { projection } = tiling;
-
-		if ( ! projection.isCartographic ) {
-
-			throw new Error( 'GeneratedSurfacePlugin: getCartographicFromPosition requires a cartographic projection.' );
-
-		}
-
+		console.warn( 'GeneratedSurfacePlugin: "getCartographicFromPosition" is deprecated. Use "TilesRenderer.surface" instead.' );
 		return this.tiles.surface.getPositionToCartographic( position, target );
 
 	}
 
-	/**
-	 * Returns the world-space position for a given cartographic coordinate.
-	 * @param {number} lat - Latitude in radians.
-	 * @param {number} lon - Longitude in radians.
-	 * @param {Vector3} [target=new Vector3()] - Optional target Vector3 to write results into.
-	 * @returns {Vector3} The world-space position. For planar surfaces z is set to 0.
-	 * @throws {Error} If the tiling projection is not cartographic.
-	 */
+	// Deprecated: use "TilesRenderer.surface" instead
 	getPositionFromCartographic( lat, lon, target = new Vector3() ) {
 
-		const { _tiling: tiling } = this;
-		const { projection } = tiling;
-
-		if ( ! projection.isCartographic ) {
-
-			throw new Error( 'GeneratedSurfacePlugin: getPositionFromCartographic requires a cartographic projection.' );
-
-		}
-
+		console.warn( 'GeneratedSurfacePlugin: "getPositionFromCartographic" is deprecated. Use "TilesRenderer.surface" instead.' );
 		return this.tiles.surface.getCartographicToPosition( lat, lon, 0, target );
 
 	}
 
-	_createPlanarMesh( tile ) {
-
-		const tx = tile[ TILE_X ];
-		const ty = tile[ TILE_Y ];
-		const level = tile[ TILE_LEVEL ];
-		const { _tiling } = this;
-
-		const [ minU, minV, maxU, maxV ] = _tiling.getTileBounds( tx, ty, level, true, true );
-		const uvRange = _tiling.getTileContentUVBounds( tx, ty, level );
-
-		// lay the grid vertices out over the tile's normalized rect and transform them by the
-		// display projection so the tiles take the shape of the projected map
-		const geometry = new PlaneGeometry( 1, 1, PLANAR_SEGMENTS, PLANAR_SEGMENTS );
-		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
-		const { position, uv } = geometry.attributes;
-		for ( let i = 0; i < position.count; i ++ ) {
-
-			const fu = uv.getX( i );
-			const fv = uv.getY( i );
-
-			this._normalizedToPlane(
-				MathUtils.lerp( minU, maxU, fu ),
-				MathUtils.lerp( minV, maxV, fv ),
-				_pos,
-			);
-			position.setXYZ( i, _pos.x, _pos.y, 0 );
-
-			// adjust the uvs so only the relevant texture portion is visible
-			uv.setXY( i,
-				MathUtils.mapLinear( fu, 0, 1, uvRange[ 0 ], uvRange[ 2 ] ),
-				MathUtils.mapLinear( fv, 0, 1, uvRange[ 1 ], uvRange[ 3 ] ),
-			);
-
-		}
-
-		return mesh;
-
-	}
-
-	// Returns the cartographic range covered by a generated planar tile. Ellipsoid tiles carry
-	// the same information in their region bounding volumes.
-	getTileCartographicRange( tile ) {
-
-		const { surface } = this.tiles;
-		if ( surface.isEllipsoid || ! this._tiling.projection.isCartographic || ! ( TILE_LEVEL in tile ) ) {
-
-			return null;
-
-		}
-
-		return this._tiling.getTileBounds( tile[ TILE_X ], tile[ TILE_Y ], tile[ TILE_LEVEL ] );
-
-	}
-
-	// maps a point in the tiling's normalized space onto the flattened plane through the surface
-	_normalizedToPlane( nu, nv, target ) {
-
-		const { _tiling, tiles, endCaps } = this;
-		const { surface } = tiles;
-		if ( ! _tiling.projection.isCartographic ) {
-
-			// non-cartographic sources map directly onto the plane
-			return surface.getNormalizedToPosition( nu, nv, 0, target );
-
-		}
-
-		const [ lon, lat ] = _tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
-		let cappedLat = lat;
-
-		// snap the edges of a pole-limited tiling to the poles so the map is not cut off there
-		if ( endCaps && _tiling.projection.isMercator ) {
-
-			if ( nv === 1 ) {
-
-				cappedLat = Math.PI / 2;
-
-			}
-
-			if ( nv === 0 ) {
-
-				cappedLat = - Math.PI / 2;
-
-			}
-
-		}
-
-		return surface.getCartographicToPosition( cappedLat, lon, 0, target );
-
-	}
-
-	_createEllipsoidMesh( tile ) {
+	_createSurfaceMesh( tile ) {
 
 		const { tiles, endCaps, _tiling: tiling } = this;
+		const { surface } = tiles;
 		const { projection } = tiling;
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
@@ -412,7 +281,7 @@ export class GeneratedSurfacePlugin {
 
 		// new geometry
 		// default to a minimum number of vertices per degree on each axis
-		const [ west, south, east, north ] = tile.boundingVolume.region;
+		const [ west, south, east, north ] = tiling.getTileBounds( x, y, level );
 		const latVerts = Math.max( MIN_LAT_VERTS, Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 ) );
 		const lonVerts = Math.max( MIN_LON_VERTS, Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 ) );
 		const cols = lonVerts + 3;
@@ -422,7 +291,10 @@ export class GeneratedSurfacePlugin {
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
 		const uvRange = tiling.getTileContentUVBounds( x, y, level );
 
-		// adjust the geometry to position it at the region
+		// skip the pole snapping when the displayed projection cannot represent the poles
+		const snapToPoles = endCaps && ! ( surface.projection && surface.projection.isMercator );
+
+		// adjust the geometry to position it on the surface
 		const { position, normal, uv } = geometry.attributes;
 		const vertCount = position.count;
 		tile.engineData.boundingVolume.getSphere( _sphere );
@@ -438,58 +310,74 @@ export class GeneratedSurfacePlugin {
 			const uNorm = ( innerCol - 1 ) / lonVerts;
 			const vNorm = 1 - ( innerRow - 1 ) / latVerts;
 
-			// convert the plane position to lat / lon
-			const cart = projection.fromNormalizedToCartographic(
-				MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ),
-				MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ),
-				_point,
-			);
-			const lon = cart[ 0 ];
-			let lat = cart[ 1 ];
+			const nU = MathUtils.mapLinear( uNorm, 0, 1, minU, maxU );
+			const nV = MathUtils.mapLinear( vNorm, 0, 1, minV, maxV );
 
-			// snap edges to poles for Mercator to avoid seams
-			if ( projection.isMercator && endCaps ) {
+			let normU = nU;
+			let normV = nV;
+			if ( projection.isCartographic ) {
 
-				if ( maxV === 1 && vNorm === 1 ) {
+				// convert the plane position to lat / lon
+				const cart = projection.fromNormalizedToCartographic( nU, nV, _point );
+				const lon = cart[ 0 ];
+				let lat = cart[ 1 ];
 
-					lat = Math.PI / 2;
+				// snap edges to poles for Mercator to avoid seams
+				if ( projection.isMercator && snapToPoles ) {
+
+					if ( maxV === 1 && vNorm === 1 ) {
+
+						lat = Math.PI / 2;
+
+					}
+
+					if ( minV === 0 && vNorm === 0 ) {
+
+						lat = - Math.PI / 2;
+
+					}
 
 				}
 
-				if ( minV === 0 && vNorm === 0 ) {
+				// ensure we have an edge loop positioned at the mercator limit to avoid UV distortion
+				// as much as possible at low LoDs.
+				if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
 
-					lat = - Math.PI / 2;
+					const latLimit = projection.fromNormalizedToCartographic( 0.5, 1, _point )[ 1 ];
+					const vStep = 1 / latVerts;
+					const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
+					const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
+
+					if ( lat > latLimit && prevLat < latLimit ) {
+
+						lat = latLimit;
+
+					}
+
+					if ( lat < - latLimit && nextLat > - latLimit ) {
+
+						lat = - latLimit;
+
+					}
 
 				}
+
+				// get the position and normal
+				surface.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
+				surface.getCartographicToNormal( lat, lon, _norm );
+
+				// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
+				projection.fromCartographicToNormalized( lon, lat, _point );
+				normU = _point[ 0 ];
+				normV = _point[ 1 ];
+
+			} else {
+
+				// non-cartographic sources map directly onto the plane
+				surface.getNormalizedToPosition( nU, nV, 0, _pos ).sub( _sphere.center );
+				surface.getCartographicToNormal( 0, 0, _norm );
 
 			}
-
-			// ensure we have an edge loop positioned at the mercator limit to avoid UV distortion
-			// as much as possible at low LoDs.
-			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
-
-				const latLimit = projection.fromNormalizedToCartographic( 0.5, 1, _point )[ 1 ];
-				const vStep = 1 / latVerts;
-				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
-				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
-
-				if ( lat > latLimit && prevLat < latLimit ) {
-
-					lat = latLimit;
-
-				}
-
-				if ( lat < - latLimit && nextLat > - latLimit ) {
-
-					lat = - latLimit;
-
-				}
-
-			}
-
-			// get the position and normal
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
-			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
 			if ( isSkirt ) {
 
@@ -497,8 +385,6 @@ export class GeneratedSurfacePlugin {
 
 			}
 
-			// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
-			const [ normU, normV ] = projection.fromCartographicToNormalized( lon, lat, _point );
 			const u = MathUtils.mapLinear( normU, minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
 			const v = MathUtils.mapLinear( normV, minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
 
@@ -576,13 +462,11 @@ export class GeneratedSurfacePlugin {
 
 	createBoundingVolume( x, y, level, regionHeight = 0 ) {
 
-		const { _tiling: tiling } = this;
+		const { _tiling: tiling, endCaps } = this;
 		const { surface } = this.tiles;
 
 		const isRoot = level === - 1;
 		if ( surface.isEllipsoid ) {
-
-			const { endCaps } = this;
 
 			let normalizedBounds;
 			let cartBounds;
@@ -642,7 +526,36 @@ export class GeneratedSurfacePlugin {
 
 				for ( const u of [ minX, maxX ] ) {
 
-					this._normalizedToPlane( u, v, _pos );
+					if ( tiling.projection.isCartographic ) {
+
+						// snap the edges of a pole-limited tiling to the poles to match the mesh
+						const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( u, v, _point );
+						let cappedLat = lat;
+						if ( endCaps && ! surface.projection.isMercator ) {
+
+							if ( v === 1 ) {
+
+								cappedLat = Math.PI / 2;
+
+							}
+
+							if ( v === 0 ) {
+
+								cappedLat = - Math.PI / 2;
+
+							}
+
+						}
+
+						surface.getCartographicToPosition( cappedLat, lon, 0, _pos );
+
+					} else {
+
+						// non-cartographic sources map directly onto the plane
+						surface.getNormalizedToPosition( u, v, 0, _pos );
+
+					}
+
 					bMinX = Math.min( bMinX, _pos.x );
 					bMinY = Math.min( bMinY, _pos.y );
 					bMaxX = Math.max( bMaxX, _pos.x );
@@ -653,7 +566,7 @@ export class GeneratedSurfacePlugin {
 			}
 
 			// return bounding box
-			return {
+			const boundingVolume = {
 				box: [
 					// center
 					( bMinX + bMaxX ) / 2, ( bMinY + bMaxY ) / 2, 0,
@@ -664,6 +577,17 @@ export class GeneratedSurfacePlugin {
 					0.0, 0.0, 0.0,
 				],
 			};
+
+			// The cartographic range covered by the tile as [ west, south, east, north ] in radians,
+			// read by consumers like image overlays in place of a "region" volume. Ignored by the
+			// tiles renderer itself.
+			if ( tiling.projection.isCartographic ) {
+
+				boundingVolume.cartographicRange = isRoot ? tiling.getContentBounds() : tiling.getTileBounds( x, y, level );
+
+			}
+
+			return boundingVolume;
 
 		}
 

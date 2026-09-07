@@ -965,7 +965,7 @@ export class TerrainRGBMeshPlugin {
 
 			}
 
-			return {
+			const boundingVolume = {
 				box: [
 					( bMinX + bMaxX ) / 2, ( bMinY + bMaxY ) / 2, ( minHeight + maxHeight ) / 2,
 					( bMaxX - bMinX ) / 2, 0.0, 0.0,
@@ -973,6 +973,13 @@ export class TerrainRGBMeshPlugin {
 					0.0, 0.0, ( maxHeight - minHeight ) / 2,
 				],
 			};
+
+			// The cartographic range covered by the tile as [ west, south, east, north ] in radians,
+			// read by consumers like image overlays in place of a "region" volume. Ignored by the
+			// tiles renderer itself.
+			boundingVolume.cartographicRange = isRoot ? tiling.getContentBounds() : tiling.getTileBounds( x, y, level );
+
+			return boundingVolume;
 
 		}
 

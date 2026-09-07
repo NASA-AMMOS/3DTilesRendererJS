@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
 - ImageOverlayPlugin, MVTAnnotationsPlugin: Map draped textures and annotations through "TilesRenderer.surface" so they support flattened, projected surfaces.
 - QueryManager: Deprecate the r3f QueryManager class.
+- GeneratedSurfacePlugin: Deprecate "getCartographicFromPosition" and "getPositionFromCartographic" in favor of the "TilesRenderer.surface" functions.
 
 ## [0.5.2] - 2026.08.24
 ### Added
