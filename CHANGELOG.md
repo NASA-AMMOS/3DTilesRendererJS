@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
 - GlobeControls: Adjust the globe controls to use stable orientation during rotation.
+- ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.

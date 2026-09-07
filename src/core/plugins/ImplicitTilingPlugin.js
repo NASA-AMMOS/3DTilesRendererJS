@@ -52,7 +52,9 @@ export class ImplicitTilingPlugin {
 
 	parseTile( buffer, tile, extension ) {
 
-		if ( /^subtree$/i.test( extension ) ) {
+		// json content arrives already parsed rather than as a buffer
+		const isJsonSubtree = /^json$/i.test( extension ) && this.isSubtreeJson( tile );
+		if ( /^subtree$/i.test( extension ) || isJsonSubtree ) {
 
 			const loader = new SUBTREELoader( tile );
 			loader.workingPath = tile.internal.basePath;
@@ -81,9 +83,20 @@ export class ImplicitTilingPlugin {
 
 	}
 
+	// json only reaches the plugin once it has been ruled out as an external tileset, so the implicit
+	// tiling data identifies a subtree, unless the tileset serves its content as json as well.
+	isSubtreeJson( tile ) {
+
+		const root = tile.implicitTilingData?.root;
+		return Boolean( root ) && ! /\.json$/i.test( root.content?.uri ?? '' );
+
+	}
+
 	disposeTile( tile ) {
 
-		if ( /.subtree$/i.test( tile.content?.uri ) ) {
+		const uri = tile.content?.uri;
+		const isJsonSubtree = /\.json$/i.test( uri ) && this.isSubtreeJson( tile );
+		if ( /.subtree$/i.test( uri ) || isJsonSubtree ) {
 
 			// TODO: ideally the plugin doesn't need to know about children being processed
 			tile.children.forEach( child => {
