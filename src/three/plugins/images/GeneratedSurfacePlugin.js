@@ -168,7 +168,8 @@ export class GeneratedSurfacePlugin {
 		}
 
 		let res;
-		if ( this._useEllipsoid() ) {
+		const { surface } = this.tiles;
+		if ( surface.isEllipsoid ) {
 
 			res = this._createEllipsoidMesh( tile );
 
@@ -311,13 +312,6 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	// whether the plugin is loading as an ellipsoid or not
-	_useEllipsoid() {
-
-		return Boolean( this.tiles.surface.isEllipsoid );
-
-	}
-
 	_createPlanarMesh( tile ) {
 
 		const tx = tile[ TILE_X ];
@@ -361,7 +355,8 @@ export class GeneratedSurfacePlugin {
 	// the same information in their region bounding volumes.
 	getTileCartographicRange( tile ) {
 
-		if ( this._useEllipsoid() || ! this._tiling.projection.isCartographic || ! ( TILE_LEVEL in tile ) ) {
+		const { surface } = this.tiles;
+		if ( surface.isEllipsoid || ! this._tiling.projection.isCartographic || ! ( TILE_LEVEL in tile ) ) {
 
 			return null;
 
@@ -582,9 +577,10 @@ export class GeneratedSurfacePlugin {
 	createBoundingVolume( x, y, level, regionHeight = 0 ) {
 
 		const { _tiling: tiling } = this;
+		const { surface } = this.tiles;
 
 		const isRoot = level === - 1;
-		if ( this._useEllipsoid() ) {
+		if ( surface.isEllipsoid ) {
 
 			const { endCaps } = this;
 
@@ -684,7 +680,8 @@ export class GeneratedSurfacePlugin {
 		}
 
 		let geometricError;
-		const useRegions = this._useEllipsoid();
+		const { surface } = this.tiles;
+		const useRegions = surface.isEllipsoid;
 		if ( useRegions ) {
 
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
@@ -712,7 +709,6 @@ export class GeneratedSurfacePlugin {
 
 			// Size of one pixel in world space. The tile contents span the surface scale.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			const { surface } = this.tiles;
 			geometricError = Math.max( surface.scale.x / pixelWidth, surface.scale.y / pixelHeight );
 
 		}

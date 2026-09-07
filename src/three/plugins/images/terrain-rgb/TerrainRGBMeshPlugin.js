@@ -567,13 +567,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// whether the plugin is loading as an ellipsoid or not
-	_useEllipsoid() {
-
-		return Boolean( this.tiles.surface.isEllipsoid );
-
-	}
-
 	// normalized bounds of the render tile within its source tile
 	_getSubview( tile ) {
 
@@ -874,14 +867,15 @@ export class TerrainRGBMeshPlugin {
 
 	createBoundingVolume( x, y, level, regionHeight = 0 ) {
 
-		const { _tiling: tiling, endCaps } = this;
+		const { _tiling: tiling, endCaps, tiles } = this;
+		const { surface } = tiles;
 		const isRoot = level === - 1;
 
 		// a fixed elevation range covering all terrain, dropping the low bound by the skirt depth
 		const minHeight = MIN_ELEVATION * this.heightScale - regionHeight;
 		const maxHeight = MAX_ELEVATION * this.heightScale;
 
-		if ( this._useEllipsoid() ) {
+		if ( surface.isEllipsoid ) {
 
 			let normalizedBounds;
 			let cartBounds;
@@ -931,7 +925,6 @@ export class TerrainRGBMeshPlugin {
 			// Compute the plane bounds of the projected tile rect with the elevation range along z.
 			// Non-separable projections are widest at the row nearest the equator so it is sampled
 			// in addition to the corners.
-			const { surface } = this.tiles;
 			const [ minX, minY, maxX, maxY ] = normalizedBounds;
 			const equatorV = MathUtils.clamp( tiling.projection.fromCartographicToNormalized( 0, 0, _point )[ 1 ], minY, maxY );
 
@@ -987,8 +980,9 @@ export class TerrainRGBMeshPlugin {
 
 	createChild( x, y, level ) {
 
-		const { _tiling: tiling } = this;
+		const { _tiling: tiling, tiles } = this;
 		const { projection } = tiling;
+		const { surface } = tiles;
 		if ( ! tiling.getTileExists( x, y, level ) ) {
 
 			return null;
@@ -996,7 +990,7 @@ export class TerrainRGBMeshPlugin {
 		}
 
 		let geometricError;
-		if ( this._useEllipsoid() ) {
+		if ( surface.isEllipsoid ) {
 
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
@@ -1017,14 +1011,13 @@ export class TerrainRGBMeshPlugin {
 			const [ lonFactor, latFactor ] = projection.getDerivativeAtNormalizedPoint( minU, midV, _point );
 
 			// calculate the size of a pixel on the surface
-			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
+			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( tiles.ellipsoid, midLat, east );
 			geometricError = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
 
 		} else {
 
 			// Size of one pixel in world space. The tile contents span the surface scale.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			const { surface } = this.tiles;
 			geometricError = Math.max( surface.scale.x / pixelWidth, surface.scale.y / pixelHeight );
 
 		}
