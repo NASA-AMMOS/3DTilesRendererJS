@@ -157,7 +157,7 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 			const cy = y + h / 2;
 
 			// center the glyph by its ink bounding box width
-			const m = this.measureChar( char );
+			const m = this.measureChar( char, font );
 			const drawX = cx - ( m.actualBoundingBoxRight + m.actualBoundingBoxLeft ) / 2;
 			const drawY = cy + h / 4;
 
@@ -264,7 +264,7 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 	 * @param {Object} [styles={}]
 	 * @param {string|null} [styles.fillStyle='white'] CSS fill color, or null to skip fill.
 	 * @param {string|null} [styles.strokeStyle=null] CSS stroke color, or null to skip stroke.
-	 * @param {number} [styles.strokeWidth=1] Stroke width in SVG user units before scaling.
+	 * @param {number} [styles.strokeWidth=1] Visible stroke width in atlas pixels.
 	 * @param {number} [styles.iconScale=1] Fraction of the slot size the icon occupies (0–1).
 	 * @returns {{ x: number, y: number, w: number, h: number }} The allocated slot.
 	 * @throws If the atlas is full.
@@ -312,7 +312,9 @@ export class MVTGlyphAtlasTexture extends CanvasTexture {
 
 			if ( strokeStyle !== null ) {
 
-				ctx.lineWidth = strokeWidth / scale;
+				// the stroke straddles the path and the fill covers the inner half, so double the
+				// width to make the visible outline "strokeWidth" pixels wide
+				ctx.lineWidth = strokeWidth * 2 / scale;
 				ctx.strokeStyle = strokeStyle;
 				for ( const path of paths ) {
 

@@ -1074,7 +1074,15 @@ export class MVTAnnotationsPlugin {
 
 	_markVectorTile( tile, state ) {
 
+		// A disposed tile can still receive a deferred visibility event from the fade plugin
+		// after "disposeTile" has removed its range.
 		const range = this.tileLoadState.get( tile );
+		if ( range === undefined ) {
+
+			return;
+
+		}
+
 		this._forEachTileInBounds( range, ( x, y, l ) => {
 
 			this.hierarchy.setTargetState( x, y, l, state );
