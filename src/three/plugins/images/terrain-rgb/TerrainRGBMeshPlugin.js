@@ -598,7 +598,7 @@ export class TerrainRGBMeshPlugin {
 
 	_createEllipsoidMesh( tile, subview ) {
 
-		const { tiles, endCaps, _tiling: tiling } = this;
+		const { tiles, endCaps, _heightScale, _tiling: tiling } = this;
 		const { projection } = tiling;
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
@@ -702,7 +702,7 @@ export class TerrainRGBMeshPlugin {
 
 		// drop the skirt vertices along the surface normal, far enough to cover the height
 		// mismatches with neighboring levels, which are bounded by the tile's elevation range
-		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * this._heightScale;
+		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * _heightScale;
 		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
 
 			const src = skirtSourceIndices[ i ];
@@ -725,16 +725,17 @@ export class TerrainRGBMeshPlugin {
 
 	_createPlanarMesh( tile, subview ) {
 
+		const { _tiling, _heightScale, unlit } = this;
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		const [ minU, minV, maxU, maxV ] = this._tiling.getTileBounds( x, y, level, true );
+		const [ minU, minV, maxU, maxV ] = _tiling.getTileBounds( x, y, level, true );
 
 		const grid = tile[ HEIGHT_GRID ];
 		const [ tu0, tv0, tu1, tv1 ] = getSubviewUVBounds( grid, subview );
 
 		const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
-		const mesh = new Mesh( geometry, this.unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
+		const mesh = new Mesh( geometry, unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
 
 		// lay the vertices out on the plane through the surface, mapping the uvs into the texture
 		// subview and tracking the elevation range. Skirt vertices share their source vertex uvs.
@@ -765,7 +766,7 @@ export class TerrainRGBMeshPlugin {
 
 		// drop the skirt vertices below their source vertices, far enough to cover the height
 		// mismatches with neighboring levels, which are bounded by the tile's elevation range
-		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * this._heightScale;
+		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * _heightScale;
 		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
 
 			position.setZ( surfaceVertexCount + i, - skirtDepth );
@@ -781,13 +782,13 @@ export class TerrainRGBMeshPlugin {
 	// maps a point in the tiling's normalized space onto the flattened plane through the surface
 	_normalizedToPlane( nu, nv, target ) {
 
-		const { surface } = this.tiles;
-		const { _tiling } = this;
+		const { _tiling, tiles, endCaps } = this;
+		const { surface } = tiles;
 		const [ lon, lat ] = _tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
 		let cappedLat = lat;
 
 		// snap the edges of a pole-limited tiling to the poles so the map is not cut off there
-		if ( this.endCaps && _tiling.projection.isMercator ) {
+		if ( endCaps && _tiling.projection.isMercator ) {
 
 			if ( nv === 1 ) cappedLat = Math.PI / 2;
 			if ( nv === 0 ) cappedLat = - Math.PI / 2;
@@ -1066,8 +1067,8 @@ export class TerrainRGBMeshPlugin {
 
 			// Size of one pixel in world space. The tile contents span the surface scale.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			const { scale } = this.tiles.surface;
-			geometricError = Math.max( scale.x / pixelWidth, scale.y / pixelHeight );
+			const { surface } = this.tiles;
+			geometricError = Math.max( surface.scale.x / pixelWidth, surface.scale.y / pixelHeight );
 
 		}
 
