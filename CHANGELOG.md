@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
+- Traversal: Skip recomputing the view error for tiles that are only visited to update their frame state, significantly reducing traversal time.
 - MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
 
 ## [0.5.2] - 2026.08.24
