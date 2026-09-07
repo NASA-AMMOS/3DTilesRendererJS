@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
 - GlobeControls: Adjust the globe controls to use stable orientation during rotation.
+- TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.
+- ProjectedSurface: Add a surface definition for tile geometry flattened onto a projected plane.
+- GeneratedSurfacePlugin, TerrainRGBMeshPlugin: Add "projection" option to display planar content in a different projection than it is stored in.
 
 ### Fixed
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
@@ -15,10 +18,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTGlyphs: Fix "update" throwing when called before the glyphs have been rendered for the first time.
 - MVTGlyphAtlasTexture: Fix "drawChar" centering glyphs using the previously assigned canvas font.
 - MVTGlyphAtlasTexture: Fix SVG icon outlines rendering at half the width of text outlines for the same "strokeWidth".
+- TerrainLambertMaterial: Fix dark lines along tile edges when the terrain is viewed from above.
 
 ### Changed
 - MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
 - MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
+- ImageOverlayPlugin, MVTAnnotationsPlugin: Map draped textures and annotations through "TilesRenderer.surface" so they support flattened, projected surfaces.
+- QueryManager: Deprecate the r3f QueryManager class.
 
 ## [0.5.2] - 2026.08.24
 ### Added
