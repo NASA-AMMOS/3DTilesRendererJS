@@ -33,9 +33,9 @@ const _point = [ 0, 0 ];
  * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from. When `applyOverlayTexture` is enabled, also used to texture the generated tile meshes.
  * @param {string} [options.shape='ellipsoid'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
  *   meaningful for cartographic sources.
- * @param {string|null} [options.projection=null] Optional projection scheme name overriding the
- *   one derived from the overlay so content can be displayed in a different projection than it
- *   is stored in. Experimental.
+ * @param {string|null} [options.projection=null] Optional display projection scheme name used to
+ *   lay out the planar geometry, so content can be displayed in a different projection than it
+ *   is stored in. The tiling always comes from the data source.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
@@ -67,6 +67,8 @@ export class GeneratedSurfacePlugin {
 		this.applyOverlayTexture = applyOverlayTexture;
 
 		this._tiling = null;
+		this._displayProjection = null;
+		this._planeAspect = 1;
 
 	}
 
@@ -97,33 +99,33 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		// TODO: temporary option for testing display projections that differ from the source
-		// overlay - this should be formalized alongside the "surface" field
-		if ( this.projection !== null ) {
+		// The tiling always comes from the data source - the display projection only changes
+		// where the generated vertices sit on the plane.
+		const displayProjection = this.projection !== null
+			? new ProjectionScheme( this.projection )
+			: this._tiling.projection;
+		this._displayProjection = displayProjection;
 
-			const projection = new ProjectionScheme( this.projection );
-			const tiling = new TilingScheme();
-			tiling.setProjection( projection );
+		if ( displayProjection.isCartographic ) {
 
-			// size the levels so the pixel aspect matches the projected plane extents
-			const [ extentX, extentY ] = projection.getProjectedExtents();
-			const pixelHeight = 256 * 2 ** ( DEFAULT_LEVELS - 1 );
-			const pixelWidth = Math.round( pixelHeight * extentX / extentY );
-			tiling.generateLevels( DEFAULT_LEVELS, 1, 1, { pixelWidth, pixelHeight } );
-			this._tiling = tiling;
+			const [ extentX, extentY ] = displayProjection.getProjectedExtents();
+			this._planeAspect = extentX / extentY;
+
+		} else {
+
+			this._planeAspect = this._tiling.aspectRatio;
 
 		}
 
 		// register the surface describing the flattened geometry so image overlays and other
 		// consumers can map between cartographic values and the planar frame
-		const { projection } = this._tiling;
-		if ( projection.isCartographic && ! this._useEllipsoid() ) {
+		if ( displayProjection.isCartographic && ! this._useEllipsoid() ) {
 
-			const surface = new ProjectedSurface( projection );
-			surface.scale.set( this._tiling.aspectRatio, 1 );
+			const surface = new ProjectedSurface( displayProjection );
+			surface.scale.set( this._planeAspect, 1 );
 			if ( this.center ) {
 
-				surface.offset.set( - this._tiling.aspectRatio / 2, - 0.5 );
+				surface.offset.set( - this._planeAspect / 2, - 0.5 );
 
 			}
 
@@ -307,70 +309,74 @@ export class GeneratedSurfacePlugin {
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
+		const { _tiling: tiling } = this;
 
-		const boundingBox = tile.boundingVolume.box;
-		let sx = 1, sy = 1, x = 0, y = 0, z = 0;
-		if ( boundingBox ) {
-
-			[ x, y, z ] = boundingBox;
-			sx = boundingBox[ 3 ];
-			sy = boundingBox[ 7 ];
-
-		}
-
-		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
-		// when rendering.
-		const { center, _tiling: tiling } = this;
-		const { projection } = tiling;
-		const geometry = new PlaneGeometry( 2 * sx, 2 * sy, PLANAR_SEGMENTS, PLANAR_SEGMENTS );
-		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
-		mesh.position.set( x, y, z );
-
-		// snap vertices that fall outside the projection outline onto the boundary so the plane
-		// takes the shape of the projected map rather than its bounding rectangle
-		if ( projection.isCartographic ) {
-
-			const aspect = tiling.aspectRatio;
-			const centerOffset = center ? 0.5 : 0;
-			const { position, uv } = geometry.attributes;
-			for ( let i = 0; i < position.count; i ++ ) {
-
-				const u = ( position.getX( i ) + x ) / aspect + centerOffset;
-				const v = position.getY( i ) + y + centerOffset;
-
-				// the outline at this row spans the longitude range of the projection
-				const lat = projection.toCartographicPoint( 0.5, v, _point )[ 1 ];
-				const minU = projection.toNormalizedPoint( - Math.PI, lat, _point )[ 0 ];
-				const maxU = projection.toNormalizedPoint( Math.PI, lat, _point )[ 0 ];
-				const clampedU = MathUtils.clamp( u, minU, maxU );
-				if ( clampedU !== u ) {
-
-					position.setX( i, ( clampedU - centerOffset ) * aspect - x );
-					uv.setX( i, MathUtils.mapLinear(
-						clampedU,
-						( x - sx ) / aspect + centerOffset, ( x + sx ) / aspect + centerOffset,
-						0, 1,
-					) );
-
-				}
-
-			}
-
-		}
-
-		// adjust the uvs so only the relevant texture portion is visible
+		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( tx, ty, level, true, true );
 		const uvRange = tiling.getTileContentUVBounds( tx, ty, level );
-		const { uv } = geometry.attributes;
-		for ( let i = 0; i < uv.count; i ++ ) {
 
+		// lay the grid vertices out over the tile's normalized rect and transform them by the
+		// display projection so the tiles take the shape of the projected map
+		const geometry = new PlaneGeometry( 1, 1, PLANAR_SEGMENTS, PLANAR_SEGMENTS );
+		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
+		const { position, uv } = geometry.attributes;
+		for ( let i = 0; i < position.count; i ++ ) {
+
+			const fu = uv.getX( i );
+			const fv = uv.getY( i );
+
+			this._normalizedToPlane(
+				MathUtils.lerp( minU, maxU, fu ),
+				MathUtils.lerp( minV, maxV, fv ),
+				_pos,
+			);
+			position.setXYZ( i, _pos.x, _pos.y, 0 );
+
+			// adjust the uvs so only the relevant texture portion is visible
 			uv.setXY( i,
-				MathUtils.mapLinear( uv.getX( i ), 0, 1, uvRange[ 0 ], uvRange[ 2 ] ),
-				MathUtils.mapLinear( uv.getY( i ), 0, 1, uvRange[ 1 ], uvRange[ 3 ] ),
+				MathUtils.mapLinear( fu, 0, 1, uvRange[ 0 ], uvRange[ 2 ] ),
+				MathUtils.mapLinear( fv, 0, 1, uvRange[ 1 ], uvRange[ 3 ] ),
 			);
 
 		}
 
 		return mesh;
+
+	}
+
+	// Reports the exact cartographic range covered by a generated planar tile so consumers like
+	// image overlays can load precisely the content that maps onto it. Ellipsoid tiles carry
+	// region bounding volumes that provide the same information.
+	getTileCartographicRange( tile ) {
+
+		if ( this._useEllipsoid() || ! this._tiling.projection.isCartographic || ! ( TILE_LEVEL in tile ) ) {
+
+			return null;
+
+		}
+
+		return this._tiling.getTileBounds( tile[ TILE_X ], tile[ TILE_Y ], tile[ TILE_LEVEL ] );
+
+	}
+
+	// maps a point in the tiling's normalized space onto the flattened plane through the
+	// display projection
+	_normalizedToPlane( nu, nv, target ) {
+
+		const { center, endCaps, _displayProjection: displayProjection, _tiling: tiling } = this;
+		const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( nu, nv, _point );
+		let cappedLat = lat;
+
+		// snap the edges of a pole-limited tiling to the poles so the map is not cut off there
+		if ( endCaps && tiling.projection.isMercator ) {
+
+			if ( nv === 1 ) cappedLat = Math.PI / 2;
+			if ( nv === 0 ) cappedLat = - Math.PI / 2;
+
+		}
+
+		const [ u, v ] = displayProjection.fromCartographicToNormalized( lon, cappedLat, _point );
+		const offset = center ? 0.5 : 0;
+		return target.set( ( u - offset ) * this._planeAspect, v - offset, 0 );
 
 	}
 
@@ -411,7 +417,7 @@ export class GeneratedSurfacePlugin {
 			const vNorm = 1 - ( innerRow - 1 ) / latVerts;
 
 			// convert the plane position to lat / lon
-			const cart = projection.toCartographicPoint(
+			const cart = projection.fromNormalizedToCartographic(
 				MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ),
 				MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ),
 				_point,
@@ -440,7 +446,7 @@ export class GeneratedSurfacePlugin {
 			// as much as possible at low LoDs.
 			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
 
-				const latLimit = projection.toCartographicPoint( 0.5, 1, _point )[ 1 ];
+				const latLimit = projection.fromNormalizedToCartographic( 0.5, 1, _point )[ 1 ];
 				const vStep = 1 / latVerts;
 				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
 				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
@@ -470,7 +476,7 @@ export class GeneratedSurfacePlugin {
 			}
 
 			// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
-			const [ normU, normV ] = projection.toNormalizedPoint( lon, lat, _point );
+			const [ normU, normV ] = projection.fromCartographicToNormalized( lon, lat, _point );
 			const u = MathUtils.mapLinear( normU, minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
 			const v = MathUtils.mapLinear( normV, minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
 
@@ -580,7 +586,6 @@ export class GeneratedSurfacePlugin {
 
 		} else {
 
-			const { center } = this;
 			let normalizedBounds;
 			if ( isRoot ) {
 
@@ -592,33 +597,38 @@ export class GeneratedSurfacePlugin {
 
 			}
 
-			// calculate the world space bounds position from the range
+			// Compute the plane bounds of the projected tile rect. Non-separable projections are
+			// widest at the row nearest the equator so it is sampled in addition to the corners.
 			const [ minX, minY, maxX, maxY ] = normalizedBounds;
-			let extentsX = ( maxX - minX ) / 2;
-			let extentsY = ( maxY - minY ) / 2;
-			let centerX = minX + extentsX;
-			let centerY = minY + extentsY;
+			const equatorV = MathUtils.clamp( tiling.projection.fromCartographicToNormalized( 0, 0, _point )[ 1 ], minY, maxY );
 
-			if ( center ) {
+			let bMinX = Infinity;
+			let bMinY = Infinity;
+			let bMaxX = - Infinity;
+			let bMaxY = - Infinity;
+			for ( const v of [ minY, maxY, equatorV ] ) {
 
-				centerX -= 0.5;
-				centerY -= 0.5;
+				for ( const u of [ minX, maxX ] ) {
+
+					this._normalizedToPlane( u, v, _pos );
+					bMinX = Math.min( bMinX, _pos.x );
+					bMinY = Math.min( bMinY, _pos.y );
+					bMaxX = Math.max( bMaxX, _pos.x );
+					bMaxY = Math.max( bMaxY, _pos.y );
+
+				}
 
 			}
-
-			// scale the fields
-			centerX *= tiling.aspectRatio;
-			extentsX *= tiling.aspectRatio;
 
 			// return bounding box
 			return {
 				box: [
 					// center
-					centerX, centerY, 0,
+					( bMinX + bMaxX ) / 2, ( bMinY + bMaxY ) / 2, 0,
 
 					// x, y, z half extents
-					extentsX, 0.0, 0.0,
-					0.0, extentsY, 0.0,
+					( bMaxX - bMinX ) / 2, 0.0, 0.0,
+					0.0, ( bMaxY - bMinY ) / 2, 0.0,
 					0.0, 0.0, 0.0,
 				],
 			};
@@ -655,7 +665,7 @@ export class GeneratedSurfacePlugin {
 			// find the most bowed point of the latitude range since the amount that latitude changes is
 			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
-			const midV = projection.toNormalizedPoint( 0, midLat, _point )[ 1 ];
+			const midV = projection.fromCartographicToNormalized( 0, midLat, _point )[ 1 ];
 			const [ lonFactor, latFactor ] = projection.getDerivativeAtNormalizedPoint( minU, midV, _point );
 
 			// calculate the size of a pixel on the surface
@@ -665,9 +675,9 @@ export class GeneratedSurfacePlugin {
 		} else {
 
 			// Calculate geometric error: size of one pixel in world space.
-			// The tile contents span [0, 1] along Y and [0, aspectRatio] along X.
+			// The tile contents span [0, 1] along Y and [0, planeAspect] along X.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
+			geometricError = Math.max( this._planeAspect / pixelWidth, 1 / pixelHeight );
 
 		}
 

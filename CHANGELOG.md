@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
+- GlobeControls: Adjust the globe controls to use stable orientation during rotation.
 
 ### Fixed
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTAnnotationsPlugin: Add a `useIdleCallback` option.
 
 ### Fixed
+- TilesRenderer, TilesFadePlugin: Keep fading-out tiles parented to the tiles renderer group until they are hidden.
 - EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
 - GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
 - MVTAnnotationsPlugin: Adjust plugin to prefetch vector tile content.

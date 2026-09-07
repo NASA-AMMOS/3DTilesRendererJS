@@ -1016,17 +1016,25 @@ export class ImageOverlayPlugin {
 
 				// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
 
-			} else if ( tile.boundingVolume.region ) {
+			} else {
 
-				// If the tile has a region bounding volume then mark the tiles to preload, clamped to the extents of
-				// the overlay image
-				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				let range = [ minLon, minLat, maxLon, maxLat ];
-				range = overlay.projection.clampToBounds( range );
-				range = overlay.projection.toNormalizedRange( range );
+				// Use the tile's region bounding volume or a plugin-provided cartographic range so
+				// exactly the content covering the tile is loaded, clamped to the extents of the
+				// overlay image.
+				const cartRange = tile.boundingVolume.region ??
+					this.tiles.invokeOnePlugin( plugin => plugin.getTileCartographicRange && plugin.getTileCartographicRange( tile ) );
 
-				info.range = range;
-				overlay.lockTextureSafe( range );
+				if ( cartRange ) {
+
+					const [ minLon, minLat, maxLon, maxLat ] = cartRange;
+					let range = [ minLon, minLat, maxLon, maxLat ];
+					range = overlay.projection.clampToBounds( range );
+					range = overlay.projection.fromCartographicToNormalizedRange( range );
+
+					info.range = range;
+					overlay.lockTextureSafe( range );
+
+				}
 
 			}
 
