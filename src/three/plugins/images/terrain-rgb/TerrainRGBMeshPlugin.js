@@ -118,7 +118,9 @@ function sampleGrid( grid, tu, tv ) {
  * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
  * @param {number} [options.tileDimension=256] Source tile pixel size.
  * @param {number} [options.maxZoom=15] Highest zoom level the source provides.
- * @param {number} [options.heightScale=1] Vertical exaggeration. Can be adjusted dynamically.
+ * @param {number} [options.heightScale=1] Factor applied to the meter elevations. A pure vertical
+ *   exaggeration on the ellipsoid, while planar projections need the meters-to-world conversion
+ *   folded in. Can be adjusted dynamically.
  * @param {ImageOverlay} [options.overlay=null] Overlay used to texture the tiles when
  *   `applyOverlayTexture` is enabled.
  * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.

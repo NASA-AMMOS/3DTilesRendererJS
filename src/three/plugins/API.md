@@ -1900,7 +1900,10 @@ constructor(
 		// Highest zoom level the source provides.
 		maxZoom = 15: number,
 
-		// Vertical exaggeration. Can be adjusted dynamically.
+		// Factor applied to the meter elevations. A pure vertical  
+		// exaggeration on the ellipsoid, while planar projections need
+		// the meters-to-world conversion   folded in. Can be adjusted
+		// dynamically.
 		heightScale = 1: number,
 
 		// Overlay used to texture the tiles when  
