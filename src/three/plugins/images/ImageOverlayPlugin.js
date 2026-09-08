@@ -520,6 +520,8 @@ export class ImageOverlayPlugin {
 
 	}
 
+	// TODO: it may be better to split by sampling across the overlay projection axes rather than
+	// the display frame cardinal axes used here
 	_getSplitVectors( scene, tile, centerTarget = _center ) {
 
 		const { tiles, overlayInfo } = this;
