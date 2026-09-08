@@ -1,5 +1,5 @@
 /** @import { WebGLRenderer, Material } from 'three' */
-import { WebGLArrayRenderTarget, MeshBasicMaterial, DataTexture, REVISION } from 'three';
+import { WebGLArrayRenderTarget, MeshBasicMaterial, DataTexture, Matrix4, REVISION } from 'three';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
@@ -7,6 +7,8 @@ import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
 const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
 const _whiteTex = new DataTexture( new Uint8Array( [ 255, 255, 255, 255 ] ), 1, 1 );
 _whiteTex.needsUpdate = true;
+
+const _instanceMatrix = /* @__PURE__ */ new Matrix4();
 
 /**
  * Plugin that uses three.js `BatchedMesh` to limit the number of draw calls required and
@@ -362,7 +364,15 @@ export class BatchedTilesPlugin {
 				const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
 				const instanceId = batchedMesh.addInstance( geometryId );
 				instanceIds.push( instanceId );
-				batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
+
+				_instanceMatrix.copy( mesh.matrixWorld );
+				if ( scene.parent !== null ) {
+
+					_instanceMatrix.premultiply( this.tiles.group.matrixWorldInverse );
+
+				}
+
+				batchedMesh.setMatrixAt( instanceId, _instanceMatrix );
 				batchedMesh.setVisibleAt( instanceId, false );
 				if ( ! isColorWhite( material.color ) ) {
 
