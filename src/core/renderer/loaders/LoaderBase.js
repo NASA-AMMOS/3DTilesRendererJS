@@ -10,26 +10,16 @@ export class LoaderBase {
 		/**
 		 * Options passed to `fetch` when loading tile content.
 		 * @type {Object}
+		 * @default {}
 		 */
 		this.fetchOptions = {};
 
 		/**
 		 * Base URL used to resolve relative external URLs.
 		 * @type {string}
+		 * @default ''
 		 */
 		this.workingPath = '';
-
-	}
-
-	/**
-	 * @deprecated Use `loadAsync` instead.
-	 * @param {string} url
-	 * @returns {Promise<any>}
-	 */
-	load( ...args ) {
-
-		console.warn( 'Loader: "load" function has been deprecated in favor of "loadAsync".' );
-		return this.loadAsync( ...args );
 
 	}
 

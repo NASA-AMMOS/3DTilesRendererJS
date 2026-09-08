@@ -1,0 +1,133 @@
+import { Vector3, MathUtils } from 'three';
+import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
+
+const _delta = /* @__PURE__ */ new Vector3();
+const _normal = /* @__PURE__ */ new Vector3();
+const _point = [ 0, 0 ];
+
+export class PointAnnotation extends OccupancyAnnotation {
+
+	constructor() {
+
+		super();
+
+		this.position = new Vector3();
+		this.lat = 0;
+		this.lon = 0;
+		this.radius = 28;
+
+		this.screenPos = new Vector3();
+		this._facingRatio = 1;
+
+	}
+
+	updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface = true ) {
+
+		const { position, screenPos } = this;
+
+		// project to screen space
+		screenPos.copy( position ).applyMatrix4( matrix );
+
+		// transform to resolution coordinates
+		screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
+		screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
+		screenPos.z = ( screenPos.z < - 1 || screenPos.z > 1 ) ? 1 : 0;
+
+		// facing ratio: dot( surface normal, direction to camera ), approximating the normal as
+		// up on a flattened surface and as the direction from the body center on an ellipsoid
+		if ( cameraPosition !== null && ( ! useEllipsoidSurface || position.lengthSq() > 0 ) ) {
+
+			_delta.subVectors( cameraPosition, position ).normalize();
+			if ( useEllipsoidSurface ) {
+
+				_normal.copy( position ).normalize();
+
+			} else {
+
+				_normal.set( 0, 0, 1 );
+
+			}
+
+			this._facingRatio = _normal.dot( _delta );
+
+		} else {
+
+			this._facingRatio = 1;
+
+		}
+
+	}
+
+	evaluate( handle ) {
+
+		const { screenPos, radius, horizonCutoff, _facingRatio } = this;
+		if ( ! this.ready ) {
+
+			return false;
+
+		}
+
+		if ( screenPos.z !== 0 ) {
+
+			return false;
+
+		}
+
+		if ( _facingRatio < horizonCutoff ) {
+
+			return false;
+
+		}
+
+		if ( handle.test( screenPos.x, screenPos.y, radius ) ) {
+
+			return false;
+
+		}
+
+		handle.mark( screenPos.x, screenPos.y, radius );
+		return true;
+
+	}
+
+}
+
+// parse a single point feature into point annotations
+export function parsePointFeature( feature, layerName, level, tileBounds, tiling, target = [] ) {
+
+	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
+	const { projection } = tiling;
+	const extent = feature.extent;
+
+	// retrieve the geometry
+	const geometry = feature.loadGeometry();
+	for ( const [ point ] of geometry ) {
+
+		const u = MathUtils.lerp( tMinX, tMaxX, point.x / extent );
+		// tile Y=0 is geographic north; with flipY the V axis increases northward
+		// so we invert vf when flipY is set
+		const vf = point.y / extent;
+		const v = tiling.flipY
+			? MathUtils.lerp( tMaxY, tMinY, vf )
+			: MathUtils.lerp( tMinY, tMaxY, vf );
+
+		const [ lon, lat ] = projection.fromNormalizedToCartographic( u, v, _point );
+
+		const item = new PointAnnotation();
+		// feature.id is the OSM element ID (node/way/relation) preserved by Planetiler
+		// across all zoom levels — stable and unique for cross-LoD annotation replacement.
+		// TODO: is this id always guaranteed to be unique and consistent across LoDs?
+		item.id = `${ layerName }:${ feature.id }`;
+		item.layer = layerName;
+		item.properties = feature.properties;
+		item.lat = lat;
+		item.lon = lon;
+		item.lodLevel = level;
+
+		target.push( item );
+
+	}
+
+	return target;
+
+}

@@ -41,19 +41,19 @@ function getRelevantBuffers( parser, propertyTables = [] ) {
 			const { values, arrayOffsets, stringOffsets } = properties[ key ];
 			if ( result[ values ] === null ) {
 
-				result[ values ] = parser.loadBufferView( values );
+				result[ values ] = parser.getDependency( 'bufferView', values );
 
 			}
 
 			if ( result[ arrayOffsets ] === null ) {
 
-				result[ arrayOffsets ] = parser.loadBufferView( arrayOffsets );
+				result[ arrayOffsets ] = parser.getDependency( 'bufferView', arrayOffsets );
 
 			}
 
 			if ( result[ stringOffsets ] === null ) {
 
-				result[ stringOffsets ] = parser.loadBufferView( stringOffsets );
+				result[ stringOffsets ] = parser.getDependency( 'bufferView', stringOffsets );
 
 			}
 
@@ -100,13 +100,13 @@ export class GLTFStructuralMetadataExtension {
 			// TODO: cache the loaded schema so we can share it and dispose of it when the
 			// extension is no longer available
 			const { manager, path, requestHeader, crossOrigin } = parser.options;
-			const finalUri = new URL( rootExtension.schemaUri, path ).toString();
+			const finalUrl = new URL( rootExtension.schemaUri, path ).toString();
 			const fileLoader = new FileLoader( manager );
 			fileLoader.setCrossOrigin( crossOrigin );
 			fileLoader.setResponseType( 'json' );
 			fileLoader.setRequestHeader( requestHeader );
 
-			schemaPromise = fileLoader.loadAsync( finalUri )
+			schemaPromise = fileLoader.loadAsync( finalUrl )
 				.then( schema => {
 
 					rootExtension = { ...rootExtension, schema };

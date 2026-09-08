@@ -71,7 +71,6 @@ function init() {
 	const i3dmLoader = new I3DMLoader();
 
 	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
 	const gltfLoader = new GLTFLoader( i3dmLoader.manager );
 	gltfLoader.setDRACOLoader( dracoLoader );
 	i3dmLoader.manager.addHandler( /\.gltf$/, gltfLoader );

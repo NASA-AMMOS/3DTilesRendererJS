@@ -1,3 +1,15 @@
+// Error thrown when a cache item's promise is rejected because the item was released
+// before its callback could run.
+class DataCacheItemRemovedError extends DOMException {
+
+	constructor() {
+
+		super( 'DataCache: Item removed', 'AbortError' );
+
+	}
+
+}
+
 function hash( ...args ) {
 
 	return args.join( '_' );
@@ -18,8 +30,9 @@ export class DataCache {
 	}
 
 	// overridable
-	fetchItem() {}
-	disposeItem() {}
+	fetchItem( keys, signal ) {}
+	// called with null if the fetch failed
+	disposeItem( item, keys ) {}
 	getMemoryUsage( item ) {
 
 		return 0;
@@ -77,8 +90,9 @@ export class DataCache {
 			info.result = this.fetchItem( args, abortController.signal );
 			if ( info.result instanceof Promise ) {
 
-				info.result.then( res => {
+				info.result = info.result.then( res => {
 
+					abortController.signal.throwIfAborted();
 					info.result = res;
 					info.bytes = this.getMemoryUsage( res );
 					this.cachedBytes += info.bytes;
@@ -87,10 +101,6 @@ export class DataCache {
 				} ).finally( () => {
 
 					this.active --;
-
-				} ).catch( e => {
-
-					// error logging and handling can be handled elsewhere
 
 				} );
 
@@ -167,7 +177,7 @@ export class DataCache {
 		for ( const key in cache ) {
 
 			const { abortController } = cache[ key ];
-			abortController.abort();
+			abortController.abort( new DataCacheItemRemovedError() );
 
 			this.releaseViaFullKey( key, true );
 
@@ -201,23 +211,33 @@ export class DataCache {
 
 					// abort any loads
 					const { result, abortController } = info;
-					abortController.abort();
+					abortController.abort( new DataCacheItemRemovedError() );
 
 					// dispose of the object even if it still is in progress
 					if ( result instanceof Promise ) {
 
 						// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
-						result.then( item => {
+						result
+							.then( item => {
 
-							this.disposeItem( item );
-							this.count --;
-							this.cachedBytes -= info.bytes;
+								this.disposeItem( item, info.args );
 
-						} ).catch( () => {} );
+							} )
+							.catch( () => {
+
+								this.disposeItem( null, info.args );
+
+							} )
+							.finally( () => {
+
+								this.count --;
+								this.cachedBytes -= info.bytes;
+
+							} );
 
 					} else {
 
-						this.disposeItem( result );
+						this.disposeItem( result, info.args );
 						this.count --;
 						this.cachedBytes -= info.bytes;
 

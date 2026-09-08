@@ -266,19 +266,12 @@ async function initThree() {
 		0.2262281938283491,
 	);
 
-	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
-
-	const ktx2loader = new KTX2Loader();
-	ktx2loader.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' );
-	ktx2loader.detectSupport( renderer );
-
 	// initialize tiles
 	const tiles = new TilesRenderer( url );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		rtc: true,
-		dracoLoader: dracoLoader,
-		ktxLoader: ktx2loader,
+		dracoLoader: new DRACOLoader(),
+		ktxLoader: new KTX2Loader().detectSupport( renderer ),
 	} ) );
 
 	tiles.preprocessURL = url => unescape( url );

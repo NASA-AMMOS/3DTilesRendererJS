@@ -276,4 +276,95 @@ describe( 'PriorityQueue', () => {
 
 	} );
 
+	it( 'should immediately run the callback for the flushed item.', () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+
+		const order = [];
+		const A = {};
+		const B = {};
+		const C = {};
+		queue.add( A, () => order.push( 'A' ) );
+		queue.add( B, () => order.push( 'B' ) );
+		queue.add( C, () => order.push( 'C' ) );
+
+		queue.flush( B );
+
+		expect( order ).toEqual( [ 'B' ] );
+		expect( queue.items ).toHaveLength( 2 );
+		expect( queue.callbacks.size ).toEqual( 2 );
+		expect( queue.items ).toHaveLength( queue.callbacks.size );
+
+	} );
+
+	it( 'should resolve the promise returned by add when flushed.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+
+		const key = {};
+		let resolved = false;
+		const promise = queue.add( key, () => 42 ).then( val => {
+
+			expect( val ).toEqual( 42 );
+			resolved = true;
+
+		} );
+
+		queue.flush( key );
+
+		await promise;
+
+		expect( resolved ).toEqual( true );
+
+	} );
+
+	it( 'should do nothing when flushing an item not in the queue.', () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+
+		const A = {};
+		const B = {};
+		queue.add( A, () => {} );
+
+		expect( () => queue.flush( B ) ).not.toThrow();
+		expect( queue.items ).toHaveLength( 1 );
+
+	} );
+
+	it( 'should only complete a job once when its callback throws synchronously.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.autoUpdate = false;
+		queue.maxJobs = 2;
+
+		// dispatch a synchronously throwing job alongside jobs that never resolve so the job
+		// count can be compared against the number of jobs actually running
+		let started = 0;
+		const pending = () => {
+
+			started ++;
+			return new Promise( () => {} );
+
+		};
+
+		const error = new Error( 'sync error' );
+		const promise = queue.add( {}, () => {
+
+			throw error;
+
+		} );
+		queue.add( {}, pending );
+		queue.add( {}, pending );
+		queue.tryRunJobs();
+
+		await expect( promise ).rejects.toBe( error );
+
+		// a double completion decrements the count below the number of running jobs
+		expect( queue.currJobs ).toEqual( started );
+
+	} );
+
 } );

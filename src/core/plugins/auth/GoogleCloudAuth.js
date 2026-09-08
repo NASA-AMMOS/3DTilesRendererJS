@@ -50,6 +50,7 @@ export class GoogleCloudAuth {
 		 */
 		this.sessionOptions = sessionOptions;
 		this._tokenRefreshPromise = null;
+		this._authHostname = null;
 
 	}
 
@@ -64,18 +65,30 @@ export class GoogleCloudAuth {
 
 		await this._tokenRefreshPromise;
 
-		// construct the url
-		const fetchUrl = new URL( url );
-		fetchUrl.searchParams.set( 'key', this.apiToken );
-		if ( this.sessionToken ) {
+		// cache the host of the auth endpoint the first time it is needed
+		if ( this._authHostname === null ) {
 
-			fetchUrl.searchParams.set( 'session', this.sessionToken );
+			this._authHostname = new URL( this.authURL ).host;
+
+		}
+
+		// only attach credentials when the request targets the same host as the auth endpoint
+		const fetchUrl = new URL( url );
+		const sameHost = fetchUrl.host === this._authHostname;
+		if ( sameHost ) {
+
+			fetchUrl.searchParams.set( 'key', this.apiToken );
+			if ( this.sessionToken ) {
+
+				fetchUrl.searchParams.set( 'session', this.sessionToken );
+
+			}
 
 		}
 
 		// try to refresh the session token if we failed to load it
 		let res = await fetch( fetchUrl, options );
-		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
+		if ( sameHost && res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
 			// refresh the session token
 			await this.refreshToken( options );

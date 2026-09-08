@@ -7,6 +7,7 @@ export const OBJECT_FRAME: Frames;
 
 export class Ellipsoid {
 
+	readonly isEllipsoid: true;
 	radius: Vector3;
 	name: string;
 
@@ -27,21 +28,6 @@ export class Ellipsoid {
 		: { lat: number, lon: number, height: number, azimuth: number, elevation: number, roll: number };
 
 	closestPointToRayEstimate( ray: Ray, target: Vector3 ): Vector3;
-
-	// deprecated
-	getAzElRollFromRotationMatrix(
-		lat: number, lon: number, rotationMatrix: Matrix4,
-		target: object, frame: Frames,
-	): { azimuth: number, elevation: number, roll: number };
-	getRotationMatrixFromAzElRoll(
-		lat: number, lon: number, az: number, el: number, roll: number,
-		target: Matrix4, frame: Frames,
-	): Matrix4;
-
-	getFrame(
-		lat: number, lon: number, az: number, el: number, roll: number, height: number,
-		target: Matrix4, frame: Frames,
-	): Matrix4;
 
 	intersectRay( ray: Ray, target: Vector3 ): Vector3 | null;
 

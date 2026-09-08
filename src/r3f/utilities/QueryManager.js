@@ -17,11 +17,19 @@ const _line1 = /* @__PURE__ */ new Line3();
 const _params = /* @__PURE__ */ new Vector2();
 const _direction = /* @__PURE__ */ new Vector3();
 const _matrix = /* @__PURE__ */ new Matrix4();
+
+/**
+ * @private
+ * @deprecated This class relies on an outdated pattern and will not be updated to support
+ * non-ellipsoid surfaces.
+ */
 export class QueryManager extends EventDispatcher {
 
 	constructor() {
 
 		super();
+
+		console.warn( 'QueryManager: This class is deprecated and will not be updated to support non-ellipsoid surfaces.' );
 
 		// settings
 		this.autoRun = true;

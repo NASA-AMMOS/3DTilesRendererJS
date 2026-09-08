@@ -1,0 +1,39 @@
+name: Read size
+
+on:
+  pull_request:
+    branches: [ master ]
+
+# This workflow runs in a read-only environment. We can safely checkout
+# the PR code here.
+# Reference:
+# https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+permissions:
+  contents: read
+
+jobs:
+  read-size:
+    name: Measure bundle size
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci --prefer-offline
+
+    - name: Read bundle sizes
+      # the pull request number is written into the json so the reporting workflow can find the
+      # pull request without checking out its code
+      run: node ./scripts/bundle-size.js sizes.json ${{ github.event.pull_request.number }}
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sizes
+        path: sizes.json

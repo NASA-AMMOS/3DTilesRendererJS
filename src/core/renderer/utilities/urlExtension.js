@@ -1,4 +1,25 @@
 /**
+ * Returns the origin of the URL, used for grouping requests made to the same server.
+ * @private
+ * @param {string} url
+ * @returns {string} null if the origin cannot be derived
+ */
+export function getUrlOrigin( url ) {
+
+	try {
+
+		const base = typeof location !== 'undefined' ? location.href : undefined;
+		return new URL( url, base ).origin;
+
+	} catch {
+
+		return null;
+
+	}
+
+}
+
+/**
  * Returns the file extension of the path component of a URL
  * @param {string} url
  * @returns {string} null if no extension found

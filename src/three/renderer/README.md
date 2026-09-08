@@ -23,6 +23,6 @@ function renderLoop() {
 }
 ```
 
-For more setup examples including custom materials, DRACO compression, Cesium Ion, and camera controls, see the [Three.js usage guide](../../USAGE.md).
+For more setup examples including custom materials, DRACO compression, Cesium Ion, and camera controls, see the [Three.js usage guide](../../../USAGE.md).
 
 See the [API reference](./API.md) for full class and method documentation.

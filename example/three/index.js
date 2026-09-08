@@ -1,5 +1,6 @@
 import {
 	TilesRenderer,
+	EnvironmentControls,
 } from '3d-tiles-renderer';
 import {
 	DebugTilesPlugin,
@@ -24,7 +25,6 @@ import {
 	OrthographicCamera,
 	Sphere,
 } from 'three';
-import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
@@ -56,6 +56,8 @@ const params = {
 
 	errorTarget: 6,
 	maxDepth: 15,
+	loadSiblings: true,
+	loadAncestors: true,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 
@@ -88,21 +90,12 @@ function reinstantiateTiles() {
 
 	}
 
-	// Note the DRACO compression files need to be supplied via an explicit source.
-	// We use unpkg here but in practice should be provided by the application.
-	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
-
-	const ktx2loader = new KTX2Loader();
-	ktx2loader.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' );
-	ktx2loader.detectSupport( renderer );
-
 	tiles = new TilesRenderer( url );
 	tiles.registerPlugin( new ImplicitTilingPlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		rtc: true,
-		dracoLoader: dracoLoader,
-		ktxLoader: ktx2loader,
+		dracoLoader: new DRACOLoader(),
+		ktxLoader: new KTX2Loader(),
 	} ) );
 
 	tiles.fetchOptions.mode = 'cors';
@@ -142,8 +135,9 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
 	camera.position.set( 400, 400, 400 );
+	camera.lookAt( 0, 0, 0 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
 
@@ -168,16 +162,18 @@ function init() {
 	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
 	secondRenderer.domElement.tabIndex = 1;
 
-	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
-	secondControls.screenSpacePanning = false;
+	secondControls = new EnvironmentControls( null, secondCamera, secondRenderer.domElement );
+	secondControls.enableFlight = true;
+	secondControls.flightSpeed = 200;
 	secondControls.minDistance = 1;
-	secondControls.maxDistance = 5000;
+	secondControls.maxDistance = 50000;
+	secondControls.useFallbackPlane = false;
 
 	secondCameraHelper = new CameraHelper( secondCamera );
 	scene.add( secondCameraHelper );
 
 	// Third person camera view
-	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 40000 );
 	thirdPersonCamera.position.set( 50, 40, 40 );
 	thirdPersonCamera.lookAt( 0, 0, 0 );
 
@@ -192,16 +188,20 @@ function init() {
 	thirdPersonRenderer.domElement.style.bottom = '5px';
 	thirdPersonRenderer.domElement.tabIndex = 1;
 
-	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
-	thirdPersonControls.screenSpacePanning = false;
+	thirdPersonControls = new EnvironmentControls( null, thirdPersonCamera, thirdPersonRenderer.domElement );
+	thirdPersonControls.enableFlight = true;
+	thirdPersonControls.flightSpeed = 200;
 	thirdPersonControls.minDistance = 1;
-	thirdPersonControls.maxDistance = 5000;
+	thirdPersonControls.maxDistance = 50000;
+	thirdPersonControls.useFallbackPlane = false;
 
 	// controls
-	controls = new FlyOrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
+	controls = new EnvironmentControls( null, camera, renderer.domElement );
+	controls.enableFlight = true;
+	controls.flightSpeed = 200;
 	controls.minDistance = 1;
-	controls.maxDistance = 5000;
+	controls.maxDistance = 50000;
+	controls.useFallbackPlane = false;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff, 4 );
@@ -216,6 +216,10 @@ function init() {
 
 	offsetParent = new Group();
 	scene.add( offsetParent );
+
+	controls.setScene( offsetParent );
+	secondControls.setScene( offsetParent );
+	thirdPersonControls.setScene( offsetParent );
 
 	geospatialRotationParent = new Group();
 	offsetParent.add( geospatialRotationParent );
@@ -259,7 +263,9 @@ function init() {
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
-	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
+	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 ).step( 1 );
+	tileOptions.add( params, 'loadAncestors' );
+	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 	tileOptions.open();
 
@@ -405,28 +411,12 @@ function onPointerUp( e ) {
 	if ( results.length ) {
 
 		const object = results[ 0 ].object;
-		const info = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).getTileInformationFromActiveObject( object );
+		const tile = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).getTileFromObject3D( object );
 
 		let str = '';
-		for ( const key in info ) {
-
-			let val = info[ key ];
-			if ( typeof val === 'number' ) {
-
-				val = Math.floor( val * 1e5 ) / 1e5;
-
-			}
-
-			let name = key;
-			while ( name.length < 20 ) {
-
-				name += ' ';
-
-			}
-
-			str += `${ name } : ${ val }\n`;
-
-		}
+		str += `geometricError : ${ tile.geometricError.toFixed( 3 ) }\n`;
+		str += `error          : ${ tile.traversal.error.toFixed( 3 ) }\n`;
+		str += `refine         : ${ tile.refine }\n`;
 
 		console.log( str );
 
@@ -439,7 +429,7 @@ function updateOrthoCamera() {
 	orthoCamera.position.copy( camera.position );
 	orthoCamera.rotation.copy( camera.rotation );
 
-	const scale = camera.position.distanceTo( controls.target ) / 2.0;
+	const scale = camera.position.distanceTo( controls.pivotPoint ) / 2.0;
 	let aspect = window.innerWidth / window.innerHeight;
 	if ( params.showSecondView ) {
 
@@ -465,6 +455,8 @@ function animate() {
 	tiles.errorTarget = params.errorTarget;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
+	tiles.loadAncestors = params.loadAncestors;
+	tiles.loadSiblings = params.loadSiblings;
 
 	// update plugin
 	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
@@ -590,6 +582,10 @@ function animate() {
 	window.tiles = tiles;
 	if ( params.enableUpdate ) {
 
+		controls.update();
+		secondControls.update();
+		thirdPersonControls.update();
+
 		secondCamera.updateMatrixWorld();
 		camera.updateMatrixWorld();
 		orthoCamera.updateMatrixWorld();
@@ -665,7 +661,7 @@ function render() {
 		const geomSet = new Set();
 		tiles.traverse( tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.traverse( c => {

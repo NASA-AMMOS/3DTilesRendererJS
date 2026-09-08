@@ -85,7 +85,7 @@ Base class for all 3D Tiles content loaders. Handles fetching and parsing tile c
 ### .fetchOptions
 
 ```js
-fetchOptions: Object
+fetchOptions: Object = {}
 ```
 
 Options passed to `fetch` when loading tile content.
@@ -94,7 +94,7 @@ Options passed to `fetch` when loading tile content.
 ### .workingPath
 
 ```js
-workingPath: string
+workingPath: string = ''
 ```
 
 Base URL used to resolve relative external URLs.
@@ -339,6 +339,73 @@ Returns the array of values for the given property key across all features. Retu
 `null` if the key is not in the table.
 
 
+## DownloadPriorityQueue
+
+Manages a lazily created PriorityQueue per server origin so the requests to every server are
+prioritized and limited independently, and a slow or saturated server can never delay the
+requests made to others. The items added without a url are managed as their own group.
+
+
+### .running
+
+```js
+readonly running: boolean
+```
+
+returns whether tasks are queued or actively running in any origin queue
+
+
+### .maxJobsPerOrigin
+
+```js
+maxJobsPerOrigin: number = 6
+```
+
+Maximum number of requests that can run concurrently per server.
+
+
+### .priorityCallback
+
+```js
+priorityCallback: ( a: any, b: any ) => number | null = null
+```
+
+Comparator used to sort the queued items of every origin queue.
+
+
+### .add
+
+```js
+add(
+	url: string | null,
+	item: any,
+	callback: ( item: any ) => Promise<any> | any,
+	signal = null: AbortSignal | null
+): Promise<any>
+```
+
+Adds an item to the queue of the url's server and returns a Promise that resolves when the
+item's callback completes, or rejects if the item is removed before running.
+
+
+### .remove
+
+```js
+remove( item: any ): void
+```
+
+Removes an item from its origin queue, rejecting its promise with an `AbortError` DOMException.
+
+
+### .has
+
+```js
+has( item: any ): boolean
+```
+
+Returns whether the given item is currently queued.
+
+
 ## LRUCache
 
 Least-recently-used cache for managing tile content lifecycle. Tracks which items
@@ -348,17 +415,17 @@ are in use each frame and evicts unused items when the cache exceeds its size li
 ### .unloadPriorityCallback
 
 ```js
-unloadPriorityCallback: ( a: any, b: any ) => number | null
+unloadPriorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to determine eviction order. Items that sort last are evicted first.
-Defaults to `null` (eviction order is by last-used time).
+When `null`, eviction order is by last-used time.
 
 
 ### .minSize
 
 ```js
-minSize: number
+minSize: number = 6000
 ```
 
 Minimum number of items to keep in the cache after eviction.
@@ -367,7 +434,7 @@ Minimum number of items to keep in the cache after eviction.
 ### .maxSize
 
 ```js
-maxSize: number
+maxSize: number = 8000
 ```
 
 Maximum number of items before eviction is triggered.
@@ -376,7 +443,7 @@ Maximum number of items before eviction is triggered.
 ### .minBytesSize
 
 ```js
-minBytesSize: number
+minBytesSize: number = ~322MB
 ```
 
 Minimum total bytes to retain after eviction.
@@ -387,7 +454,7 @@ Minimum total bytes to retain after eviction.
 ### .maxBytesSize
 
 ```js
-maxBytesSize: number
+maxBytesSize: number = ~430MB
 ```
 
 Maximum total bytes before eviction is triggered.
@@ -398,7 +465,7 @@ Maximum total bytes before eviction is triggered.
 ### .unloadPercent
 
 ```js
-unloadPercent: number
+unloadPercent: number = 0.05
 ```
 
 Fraction of excess items/bytes to unload per eviction pass.
@@ -407,10 +474,20 @@ Fraction of excess items/bytes to unload per eviction pass.
 ### .autoMarkUnused
 
 ```js
-autoMarkUnused: boolean
+autoMarkUnused: boolean = true
 ```
 
 If true, items are automatically marked as unused at the start of each eviction pass.
+
+
+### .cachedBytes
+
+```js
+readonly cachedBytes: number
+```
+
+Total number of bytes tracked for the items currently in the cache. Can be used
+alongside `maxBytesSize` and `isFull` to adjust settings as memory grows.
 
 
 ### .isFull
@@ -551,7 +628,7 @@ returns whether tasks are queued or actively running
 ### .maxJobs
 
 ```js
-maxJobs: number
+maxJobs: number = 6
 ```
 
 Maximum number of jobs that can run concurrently.
@@ -560,7 +637,7 @@ Maximum number of jobs that can run concurrently.
 ### .autoUpdate
 
 ```js
-autoUpdate: boolean
+autoUpdate: boolean = true
 ```
 
 If true, job runs are automatically scheduled after `add` and after each job completes.
@@ -569,11 +646,11 @@ If true, job runs are automatically scheduled after `add` and after each job com
 ### .priorityCallback
 
 ```js
-priorityCallback: ( a: any, b: any ) => number | null
+priorityCallback: ( a: any, b: any ) => number | null = null
 ```
 
 Comparator used to sort queued items. Higher-priority items should sort last
-(i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
+(i.e. return positive when `itemA` should run before `itemB`).
 
 
 ### .sort
@@ -610,7 +687,7 @@ callback completes, or rejects if the item is removed before running.
 remove( item: any ): void
 ```
 
-Removes an item from the queue, rejecting its promise with `PriorityQueueItemRemovedError`.
+Removes an item from the queue, rejecting its promise with an `AbortError` DOMException.
 
 
 ### .removeByFilter
@@ -631,6 +708,16 @@ tryRunJobs(): void
 Immediately attempts to dequeue and run pending jobs up to `maxJobs` concurrency.
 
 
+### .flush
+
+```js
+flush( item: any ): Promise<any> | any
+```
+
+Immediately runs the callback for the given item, removing it from the queue.
+Does nothing if the item is not queued.
+
+
 ### .scheduleJobRun
 
 ```js
@@ -638,14 +725,6 @@ scheduleJobRun(): void
 ```
 
 Schedules a deferred call to `tryRunJobs` via `schedulingCallback`.
-
-
-## PriorityQueueItemRemovedError
-
-_extends `Error`_
-
-Error thrown when a queued item's promise is rejected because the item was removed
-before its callback could run.
 
 
 ## Scheduler
@@ -703,9 +782,6 @@ extend this class to add camera projection, scene management, and tile display.
 // Fired when the renderer determines a new render is required — e.g. after a tile loads.
 { type: 'needs-update' }
 
-// Fired when any tile content (model or external tileset) finishes loading.
-{ type: 'load-content' }
-
 // Fired when any tileset JSON finishes loading.
 { type: 'load-tileset', tileset: Tileset, url: string }
 
@@ -719,7 +795,7 @@ extend this class to add camera projection, scene management, and tile display.
 { type: 'tiles-load-end' }
 
 // Fired when a tile content download begins.
-{ type: 'tile-download-start', tile: Tile, uri: string }
+{ type: 'tile-download-start', tile: Tile, url: string }
 
 // Fired when a tile's renderable content (model/scene) is created.
 // The `scene` type is engine-specific (e.g. `THREE.Group` in three.js).
@@ -761,6 +837,18 @@ readonly loadProgress: number
 Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 
 
+### .downloadQueue
+
+```js
+downloadQueue: DownloadPriorityQueue
+```
+
+Download queue managing concurrent tile downloads per server origin. Max jobs per origin
+defaults to `25`.
+
+> [!NOTE]
+> Cannot be replaced once `update()` has been called for the first time.
+
 ### .rootTileset
 
 ```js
@@ -773,7 +861,7 @@ The loaded root tileset object, or null if not yet loaded.
 ### .fetchOptions
 
 ```js
-fetchOptions: RequestInit
+fetchOptions: RequestInit = {}
 ```
 
 Options passed to `fetch` when loading tile and tileset resources.
@@ -804,17 +892,6 @@ lruCache: LRUCache
 ```
 
 LRU cache managing loaded tile lifecycle and memory eviction.
-
-> [!NOTE]
-> Cannot be replaced once `update()` has been called for the first time.
-
-### .downloadQueue
-
-```js
-downloadQueue: PriorityQueue
-```
-
-Priority queue controlling concurrent tile downloads. Max jobs defaults to `25`.
 
 > [!NOTE]
 > Cannot be replaced once `update()` has been called for the first time.
@@ -863,7 +940,7 @@ Loading and rendering statistics updated each frame. Fields:
 ### .errorTarget
 
 ```js
-errorTarget: number
+errorTarget: number = 16
 ```
 
 Target screen-space error in pixels to aim for when updating the geometry. Tiles will
@@ -872,10 +949,39 @@ not render if they are below this level of screen-space error. See the
 of the 3D Tiles specification for more information.
 
 
+### .errorFalloff
+
+```js
+errorFalloff: number = 0
+```
+
+Maximum screen-space error in pixels subtracted from distant tiles. Set to 0 to disable.
+Comparable to Cesium's "dynamicScreenSpaceError" settings.
+
+`error -= errorFalloff * ( 1 - e ^ -( distance * errorFalloffDensity )² )`
+
+> [!WARN]
+> Experimental and may change.
+
+
+### .errorFalloffDensity
+
+```js
+errorFalloffDensity: number = 2e-4
+```
+
+Distance scale for the "errorFalloff" curve, in inverse meters. Larger values affect
+tiles closer to the camera.
+Comparable to Cesium's "dynamicScreenSpaceError" settings.
+
+> [!WARN]
+> Experimental and may change.
+
+
 ### .displayActiveTiles
 
 ```js
-displayActiveTiles: boolean
+displayActiveTiles: boolean = false
 ```
 
 "Active tiles" are those that are loaded and available but not necessarily visible.
@@ -888,51 +994,40 @@ camera view not accounted for by the tiles renderer.
 ### .maxDepth
 
 ```js
-maxDepth: number
+maxDepth: number = Infinity
 ```
 
 Maximum depth in the tile hierarchy to traverse. Tiles deeper than this are skipped.
 
 
-### .optimizedLoadStrategy
-
-```js
-optimizedLoadStrategy: boolean
-```
-
-**Experimental.** Enables an optimized tile loading strategy that loads only the tiles
-needed for the current view, reducing memory usage and improving initial load times.
-Tiles are loaded independently based on screen-space error without requiring all parent
-tiles to load first. Prevents visual gaps and flashing during camera movement.
-
-Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
-
-Default is `false`, which uses the previous approach of loading all parent and sibling
-tiles for guaranteed smooth transitions.
-
-> [!WARNING]
-> Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
-> dispose of child tiles including the `ImageOverlayPlugin` `enableTileSplitting` setting,
-> `QuantizedMeshPlugin`, & `ImageFormatPlugin` subclasses (XYZ, TMS, etc). Any tile sets
-> that share caches or queues must also use the same setting.
-
 ### .loadSiblings
 
 ```js
-loadSiblings: boolean
+loadSiblings: boolean = true
 ```
 
 **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
 camera movement. When `false`, only visible tiles are loaded, minimizing memory but
-potentially causing brief gaps during rapid movement.
+potentially causing brief gaps during rapid movement. Implicitly treated as `true` when
+`loadAncestors` is enabled.
 
-Only applies when `optimizedLoadStrategy` is enabled.
+
+### .loadAncestors
+
+```js
+loadAncestors: boolean = true
+```
+
+**Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
+fallback while children are loading — similar to the behavior of the standard load
+strategy. Increases memory usage but provides smoother transitions on first load.
+Implicitly enables sibling loading to prevent flickering during camera movement.
 
 
 ### .maxTilesProcessed
 
 ```js
-maxTilesProcessed: number
+maxTilesProcessed: number = 250
 ```
 
 The number of tiles to process immediately when traversing the tile set to determine
@@ -1229,6 +1324,14 @@ virtualChildCount: number
 ```
 
 Number of virtual children appended to this tile by plugins.
+
+### .renderer
+
+```js
+renderer: TilesRendererBase
+```
+
+The renderer instance that owns this tile.
 
 ## Tileset
 

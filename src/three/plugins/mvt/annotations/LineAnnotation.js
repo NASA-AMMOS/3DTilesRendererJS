@@ -1,0 +1,379 @@
+import { MathUtils, Vector3, Vector2, Matrix4 } from 'three';
+import { OccupancyAnnotation } from '../ScreenOccupationManager.js';
+
+// real-world spacing between road-label anchors, in meters. Converted to an angular spacing using
+// the body's radius so anchor density tracks real-world length on any ellipsoid.
+const ANCHOR_SPACING_METERS = 500000;
+
+const _delta = /* @__PURE__ */ new Vector3();
+const _normal = /* @__PURE__ */ new Vector3();
+
+// reused parse buffer holding interleaved x / y sample pairs
+const _subsampledPoints = [];
+const _point = [ 0, 0 ];
+
+// incrementing id assigned to features with no name or id
+let _unnamedFeatureId = 0;
+
+// Share path annotation used for text anchors
+export class LineAnnotation extends OccupancyAnnotation {
+
+	// number of points in the path
+	get count() {
+
+		return this.lat.length;
+
+	}
+
+	// number of anchors
+	get anchorCount() {
+
+		return this.anchorPositions.length;
+
+	}
+
+	constructor() {
+
+		super();
+
+		// display text for this path
+		this.text = '';
+		this.characterWidths = [];
+		this.characterRadius = 0;
+		this.totalTextWidth = 0;
+
+		// the range of the tile this line is associated with
+		this.range = null;
+
+		// per-sample cartographic coordinates in radians
+		this.lat = [];
+		this.lon = [];
+
+		// per-sample settled positions in tiles.group local space, filled during settling
+		this.positions = [];
+
+		// anchors placed along the path, each { i0, i1, alpha, lat, lon, ref }
+		this.anchorPositions = [];
+
+		// screen positions, cumulative length used for calculating text layout
+		this.screenPositions = [];
+		this.cumulativeLen = [];
+
+		// per-sample dot( surface normal, direction to camera )
+		this.facingRatios = [];
+
+		// cache variables
+		this.cachedMatrix = new Matrix4();
+		this.cachedResolution = new Vector2();
+
+		// set true when settling updates "positions" so updateTransform recomputes the screen
+		// projection even when the camera hasn't moved.
+		this.needsUpdate = false;
+
+	}
+
+	// overrides
+	evaluate() {
+
+		throw new Error();
+
+	}
+
+	// update screen space points and cumulative values for text placement
+	updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface = true ) {
+
+		const {
+			positions,
+			screenPositions,
+			cachedMatrix,
+			cachedResolution,
+			cumulativeLen,
+		} = this;
+
+		if (
+			! this.needsUpdate &&
+			cachedMatrix.equals( matrix ) &&
+			cachedResolution.equals( resolution )
+		) {
+
+			return;
+
+		}
+
+		this.needsUpdate = false;
+		cachedMatrix.copy( matrix );
+		cachedResolution.copy( resolution );
+
+		while ( screenPositions.length < positions.length ) {
+
+			screenPositions.push( new Vector3() );
+
+		}
+
+		const { facingRatios } = this;
+		facingRatios.length = screenPositions.length;
+
+		for ( let i = 0, l = screenPositions.length; i < l; i ++ ) {
+
+			const position = positions[ i ];
+			const screenPos = screenPositions[ i ];
+
+			// project to screen space
+			screenPos.copy( position ).applyMatrix4( matrix );
+
+			// transform to resolution coordinates
+			screenPos.x = ( screenPos.x * 0.5 + 0.5 ) * resolution.width;
+			screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
+			screenPos.z = MathUtils.mapLinear( screenPos.z, - 1, 1, 0, 1 );
+
+			// approximate the surface normal as up on a flattened surface and as the direction
+			// from the body center on an ellipsoid. Matches PointAnnotation.
+			if ( cameraPosition !== null && ( ! useEllipsoidSurface || position.lengthSq() > 0 ) ) {
+
+				_delta.subVectors( cameraPosition, position ).normalize();
+				if ( useEllipsoidSurface ) {
+
+					_normal.copy( position ).normalize();
+
+				} else {
+
+					_normal.set( 0, 0, 1 );
+
+				}
+
+				facingRatios[ i ] = _normal.dot( _delta );
+
+			} else {
+
+				facingRatios[ i ] = 1;
+
+			}
+
+		}
+
+		// roll up the cumulative placement
+		cumulativeLen.length = screenPositions.length;
+		cumulativeLen[ 0 ] = 0;
+		for ( let i = 1; i < screenPositions.length; i ++ ) {
+
+			const p0 = screenPositions[ i - 1 ];
+			const p1 = screenPositions[ i ];
+			const dx = p1.x - p0.x;
+			const dy = p1.y - p0.y;
+			const len = Math.sqrt( dx * dx + dy * dy );
+			cumulativeLen[ i ] = cumulativeLen[ i - 1 ] + len;
+
+		}
+
+	}
+
+	//
+
+	updateCharacterWidthCache( measureChar ) {
+
+		const { text, characterWidths, properties, layer } = this;
+		characterWidths.length = text.length;
+		let total = 0;
+		for ( let i = 0, l = text.length; i < l; i ++ ) {
+
+			const width = measureChar( text[ i ], layer, properties );
+			characterWidths[ i ] = width;
+			total += width;
+
+		}
+
+		// compute the radius as the full width of M to add some
+		// margin around the labels
+		this.totalTextWidth = total;
+		this.characterRadius = measureChar( 'M', layer, properties );
+
+	}
+
+	// whether a lat / lon falls within the same tile as this line
+	hasCoverage( lat, lon ) {
+
+		// e
+		const [ minLon, minLat, maxLon, maxLat ] = this.range;
+		return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
+
+	}
+
+	// Place anchors along a path at a fixed "spacing" (geographic, in radians), recording the
+	// bounding sample indices. Short paths receive a single anchor at their midpoint.
+	generateAnchors( spacing ) {
+
+		const { lat, lon } = this;
+
+		// segment lengths and total length in cartographic space so anchor count tracks the
+		// path's real-world length rather than the tile's size
+		const segLengths = [];
+		let totalLength = 0;
+		for ( let i = 0, l = lat.length - 1; i < l; i ++ ) {
+
+			const lat0 = lat[ i ];
+			const lat1 = lat[ i + 1 ];
+
+			const lon0 = lon[ i ];
+			const lon1 = lon[ i + 1 ];
+
+			// TODO: this is using some rough sphere math to space the anchors evenly regardless of
+			// lat but we should figure out a better way to handle this spacing
+			const latMid = 0.5 * ( lat0 + lat1 );
+			const dLat = lat1 - lat0;
+			const dLon = ( lon1 - lon0 ) * Math.cos( latMid );
+			const d = Math.sqrt( dLat * dLat + dLon * dLon );
+			segLengths.push( d );
+			totalLength += d;
+
+		}
+
+		// first anchor offset half a spacing in, fall back to the midpoint for short paths
+		let target = spacing * 0.5;
+		if ( target > totalLength ) {
+
+			target = totalLength * 0.5;
+
+		}
+
+		let currLength = 0;
+		let currIndex = 0;
+		const anchorCandidates = [];
+		while ( target <= totalLength ) {
+
+			// advance to the segment containing "target"
+			while ( currIndex < segLengths.length && currLength + segLengths[ currIndex ] < target ) {
+
+				currLength += segLengths[ currIndex ];
+				currIndex ++;
+
+			}
+
+			if ( currIndex >= segLengths.length ) {
+
+				break;
+
+			}
+
+			const i0 = currIndex;
+			const i1 = currIndex + 1;
+			const d0 = segLengths[ i0 ];
+			const alpha = d0 > 0 ? ( target - currLength ) / d0 : 0;
+
+			anchorCandidates.push( {
+				i0,
+				i1,
+				alpha,
+
+				ref: null,
+				lat: MathUtils.lerp( lat[ i0 ], lat[ i1 ], alpha ),
+				lon: MathUtils.lerp( lon[ i0 ], lon[ i1 ], alpha ),
+			} );
+
+			target += spacing;
+
+		}
+
+		this.anchorPositions = anchorCandidates;
+
+	}
+
+}
+
+// Densify a polyline in tile coordinate space so no gap between consecutive samples
+// exceeds "spacing", preserving the original vertices. "spacing" is constant in tile
+// space, the geographic sample density scales with the tile's LoD automatically.
+// Writes interleaved x / y pairs into "target" to avoid allocating an object per sample.
+function subsamplePath( points, spacing, target ) {
+
+	target.length = 0;
+	for ( let i = 0, l = points.length - 1; i < l; i ++ ) {
+
+		const p0 = points[ i ];
+		const p1 = points[ i + 1 ];
+		target.push( p0.x, p0.y );
+
+		const dx = p1.x - p0.x;
+		const dy = p1.y - p0.y;
+		const dist = Math.sqrt( dx * dx + dy * dy );
+		const steps = Math.ceil( dist / spacing );
+		for ( let s = 1; s < steps; s ++ ) {
+
+			const t = s / steps;
+			target.push(
+				MathUtils.lerp( p0.x, p1.x, t ),
+				MathUtils.lerp( p0.y, p1.y, t ),
+			);
+
+		}
+
+	}
+
+	const last = points[ points.length - 1 ];
+	target.push( last.x, last.y );
+	return target;
+
+}
+
+// parse a single line feature into line annotations, one per line fragment
+export function parseLineFeature( feature, layerName, level, tileBounds, range, tiling, ellipsoid, target = [] ) {
+
+	// anchor spacing in radians, derived from the fixed real-world distance and the body's radius so
+	// density tracks real-world length independent of the ellipsoid.
+	// TODO: this needs to scale based on LoD rather than a fixed value - it is hackily scaled by the
+	// tile width below
+	const anchorSpacing = ANCHOR_SPACING_METERS / ellipsoid.radius.x;
+	const subsampleFraction = 1 / 64;
+	const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
+	const { flipY, projection } = tiling;
+
+	const extent = feature.extent;
+	const spacing = extent * subsampleFraction;
+
+	// feature.id is the OSM element id preserved across LoDs, making it the path's stable key.
+	// Unnamed features fall back to a unique id so they are not merged.
+	const id = `${ layerName }:${ feature.properties.name || feature.id || `unnamed_${ _unnamedFeatureId ++ }` }`;
+	const geometry = feature.loadGeometry();
+	for ( const line of geometry ) {
+
+		const subSampledPoints = subsamplePath( line, spacing, _subsampledPoints );
+
+		// init the annotation
+		const annotation = new LineAnnotation();
+		annotation.id = id;
+		annotation.layer = layerName;
+		annotation.properties = feature.properties;
+		annotation.lodLevel = level;
+		annotation.range = range;
+
+		// construct the lat / lon points
+		for ( let i = 0, l = subSampledPoints.length; i < l; i += 2 ) {
+
+			// tile Y=0 is geographic north; with flipY the V axis increases northward
+			const u = MathUtils.lerp( tMinX, tMaxX, subSampledPoints[ i ] / extent );
+			const vf = subSampledPoints[ i + 1 ] / extent;
+
+			// TODO: is this not already accounted for in the fromNormalizedToCartographic? Is this supposed to
+			// just be ALWAYS true? This seems to be a flip of the internal content rather than the
+			// overall tiling?
+			const v = flipY
+				? MathUtils.lerp( tMaxY, tMinY, vf )
+				: MathUtils.lerp( tMinY, tMaxY, vf );
+
+			const [ lon, lat ] = projection.fromNormalizedToCartographic( u, v, _point );
+			annotation.lon.push( lon );
+			annotation.lat.push( lat );
+			annotation.positions.push( new Vector3() );
+
+		}
+
+		// construct the anchors
+		annotation.generateAnchors( anchorSpacing * ( range[ 2 ] - range[ 0 ] ) );
+
+		// append the annotation
+		target.push( annotation );
+
+	}
+
+	return target;
+
+}

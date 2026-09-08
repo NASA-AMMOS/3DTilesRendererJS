@@ -6,14 +6,131 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
+- MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
+- GlobeControls: Adjust the globe controls to use stable orientation during rotation.
+- TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.
+- ProjectedSurface: Add a surface definition for tile geometry flattened onto a projected plane.
+- GeneratedSurfacePlugin, TerrainRGBMeshPlugin: Add "projection" option to select the displayed surface shape, including displaying planar content in a different projection than it is stored in. Deprecates the "shape" option.
+- ProjectionScheme: Added support for EPSG:8857, equal earth projection.
+
+### Fixed
+- MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
+- MVTAnnotationsPlugin: Fix a crash when a tile visibility event is dispatched after the tile has been disposed.
+- MVTGlyphs: Fix "update" throwing when called before the glyphs have been rendered for the first time.
+- MVTGlyphAtlasTexture: Fix "drawChar" centering glyphs using the previously assigned canvas font.
+- MVTGlyphAtlasTexture: Fix SVG icon outlines rendering at half the width of text outlines for the same "strokeWidth".
+- TerrainLambertMaterial: Fix dark lines along tile edges when the terrain is viewed from above.
+- BatchedTilesPlugin: Fix bug where tiles were not transformed properly before being added to the batched mesh instance.
+
+### Changed
+- MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
+- Traversal: Skip recomputing the view error for tiles that are only visited to update their frame state, significantly reducing traversal time.
+- MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
+- ImageOverlayPlugin, MVTAnnotationsPlugin: Map draped textures and annotations through "TilesRenderer.surface" so they support flattened, projected surfaces.
+- QueryManager: Deprecate the r3f QueryManager class.
+- GeneratedSurfacePlugin: Deprecate "getCartographicFromPosition" and "getPositionFromCartographic" in favor of the "TilesRenderer.surface" functions.
+
+## [0.5.2] - 2026.08.24
+### Added
+- TerrainRGBMeshPlugin, TerrariumMeshPlugin: Add support for terrarium and terrain rgb formats.
+- TilesRenderer: Dedicated queues for each host to avoid blocking on slow servers
+- RasterElevationSamplingPlugin: Add plugin to examples to rasterize tiles to a texture, sample elevations.
+- MVTAnnotationsPlugin: Add preload for MVT content if region bounding volume is available.
+- MVTAnnotationsPlugin: Add support for calling "sampleCartographicElevation" from a plugin to perform a fast altitude fetch.
+- MVTAnnotationsDriver: Add support for "sampleCartographicElevation".
+- PriorityQueue: Add support for passing an abort signal for an object.
+- MVTAnnotationsPlugin: Expose "maxSettleTimeMs" and "maxOccupancyUpdateTimeMs" for adjusting processing time.
+- MVTAnnotationsPlugin: Add "horizonCutoff" to trim annotations at a distance.
+- TileRenderer: Add a set of experimental error falloff parameters.
+- MVTAnnotationsPlugin: Spread tile annotation parsing out among multiple frames with an exposed "maxParseTimeMs" setting.
+- MVTAnnotationsPlugin: Add a `getAnnotationRank` in place of `sortAnnotations`
+- MVTAnnotationsPlugin: Add a `useIdleCallback` option.
+
+### Fixed
+- TilesRenderer, TilesFadePlugin: Keep fading-out tiles parented to the tiles renderer group until they are hidden.
+- EnvironmentControls, GlobeControls: Fix orthographic camera zoom when adjusting zoomSpeed.
+- GeoJSONOverlay: Fix content bounds check treating the normalized tile range as radians, causing every tile to report content.
+- MVTAnnotationsPlugin: Adjust plugin to prefetch vector tile content.
+- EnvironmentControls, GlobeControls: Fix orthographic camera zoom jumping when zooming into different points when using touch.
+- MVTAnnotationsPlugin: Fix case that could stall annotation processing and loading.
+
+### Changed
+- MVTAnnotationsPlugin: Deprecated `sortAnnotations` function in favor of `getAnnotationRank`.
+
+## [0.5.1] - 2026.08.07
+### Added
+- Add a "tile" reference to tile mesh `userData` field.
+- MVTAnnotationsDriver: add an optional "settle raycast" function
+- Exports for default queues, caches.
+
+### Fixed
+- MVTGlyphAtlasTexture: Fixed a case where glyph uvs woudl be incorrect after resizing, resulting in garbled text labels.
+- MVTAnnotationsPlugin: Run settling and screen occupancy updates in an idle callback if there is remaining work.
+- MVTAnnotations: Remove hard coded earth constants used during line parsing
+- TilesRenderer: "active" tiles now have the parent explicitly assigned to the tiles renderer group without being added as children to ensure the tile mesh world matrices account for it.
+- Traversal: Filter additive tile children using the parents geometric error to avoid loading and rendering too many children.
+- EXT_structural_metadata plugin: Fix case where buffers were not decompressed before being read.
+- DebugTilesPlugin: Initialize wireframe with a correct default.
+
+### Changed
+- TilesRenderer: Added "toJSON" to tile instances to avoid cyclic references during serilization.
+
+## [0.5.0] - 2026.07.15
+### Added
+- TilesRenderer: Add "getResolution".
+- Add "ValidateTilesetPlugin".
+- TilesRenderer: Add "accelerateRaycast" toggle for malformed data sets.
+- LoadRegionPlugin: Add a "regions" constructor option.
+
+### Changed
+- Deprecated APIs and fields have been removed.
+- CesiumIonPlugin: Removed warning logs.
+- TilesRenderer: All instances will now share "processNodeQueue", "lruCache", "downloadQueue" and "priorityQueue" instances by default until optionally reassigned.
+- ImageOverlayPlugin: All image overlay instances share tile download & processing queues.
+
+### Fixed
+- GeneratedSurfacePlugin: Fix the plugin not applying uv ranges correctly.
+- ImageOverlayPlugin: Fix plugins not tracking tile visibility correctly.
+- Fix "disposeTile" events firing for internal tileset json tiles
+- Export INDEXED_COLOR for DebugTilesPlugin
+- TilesFadePlugin: Remove "displayActiveTiles" hack so tiles renderer settings are respected.
+- TilesRenderer: Fixed unconditional traversal behavior.
+- TilesRenderer: Fixed tiles occasionally getting "stuck" visible during traversal.
+
+## [0.4.28] - 2026.06.09
+### Fixed
+- Add in "pbf", "@mapbox/vector-tiles" and "pmtiles" as required dependencies in package.json to prevent failure in bundlers when they are not installed.
+
+## [0.4.27] - 2026.05.25
+### Fixed
+- Bug introduced in adding "empty" tile events during traversal.
+
+## [0.4.26] - 2026.05.25
+### Added
+- DebugTilesPlugin: Added support for displaying empty tiles that stop traversal so tile set structure is more clear.
+
+### Fixed
+- EnvironmentControls: Zooming into nothing now works when geometry is not below the camera.
+- ImageOverlayPlugin: Fixed plugin firing "needs-rerender" rather than a "needs-render" event.
+
+### Changed
+- TilesRendererBase: "tile-download-start" event now specifies "url" rather than "uri" as a field.
+- TilesRendererBase: Deprecated "load-content" plugin.
+
+## [0.4.25] - 2026.05.21
+### Added
 - "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
 - Improved support for ExternalTexture memory tracking.
 - StructuralMetadata: Throw an error in `getPropertyTableData` when non-matching argument types are passed.
-- MVTOverlay, PMTilesOverlay: Overlays for reading and rendering vector tilee formats as tile overlays.
+- MVTOverlay, PMTilesOverlay: Overlays for reading and rendering vector tile formats as tile overlays.
+- TilesRenderer: Added "loadAncestors" option.
+- GlobeControls, EnvironmentControls: Add "enableFlight" option for free controls.
 
 ### Fixed
 - ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
 - Converted remaining "three/examples/jsm/" paths to "three/addons/"
+- ImageOverlayPlugin: Geometry tiles will now continue to load and display even if an overlay texture fails to load.
+- ImageOverlayPlugin: If an overlay fails to load then a "load-error" will be thrown on TilesRenderer.
 
 ### Changed
 - Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin" & "ImageOverlayPlugin", instead.
@@ -45,7 +162,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
-- QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
+- QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete.
 - ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
 - BatchedMesh: Fix instances not being released when "discardOriginalContent" is true.
 
@@ -70,6 +187,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.20] - 2026-02-03
 ### Added
+- Added support for Babylon.js
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
 - I3DMLoader: Added support for oct-encoded normals.

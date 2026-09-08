@@ -11,17 +11,22 @@ export * from './batched/BatchedTilesPlugin.js';
 export * from './TileFlatteningPlugin.js';
 export * from './QuantizedMeshPlugin.js';
 export * from './images/ImageOverlayPlugin.js';
+export * from './images/utils/ProjectedSurface.js';
 export * from './LoadRegionPlugin.js';
 export * from './DebugTilesPlugin.js';
-
-// other formats
-export * from './images/DeepZoomImagePlugin.js';
-export * from './images/EPSGTilesPlugin.js';
+export * from './mvt/MVTAnnotationsPlugin.js';
 
 // gltf extensions
 export * from './gltf/GLTFCesiumRTCExtension.js';
 export * from './gltf/GLTFStructuralMetadataExtension.js';
 export * from './gltf/GLTFMeshFeaturesExtension.js';
+
+// mvt utilities
+export * from './mvt/MVTGlyphAtlasTexture.js';
+export * from './mvt/MVTGlyphMaterial.js';
+export * from './mvt/MVTGlyphs.js';
+export * from './mvt/MVTIconGlyphs.js';
+export * from './mvt/MVTLabelGlyphs.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';

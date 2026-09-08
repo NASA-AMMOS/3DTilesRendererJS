@@ -3,13 +3,16 @@ import { Vector3, Matrix4, MathUtils } from 'three';
 // iterates over all present tiles in the given tileset at the given level in the given range
 export function forEachTileInBounds( range, level, tiling, callback ) {
 
-	// pull the bounds in a bit to avoid loading unnecessary tiles. 1e-8 was chosen since smaller values
-	// are not larger enough and cause extra tiles to load in cases where 1-to-1 tile-to-image should occur
+	// Pull the bounds in a bit so a range that matches a tile exactly does not load
+	// neighboring tiles. The epsilon is scaled to the queried range span so it stays
+	// sub-pixel in composed overlay textures at deep tile levels.
 	let [ minLon, minLat, maxLon, maxLat ] = range;
-	minLat += 1e-8;
-	minLon += 1e-8;
-	maxLat -= 1e-8;
-	maxLon -= 1e-8;
+	const epsX = ( maxLon - minLon ) * 1e-4;
+	const epsY = ( maxLat - minLat ) * 1e-4;
+	minLat += epsY;
+	minLon += epsX;
+	maxLat -= epsY;
+	maxLon -= epsX;
 
 	const clampedLevel = Math.max( Math.min( level, tiling.maxLevel ), tiling.minLevel );
 	const [ minX, minY, maxX, maxY ] = tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, clampedLevel, true );
@@ -26,7 +29,7 @@ export function forEachTileInBounds( range, level, tiling, callback ) {
 }
 
 // functions for generating UVs for cartographic-projected UVs
-function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
+function getGeometryCartographicChannel( geometry, geomToSurfaceMatrix, surface ) {
 
 	const _vec = new Vector3();
 	const _cart = {};
@@ -34,10 +37,10 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 	const posAttr = geometry.getAttribute( 'position' );
 
 	geometry.computeBoundingBox();
-	geometry.boundingBox.getCenter( _vec ).applyMatrix4( geomToEllipsoidMatrix );
+	geometry.boundingBox.getCenter( _vec ).applyMatrix4( geomToSurfaceMatrix );
 
 	// find a rough mid lat / lon point
-	ellipsoid.getPositionToCartographic( _vec, _cart );
+	surface.getPositionToCartographic( _vec, _cart );
 
 	// fall back to 0 because if the geometry is exactly centered at 0, 0, 0 then
 	// the calculated lat / lon will be NaN.
@@ -53,8 +56,8 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 	for ( let i = 0; i < posAttr.count; i ++ ) {
 
 		// get the lat / lon values per vertex
-		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( geomToEllipsoidMatrix );
-		ellipsoid.getPositionToCartographic( _vec, _cart );
+		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( geomToSurfaceMatrix );
+		surface.getPositionToCartographic( _vec, _cart );
 
 		// The latitude calculations are not so stable at the poles so force the lat value to
 		// the mid point to ensure we don't load an unnecessarily large of tiles
@@ -101,7 +104,7 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, projection = null, normalizedRange = null ) {
+export function getMeshesCartographicRange( meshes, surface, meshToSurfaceMatrix = null, projection = null, normalizedRange = null ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -115,15 +118,15 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 	const _matrix = new Matrix4();
 	meshes.forEach( mesh => {
 
-		// multiply in the ellipsoid matrix if necessary
+		// multiply in the surface matrix if necessary
 		_matrix.copy( mesh.matrixWorld );
-		if ( meshToEllipsoidMatrix ) {
+		if ( meshToSurfaceMatrix ) {
 
-			_matrix.premultiply( meshToEllipsoidMatrix );
+			_matrix.premultiply( meshToSurfaceMatrix );
 
 		}
 
-		const { uv, region } = getGeometryCartographicChannel( mesh.geometry, _matrix, ellipsoid );
+		const { uv, region } = getGeometryCartographicChannel( mesh.geometry, _matrix, surface );
 		uvs.push( uv );
 
 		// save the min and max values
@@ -148,11 +151,12 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 		if ( normalizedRange === null ) {
 
 			normalizedRange = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
-			normalizedRange = projection.toNormalizedRange( normalizedRange );
+			normalizedRange = projection.fromCartographicToNormalizedRange( normalizedRange );
 
 		}
 
 		const [ minU, minV, maxU, maxV ] = normalizedRange;
+		const heightDelta = maxHeight - minHeight;
 		uvs.forEach( uv => {
 
 			for ( let i = 0, l = uv.length; i < l; i += 3 ) {
@@ -161,12 +165,15 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 				const lat = uv[ i + 1 ];
 				const h = uv[ i + 2 ];
 
-				let [ u, v ] = projection.toNormalizedPoint( lon, lat );
+				let [ u, v ] = projection.fromCartographicToNormalized( lon, lat );
 				u = MathUtils.clamp( u, 0, 1 );
 				v = MathUtils.clamp( v, 0, 1 );
 				uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
 				uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
-				uv[ i + 2 ] = MathUtils.mapLinear( h, minHeight, maxHeight, 0, 1 );
+
+				// a constant-height mesh (eg a flattened plane) has a degenerate height range that
+				// would produce NaN here, so fall back to the middle of the range
+				uv[ i + 2 ] = heightDelta === 0 ? 0.5 : MathUtils.mapLinear( h, minHeight, maxHeight, 0, 1 );
 
 			}
 

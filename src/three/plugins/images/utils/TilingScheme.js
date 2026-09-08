@@ -1,6 +1,8 @@
 import { MathUtils } from 'three';
 import { ProjectionScheme } from './ProjectionScheme.js';
 
+const _point = [ 0, 0 ];
+
 function doBoundsIntersect( a, b ) {
 
 	const [ aMinX, aMinY, aMaxX, aMaxY ] = a;
@@ -191,13 +193,13 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			[ bx, by ] = this.toNormalizedPoint( bx, by );
+			[ bx, by ] = this.fromCartographicToNormalized( bx, by, _point );
 
 		}
 
 		if ( tileBounds ) {
 
-			const normalizedBounds = this.toNormalizedRange( tileBounds );
+			const normalizedBounds = this.fromCartographicToNormalizedRange( tileBounds );
 			bx = MathUtils.mapLinear( bx, normalizedBounds[ 0 ], normalizedBounds[ 2 ], 0, 1 );
 			by = MathUtils.mapLinear( by, normalizedBounds[ 1 ], normalizedBounds[ 3 ], 0, 1 );
 
@@ -233,11 +235,11 @@ export class TilingScheme {
 
 			if ( normalized ) {
 
-				tileBounds = this.toNormalizedRange( tileBounds );
+				tileBounds = this.fromCartographicToNormalizedRange( tileBounds );
 
 			}
 
-			if ( ! doBoundsIntersect( range, contentBounds ) ) {
+			if ( ! doBoundsIntersect( range, tileBounds ) ) {
 
 				return [ 0, 0, - 1, - 1 ];
 
@@ -276,29 +278,25 @@ export class TilingScheme {
 
 	getTileExists( x, y, level ) {
 
-		const [ rminx, rminy, rmaxx, rmaxy ] = this.contentBounds;
-		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
+		const tileBounds = this.getTileBounds( x, y, level );
+		const [ tminx, tminy, tmaxx, tmaxy ] = tileBounds;
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
-		// TODO: is supporting "just touch" correct?
-		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
+		return ! isDegenerate && doBoundsIntersect( tileBounds, this.contentBounds );
 
 	}
 
 	getContentBounds( normalized = false ) {
 
-		const { projection } = this;
-		const bounds = [ ...this.contentBounds ];
 		if ( normalized ) {
 
-			bounds[ 0 ] = projection.convertLongitudeToNormalized( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertLatitudeToNormalized( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertLongitudeToNormalized( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertLatitudeToNormalized( bounds[ 3 ] );
+			return this.fromCartographicToNormalizedRange( this.contentBounds );
+
+		} else {
+
+			return [ ...this.contentBounds ];
 
 		}
-
-		return bounds;
 
 	}
 
@@ -318,7 +316,7 @@ export class TilingScheme {
 
 	getTileBounds( x, y, level, normalized = false, clamp = true ) {
 
-		const { flipY, pixelOverlap, projection } = this;
+		const { flipY, pixelOverlap } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, tileBounds } = this.getLevel( level );
 
 		let tileLeft = tilePixelWidth * x - pixelOverlap;
@@ -353,7 +351,7 @@ export class TilingScheme {
 		let bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
 		if ( tileBounds ) {
 
-			const normBounds = this.toNormalizedRange( tileBounds );
+			const normBounds = this.fromCartographicToNormalizedRange( tileBounds );
 			bounds[ 0 ] = MathUtils.mapLinear( bounds[ 0 ], 0, 1, normBounds[ 0 ], normBounds[ 2 ] );
 			bounds[ 2 ] = MathUtils.mapLinear( bounds[ 2 ], 0, 1, normBounds[ 0 ], normBounds[ 2 ] );
 			bounds[ 1 ] = MathUtils.mapLinear( bounds[ 1 ], 0, 1, normBounds[ 1 ], normBounds[ 3 ] );
@@ -369,10 +367,7 @@ export class TilingScheme {
 
 		if ( ! normalized ) {
 
-			bounds[ 0 ] = projection.convertNormalizedToLongitude( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertNormalizedToLatitude( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertNormalizedToLongitude( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertNormalizedToLatitude( bounds[ 3 ] );
+			bounds = this.fromNormalizedToCartographicRange( bounds );
 
 		}
 
@@ -380,27 +375,27 @@ export class TilingScheme {
 
 	}
 
-	toNormalizedPoint( x, y ) {
+	fromCartographicToNormalized( x, y, target ) {
 
-		return this.projection.toNormalizedPoint( x, y );
-
-	}
-
-	toNormalizedRange( range ) {
-
-		return this.projection.toNormalizedRange( range );
+		return this.projection.fromCartographicToNormalized( x, y, target );
 
 	}
 
-	toCartographicPoint( x, y ) {
+	fromCartographicToNormalizedRange( range ) {
 
-		return this.projection.toCartographicPoint( x, y );
+		return this.projection.fromCartographicToNormalizedRange( range );
 
 	}
 
-	toCartographicRange( range ) {
+	fromNormalizedToCartographic( x, y, target ) {
 
-		return this.projection.toCartographicRange( range );
+		return this.projection.fromNormalizedToCartographic( x, y, target );
+
+	}
+
+	fromNormalizedToCartographicRange( range ) {
+
+		return this.projection.fromNormalizedToCartographicRange( range );
 
 	}
 

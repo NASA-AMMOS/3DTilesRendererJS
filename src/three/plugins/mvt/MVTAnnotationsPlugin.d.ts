@@ -1,0 +1,65 @@
+import { Camera, Group, Ray, Vector3 } from 'three';
+import { MVTIconGlyphs } from './MVTIconGlyphs.js';
+import { MVTLabelGlyphs } from './MVTLabelGlyphs.js';
+
+export type MVTRaycastCallback = ( ray: Ray, lat: number, lon: number, target: Vector3 ) => boolean;
+export type MVTElevationSampleCallback = ( lat: number, lon: number ) => number | null;
+
+export class MVTAnnotationsDriver {
+
+	group: Group;
+	performSettleRaycast: MVTRaycastCallback | null;
+	sampleCartographicElevation: MVTElevationSampleCallback | null;
+
+	filterAnnotation( layer: string, properties: Record<string, unknown>, type: number ): boolean;
+	getAnnotationRank( annotation: object ): number;
+	measureChar( char: string ): number;
+	getText( properties: Record<string, unknown> ): string;
+	isAnnotationEnabled( layer: string, properties: Record<string, unknown>, type: number ): boolean;
+	onPointsUpdate( added: object[], removed: object[] ): void;
+	onLabelsUpdate( added: object[], removed: object[] ): void;
+	dispose(): void;
+
+}
+
+export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
+
+	icons: MVTIconGlyphs;
+	labels: MVTLabelGlyphs;
+
+}
+
+export interface MVTAnnotationsPluginOptions {
+
+	overlay: object;
+	camera?: Camera | null;
+	driver?: MVTAnnotationsDriver;
+	resolution?: number;
+	horizonCutoff?: number;
+	useIdleCallback?: boolean;
+
+}
+
+export class MVTAnnotationsPlugin {
+
+	name: string;
+	priority: number;
+
+	overlay: object;
+	camera: Camera | null;
+	driver: MVTAnnotationsDriver;
+	resolution: number;
+	horizonCutoff: number;
+	useIdleCallback: boolean;
+	maxSettleTimeMs: number;
+	maxOccupancyUpdateTimeMs: number;
+	maxParseTimeMs: number;
+
+	readonly contentCache: object;
+
+	constructor( options: MVTAnnotationsPluginOptions );
+
+	init( tiles: object ): Promise<void>;
+	dispose(): void;
+
+}

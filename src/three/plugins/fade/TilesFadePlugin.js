@@ -4,40 +4,42 @@ import { FadeMaterialManager } from './FadeMaterialManager.js';
 import { FadeBatchedMesh } from './FadeBatchedMesh.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
+
+function tileWasInFrustumLastFrame( tile ) {
+
+	// Check if an ancestor was outside the frustum last frame, indicating that this one
+	// would have been, too.
+	let current = tile;
+	while ( current ) {
+
+		if ( current.traversal.wasSetActive ) {
+
+			return current.traversal.wasInFrustum;
+
+		}
+
+		current = current.parent;
+
+	}
+
+	return false;
+
+}
+
 const _fromPos = /* @__PURE__ */ new Vector3();
 const _toPos = /* @__PURE__ */ new Vector3();
 const _fromQuat = /* @__PURE__ */ new Quaternion();
 const _toQuat = /* @__PURE__ */ new Quaternion();
 const _scale = /* @__PURE__ */ new Vector3();
 
-function onUpdateBefore() {
-
-	const fadeManager = this._fadeManager;
-	const tiles = this.tiles;
-
-	// store the tiles renderer state before the tiles update so we can check
-	// whether fading started or stopped completely
-	this._fadingBefore = fadeManager.fadeCount;
-	this._displayActiveTiles = tiles.displayActiveTiles;
-
-	// we need to display all active tiles in this case so we don't fade tiles in
-	// when moving from off screen
-	tiles.displayActiveTiles = true;
-
-}
-
 function onUpdateAfter() {
 
 	const fadeManager = this._fadeManager;
 	const fadeMaterialManager = this._fadeMaterialManager;
-	const displayActiveTiles = this._displayActiveTiles;
 	const fadingBefore = this._fadingBefore;
 	const prevCameraTransforms = this._prevCameraTransforms;
 	const { tiles, maximumFadeOutTiles, batchedMesh } = this;
 	const { cameras } = tiles;
-
-	// reset the active tiles flag
-	tiles.displayActiveTiles = displayActiveTiles;
 
 	// update fade step
 	fadeManager.update();
@@ -48,32 +50,6 @@ function onUpdateAfter() {
 
 		tiles.dispatchEvent( { type: 'fade-change' } );
 		tiles.dispatchEvent( { type: 'needs-render' } );
-
-	}
-
-	// update the visibility of tiles based on visibility since we must use
-	// the active tiles for rendering fade
-	if ( ! displayActiveTiles ) {
-
-		tiles.visibleTiles.forEach( t => {
-
-			// if a tile is fading out then it may not be traversed and thus will not have
-			// the frustum flag set correctly.
-			const scene = t.engineData.scene;
-			if ( scene ) {
-
-				scene.visible = t.traversal.inFrustum;
-
-			}
-
-			this.forEachBatchIds( t, ( id, batchedMesh, plugin ) => {
-
-				batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
-				plugin.batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
-
-			} );
-
-		} );
 
 	}
 
@@ -125,16 +101,10 @@ function onUpdateAfter() {
 
 		// prevent faded tiles from being unloaded
 		const scene = tile.engineData.scene;
-		const isFadingOut = fadeManager.isFadingOut( tile );
 		tiles.markTileUsed( tile );
 		if ( scene ) {
 
 			fadeMaterialManager.setFade( scene, fadeIn, fadeOut );
-			if ( isFadingOut ) {
-
-				scene.visible = true;
-
-			}
 
 		}
 
@@ -257,18 +227,9 @@ export class TilesFadePlugin {
 
 		};
 
-		this._onTileVisibilityChange = ( { tile, visible } ) => {
+		this._onTileVisibilityChange = ( { tile } ) => {
 
-			// this function gets fired _after_ all set visible callbacks including the batched meshes
-
-			// revert the scene and fade to the initial state when toggling
-			const scene = tile.engineData.scene;
-			if ( scene ) {
-
-				scene.visible = true;
-
-			}
-
+			// reset batched mesh fade state when tile visibility changes
 			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
 				batchedMesh.setFadeAt( id, 0, 0 );
@@ -281,7 +242,8 @@ export class TilesFadePlugin {
 
 		this._onUpdateBefore = () => {
 
-			onUpdateBefore.call( this );
+			// store the fade count before the update so we can check whether fading started or stopped
+			this._fadingBefore = this._fadeManager.fadeCount;
 
 		};
 
@@ -400,9 +362,22 @@ export class TilesFadePlugin {
 	setTileVisible( tile, visible ) {
 
 		const fadeManager = this._fadeManager;
+		const wasFading = fadeManager.isFading( tile );
+
+		// Tiles that were off-screen last frame pop in/out without fading
+		if ( ! tileWasInFrustumLastFrame( tile ) ) {
+
+			if ( wasFading ) {
+
+				fadeManager.completeFade( tile );
+
+			}
+
+			return false;
+
+		}
 
 		// track the fade state
-		const wasFading = fadeManager.isFading( tile );
 		if ( fadeManager.isFadingOut( tile ) ) {
 
 			this._fadingOutCount --;
@@ -488,11 +463,6 @@ export class TilesFadePlugin {
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			this._fadeManager.deleteObject( tile );
-			if ( scene ) {
-
-				scene.visible = true; // TODO
-
-			}
 
 		} );
 

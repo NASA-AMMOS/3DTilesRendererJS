@@ -1,19 +1,22 @@
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
+import { DownloadPriorityQueue } from '../utilities/DownloadPriorityQueue.js';
 import { Tile } from './Tile.js';
 import { Tileset } from './Tileset.js';
+
+export const DEFAULT_LRU_CACHE : LRUCache;
+export const DEFAULT_DOWNLOAD_QUEUE : DownloadPriorityQueue;
+export const DEFAULT_PARSE_QUEUE : PriorityQueue;
+export const DEFAULT_NODE_QUEUE : PriorityQueue;
 
 // Events dispatched by TilesRendererBase, available across all renderer implementations.
 export interface TilesRendererBaseEventMap<TScene = unknown> {
 	'needs-update': {};
-	'load-content': {};
-	'load-tileset': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
-	/* @deprecated Use 'load-tileset' instead */
-	'load-tile-set': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
+	'load-tileset': { tileset : Tileset, url : string };
 	'load-root-tileset': { tileset : Tileset, url : string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
-	'tile-download-start': { tile : Tile, uri : string };
+	'tile-download-start': { tile : Tile, url : string };
 	'load-model': { scene : TScene, tile : Tile, url : string };
 	'dispose-model': { scene : TScene, tile : Tile };
 	'tile-visibility-change': { scene : TScene, tile : Tile, visible : boolean };
@@ -25,18 +28,17 @@ export interface TilesRendererBaseEventMap<TScene = unknown> {
 export class TilesRendererBase<TEventMap extends TilesRendererBaseEventMap = TilesRendererBaseEventMap> {
 
 	readonly rootTileset : Tileset | null;
-	/** @deprecated Use rootTileset instead */
-	readonly rootTileSet : Tileset | null;
 	readonly root : Tile | null;
 	readonly visibleTiles : Set<Tile>;
 	readonly activeTiles : Set<Tile>;
 
 	errorTarget : number;
-	errorThreshold : number;
+	errorFalloff : number;
+	errorFalloffDensity : number;
 	displayActiveTiles : boolean;
 	maxDepth : number;
 	loadSiblings : boolean;
-	optimizedLoadStrategy : boolean;
+	loadAncestors : boolean;
 	maxTilesProcessed : number;
 
 	readonly loadProgress : number;
@@ -45,7 +47,7 @@ export class TilesRendererBase<TEventMap extends TilesRendererBaseEventMap = Til
 
 	lruCache : LRUCache;
 	parseQueue : PriorityQueue;
-	downloadQueue : PriorityQueue;
+	downloadQueue : DownloadPriorityQueue;
 	processNodeQueue: PriorityQueue;
 
 	constructor( url?: string );

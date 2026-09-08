@@ -62,6 +62,12 @@ class PMTilesContentCache extends MVTContentCache {
 			getKey: () => this.url,
 			getBytes: async ( offset, length, signal ) => {
 
+				if ( signal ) {
+
+					signal.throwIfAborted();
+
+				}
+
 				const { fetchOptions, url } = this;
 				const res = await this.fetchData( url, {
 					...fetchOptions,
@@ -124,6 +130,7 @@ class PMTilesContentCache extends MVTContentCache {
 
 }
 
+// TODO: this should probably be a form of proxy
 export class PMTilesImageSource extends RegionImageSource {
 
 	get tiling() {
@@ -161,13 +168,25 @@ export class PMTilesImageSource extends RegionImageSource {
 
 	}
 
+	get fetchOptions() {
+
+		return this._contentCache.fetchOptions;
+
+	}
+
+	set fetchOptions( v ) {
+
+		this._contentCache.fetchOptions = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		super();
 
 		const {
 			resolution = 512,
-			getStyle = () => null,
+			getStyle = null,
 		} = options;
 
 		this._resolution = resolution;
@@ -227,13 +246,19 @@ export class PMTilesImageSource extends RegionImageSource {
 
 	}
 
-	redraw() {
+	redraw( ...args ) {
 
 		if ( this._deferredSource instanceof MVTImageSource ) {
 
-			this._deferredSource.redraw();
+			this._deferredSource.redraw( ...args );
 
 		}
+
+	}
+
+	forEachItem( ...args ) {
+
+		return this._deferredSource.forEachItem( ...args );
 
 	}
 

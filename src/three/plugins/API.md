@@ -12,7 +12,12 @@ Abstract base class for `LoadRegionPlugin` regions. Subclass and override
 ```js
 constructor(
 	{
+		// Geometric error target used when this region controls
+		// refinement.
 		errorTarget = 10: number,
+
+		// When `true`, tiles outside this region are suppressed (mask
+		// mode).
 		mask = false: boolean,
 	}
 )
@@ -30,8 +35,14 @@ An oriented bounding-box load region. Only tiles that intersect `obb` are loaded
 ```js
 constructor(
 	{
+		// The oriented bounding box; defaults to an empty OBB at the
+		// origin.
 		obb?: OBB,
+
+		// Geometric error target for tiles inside the region.
 		errorTarget = 10: number,
+
+		// Mask mode — suppresses tiles outside this region.
 		mask = false: boolean,
 	}
 )
@@ -49,8 +60,13 @@ A ray-based load region. Only tiles that intersect `ray` are loaded.
 ```js
 constructor(
 	{
+		// The ray; defaults to a ray at the origin pointing in +Z.
 		ray?: Ray,
+
+		// Geometric error target for tiles inside the region.
 		errorTarget = 10: number,
+
+		// Mask mode — suppresses tiles outside this region.
 		mask = false: boolean,
 	}
 )
@@ -68,8 +84,14 @@ A spherical load region. Only tiles that intersect `sphere` are loaded.
 ```js
 constructor(
 	{
+		// The sphere volume; defaults to an empty sphere at the
+		// origin.
 		sphere?: Sphere,
+
+		// Geometric error target for tiles inside the region.
 		errorTarget = 10: number,
+
+		// Mask mode — suppresses tiles outside this region.
 		mask = false: boolean,
 	}
 )
@@ -93,14 +115,35 @@ required. Requires Three.js r170 or later.
 ```js
 constructor(
 	{
+		// The renderer used to generate a `WebGLArrayRenderTarget`.
 		renderer: WebGLRenderer,
+
+		// Initial number of instances in the batched mesh.
 		instanceCount = 500: number,
+
+		// Minimum vertex space to reserve per tile geometry added.
 		vertexCount = 1000: number,
+
+		// Minimum index space to reserve per tile geometry added.
 		indexCount = 1000: number,
+
+		// Fraction by which to grow the mesh when capacity is
+		// exceeded.
 		expandPercent = 0.25: number,
+
+		// Hard cap on instance count (clamped to GPU limits).
 		maxInstanceCount = Infinity: number,
+
+		// Free the original tile scene after batching. Set to `false`
+		// when used with `UnloadTilesPlugin`.
 		discardOriginalContent = true: boolean,
+
+		// Override width/height for the texture array; defaults to the
+		// first tile's texture size.
 		textureSize = null: number | null,
+
+		// Custom material for the batched mesh; defaults to the first
+		// tile's material type.
 		material = null: Material | null,
 	}
 )
@@ -121,10 +164,21 @@ instead.
 ```js
 constructor(
 	{
+		// Cesium Ion API token.
 		apiToken?: string,
+
+		// Cesium Ion asset ID, or `null` when using an explicit root
+		// URL.
 		assetId = null: string | null,
+
+		// Automatically refresh the token on 4xx errors.
 		autoRefreshToken = false: boolean,
+
+		// Apply recommended renderer settings for Cesium Ion assets.
 		useRecommendedSettings = true: boolean,
+
+		// Callback `(type, tiles, asset)` invoked for non-3DTILES
+		// asset types.
 		assetTypeHandler?: function,
 	}
 )
@@ -136,16 +190,41 @@ Base class for all image overlays. Provides the interface that `ImageOverlayPlug
 fetch, lock, and release overlay textures.
 
 
+### .downloadQueue
+
+```js
+downloadQueue: DownloadPriorityQueue
+```
+
+Download queue managing the overlay's concurrent image downloads per server origin.
+
+
 ### .constructor
 
 ```js
 constructor(
 	{
+		// Opacity of the overlay layer (0–1).
 		opacity = 1: number,
+
+		// Tint color multiplied with the overlay texture.
 		color = 0xffffff: number | Color,
+
+		// World-space transform defining the plane for planar
+		// projection. If null, cartographic (lat/lon) projection is
+		// used instead.
 		frame = null: Matrix4,
+
+		// Optional function `(url) => url` called before every fetch
+		// to allow URL rewriting or token injection.
 		preprocessURL = null: function,
+
+		// If true, the overlay alpha channel masks the underlying tile
+		// surface rather than blending on top of it.
 		alphaMask = false: boolean,
+
+		// If true, inverts the alpha channel before applying the mask
+		// or blend.
 		alphaInvert = false: boolean,
 	}
 )
@@ -166,22 +245,55 @@ feature's `properties` object.
 ```js
 constructor(
 	{
+		// GeoJSON FeatureCollection or Feature object to render. If
+		// not provided, `url` must be set so the data can be fetched
+		// on init.
 		geojson = null: Object,
+
+		// URL to a GeoJSON file to fetch on initialization (used when
+		// `geojson` is not supplied directly).
 		url = null: string,
+
+		// Canvas resolution (pixels) used when compositing tiles.
 		resolution = 256: number,
+
+		// Per-feature style callback. When provided, overrides
+		// `strokeStyle`, `fillStyle`, `strokeWidth`, and
+		// `pointRadius`.
 		getStyle?: (
 			feature: Object,
 			properties: Object
 		) => VectorTileStyle | null,
+
+		// Radius in pixels used to render Point features.
 		pointRadius = 6: number,
+
+		// Canvas stroke style for feature outlines.
 		strokeStyle = 'white': string,
+
+		// Stroke line width in pixels.
 		strokeWidth = 2: number,
+
+		// Canvas fill style for feature interiors.
 		fillStyle = 'rgba( 255, 255, 255, 0.5 )': string,
+
+		// Overlay opacity (0–1).
 		opacity = 1: number,
+
+		// Tint color.
 		color = 0xffffff: number | Color,
+
+		// Planar projection frame. If null, cartographic projection is
+		// used.
 		frame = null: Matrix4,
+
+		// URL rewriting callback.
 		preprocessURL = null: function,
+
+		// Use alpha channel as a surface mask.
 		alphaMask = false: boolean,
+
+		// Invert the alpha channel.
 		alphaInvert = false: boolean,
 	}
 )
@@ -194,22 +306,26 @@ _extends [`ImageOverlay`](#imageoverlay)_
 Overlay that renders XYZ-template MVT vector tiles on top of 3D tile geometry.
 See the [Mapbox Vector Tile specification](https://github.com/mapbox/vector-tile-spec).
 
-Requires the optional peer dependencies `@mapbox/vector-tile` and `pbf`, which are
-imported dynamically on first use and must be installed separately:
-```
-npm install @mapbox/vector-tile pbf
-```
-
 
 ### .constructor
 
 ```js
 constructor(
 	{
+		// URL template with `{x}`, `{y}`, `{z}` placeholders.
 		url?: string,
+
+		// Number of zoom levels.
 		levels = 20: number,
+
+		// Projection scheme identifier.
 		projection = 'EPSG:3857': string,
+
+		// Canvas resolution for generated tile textures.
 		resolution = 512: number,
+
+		// Per-feature style callback. If not provided then no content
+		// will draw.
 		getStyle?: (
 			layerName: string,
 			properties: Object | null
@@ -225,21 +341,23 @@ _extends [`MVTOverlay`](#mvtoverlay)_
 Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
 Projection and zoom levels are read automatically from the PMTiles archive header.
 
-Requires the optional peer dependency `pmtiles`, which is imported dynamically on first use
-and must be installed separately. Vector archives additionally require `@mapbox/vector-tile`
-and `pbf`:
-```
-npm install pmtiles @mapbox/vector-tile pbf
-```
-
+> [!NOTE]
+> Direct use of PMTiles requires range requests, which are not automatically cached
+> by the browser. It's recommended to implement a service worker to cache response content
+> to save bandwidth.
 
 ### .constructor
 
 ```js
 constructor(
 	{
+		// URL to the `.pmtiles` archive.
 		url?: string,
+
+		// Canvas resolution for generated tile textures.
 		resolution = 512: number,
+
+		// Per-feature style callback. Only applies to vector archives.
 		getStyle?: (
 			layerName: string,
 			properties: Object | null
@@ -271,6 +389,7 @@ and [OpenSeadragon](https://openseadragon.github.io).
 ```js
 constructor(
 	{
+		// URL to the `.dzi` descriptor file.
 		url?: string,
 	}
 )
@@ -289,15 +408,38 @@ Google Maps Tile API.
 ```js
 constructor(
 	{
+		// Google Maps API key.
 		apiToken?: string,
+
+		// Session creation options passed to the Google Maps Tile API
+		// when establishing a tile session.
 		sessionOptions?: Object,
+
+		// Automatically refresh the session token before it expires.
 		autoRefreshToken = false: boolean,
+
+		// URL to a Google logo image. If provided, it is included in
+		// the overlay attributions as required by Google's terms of
+		// service.
 		logoUrl = null: string,
+
+		// Overlay opacity (0–1).
 		opacity = 1: number,
+
+		// Tint color.
 		color = 0xffffff: number | Color,
+
+		// Planar projection frame. If null, cartographic projection is
+		// used.
 		frame = null: Matrix4,
+
+		// URL rewriting callback.
 		preprocessURL = null: function,
+
+		// Use alpha channel as a surface mask.
 		alphaMask = false: boolean,
+
+		// Invert the alpha channel.
 		alphaInvert = false: boolean,
 	}
 )
@@ -316,12 +458,27 @@ See the [TMS specification](https://wiki.osgeo.org/wiki/Tile_Map_Service_Specifi
 ```js
 constructor(
 	{
+		// URL to the TMS `tilemapresource.xml` descriptor or tile
+		// template.
 		url?: string,
+
+		// Overlay opacity (0–1).
 		opacity = 1: number,
+
+		// Tint color.
 		color = 0xffffff: number | Color,
+
+		// Planar projection frame. If null, cartographic projection is
+		// used.
 		frame = null: Matrix4,
+
+		// URL rewriting callback.
 		preprocessURL = null: function,
+
+		// Use alpha channel as a surface mask.
 		alphaMask = false: boolean,
+
+		// Invert the alpha channel.
 		alphaInvert = false: boolean,
 	}
 )
@@ -340,21 +497,54 @@ See the [WMS specification](https://www.ogc.org/standard/wms/).
 ```js
 constructor(
 	{
+		// WMS base URL.
 		url?: string,
+
+		// WMS layer name.
 		layer?: string,
+
+		// Coordinate reference system, e.g. `'EPSG:4326'`.
 		crs?: string,
+
+		// Image MIME type, e.g. `'image/png'`.
 		format?: string,
+
+		// Tile pixel size.
 		tileDimension = 256: number,
+
+		// WMS styles parameter.
 		styles?: string,
+
+		// WMS version string.
 		version = '1.3.0': string,
+
+		// Whether to request a transparent image.
 		transparent = false: boolean,
+
+		// Number of zoom levels.
 		levels = 18: number,
+
+		// Content bounding box in radians `[west, south, east,
+		// north]`. If null, uses full projection bounds.
 		contentBoundingBox = null: Array<number> | null,
+
+		// Overlay opacity (0–1).
 		opacity = 1: number,
+
+		// Tint color.
 		color = 0xffffff: number | Color,
+
+		// Planar projection frame. If null, cartographic projection is
+		// used.
 		frame = null: Matrix4,
+
+		// URL rewriting callback.
 		preprocessURL = null: function,
+
+		// Use alpha channel as a surface mask.
 		alphaMask = false: boolean,
+
+		// Invert the alpha channel.
 		alphaInvert = false: boolean,
 	}
 )
@@ -374,17 +564,45 @@ directly. See the [WMTS specification](https://www.ogc.org/standard/wmts/).
 ```js
 constructor(
 	{
+		// WMTS service URL.
 		url?: string,
+
+		// WMTS layer identifier.
 		layer?: string,
+
+		// TileMatrixSet identifier (e.g., 'GoogleMapsCompatible',
+		// 'EPSG:3857').
 		tileMatrixSet?: string,
+
+		// Style identifier.
 		style = 'default': string,
+
+		// Output image format (e.g., 'image/png', 'image/jpeg').
 		format = 'image/jpeg': string,
+
+		// WMTS dimension values
 		dimensions = null: Object<string, (string|number)> | null,
+
+		// Custom TileMatrix identifiers per level
 		tileMatrixLabels = null: Array<string> | null,
+
+		// Explicit per-level tile matrix definitions. When provided,
+		// `levels` and `tileMatrixLabels` are ignored.
 		tileMatrices = null: Array<WMTSTileMatrix> | null,
+
+		// Projection identifier ('EPSG:3857' or 'EPSG:4326'). Defaults
+		// to 'EPSG:3857' if not specified.
 		projection = null: string | null,
+
+		// Number of zoom levels. Ignored if `tileMatrices` is
+		// provided.
 		levels = 20: number,
+
+		// Default tile width and height in pixels.
 		tileDimension = 256: number,
+
+		// Content bounding box in radians, `[west, south, east,
+		// north]`. If null, uses full projection bounds.
 		contentBoundingBox = null: Array<number> | null,
 	}
 )
@@ -403,15 +621,35 @@ geometry. See the [Slippy map tilenames specification](https://wiki.openstreetma
 ```js
 constructor(
 	{
+		// URL template with `{x}`, `{y}`, `{z}` placeholders.
 		url?: string,
+
+		// Number of zoom levels.
 		levels = 20: number,
+
+		// Tile pixel size.
 		tileDimension = 256: number,
+
+		// Projection scheme identifier.
 		projection = 'EPSG:3857': string,
+
+		// Overlay opacity (0–1).
 		opacity = 1: number,
+
+		// Tint color.
 		color = 0xffffff: number | Color,
+
+		// Planar projection frame. If null, cartographic projection is
+		// used.
 		frame = null: Matrix4,
+
+		// URL rewriting callback.
 		preprocessURL = null: function,
+
+		// Use alpha channel as a surface mask.
 		alphaMask = false: boolean,
+
+		// Invert the alpha channel.
 		alphaInvert = false: boolean,
 	}
 )
@@ -430,14 +668,32 @@ as external asset types (Google 2D Maps, Bing Maps) that Ion proxies.
 ```js
 constructor(
 	{
+		// Cesium Ion API token for authentication.
 		apiToken?: string,
+
+		// Cesium Ion asset ID.
 		assetId?: number,
+
+		// Automatically refresh the auth token before it expires.
 		autoRefreshToken = false: boolean,
+
+		// Overlay opacity (0–1).
 		opacity = 1: number,
+
+		// Tint color.
 		color = 0xffffff: number | Color,
+
+		// Planar projection frame. If null, cartographic projection is
+		// used.
 		frame = null: Matrix4,
+
+		// URL rewriting callback.
 		preprocessURL = null: function,
+
+		// Use alpha channel as a surface mask.
 		alphaMask = false: boolean,
+
+		// Invert the alpha channel.
 		alphaInvert = false: boolean,
 	}
 )
@@ -454,7 +710,7 @@ order, and an unlit rendering mode. Color modes are available via the static
 ### .getDebugColor
 
 ```js
-getDebugColor: ( val: number, target: Color ) => void
+getDebugColor: ( val: number, target: Color ) => void = ( value, target ) => target.setRGB( value, value, value )
 ```
 
 Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
@@ -467,17 +723,44 @@ ramp.
 ```js
 constructor(
 	{
+		// Show OBB bounding-box helpers.
 		displayBoxBounds = false: boolean,
+
+		// Show bounding-sphere helpers.
 		displaySphereBounds = false: boolean,
+
+		// Show bounding-region helpers.
 		displayRegionBounds = false: boolean,
+
+		// Also show ancestor bounding volumes for visible tiles.
 		displayParentBounds = false: boolean,
+
+		// Initial tile color mode.
 		colorMode = ColorModes.NONE: number,
+
+		// Color mode applied to bounding-volume helpers.
 		boundsColorMode = ColorModes.NONE: number,
+
+		// Maximum tree depth for depth-based coloring (`-1` = auto).
 		maxDebugDepth = -1: number,
+
+		// Maximum distance for distance-based coloring (`-1` = auto).
 		maxDebugDistance = -1: number,
+
+		// Maximum error for error-based coloring (`-1` = auto).
 		maxDebugError = -1: number,
-		customColorCallback = null: function | null,
+
+		// Callback invoked per-object when `colorMode` is
+		// `CUSTOM_COLOR`.
+		customColorCallback = null: (
+			tile: Object,
+			child: Object3D
+		) => void,
+
+		// Replace tile materials with unlit `MeshBasicMaterial`.
 		unlit = false: boolean,
+
+		// Whether the plugin is active on init.
 		enabled = true: boolean,
 	}
 )
@@ -495,161 +778,6 @@ after modifying properties such as `colorMode`, `displayBoxBounds`, or
 so changes can be reflected.
 
 
-## ImageFormatPlugin
-
-Base plugin class for tiled image sources with a consistent size and resolution per
-tile. Subclasses provide a concrete `imageSource` and override `getUrl` and
-`createBoundingVolume` as needed.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		imageSource = null: Object,
-		center = false: boolean,
-		useRecommendedSettings = true: boolean,
-	}
-)
-```
-
-## EllipsoidProjectionTilesPlugin
-
-_extends [`ImageFormatPlugin`](#imageformatplugin)_
-
-Extension of `ImageFormatPlugin` that projects tiled images onto ellipsoidal
-(globe-surface) geometry in addition to the default planar layout. Set
-`options.shape = 'ellipsoid'` to enable globe projection.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		shape = 'planar': string,
-		endCaps = true: boolean,
-	}
-)
-```
-
-## TMSTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders TMS (Tile Map Service) image tiles projected onto 3D tile geometry.
-See the [TMS specification](https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification).
-
-> [!NOTE]
-> Most TMS generation implementations (including CesiumJS and Ion) do not correctly support the Origin tag and tile index offsets.
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-	}
-)
-```
-
-## WMSTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders WMS (Web Map Service) image tiles projected onto 3D tile geometry.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-		layer?: string,
-		crs?: string,
-		format?: string,
-		tileDimension = 256: number,
-		styles?: string,
-		version = '1.3.0': string,
-		transparent = false: boolean,
-		levels = 18: number,
-		contentBoundingBox = null: Array<number> | null,
-	}
-)
-```
-
-## WMTSTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders WMTS (Web Map Tile Service) image tiles projected onto 3D tile
-geometry. Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide
-a URL template directly.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-		layer?: string,
-		tileMatrixSet?: string,
-		style = 'default': string,
-		format = 'image/jpeg': string,
-		dimensions = null: Object<string, (string|number)> | null,
-		tileMatrixLabels = null: Array<string> | null,
-		tileMatrices = null: Array<WMTSTileMatrix> | null,
-		projection = null: string | null,
-		levels = 20: number,
-		tileDimension = 256: number,
-		contentBoundingBox = null: Array<number> | null,
-	}
-)
-```
-
-## XYZTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) projected onto
-3D tile geometry. See the [Slippy map tilenames specification](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-		levels?: number,
-		tileDimension?: number,
-		projection?: string,
-	}
-)
-```
-
-## DeepZoomImagePlugin
-
-_extends [`ImageFormatPlugin`](#imageformatplugin)_
-
-Plugin that renders a Deep Zoom Image (DZI) as a 3D Tiles-compatible tiled texture.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-		center = false: boolean,
-		useRecommendedSettings = true: boolean,
-	}
-)
-```
-
 ## GeneratedSurfacePlugin
 
 Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
@@ -657,7 +785,7 @@ image overlay data.
 
 The tiling scheme and projection are derived from a provided overlay.
 If the source's projection is cartographic (any EPSG scheme), the plugin supports
-both planar and ellipsoidal geometry via the `shape` option.
+both planar and ellipsoidal geometry via the `projection` option.
 
 
 ### .constructor
@@ -665,37 +793,31 @@ both planar and ellipsoidal geometry via the `shape` option.
 ```js
 constructor(
 	{
+		// Overlay instance to derive the tiling scheme from. When
+		// `applyOverlayTexture` is enabled, also used to texture the
+		// generated tile meshes.
 		overlay = null: ImageOverlay,
-		shape = 'ellipsoid': string,
+
+		// Display the tiles on the   ellipsoid, on a plane in the
+		// source projection, or on a plane in the named projection
+		// scheme.
+		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
+
+		// For Mercator ellipsoid mode, snap poles to ±90° lat.
 		endCaps = true: boolean,
+
+		// Shift planar tiles so the image is centered at origin.
 		center = true: boolean,
+
+		// Apply recommended TilesRenderer settings.
 		useRecommendedSettings = true: boolean,
+
+		// Whether to apply the overlay's texture to the generated tile
+		// meshes.
+		applyOverlayTexture = false: boolean,
 	}
 )
 ```
-
-### .getCartographicFromPosition
-
-```js
-getCartographicFromPosition( position: Vector3, target = {}: Object ): Object
-```
-
-Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
-to the target object.
-
-
-### .getPositionFromCartographic
-
-```js
-getPositionFromCartographic(
-	lat: number,
-	lon: number,
-	target = new Vector3(): Vector3
-): Vector3
-```
-
-Returns the world-space position for a given cartographic coordinate.
-
 
 ## GLTFCesiumRTCExtension
 
@@ -717,12 +839,28 @@ support loading Draco-compressed point cloud files.
 ```js
 constructor(
 	{
+		// Enable the `EXT_structural_metadata` and `EXT_mesh_features`
+		// extensions.
 		metadata = true: boolean,
+
+		// Enable the `CESIUM_RTC` extension.
 		rtc = true: boolean,
+
+		// Additional GLTF loader plugins to pass to
+		// `GLTFLoader.register`.
 		plugins = []: Array,
+
+		// A `DRACOLoader` instance for Draco-compressed geometry.
 		dracoLoader = null: Object,
+
+		// A `KTX2Loader` instance for KTX2-compressed textures.
 		ktxLoader = null: Object,
+
+		// A `MeshoptDecoder` for Meshopt-compressed meshes.
 		meshoptDecoder = null: Object,
+
+		// Automatically dispose the DRACO and KTX loaders on
+		// `dispose()`.
 		autoDispose = true: boolean,
 	}
 )
@@ -770,9 +908,13 @@ Image sources are added via `addOverlay()` and removed via `deleteOverlay()`.
 ```js
 constructor(
 	{
-		renderer: WebGLRenderer,
+		// Initial image overlay sources to add.
 		overlays = []: Array,
+
+		// Resolution of each generated tile texture in pixels.
 		resolution = 256: number,
+
+		// Allow tiles to be split to match image tile boundaries.
 		enableTileSplitting = true: boolean,
 	}
 )
@@ -807,6 +949,17 @@ deleteOverlay( overlay: ImageOverlay ): void
 Removes the given overlay from the plugin.
 
 
+### .resetFailedOverlays
+
+```js
+resetFailedOverlays(): void
+```
+
+Retries any overlay texture fetches that previously failed. Successfully loaded textures
+are applied to their tiles without requiring a geometry reload. Pairs with the `load-error`
+event, which fires on the `TilesRenderer` when an overlay texture fetch fails.
+
+
 ## LoadRegionPlugin
 
 Plugin that restricts tile loading and traversal to one or more geometric regions
@@ -814,6 +967,18 @@ Plugin that restricts tile loading and traversal to one or more geometric region
 region are loaded and refined. Regions marked as masks additionally prevent tiles
 outside them from loading.
 
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Initial set of regions to register. Equivalent to calling
+		// `addRegion` for each entry.
+		regions = []: Array<BaseRegion>,
+	}
+)
+```
 
 ## MeshFeatures
 
@@ -879,6 +1044,632 @@ dispose(): void
 Disposes all textures used by this instance.
 
 
+## MVTAnnotationsDriver
+
+Bundles the callbacks the "MVTAnnotationsPlugin" needs into a single object. Subclass and override
+the methods to customize which features become annotations, their placement priority, per-character
+sizing, the displayed text, and how visibility changes are rendered. By default all points of interest
+are rendered as circles and labels are rendered as white text with a black outline. Custom implementations
+can be used for more sophisticated text rendering, variable font weights based on properties, and custom
+icons.
+
+
+### .needsUpdate
+
+```js
+needsUpdate: boolean
+```
+
+Set to "true" when the filters or settings have changed to trigger an
+update to the annotations in the plugin.
+
+
+### .group
+
+```js
+group: Group
+```
+
+Render group for the driver's own three.js objects. The plugin mounts it under
+`tiles.group` on `init` unless it has already been parented elsewhere, eg to render
+annotations in a separate pass, and removes it on `dispose`; add any objects the
+driver draws to it.
+
+
+### .performSettleRaycast
+
+```js
+performSettleRaycast: ( ray: Ray, lat: number, lon: number, target: Vector3 ) => boolean | null
+```
+
+Optional callback overriding the default surface raycast used when settling annotations
+onto the tile geometry, letting the caller analyze the hits and return a better point.
+Leave null to use the plugin's default raycasting.
+
+
+### .sampleCartographicElevation
+
+```js
+sampleCartographicElevation: ( lat: number, lon: number ) => number | null | null
+```
+
+Optional callback used to settle annotations by sampling elevations directly, which is
+much faster than raycasting. Takes precedence over any registered plugin providing
+"sampleCartographicElevation" while "performSettleRaycast" takes precedence over both.
+Leave null to use the plugin's default behavior.
+
+
+### .filterAnnotation
+
+```js
+filterAnnotation( layer: string, properties: Object, type: number ): boolean
+```
+
+Whether an MVT feature should be included as an annotation.
+
+
+### .getAnnotationRank
+
+```js
+getAnnotationRank( annotation: Object ): number
+```
+
+Placement priority for an annotation. Lower values are placed first and win collisions.
+Values are clamped to the [ 0, 4095 ] integer range.
+
+
+### .measureChar
+
+```js
+measureChar( char: string, layer: layer, properties: Object ): number
+```
+
+Advance width of a single character, in pixels, used to space glyphs along text labels.
+
+
+### .getText
+
+```js
+getText( properties: Object ): string
+```
+
+The string a line / road annotation should display for the given feature.
+
+
+### .isAnnotationEnabled
+
+```js
+isAnnotationEnabled( layer: string, properties: Object, type: number ): boolean
+```
+
+Whether a parsed annotation should currently be displayed. Unlike `filterAnnotation` which
+decides what is parsed once.
+
+
+### .onPointsUpdate
+
+```js
+onPointsUpdate( added: Array<Object>, removed: Array<Object> ): void
+```
+
+Called each frame with the point ( PoI ) annotations whose visibility changed, for the caller
+to render.
+
+
+### .onLabelsUpdate
+
+```js
+onLabelsUpdate( added: Array<Object>, removed: Array<Object> ): void
+```
+
+Called each frame with the line / label annotations whose visibility changed, for the caller
+to render.
+
+
+### .dispose
+
+```js
+dispose(): void
+```
+
+Releases any resources the driver created (geometries, materials, textures, etc.). Called by
+the plugin from its own `dispose`.
+
+
+## MVTAnnotationsPlugin
+
+Plugin that extracts point features from an MVT overlay and manages their screen-space
+occupation, preventing label crowding via a hierarchical lock system and raycasted depth
+placement. Rendering is left entirely to the caller via the driver's `onPointsUpdate` /
+`onLabelsUpdate`.
+
+
+### .maxSettleTimeMs
+
+```js
+maxSettleTimeMs: number = 1
+```
+
+Time budget in milliseconds per frame for settling annotations onto the tile geometry.
+
+
+### .maxOccupancyUpdateTimeMs
+
+```js
+maxOccupancyUpdateTimeMs: number = 0.5
+```
+
+Time budget in milliseconds per frame for the sliced occupancy layout pass.
+
+
+### .maxParseTimeMs
+
+```js
+maxParseTimeMs: number = 1
+```
+
+Time budget in milliseconds per frame for parsing toggled vector tiles into annotations.
+
+
+### .horizonCutoff
+
+```js
+horizonCutoff: number = 0.1
+```
+
+Hides annotations once `dot( surface normal, direction to camera )` falls below this, removing
+those near the horizon. Raise it to display annotations closer, set it to 0 to disable.
+
+
+### .resolution
+
+```js
+resolution: number | null = 50
+```
+
+Target resolution used when selecting the vector tile level to load. Lower values load
+coarser tiles with fewer annotations. Set to null to use the overlay resolution.
+
+
+### .useIdleCallback
+
+```js
+useIdleCallback: boolean = true
+```
+
+Whether pending annotation work is additionally processed in idle callbacks between frames.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// The `PMTilesOverlay` (or compatible overlay) whose tile
+		// content is parsed for point features.
+		overlay: Object,
+
+		// Initial camera. Can be updated with `setCamera()`.
+		camera = null: Camera,
+
+		// Supplies the annotation callbacks: feature filtering,
+		// placement priority, per-character sizing, and render
+		// updates. Cannot be changed once initialized.
+		driver?: MVTAnnotationsDriver,
+
+		// Target resolution used when selecting the vector tile level
+		// to load. This is equivalent to "resolution" value in
+		// ImageOverlayPlugin used to drive loaded levels of detail for
+		// the overlays. Lower values load coarser tiles with fewer
+		// annotations, independently of the shared overlay's own
+		// resolution. Set to null to use the overlay resolution.
+		resolution = 50: number | null,
+	}
+)
+```
+
+## MVTGlyphAtlasTexture
+
+_extends `CanvasTexture`_
+
+A canvas texture that manages a grid of fixed-size slots, each holding a rendered glyph or icon.
+Slots are addressed by string key and can be drawn with text, images, or paths.
+
+
+### .isFull
+
+```js
+isFull: boolean
+```
+
+Returns true when all slots are allocated.
+
+
+### .capacity
+
+```js
+capacity: number
+```
+
+Returns the total number of icons that can be added to the atlas.
+
+
+### .count
+
+```js
+count: number
+```
+
+Returns the number of icons currently used.
+
+
+### .constructor
+
+```js
+constructor( slotCount = 32: number, slotSize = 64: number )
+```
+
+### .keys
+
+```js
+keys(): void
+```
+
+Returns the keys associated with all glyphs.
+
+
+### .has
+
+```js
+has( key: string ): boolean
+```
+
+Returns true if key has an allocated slot.
+
+
+### .get
+
+```js
+get( key: string ): Object | null
+```
+
+Returns the slot bounds `{ x, y, w, h }` for key, or null if not allocated.
+
+
+### .getSlotSize
+
+```js
+getSlotSize( target: Vector2 ): Vector2
+```
+
+Returns the UV bounds of a slot for key in GPU texture space (flipY applied),
+or null if not allocated.
+
+
+### .getUV
+
+```js
+getUV( key: string ): Object | null
+```
+
+Returns the UV bounds of the slot for key in GPU texture space (flipY applied),
+or null if not allocated. x/y is the top-left corner; w/h is the slot size in UV units.
+
+
+### .drawChar
+
+```js
+drawChar(
+	key: string,
+	char: string,
+	{
+		// CSS font string (e.g. `'bold 48px sans-serif'`).
+		font = '': string,
+
+		// CSS fill color.
+		color = 'white': string,
+
+		// CSS stroke color drawn under the fill, or null to skip the
+		// stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in atlas pixels.
+		strokeWidth = 1: number,
+	}
+): Object
+```
+
+Renders a single character in the slot, centered on its text metrics bounding box.
+
+
+### .measureChar
+
+```js
+measureChar( char: string, font: string ): TextMetrics
+```
+
+Function that returns a text metrics object for the given character rendered with
+the provided set of styles.
+
+
+### .drawImage
+
+```js
+drawImage(
+	key: string,
+	image: HTMLImageElement | HTMLCanvasElement | ImageBitmap
+): Object
+```
+
+Draws a `CanvasImageSource` into the slot, scaled to fit.
+
+
+### .drawPath
+
+```js
+drawPath(
+	key: string,
+	path2D: Path2D,
+	{
+		// CSS fill color, or null to skip fill.
+		fillStyle = null: string | null,
+
+		// CSS stroke color, or null to skip stroke.
+		strokeStyle = null: string | null,
+
+		// Stroke width in pixels.
+		lineWidth = 1: number,
+	}
+): Object
+```
+
+Renders a `Path2D` into the slot. Path coordinates are slot-local (origin at top-left).
+
+
+### .drawSVG
+
+```js
+drawSVG(
+	key: string,
+	svgText: string,
+	{
+		// CSS fill color, or null to skip fill.
+		fillStyle = 'white': string | null,
+
+		// CSS stroke color, or null to skip stroke.
+		strokeStyle = null: string | null,
+
+		// Visible stroke width in atlas pixels.
+		strokeWidth = 1: number,
+
+		// Fraction of the slot size the icon occupies (0–1).
+		iconScale = 1: number,
+	}
+): Object
+```
+
+Parses an SVG string and renders its paths into a slot, scaled to fit.
+
+
+### .release
+
+```js
+release( key: string ): void
+```
+
+Frees the slot for key, returning it to the pool for reuse.
+
+
+### .resize
+
+```js
+resize( slotCount: number, slotSize: number ): void
+```
+
+Resizes the atlas, copying existing slot content to their new positions.
+
+
+### .clear
+
+```js
+clear(): void
+```
+
+Clears all slots and resets the atlas to empty.
+
+
+## MVTGlyphs
+
+_extends `Group`_
+
+Base object that renders a batch of glyphs from a shared `MVTGlyphAtlasTexture`, fading each item
+in and out. Manages the geometry and two child draws sharing it: an opaque pass and a transparent
+"draw through" pass, combined per `drawMode`.
+
+
+### .DrawMode
+
+```js
+DrawMode: MVTDrawModeEnum
+```
+
+The draw modes assignable to `drawMode`.
+
+
+### .size
+
+```js
+size: number
+```
+
+Glyph size in pixels.
+
+
+### .glyphAtlas
+
+```js
+glyphAtlas: MVTGlyphAtlasTexture
+```
+
+The texture atlas used for rendering glyphs.
+
+
+### .drawMode
+
+```js
+drawMode: number
+```
+
+How glyphs interact with the depth buffer; one of `MVTGlyphs.DrawMode`.
+
+
+### .fadeInDuration
+
+```js
+fadeInDuration: number
+```
+
+Seconds a glyph takes to fade in.
+
+
+### .fadeOutDuration
+
+```js
+fadeOutDuration: number
+```
+
+Seconds a glyph takes to fade out.
+
+
+### .drawThroughOpacity
+
+```js
+drawThroughOpacity: number
+```
+
+Opacity of the ghosted, drawThrough glyphs in the `DRAW_THROUGH` draw mode.
+
+
+### .dispose
+
+```js
+dispose(): void
+```
+
+Disposes the glyph atlas, geometry, and materials.
+
+
+## MVTIconGlyphs
+
+_extends [`MVTGlyphs`](#mvtglyphs)_
+
+Renders one icon glyph per point annotation. Each item's atlas key comes from `getKind`, or
+`fallback` when that key isn't in the atlas.
+
+
+### .getKind
+
+```js
+getKind: ( layer: string, properties: Object ) => string | null
+```
+
+Chooses the atlas key to draw for each point.
+
+
+### .fallback
+
+```js
+fallback: string | null
+```
+
+Atlas key used when `getKind`'s result isn't present in the atlas ( null draws nothing ).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Chooses the atlas key to draw for each point.
+		getKind?: (
+			layer: string,
+			properties: Object
+		) => string | null,
+
+		// Atlas key drawn when `getKind`'s result is missing from the
+		// atlas; null draws nothing.
+		fallback = null: string | null,
+
+		// Glyph size in pixels.
+		size = 18: number,
+
+		// Atlas slot size in pixels (defaults to `18 *
+		// devicePixelRatio`).
+		glyphSize?: number,
+
+		// Initial atlas slot capacity.
+		slotCount = 64: number,
+	}
+)
+```
+
+## MVTLabelGlyphs
+
+_extends [`MVTGlyphs`](#mvtglyphs)_
+
+Renders text labels one glyph per character, laid out along each annotation's path. Characters are
+rasterized into the atlas on demand, so a label's text may change at any time.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Glyph size in pixels.
+		size = 16: number,
+
+		// Atlas slot size in pixels (defaults to `16 *
+		// devicePixelRatio`).
+		glyphSize?: number,
+
+		// Initial atlas slot capacity ( grows as needed ).
+		slotCount = 64: number,
+
+		// Explicit CSS font string; overrides `fontFamily`.
+		font = null: string | null,
+
+		// Font family used to build the CSS font when `font` isn't
+		// given.
+		fontFamily = 'sans-serif': string,
+
+		// Outline color drawn under each glyph.
+		strokeStyle = 'black': string,
+
+		// Outline width in atlas pixels ( 0 disables the outline ).
+		strokeWidth = 0: number,
+	}
+)
+```
+
+### .reset
+
+```js
+reset(): void
+```
+
+Resets the cached glyphs content. Used when changing fonts or styles.
+
+
+### .measureChar
+
+```js
+measureChar( char: string ): number
+```
+
+Advance width of `char` in the label's size units, cached per character.
+
+
 ## QuantizedMeshPlugin
 
 Plugin that adds support for the Cesium quantized-mesh terrain format. Fetches the
@@ -891,10 +1682,20 @@ tile content from quantized-mesh buffers.
 ```js
 constructor(
 	{
+		// Apply recommended error and fetch settings for terrain.
 		useRecommendedSettings = true: boolean,
+
+		// Override skirt length in metres; defaults to tile geometric
+		// error.
 		skirtLength = null: number | null,
+
+		// Blend skirt normals with tile surface for smoother edges.
 		smoothSkirtNormals = true: boolean,
+
+		// Compute vertex normals for the terrain mesh.
 		generateNormals = true: boolean,
+
+		// Generate a solid closed mesh (adds a bottom cap).
 		solid = false: boolean,
 	}
 )
@@ -914,13 +1715,31 @@ can be determined the tileset is oriented so the given `up` axis aligns to three
 ```js
 constructor(
 	{
+		// Latitude in radians of the surface point to orient to
+		// (requires `lon`).
 		lat = null: number | null,
+
+		// Longitude in radians of the surface point to orient to
+		// (requires `lat`).
 		lon = null: number | null,
+
+		// Height in metres above the ellipsoid surface.
 		height = 0: number,
+
+		// Axis to orient toward three.js +Y when no lat/lon is
+		// available. Valid values are `±x`, `±y`, `±z`.
 		up = '+z': string,
+
+		// Whether to reposition the tileset to the origin.
 		recenter = true: boolean,
+
+		// Azimuth rotation in radians.
 		azimuth = 0: number,
+
+		// Elevation rotation in radians.
 		elevation = 0: number,
+
+		// Roll rotation in radians.
 		roll = 0: number,
 	}
 )
@@ -1051,6 +1870,81 @@ dispose(): void
 Disposes all texture, table, and attribute accessors.
 
 
+## TerrainRGBMeshPlugin
+
+Generates terrain tiles from raster Terrain-RGB elevation tiles. Each elevation texture is
+shared by multiple layers of sub tiles that displace a smooth surface mesh on the GPU with a
+subview of the texture, so elevation scale and seam updates only require texture changes.
+
+> [!NOTE]
+> Enabling frustum culling on the tile meshes is not supported since the geometry bounds do not
+> include the gpu displacement. Culling is handled by the tile traversal.
+
+> [!NOTE]
+> Debug bounding volume visualizations, such as those from DebugTilesPlugin, may not display
+> correctly after changing the height scale since they are not rebuilt when the tile bounding
+> volumes update.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
+		url: string,
+
+		// Source tile pixel size.
+		tileDimension = 256: number,
+
+		// Highest zoom level the source provides.
+		maxZoom = 15: number,
+
+		// Factor applied to the meter elevations. A pure vertical  
+		// exaggeration on the ellipsoid, while planar projections need
+		// the meters-to-world conversion   folded in. Can be adjusted
+		// dynamically.
+		heightScale = 1: number,
+
+		// Overlay used to texture the tiles when  
+		// `applyOverlayTexture` is enabled.
+		overlay = null: ImageOverlay,
+
+		// Whether to apply the overlay texture.
+		applyOverlayTexture = false: boolean,
+
+		// Render the tiles without lighting or terrain normals.
+		unlit = false: boolean,
+
+		// Display the tiles on the   ellipsoid, on a plane in the
+		// source projection, or on a plane in the named projection
+		// scheme.
+		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
+
+		// Snap poles to ±90° lat.
+		endCaps = true: boolean,
+
+		// Apply recommended TilesRenderer settings.
+		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
+### .sampleCartographicElevation
+
+```js
+sampleCartographicElevation( lat: number, lon: number ): number | null
+```
+
+Samples the loaded elevation data at the given cartographic point using the finest loaded
+texture covering it. The height scale is applied so the result matches the displaced surface.
+
+
+## TerrariumMeshPlugin
+
+[TerrainRGBMeshPlugin](TerrainRGBMeshPlugin) for the Terrarium encoding.
+
+
 ## TileCompressionPlugin
 
 Plugin that processes tile geometry buffer attributes into smaller data types on load
@@ -1064,14 +1958,31 @@ size when compression is enabled is fairly aggressive and may cause visual artif
 ```js
 constructor(
 	{
+		// Generate vertex normals if absent.
 		generateNormals = false: boolean,
+
+		// Disable mipmap generation on tile textures.
 		disableMipmaps = true: boolean,
+
+		// Compress index buffers to the smallest fitting integer type.
 		compressIndex = true: boolean,
+
+		// Compress normal attributes.
 		compressNormals = false: boolean,
+
+		// Compress UV attributes.
 		compressUvs = false: boolean,
+
+		// Compress position attributes.
 		compressPosition = false: boolean,
+
+		// Target type for UV compression.
 		uvType = Int8Array: TypedArrayConstructor,
+
+		// Target type for normal compression.
 		normalType = Int8Array: TypedArrayConstructor,
+
+		// Target type for position compression.
 		positionType = Int16Array: TypedArrayConstructor,
 	}
 )
@@ -1100,6 +2011,9 @@ addShape(
 	mesh: Object3D,
 	direction: Vector3,
 	{
+		// Maximum distance from the shape surface within which
+		// vertices are flattened. `Infinity` always flattens; `0`
+		// never flattens.
 		threshold = Infinity: number,
 	}
 ): void
@@ -1137,6 +2051,24 @@ clearShapes(): void
 Removes all shapes and resets flattened tiles to their original positions.
 
 
+## TilesetValidationPlugin
+
+Plugin that validates tile geometry containment on load. For each loaded tile it checks that
+all mesh vertices lie within the tile's bounding volume and within the parent tile's bounding
+volume, logging a warning for any violations. Intended for debugging only.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Whether the plugin is active on init.
+		enabled = true: boolean,
+	}
+)
+```
+
 ## TilesFadePlugin
 
 Plugin that overrides material shaders to fade tile geometry in and out as tile LODs
@@ -1150,8 +2082,14 @@ rendering. Works alongside `BatchedTilesPlugin` when present.
 ```js
 constructor(
 	{
+		// Time in milliseconds for a tile to fully fade in or out.
 		fadeDuration = 250: number,
+
+		// Maximum simultaneous fade-out tiles. If exceeded, tiles pop
+		// instead of fading.
 		maximumFadeOutTiles = 50: number,
+
+		// Whether root-level tiles fade in on their first appearance.
 		fadeRootTiles = false: boolean,
 	}
 )
@@ -1181,7 +2119,13 @@ yet on the GPU.
 ```js
 constructor(
 	{
+		// Milliseconds to wait after a tile is hidden before freeing
+		// its GPU data. Useful to avoid thrashing when the camera is
+		// moving.
 		delay = 0: number,
+
+		// Target GPU byte budget to unload down to. `0` means unload
+		// with no budget limit.
 		bytesTarget = 0: number,
 	}
 )
@@ -1199,7 +2143,7 @@ event-driven renderers that only render on demand.
 _extends [`LoaderBase`](../../core/renderer/API.md#loaderbase)_
 
 Loader that fetches and parses a WMS `GetCapabilities` XML document into a structured
-JavaScript object. The result can be passed to `WMSTilesPlugin`.
+JavaScript object. The result can be used to configure `WMSImageSource`.
 
 The parsed result has the shape:
 ```
@@ -1226,7 +2170,7 @@ constructor( manager: LoadingManager )
 _extends [`LoaderBase`](../../core/renderer/API.md#loaderbase)_
 
 Loader that fetches and parses a WMTS `GetCapabilities` XML document into a structured
-JavaScript object. The result can be passed directly to `WMTSTilesPlugin`.
+JavaScript object. The result can be used to configure `WMTSImageSource`.
 
 The parsed result has the shape:
 ```
@@ -1272,6 +2216,33 @@ nullFeatureId: number | null
 ```js
 texture?: Object
 ```
+
+## MVTDrawModeEnum
+
+
+### .OBSCURED
+
+```js
+OBSCURED: number
+```
+
+Depth-tested, so glyphs are hidden where behind terrain.
+
+### .DRAW_THROUGH
+
+```js
+DRAW_THROUGH: number
+```
+
+Visible parts drawn opaque, parts behind terrain ghosted on top.
+
+### .OVERLAY
+
+```js
+OVERLAY: number
+```
+
+Always drawn on top of everything.
 
 ## VectorTileStyle
 

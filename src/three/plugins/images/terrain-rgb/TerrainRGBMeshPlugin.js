@@ -1,0 +1,1083 @@
+/** @import { ImageOverlay } from '../ImageOverlayPlugin.js' */
+import {
+	Mesh,
+	MeshBasicMaterial,
+	MathUtils,
+	Vector3,
+	Sphere,
+} from 'three';
+import { XYZImageSource } from '../sources/XYZImageSource.js';
+import { getCartographicToMeterDerivative } from '../utils/getCartographicToMeterDerivative.js';
+import { ProjectionScheme } from '../utils/ProjectionScheme.js';
+import { ProjectedSurface } from '../utils/ProjectedSurface.js';
+import { SkirtedPlaneGeometry } from './SkirtedPlaneGeometry.js';
+import { GridCache } from './GridCache.js';
+import { TerrainLambertMaterial } from './TerrainLambertMaterial.js';
+import { TerrainBasicMaterial } from './TerrainBasicMaterial.js';
+
+const TILE_X = Symbol( 'TILE_X' );
+const TILE_Y = Symbol( 'TILE_Y' );
+const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
+const HEIGHT_GRID = Symbol( 'HEIGHT_GRID' );
+const SOURCE_TILE = Symbol( 'SOURCE_TILE' );
+const OVERLAY_RANGE = Symbol( 'OVERLAY_RANGE' );
+const OVERLAY_LEVEL = Symbol( 'OVERLAY_LEVEL' );
+
+// the raw measured elevation range of a tile, excluding height scale and padding
+const HEIGHT_RANGE = Symbol( 'HEIGHT_RANGE' );
+
+// mesh segments per tile
+const MESH_SIZE = 32;
+
+// fixed elevation range used to initialize every bounding region, encapsulating earth terrain
+const MIN_ELEVATION = - 500;
+const MAX_ELEVATION = 9000;
+
+// number of tile tree levels sharing each fetched texture level
+const EXTRA_LEVELS = 2;
+
+const _pos = /* @__PURE__ */ new Vector3();
+const _norm = /* @__PURE__ */ new Vector3();
+const _sphere = /* @__PURE__ */ new Sphere();
+const _hits = [];
+const _point = [ 0, 0 ];
+
+// shared scratch mesh for raycasting displaced vertices since all tiles use the same vertex layout
+let _raycastMesh = null;
+function getRaycastMesh() {
+
+	if ( _raycastMesh === null ) {
+
+		_raycastMesh = new Mesh( new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE ), new MeshBasicMaterial() );
+		_raycastMesh.matrixAutoUpdate = false;
+
+	}
+
+	return _raycastMesh;
+
+}
+
+// The source tile level holding the texture a tile at the given level reads a subview of, clamped
+// to the deepest fetched level so the levels beyond it keep subdividing the finest textures.
+function getSourceLevel( level, maxSourceLevel ) {
+
+	return Math.min( EXTRA_LEVELS * Math.floor( level / EXTRA_LEVELS ), maxSourceLevel );
+
+}
+
+// texture coordinate range of a subview within the padded grid texture. The half texel inset
+// means tile edges sample into the stitched border so both sides of a seam agree.
+function getSubviewUVBounds( grid, subview ) {
+
+	const { width, height } = grid.image;
+	const w = width - 2;
+	const h = height - 2;
+	return [
+		( subview[ 0 ] * w + 1 ) / width,
+		( subview[ 1 ] * h + 1 ) / height,
+		( subview[ 2 ] * w + 1 ) / width,
+		( subview[ 3 ] * h + 1 ) / height,
+	];
+
+}
+
+// bilinear sample of a padded grid at padded texture coordinates
+function sampleGrid( grid, tu, tv ) {
+
+	const { data, width, height } = grid.image;
+	const fx = MathUtils.clamp( tu * width - 0.5, 0, width - 1 );
+	const fy = MathUtils.clamp( tv * height - 0.5, 0, height - 1 );
+	const x0 = Math.floor( fx );
+	const y0 = Math.floor( fy );
+	const x1 = Math.min( x0 + 1, width - 1 );
+	const y1 = Math.min( y0 + 1, height - 1 );
+	const tx = fx - x0;
+	const ty = fy - y0;
+
+	const h0 = data[ y0 * width + x0 ] * ( 1 - tx ) + data[ y0 * width + x1 ] * tx;
+	const h1 = data[ y1 * width + x0 ] * ( 1 - tx ) + data[ y1 * width + x1 ] * tx;
+	return h0 * ( 1 - ty ) + h1 * ty;
+
+}
+
+/**
+ * Generates terrain tiles from raster Terrain-RGB elevation tiles. Each elevation texture is
+ * shared by multiple layers of sub tiles that displace a smooth surface mesh on the GPU with a
+ * subview of the texture, so elevation scale and seam updates only require texture changes.
+ *
+ * > [!NOTE]
+ * > Enabling frustum culling on the tile meshes is not supported since the geometry bounds do not
+ * > include the gpu displacement. Culling is handled by the tile traversal.
+ *
+ * > [!NOTE]
+ * > Debug bounding volume visualizations, such as those from DebugTilesPlugin, may not display
+ * > correctly after changing the height scale since they are not rebuilt when the tile bounding
+ * > volumes update.
+ *
+ * @param {Object} [options]
+ * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
+ * @param {number} [options.tileDimension=256] Source tile pixel size.
+ * @param {number} [options.maxZoom=15] Highest zoom level the source provides.
+ * @param {number} [options.heightScale=1] Factor applied to the meter elevations. A pure vertical
+ *   exaggeration on the ellipsoid, while planar projections need the meters-to-world conversion
+ *   folded in. Can be adjusted dynamically.
+ * @param {ImageOverlay} [options.overlay=null] Overlay used to texture the tiles when
+ *   `applyOverlayTexture` is enabled.
+ * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.
+ * @param {boolean} [options.unlit=false] Render the tiles without lighting or terrain normals.
+ * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] Display the tiles on the
+ *   ellipsoid, on a plane in the source projection, or on a plane in the named projection scheme.
+ * @param {boolean} [options.endCaps=true] Snap poles to ±90° lat.
+ * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
+ */
+export class TerrainRGBMeshPlugin {
+
+	// Deprecated: use "projection" instead
+	get shape() {
+
+		console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+		return this.projection === 'ellipsoid' ? 'ellipsoid' : 'planar';
+
+	}
+
+	set shape( v ) {
+
+		console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+		this.projection = v === 'planar' ? 'source' : 'ellipsoid';
+
+	}
+
+	get heightScale() {
+
+		return this._heightScale;
+
+	}
+
+	set heightScale( value ) {
+
+		if ( value !== this._heightScale ) {
+
+			this._heightScale = value;
+			this._updateHeightScale();
+
+		}
+
+	}
+
+	constructor( options = {} ) {
+
+		const {
+			url = null,
+			tileDimension = 256,
+			maxZoom = 15,
+			heightScale = 1,
+			overlay = null,
+			applyOverlayTexture = false,
+			unlit = false,
+			shape = null,
+			projection = null,
+			endCaps = true,
+			useRecommendedSettings = true,
+		} = options;
+
+		this.name = 'TERRAIN_RGB_MESH_PLUGIN';
+		this.priority = - 10;
+		this.tiles = null;
+
+		this.url = url;
+		this.tileDimension = tileDimension;
+		this.maxZoom = maxZoom;
+		this.overlay = overlay;
+		this.applyOverlayTexture = applyOverlayTexture;
+		this.unlit = unlit;
+		this.projection = projection ?? 'ellipsoid';
+		if ( shape !== null ) {
+
+			console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+			if ( projection === null ) {
+
+				this.projection = shape === 'planar' ? 'source' : 'ellipsoid';
+
+			}
+
+		}
+
+		this.endCaps = endCaps;
+		this.useRecommendedSettings = useRecommendedSettings;
+		this.heightScale = heightScale;
+
+		this._source = null;
+		this._gridCache = new GridCache( this );
+		this._tiling = null;
+		this._maxSourceLevel = - 1;
+
+	}
+
+	init( tiles ) {
+
+		if ( this.useRecommendedSettings ) {
+
+			tiles.errorTarget = 1;
+
+		}
+
+		this.tiles = tiles;
+
+	}
+
+	async loadRootTileset() {
+
+		if ( this.overlay ) {
+
+			await this.overlay.init();
+
+		}
+
+		// Options are fixed at this point. The tree extends past the last fetched texture level so
+		// its subview layers exist, and further down to the overlay's resolution when its texture is
+		// applied so the overlay data displays at full fidelity.
+		const { url, tileDimension, maxZoom, overlay, applyOverlayTexture } = this;
+		this._maxSourceLevel = EXTRA_LEVELS * Math.floor( maxZoom / EXTRA_LEVELS );
+
+		let maxLevel = this._maxSourceLevel + EXTRA_LEVELS - 1;
+		if ( overlay && applyOverlayTexture ) {
+
+			maxLevel = Math.max( maxLevel, overlay.tiling.maxLevel );
+
+		}
+
+		this._source = new XYZImageSource( { url, tileDimension, levels: maxLevel + 1 } );
+
+		// route the elevation texture requests through the download queue so they are prioritized
+		// and limited per server alongside the other content
+		this._source.fetchData = ( fetchUrl, options ) => {
+
+			const item = { priority: - performance.now() };
+			return this.tiles.downloadQueue.add( fetchUrl, item, () => fetch( fetchUrl, options ), options.signal );
+
+		};
+
+		await this._source.init();
+		this._tiling = this._source.tiling;
+
+		// The tiling always comes from the data source. The surface embeds the display projection's
+		// normalized space in the local frame and all planar geometry flows through it.
+		const { projection } = this;
+		const displayProjection = projection === 'ellipsoid' || projection === 'source'
+			? this._tiling.projection
+			: new ProjectionScheme( projection );
+
+		const [ extentX, extentY ] = displayProjection.getProjectedExtents();
+		const planeAspect = extentX / extentY;
+
+		// register the surface so image overlays and other consumers can map between cartographic
+		// values and the planar frame
+		if ( this.projection !== 'ellipsoid' ) {
+
+			const surface = new ProjectedSurface( displayProjection );
+			surface.scale.set( planeAspect, 1 );
+			surface.offset.set( - planeAspect / 2, - 0.5 );
+			this.tiles.surface = surface;
+
+		}
+
+		return this.getTileset();
+
+	}
+
+	async parseToMesh( buffer, tile, extension, url, abortSignal ) {
+
+		if ( tile[ TILE_X ] === undefined ) {
+
+			return null;
+
+		}
+
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+
+		// find the source tile that this render tile reads a subview of
+		const sourceLevel = getSourceLevel( level, this._maxSourceLevel );
+		const scale = 2 ** ( level - sourceLevel );
+		const sx = Math.floor( x / scale );
+		const sy = Math.floor( y / scale );
+
+		// lock the shared elevation grid
+		let grid;
+		try {
+
+			grid = await this._gridCache.lock( sx, sy, sourceLevel );
+
+		} catch ( err ) {
+
+			if ( err.name !== 'AbortError' ) {
+
+				throw err;
+
+			}
+
+			return null;
+
+		}
+
+		if ( abortSignal.aborted ) {
+
+			this._gridCache.release( sx, sy, sourceLevel );
+			return null;
+
+		}
+
+		tile[ HEIGHT_GRID ] = grid;
+		tile[ SOURCE_TILE ] = [ sx, sy, sourceLevel ];
+
+		// Build the surface mesh displaced by the elevation texture, which also drives the bump map
+		// normals. Clones share the texture upload while each tile disposes its own reference.
+		const subview = this._getSubview( tile );
+		const mesh = this._createTerrainMesh( tile, subview );
+		const displacement = grid.clone();
+		mesh.material.displacementMap = displacement;
+		if ( ! this.unlit ) {
+
+			mesh.material.bumpMap = displacement;
+
+		}
+
+		// seed the children with this tile's measured height range so they hold a tighter estimate
+		// than the conservative default until their own data loads
+		tile.children.forEach( child => {
+
+			if ( ! child[ HEIGHT_RANGE ] ) {
+
+				child[ HEIGHT_RANGE ] = tile[ HEIGHT_RANGE ];
+				this._updateBoundingVolume( child );
+
+			}
+
+		} );
+
+		// apply the overlay texture
+		const { overlay, applyOverlayTexture } = this;
+		if ( overlay && applyOverlayTexture ) {
+
+			const range = this._tiling.getTileBounds( x, y, level, true, false );
+			if ( overlay.hasContent( range, level ) ) {
+
+				try {
+
+					await overlay.lockTexture( range, level );
+
+				} catch ( err ) {
+
+					if ( err.name !== 'AbortError' ) {
+
+						throw err;
+
+					}
+
+					this._releaseGrid( tile );
+					return null;
+
+				}
+
+				tile[ OVERLAY_RANGE ] = range;
+				tile[ OVERLAY_LEVEL ] = level;
+
+				if ( abortSignal.aborted ) {
+
+					overlay.releaseTexture( range, level );
+					delete tile[ OVERLAY_RANGE ];
+					delete tile[ OVERLAY_LEVEL ];
+					this._releaseGrid( tile );
+					return null;
+
+				}
+
+				// The mesh uvs live in the elevation texture's subview range, so remap the overlay
+				// from that range onto its own uv bounds via a clone's transform.
+				const [ tu0, tv0, tu1, tv1 ] = getSubviewUVBounds( grid, subview );
+				const uvRange = this._tiling.getTileContentUVBounds( x, y, level );
+				const repeatX = ( uvRange[ 2 ] - uvRange[ 0 ] ) / ( tu1 - tu0 );
+				const repeatY = ( uvRange[ 3 ] - uvRange[ 1 ] ) / ( tv1 - tv0 );
+				const texture = overlay.getTexture( range, level ).clone();
+				texture.offset.set( uvRange[ 0 ] - tu0 * repeatX, uvRange[ 1 ] - tv0 * repeatY );
+				texture.repeat.set( repeatX, repeatY );
+
+				mesh.material.map = texture;
+				mesh.material.needsUpdate = true;
+
+			}
+
+		}
+
+		// assigned after the last await so a height scale change mid-parse cannot leave a stale
+		// scale on a material that "_updateHeightScale" has not seen yet
+		mesh.material.displacementScale = this._heightScale;
+		mesh.material.bumpScale = this._heightScale;
+
+		return mesh;
+
+	}
+
+	// Raycast against a cpu-displaced copy of the tile geometry since the rendered vertices are
+	// displaced on the gpu.
+	// TODO: cache the displaced positions per tile rather than regenerating them per raycast
+	raycastTile( tile, scene, raycaster, intersects ) {
+
+		const grid = tile[ HEIGHT_GRID ];
+		if ( ! grid ) {
+
+			return false;
+
+		}
+
+		scene.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				const raycastMesh = getRaycastMesh();
+				const basePosition = c.geometry.attributes.position;
+				const baseNormal = c.geometry.attributes.normal;
+				const baseUv = c.geometry.attributes.uv;
+				const position = raycastMesh.geometry.attributes.position;
+
+				// displace the vertices along the normals to match the gpu result
+				for ( let i = 0, l = position.count; i < l; i ++ ) {
+
+					const height = sampleGrid( grid, baseUv.getX( i ), baseUv.getY( i ) ) * this._heightScale;
+
+					_pos.fromBufferAttribute( basePosition, i );
+					_norm.fromBufferAttribute( baseNormal, i );
+					_pos.addScaledVector( _norm, height );
+					position.setXYZ( i, _pos.x, _pos.y, _pos.z );
+
+				}
+
+				raycastMesh.geometry.computeBoundingSphere();
+				raycastMesh.matrixWorld.copy( c.matrixWorld );
+
+				// remap the hits to the real mesh
+				_hits.length = 0;
+				raycastMesh.raycast( raycaster, _hits );
+				_hits.forEach( hit => {
+
+					hit.object = c;
+					intersects.push( hit );
+
+				} );
+
+			}
+
+		} );
+
+		return true;
+
+	}
+
+	/**
+	 * Samples the loaded elevation data at the given cartographic point using the finest loaded
+	 * texture covering it. The height scale is applied so the result matches the displaced surface.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @returns {number|null} The elevation, or `null` when no data covering the point is loaded.
+	 */
+	sampleCartographicElevation( lat, lon ) {
+
+		const tiling = this._tiling;
+		if ( tiling === null || ! tiling.projection.isCartographic ) {
+
+			return null;
+
+		}
+
+		const { projection } = tiling;
+		const [ nx, ny ] = projection.fromCartographicToNormalized( lon, lat, _point );
+
+		for ( let level = this._maxSourceLevel; level >= 0; level -= EXTRA_LEVELS ) {
+
+			const [ x, y ] = tiling.getTileAtPoint( nx, ny, level, true );
+			const grid = this._gridCache.get( x, y, level );
+			if ( grid && ! ( grid instanceof Promise ) ) {
+
+				// map the point into the padded grid texture coordinates
+				const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
+				const { width, height } = grid.image;
+				const u = ( nx - minU ) / ( maxU - minU );
+				const v = ( ny - minV ) / ( maxV - minV );
+				const tu = ( u * ( width - 2 ) + 1 ) / width;
+				const tv = ( v * ( height - 2 ) + 1 ) / height;
+				return sampleGrid( grid, tu, tv ) * this._heightScale;
+
+			}
+
+		}
+
+		return null;
+
+	}
+
+	preprocessNode( tile ) {
+
+		const tiling = this._tiling;
+		const maxLevel = tiling.maxLevel;
+		const level = tile[ TILE_LEVEL ];
+		if ( level < maxLevel && tile.parent !== null ) {
+
+			this.expandChildren( tile );
+
+		}
+
+	}
+
+	disposeTile( tile ) {
+
+		const range = tile[ OVERLAY_RANGE ];
+		if ( this.overlay && range ) {
+
+			this.overlay.releaseTexture( range, tile[ OVERLAY_LEVEL ] );
+			delete tile[ OVERLAY_RANGE ];
+			delete tile[ OVERLAY_LEVEL ];
+
+		}
+
+		this._releaseGrid( tile );
+
+	}
+
+	_releaseGrid( tile ) {
+
+		const sourceTile = tile[ SOURCE_TILE ];
+		if ( sourceTile ) {
+
+			this._gridCache.release( ...sourceTile );
+			delete tile[ SOURCE_TILE ];
+			delete tile[ HEIGHT_GRID ];
+
+		}
+
+	}
+
+	dispose() {
+
+		// Every tile locks its grid once and releases it once, so the cache empties itself. Grids
+		// locked by in-flight parses are released by their abort handling once they settle.
+		this.tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			this.disposeTile( tile );
+
+		} );
+
+	}
+
+	// normalized bounds of the render tile within its source tile
+	_getSubview( tile ) {
+
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+		const [ sx, sy, sourceLevel ] = tile[ SOURCE_TILE ];
+
+		const renderBounds = this._tiling.getTileBounds( x, y, level, true );
+		const sourceBounds = this._tiling.getTileBounds( sx, sy, sourceLevel, true );
+		const invW = 1 / ( sourceBounds[ 2 ] - sourceBounds[ 0 ] );
+		const invH = 1 / ( sourceBounds[ 3 ] - sourceBounds[ 1 ] );
+
+		return [
+			( renderBounds[ 0 ] - sourceBounds[ 0 ] ) * invW,
+			( renderBounds[ 1 ] - sourceBounds[ 1 ] ) * invH,
+			( renderBounds[ 2 ] - sourceBounds[ 0 ] ) * invW,
+			( renderBounds[ 3 ] - sourceBounds[ 1 ] ) * invH,
+		];
+
+	}
+
+	_createTerrainMesh( tile, subview ) {
+
+		const { tiles, endCaps, unlit, _heightScale, _tiling } = this;
+		const { surface } = tiles;
+		const { projection } = _tiling;
+		const level = tile[ TILE_LEVEL ];
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+
+		const [ , south, , north ] = _tiling.getTileBounds( x, y, level );
+		const [ minU, minV, maxU, maxV ] = _tiling.getTileBounds( x, y, level, true, true );
+
+		const grid = tile[ HEIGHT_GRID ];
+		const [ tu0, tv0, tu1, tv1 ] = getSubviewUVBounds( grid, subview );
+
+		// new geometry positioned at the tile bounding sphere center
+		const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
+		const mesh = new Mesh( geometry, unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
+		tile.engineData.boundingVolume.getSphere( _sphere );
+		mesh.position.copy( _sphere.center );
+
+		// skip the pole snapping when the displayed projection cannot represent the poles
+		const snapToPoles = endCaps && ! ( surface.projection && surface.projection.isMercator );
+
+		// position the surface vertices on the surface, tracking the raw elevation range
+		const { position, normal, uv } = geometry.attributes;
+		const { surfaceVertexCount, skirtSourceIndices } = geometry;
+		const cols = MESH_SIZE + 1;
+		let minHeight = Infinity;
+		let maxHeight = - Infinity;
+		for ( let i = 0; i < surfaceVertexCount; i ++ ) {
+
+			const col = i % cols;
+			const row = Math.floor( i / cols );
+			const uNorm = col / MESH_SIZE;
+			const vNorm = 1 - row / MESH_SIZE;
+
+			// convert the plane position to lat / lon
+			const cart = projection.fromNormalizedToCartographic(
+				MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ),
+				MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ),
+				_point,
+			);
+			const lon = cart[ 0 ];
+			let lat = cart[ 1 ];
+
+			// snap edges to poles for Mercator to avoid seams
+			if ( projection.isMercator && snapToPoles ) {
+
+				if ( maxV === 1 && vNorm === 1 ) {
+
+					lat = Math.PI / 2;
+
+				}
+
+				if ( minV === 0 && vNorm === 0 ) {
+
+					lat = - Math.PI / 2;
+
+				}
+
+			}
+
+			// ensure we have an edge loop positioned at the mercator limit to avoid UV distortion
+			// as much as possible at low LoDs.
+			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
+
+				const latLimit = projection.fromNormalizedToCartographic( 0.5, 1, _point )[ 1 ];
+				const vStep = 1 / MESH_SIZE;
+				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
+				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
+
+				if ( lat > latLimit && prevLat < latLimit ) {
+
+					lat = latLimit;
+
+				}
+
+				if ( lat < - latLimit && nextLat > - latLimit ) {
+
+					lat = - latLimit;
+
+				}
+
+			}
+
+			// derive uvs from the final adjusted lat / lon, mapped into the elevation texture's
+			// subview so they sample the correct portion of the texture directly
+			const [ normU, normV ] = projection.fromCartographicToNormalized( lon, lat, _point );
+			const u = MathUtils.mapLinear( normU, minU, maxU, 0, 1 );
+			const v = MathUtils.mapLinear( normV, minV, maxV, 0, 1 );
+			const tu = MathUtils.mapLinear( u, 0, 1, tu0, tu1 );
+			const tv = MathUtils.mapLinear( v, 0, 1, tv0, tv1 );
+
+			// get the position and normal
+			const height = sampleGrid( grid, tu, tv );
+			if ( height < minHeight ) minHeight = height;
+			if ( height > maxHeight ) maxHeight = height;
+			surface.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
+			surface.getCartographicToNormal( lat, lon, _norm );
+
+			// update the geometry
+			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
+			normal.setXYZ( i, _norm.x, _norm.y, _norm.z );
+			uv.setXY( i, tu, tv );
+
+		}
+
+		// drop the skirt vertices along the surface normal, far enough to cover the height
+		// mismatches with neighboring levels, which are bounded by the tile's elevation range
+		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * _heightScale;
+		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
+
+			const src = skirtSourceIndices[ i ];
+			const dst = surfaceVertexCount + i;
+			_pos.fromBufferAttribute( position, src );
+			_norm.fromBufferAttribute( normal, src );
+			_pos.addScaledVector( _norm, - skirtDepth );
+
+			position.setXYZ( dst, _pos.x, _pos.y, _pos.z );
+			normal.setXYZ( dst, _norm.x, _norm.y, _norm.z );
+			uv.setXY( dst, uv.getX( src ), uv.getY( src ) );
+
+		}
+
+		tile[ HEIGHT_RANGE ] = { min: minHeight, max: maxHeight };
+		this._updateBoundingVolume( tile );
+		return mesh;
+
+	}
+
+	// Writes the tile's elevation range onto its bounding volume: the measured range once the
+	// elevation data has loaded, or the fixed conservative range before then. The range is
+	// padded by the geometric error and the low bound dropped further to enclose the skirts.
+	_updateBoundingVolume( tile ) {
+
+		const scale = this._heightScale;
+		const pad = tile[ TILE_LEVEL ] === - 1 ? 0 : tile.geometricError;
+		const range = tile[ HEIGHT_RANGE ];
+
+		let min, max;
+		if ( range ) {
+
+			min = range.min * scale - pad - ( range.max - range.min ) * scale;
+			max = range.max * scale + pad;
+
+		} else {
+
+			min = MIN_ELEVATION * scale - pad;
+			max = MAX_ELEVATION * scale;
+
+		}
+
+		// the engine volume only exists once the tile has been preprocessed
+		const { boundingVolume, engineData } = tile;
+		if ( boundingVolume.region ) {
+
+			const region = boundingVolume.region;
+			region[ 4 ] = min;
+			region[ 5 ] = max;
+			if ( engineData && engineData.boundingVolume ) {
+
+				engineData.boundingVolume.setRegionData( this.tiles.ellipsoid, ...region );
+
+			}
+
+		} else {
+
+			// elevation runs along local z: set the box center and half extent
+			const box = boundingVolume.box;
+			box[ 2 ] = ( min + max ) / 2;
+			box[ 11 ] = ( max - min ) / 2;
+			if ( engineData && engineData.boundingVolume ) {
+
+				engineData.boundingVolume.setObbData( box, engineData.transform );
+
+			}
+
+		}
+
+	}
+
+	// update the displacement scale on the loaded materials and refresh every bounding volume for
+	// the new height range
+	_updateHeightScale() {
+
+		const { tiles } = this;
+		if ( ! tiles ) {
+
+			return;
+
+		}
+
+		tiles.forEachLoadedModel( scene => {
+
+			scene.traverse( c => {
+
+				if ( c.isMesh ) {
+
+					c.material.displacementScale = this._heightScale;
+					c.material.bumpScale = this._heightScale;
+
+				}
+
+			} );
+
+		} );
+
+		tiles.traverse( tile => {
+
+			this._updateBoundingVolume( tile );
+
+		}, null, false );
+
+	}
+
+	getTileset() {
+
+		const { tiles, _tiling: tiling } = this;
+		const minLevel = tiling.minLevel;
+		const { tileCountX, tileCountY } = tiling.getLevel( minLevel );
+
+		const children = [];
+		for ( let x = 0; x < tileCountX; x ++ ) {
+
+			for ( let y = 0; y < tileCountY; y ++ ) {
+
+				const child = this.createChild( x, y, minLevel );
+				if ( child !== null ) {
+
+					children.push( child );
+
+				}
+
+			}
+
+		}
+
+		// generate tileset
+		const tileset = {
+			asset: { version: '1.1' },
+			geometricError: Infinity,
+			root: {
+				refine: 'REPLACE',
+				geometricError: Infinity,
+				boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
+				children,
+
+				[ TILE_LEVEL ]: - 1,
+				[ TILE_X ]: 0,
+				[ TILE_Y ]: 0,
+			},
+		};
+
+		tiles.preprocessTileset( tileset, '' );
+		return tileset;
+
+	}
+
+	// the content of every tile is the url of the texture it reads a subview of, so the levels
+	// between fetch levels inherit the ancestor texture url
+	getUrl( x, y, level ) {
+
+		const sourceLevel = getSourceLevel( level, this._maxSourceLevel );
+		const scale = 2 ** ( level - sourceLevel );
+		return this._source.getUrl( Math.floor( x / scale ), Math.floor( y / scale ), sourceLevel );
+
+	}
+
+	// all tile content is generated, and the textures are fetched through the shared grid cache
+	fetchData( /* url */ ) {
+
+		return new ArrayBuffer();
+
+	}
+
+	createBoundingVolume( x, y, level, regionHeight = 0 ) {
+
+		const { _tiling: tiling, endCaps, tiles } = this;
+		const { surface } = tiles;
+		const isRoot = level === - 1;
+
+		// a fixed elevation range covering all terrain, dropping the low bound by the skirt depth
+		const minHeight = MIN_ELEVATION * this.heightScale - regionHeight;
+		const maxHeight = MAX_ELEVATION * this.heightScale;
+
+		if ( surface.isEllipsoid ) {
+
+			let normalizedBounds;
+			let cartBounds;
+			if ( isRoot ) {
+
+				normalizedBounds = tiling.getContentBounds( true );
+				cartBounds = tiling.getContentBounds();
+
+			} else {
+
+				normalizedBounds = tiling.getTileBounds( x, y, level, true, true );
+				cartBounds = tiling.getTileBounds( x, y, level, false, true );
+
+			}
+
+			if ( endCaps ) {
+
+				if ( normalizedBounds[ 3 ] === 1 ) {
+
+					cartBounds[ 3 ] = Math.PI / 2;
+
+				}
+
+				if ( normalizedBounds[ 1 ] === 0 ) {
+
+					cartBounds[ 1 ] = - Math.PI / 2;
+
+				}
+
+			}
+
+			return { region: [ ...cartBounds, minHeight, maxHeight ] };
+
+		} else {
+
+			let normalizedBounds;
+			if ( isRoot ) {
+
+				normalizedBounds = tiling.getContentBounds( true );
+
+			} else {
+
+				normalizedBounds = tiling.getTileBounds( x, y, level, true );
+
+			}
+
+			// Compute the plane bounds of the projected tile rect with the elevation range along z.
+			// Non-separable projections are widest at the row nearest the equator so it is sampled
+			// in addition to the corners.
+			const [ minX, minY, maxX, maxY ] = normalizedBounds;
+			const equatorV = MathUtils.clamp( tiling.projection.fromCartographicToNormalized( 0, 0, _point )[ 1 ], minY, maxY );
+
+			let bMinX = Infinity;
+			let bMinY = Infinity;
+			let bMaxX = - Infinity;
+			let bMaxY = - Infinity;
+			for ( const v of [ minY, maxY, equatorV ] ) {
+
+				for ( const u of [ minX, maxX ] ) {
+
+					// snap the edges of a pole-limited tiling to the poles to match the mesh
+					const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( u, v, _point );
+					let cappedLat = lat;
+					if ( endCaps && ! surface.projection.isMercator ) {
+
+						if ( v === 1 ) {
+
+							cappedLat = Math.PI / 2;
+
+						}
+
+						if ( v === 0 ) {
+
+							cappedLat = - Math.PI / 2;
+
+						}
+
+					}
+
+					surface.getCartographicToPosition( cappedLat, lon, 0, _pos );
+					bMinX = Math.min( bMinX, _pos.x );
+					bMinY = Math.min( bMinY, _pos.y );
+					bMaxX = Math.max( bMaxX, _pos.x );
+					bMaxY = Math.max( bMaxY, _pos.y );
+
+				}
+
+			}
+
+			const boundingVolume = {
+				box: [
+					( bMinX + bMaxX ) / 2, ( bMinY + bMaxY ) / 2, ( minHeight + maxHeight ) / 2,
+					( bMaxX - bMinX ) / 2, 0.0, 0.0,
+					0.0, ( bMaxY - bMinY ) / 2, 0.0,
+					0.0, 0.0, ( maxHeight - minHeight ) / 2,
+				],
+			};
+
+			// The cartographic range covered by the tile as [ west, south, east, north ] in radians,
+			// read by consumers like image overlays in place of a "region" volume. Ignored by the
+			// tiles renderer itself.
+			boundingVolume.cartographicRange = isRoot ? tiling.getContentBounds() : tiling.getTileBounds( x, y, level );
+
+			return boundingVolume;
+
+		}
+
+	}
+
+	createChild( x, y, level ) {
+
+		const { _tiling: tiling, tiles } = this;
+		const { projection } = tiling;
+		const { surface } = tiles;
+		if ( ! tiling.getTileExists( x, y, level ) ) {
+
+			return null;
+
+		}
+
+		let geometricError;
+		if ( surface.isEllipsoid ) {
+
+			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
+			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
+
+			// one pixel width in uv space, so the error ladder halves per level and the inserted
+			// layers interpolate between the fetched texture levels
+			const tileUWidth = ( maxU - minU ) / tilePixelWidth;
+			const tileVWidth = ( maxV - minV ) / tilePixelHeight;
+
+			// calculate the region ranges
+			const [ /* west */, south, east, north ] = tiling.getTileBounds( x, y, level );
+
+			// calculate the changes in lat / lon at the given point
+			// find the most bowed point of the latitude range since the amount that latitude changes is
+			// dependent on the Y value of the image
+			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
+			const midV = projection.fromCartographicToNormalized( 0, midLat, _point )[ 1 ];
+			const [ lonFactor, latFactor ] = projection.getDerivativeAtNormalizedPoint( minU, midV, _point );
+
+			// calculate the size of a pixel on the surface
+			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( tiles.ellipsoid, midLat, east );
+			geometricError = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
+
+		} else {
+
+			// Size of one pixel in world space. The tile contents span the surface scale.
+			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
+			geometricError = Math.max( surface.scale.x / pixelWidth, surface.scale.y / pixelHeight );
+
+		}
+
+		// Generate the node
+		return {
+			refine: 'REPLACE',
+			geometricError,
+			boundingVolume: this.createBoundingVolume( x, y, level, geometricError ),
+			content: {
+				uri: this.getUrl( x, y, level ),
+			},
+			children: [],
+
+			// save the tile params so we can expand later
+			[ TILE_X ]: x,
+			[ TILE_Y ]: y,
+			[ TILE_LEVEL ]: level,
+		};
+
+	}
+
+	expandChildren( tile ) {
+
+		const level = tile[ TILE_LEVEL ];
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+
+		const { tileSplitX, tileSplitY } = this._tiling.getLevel( level );
+		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
+
+			for ( let cy = 0; cy < tileSplitY; cy ++ ) {
+
+				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
+				if ( child ) {
+
+					tile.children.push( child );
+
+				}
+
+			}
+
+		}
+
+	}
+
+	// packed RGB to meters; override for other encodings
+	decodeElevation( r, g, b ) {
+
+		return - 10000 + ( r * 65536 + g * 256 + b ) * 0.1;
+
+	}
+
+}

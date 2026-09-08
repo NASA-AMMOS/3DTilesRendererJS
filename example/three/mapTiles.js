@@ -96,6 +96,7 @@ function initTiles() {
 	surfacePlugin = new GeneratedSurfacePlugin( {
 		overlay,
 		shape: params.planar ? 'planar' : 'ellipsoid',
+		applyOverlayTexture: true,
 	} );
 	tiles.registerPlugin( surfacePlugin );
 
@@ -187,7 +188,7 @@ function onMouseMove( e ) {
 		toLocalMat.copy( tiles.group.matrixWorld ).invert();
 		hits[ 0 ].point.applyMatrix4( toLocalMat );
 
-		const cart = surfacePlugin.getCartographicFromPosition( hits[ 0 ].point );
+		const cart = tiles.surface.getPositionToCartographic( hits[ 0 ].point, {} );
 		const lat = MathUtils.radToDeg( cart.lat ).toFixed( 2 );
 		const lon = MathUtils.radToDeg( cart.lon ).toFixed( 2 );
 		coordsEl.textContent = `${ lat }°  ${ lon }°`;

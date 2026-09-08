@@ -121,7 +121,8 @@ function rebuildTiles() {
 			styles: params.styles,
 			version: capabilities.version,
 		} ),
-		shape: 'ellipsoid',
+		projection: 'ellipsoid',
+		applyOverlayTexture: true,
 	} ) );
 
 	tiles.group.rotation.x = - Math.PI / 2;

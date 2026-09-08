@@ -20,6 +20,27 @@ function importMVTDeps() {
 
 }
 
+// Protomaps "Light" theme — from protomaps/basemaps flavors.ts
+const DEFAULT_STYLES = {
+	earth: { 		fill: '#e2dfda', order: 0 },
+	water: { 		fill: '#80deea', order: 1 },
+	landcover: { 	fill: '#c4e7d2', order: 2 },
+	landuse: { 		fill: '#cfddd5', order: 3 },
+	natural: { 		fill: '#e2e0d7', order: 4 },
+	buildings: { 	fill: '#cccccc', order: 5 },
+	roads: { 		stroke: '#ebebeb', order: 6 },
+	transit: { 		stroke: '#a7b1b3', order: 7 },
+	boundaries: { 	stroke: '#adadad', order: 8 },
+	places: { 		fill: '#5c5c5c', order: 9 },
+	pois: { 		fill: '#1a8cbd', radius: 3, order: 10 },
+};
+
+const DEFAULT_GET_STYLE = ( layer, properties ) => {
+
+	return DEFAULT_STYLES[ layer ] ?? null;
+
+};
+
 // Fetches and caches parsed MVT tile content (vectorTile + tileBounds) keyed by (tx, ty, tl).
 export class MVTContentCache extends DataCache {
 
@@ -138,11 +159,23 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
+	get fetchOptions() {
+
+		return this._contentCache.fetchOptions;
+
+	}
+
+	set fetchOptions( v ) {
+
+		this._contentCache.fetchOptions = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
 			resolution = 512,
-			getStyle = () => null,
+			getStyle = null,
 			contentCache,
 			...rest
 		} = options;
@@ -170,73 +203,105 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
-	async fetchItem( [ minX, minY, maxX, maxY, level ], _signal ) {
+	async fetchItem( [ minX, minY, maxX, maxY, level ], signal ) {
 
-		const { resolution } = this;
+		const { resolution, _contentCache } = this;
 		const canvas = document.createElement( 'canvas' );
 		canvas.width = resolution;
 		canvas.height = resolution;
 
-		const ctx = canvas.getContext( '2d' );
 		const regionBounds = [ minX, minY, maxX, maxY ];
-		const { _contentCache, _canvasRenderer } = this;
 
 		const promises = [];
 		forEachTileInBounds( regionBounds, level, _contentCache.tiling, ( tx, ty, tl ) => {
 
-			promises.push( ( async () => {
-
-				const vectorTile = await _contentCache.lock( tx, ty, tl );
-				if ( vectorTile ) {
-
-					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					_canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
-					this._renderVectorTile( vectorTile );
-
-				}
-
-			} )() );
+			promises.push( _contentCache.lock( tx, ty, tl ) );
 
 		} );
 
 		await Promise.all( promises );
 
+		signal?.throwIfAborted();
+
+		this._drawToCanvas( canvas, regionBounds, level );
+
 		const tex = new CanvasTexture( canvas );
 		tex.colorSpace = SRGBColorSpace;
 		tex.generateMipmaps = false;
 		tex.needsUpdate = true;
-		tex._regionArgs = [ minX, minY, maxX, maxY, level ];
 		return tex;
 
 	}
 
-	disposeItem( texture ) {
+	disposeItem( texture, [ minX, minY, maxX, maxY, level ] ) {
 
-		const [ minX, minY, maxX, maxY, level ] = texture._regionArgs;
 		forEachTileInBounds( [ minX, minY, maxX, maxY ], level, this._contentCache.tiling, ( tx, ty, tl ) => {
 
 			this._contentCache.release( tx, ty, tl );
 
 		} );
 
-		texture.dispose();
+		if ( texture ) {
+
+			texture.dispose();
+
+		}
+
+	}
+
+	redraw( ...args ) {
+
+		const [ minX, minY, maxX, maxY, level ] = args;
+		const tex = this.get( minX, minY, maxX, maxY, level );
+		if ( ! tex ) {
+
+			return;
+
+		}
+
+		this._drawToCanvas( tex.image, [ minX, minY, maxX, maxY ], level );
+		tex.needsUpdate = true;
+
+	}
+
+	dispose() {
+
+		super.dispose();
+		this._contentCache.dispose();
+
+	}
+
+	_drawToCanvas( canvas, regionBounds, level ) {
+
+		const { _contentCache, _canvasRenderer } = this;
+		const ctx = canvas.getContext( '2d' );
+		forEachTileInBounds( regionBounds, level, _contentCache.tiling, ( tx, ty, tl ) => {
+
+			const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
+			_canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
+
+			const vectorTile = _contentCache.get( tx, ty, tl );
+			if ( vectorTile ) {
+
+				this._renderVectorTile( vectorTile );
+
+			}
+
+		} );
 
 	}
 
 	_renderVectorTile( vectorTile ) {
 
-		const { _canvasRenderer, getStyle } = this;
+		const { _canvasRenderer } = this;
+		const getStyle = this.getStyle || DEFAULT_GET_STYLE;
 
 		// Sort layers by user-defined order, falling back to alphabetical.
 		const layerNames = [ ...Object.keys( vectorTile.layers ) ].sort( ( a, b ) => {
 
-			if ( getStyle ) {
-
-				const orderA = getStyle( a, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
-				const orderB = getStyle( b, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
-				if ( orderA !== orderB ) return orderA - orderB;
-
-			}
+			const orderA = getStyle( a, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
+			const orderB = getStyle( b, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
+			if ( orderA !== orderB ) return orderA - orderB;
 
 			return a.localeCompare( b );
 
@@ -275,42 +340,6 @@ export class MVTImageSource extends RegionImageSource {
 			}
 
 		}
-
-	}
-
-	redraw() {
-
-		this.forEachItem( ( tex, args ) => {
-
-			const [ minX, minY, maxX, maxY, level ] = args;
-			const regionBounds = [ minX, minY, maxX, maxY ];
-			const canvas = tex.image;
-			const ctx = canvas.getContext( '2d' );
-			ctx.clearRect( 0, 0, canvas.width, canvas.height );
-
-			forEachTileInBounds( regionBounds, level, this._contentCache.tiling, ( tx, ty, tl ) => {
-
-				const vectorTile = this._contentCache.get( tx, ty, tl );
-				if ( vectorTile ) {
-
-					const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					this._canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
-					this._renderVectorTile( vectorTile );
-
-				}
-
-			} );
-
-			tex.needsUpdate = true;
-
-		} );
-
-	}
-
-	dispose() {
-
-		super.dispose();
-		this._contentCache.dispose();
 
 	}
 

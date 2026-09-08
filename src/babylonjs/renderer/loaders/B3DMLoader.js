@@ -31,10 +31,10 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 	/**
 	 * @param {ArrayBuffer} buffer - The raw B3DM file data.
-	 * @param {string} uri - URI used for resolving relative resources.
+	 * @param {string} url - URL used for resolving relative resources.
 	 * @returns {Promise<Object>}
 	 */
-	async parse( buffer, uri ) {
+	async parse( buffer, url ) {
 
 		const b3dm = super.parse( buffer );
 
@@ -51,7 +51,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 		}
 
 		// parse the file
-		const result = await gltfLoader.parse( b3dm.glbBytes, uri, 'glb' );
+		const result = await gltfLoader.parse( b3dm.glbBytes, url, 'glb' );
 		const gltfScene = result.scene;
 		return {
 			...b3dm,

@@ -161,11 +161,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	async parseTile( buffer, tile, extension, uri, abortSignal ) {
+	async parseTile( buffer, tile, extension, url, abortSignal ) {
 
 		const engineData = tile.engineData;
 		const rootScene = this.scene;
-		const workingPath = LoaderUtils.getWorkingPath( uri );
+		const workingPath = LoaderUtils.getWorkingPath( url );
 		const fetchOptions = this.fetchOptions;
 
 		const tileTransform = engineData.transform;
@@ -183,7 +183,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.fetchOptions = fetchOptions;
 				loader.adjustmentTransform.copyFrom( upRotationMatrix );
 
-				result = await loader.parse( buffer, uri );
+				result = await loader.parse( buffer, url );
 				break;
 
 			}
@@ -196,7 +196,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.fetchOptions = fetchOptions;
 				loader.adjustmentTransform.copyFrom( upRotationMatrix );
 
-				result = await loader.parse( buffer, uri, extension );
+				result = await loader.parse( buffer, url, extension );
 				break;
 
 			}

@@ -19,14 +19,8 @@ export class TilesGroup extends Group {
 	raycast( raycaster, intersects ) {
 
 		// returning "false" ends raycast traversal
-		if ( this.tilesRenderer.optimizeRaycast ) {
-
-			this.tilesRenderer.raycast( raycaster, intersects );
-			return false;
-
-		}
-
-		return true;
+		this.tilesRenderer.raycast( raycaster, intersects );
+		return false;
 
 	}
 
@@ -84,6 +78,20 @@ export class TilesGroup extends Group {
 					children[ i ].updateMatrixWorld();
 
 				}
+
+				// active-but-hidden tile scenes are parented to this group but not added as children,
+				// so the loop above doesn't reach them so update their world matrices explicitly
+				const { tilesRenderer } = this;
+				const { activeTiles, visibleTiles } = tilesRenderer;
+				activeTiles.forEach( tile => {
+
+					if ( ! visibleTiles.has( tile ) ) {
+
+						tile.engineData.scene.updateMatrixWorld( true );
+
+					}
+
+				} );
 
 			}
 

@@ -9,13 +9,6 @@ import { FeatureTable } from './FeatureTable.js';
  */
 export class BatchTable extends FeatureTable {
 
-	get batchSize() {
-
-		console.warn( 'BatchTable.batchSize has been deprecated and replaced with BatchTable.count.' );
-		return this.count;
-
-	}
-
 	/**
 	 * @param {ArrayBuffer} buffer
 	 * @param {number} count - Number of features in the batch
@@ -48,21 +41,6 @@ export class BatchTable extends FeatureTable {
 			}
 
 		}
-
-	}
-
-	/**
-	 * @deprecated Use `getDataFromId` or `getPropertyArray` instead.
-	 * @param {string} key
-	 * @param {string | null} [componentType]
-	 * @param {string | null} [type]
-	 * @returns {number | string | ArrayBufferView | null}
-	 */
-	getData( key, componentType = null, type = null ) {
-
-		console.warn( 'BatchTable: BatchTable.getData is deprecated. Use BatchTable.getDataFromId to get all' +
-			'properties for an id or BatchTable.getPropertyArray for getting an array of value for a property.' );
-		return super.getData( key, this.count, componentType, type );
 
 	}
 

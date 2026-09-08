@@ -95,13 +95,18 @@ export class GeoJSONImageSource extends RegionImageSource {
 		// TODO: we may want to include the LoD or resolution or something here, as well, since that will
 		// impact the size of the points, etc.
 
-		const boundsDeg = [ minX, minY, maxX, maxY ].map( v => v * Math.RAD2DEG );
+		// the range is given in normalized projection space, so it has to be unprojected before it
+		// can be compared against the content bounds
+		const { projection } = this;
+		const boundsDeg = projection
+			.fromNormalizedToCartographicRange( [ minX, minY, maxX, maxY ] )
+			.map( v => v * MathUtils.RAD2DEG );
 		return this._boundsIntersectBounds( boundsDeg, this.contentBounds );
 
 	}
 
 	// main fetch per region -> returns CanvasTexture
-	async fetchItem( tokens, signal ) {
+	fetchItem( tokens, signal ) {
 
 		// create canvas
 		const canvas = document.createElement( 'canvas' );
@@ -118,19 +123,25 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	disposeItem( texture ) {
 
-		texture.dispose();
+		if ( texture ) {
+
+			texture.dispose();
+
+		}
 
 	}
 
-	redraw() {
+	redraw( ...args ) {
 
-		this._updateCache( true );
-		this.forEachItem( ( tex, args ) => {
+		const tex = this.get( ...args );
+		if ( ! tex ) {
 
-			this._drawToCanvas( tex.image, args );
-			tex.needsUpdate = true;
+			return;
 
-		} );
+		}
+
+		this._drawToCanvas( tex.image, args );
+		tex.needsUpdate = true;
 
 	}
 
@@ -185,10 +196,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		canvas.height = resolution;
 
 		// Convert normalized range to degrees for rendering
-		const minLonRad = projection.convertNormalizedToLongitude( minX );
-		const minLatRad = projection.convertNormalizedToLatitude( minY );
-		const maxLonRad = projection.convertNormalizedToLongitude( maxX );
-		const maxLatRad = projection.convertNormalizedToLatitude( maxY );
+		const [ minLonRad, minLatRad, maxLonRad, maxLatRad ] = projection.fromNormalizedToCartographicRange( [ minX, minY, maxX, maxY ] );
 		const regionBoundsDeg = [
 			minLonRad * MathUtils.RAD2DEG,
 			minLatRad * MathUtils.RAD2DEG,

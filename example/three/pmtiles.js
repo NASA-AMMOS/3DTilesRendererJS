@@ -12,7 +12,7 @@ import {
 } from '3d-tiles-renderer/plugins';
 import GUI from 'three/addons/libs/lil-gui.module.min.js';
 
-// Layer config for Protomaps v4 basemap — colors from the Protomaps "Light" theme
+// Protomaps "Light" theme — from protomaps/basemaps flavors.ts
 const LAYERS = {
 	earth: { enabled: true, fill: '#e2dfda', order: 0 },
 	water: { enabled: true, fill: '#80deea', order: 1 },
@@ -46,7 +46,7 @@ function init() {
 
 	// PMTiles overlay: vector tile data composited on top of the base geometry
 	overlay = new PMTilesOverlay( {
-		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
 		getStyle,
 	} );
 
@@ -55,12 +55,10 @@ function init() {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new GeneratedSurfacePlugin( {
-		center: true,
-		shape: 'ellipsoid',
+		projection: 'ellipsoid',
 	} ) );
 	tiles.registerPlugin( new ImageOverlayPlugin( {
 		overlays: [ overlay ],
-		renderer,
 	} ) );
 
 	tiles.setCamera( camera );

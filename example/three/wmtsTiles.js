@@ -180,8 +180,9 @@ function rebuildTiles() {
 			layer: params.layer,
 			tileMatrixSet: params.tileMatrixSet,
 		} ),
-		shape: params.planar ? 'planar' : 'ellipsoid',
+		projection: params.planar ? 'source' : 'ellipsoid',
 		center: true,
+		applyOverlayTexture: true,
 	} ) );
 
 	tiles.setCamera( camera );

@@ -12,11 +12,12 @@ export * from './QuantizedMeshPlugin.js';
 export * from './images/ImageOverlayPlugin.js';
 export * from './LoadRegionPlugin.js';
 export * from './DebugTilesPlugin.js';
+export * from './mvt/MVTAnnotationsPlugin.js';
 
 // other formats
 export * from './images/GeneratedSurfacePlugin.js';
-export * from './images/DeepZoomImagePlugin.js';
-export * from './images/EPSGTilesPlugin.js';
+export * from './images/terrain-rgb/TerrainRGBMeshPlugin.js';
+export * from './images/terrain-rgb/TerrariumMeshPlugin.js';
 export * from './images/MVTOverlay.js';
 
 // gltf extensions
@@ -27,6 +28,13 @@ export * from './gltf/GLTFMeshFeaturesExtension.js';
 // gltf metadata classes
 export * from './gltf/metadata/classes/MeshFeatures.js';
 export * from './gltf/metadata/classes/StructuralMetadata.js';
+
+// mvt utilities
+export * from './mvt/MVTGlyphAtlasTexture.js';
+export * from './mvt/MVTGlyphMaterial.js';
+export * from './mvt/MVTGlyphs.js';
+export * from './mvt/MVTIconGlyphs.js';
+export * from './mvt/MVTLabelGlyphs.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';

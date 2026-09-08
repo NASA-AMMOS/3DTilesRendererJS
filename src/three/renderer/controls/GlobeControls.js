@@ -8,7 +8,7 @@ import {
 	Ray,
 	Group,
 } from 'three';
-import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
+import { DRAG, ZOOM, FREE_ROTATE, EnvironmentControls, NONE, ZOOM_DELTA_SCALAR } from './EnvironmentControls.js';
 import { makeRotateAroundPoint, adjustedPointerToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
@@ -22,6 +22,7 @@ const _forward = /* @__PURE__ */ new Vector3();
 const _targetRight = /* @__PURE__ */ new Vector3();
 const _globalUp = /* @__PURE__ */ new Vector3();
 const _quaternion = /* @__PURE__ */ new Quaternion();
+const _quaternion2 = /* @__PURE__ */ new Quaternion();
 const _zoomPointUp = /* @__PURE__ */ new Vector3();
 const _toCenter = /* @__PURE__ */ new Vector3();
 const _ray = /* @__PURE__ */ new Ray();
@@ -40,13 +41,6 @@ const MIN_ELEVATION = 2550;
  * @param {HTMLElement} [domElement=null] - The DOM element to attach pointer events to.
  */
 export class GlobeControls extends EnvironmentControls {
-
-	get tilesGroup() {
-
-		console.warn( 'GlobeControls: "tilesGroup" has been deprecated. Use "ellipsoidGroup", instead.' );
-		return this.ellipsoidFrame;
-
-	}
 
 	/**
 	 * The world matrix of `ellipsoidGroup`, representing the ellipsoid's coordinate frame.
@@ -73,7 +67,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	constructor( scene = null, camera = null, domElement = null, tilesRenderer = null ) {
+	constructor( scene = null, camera = null, domElement = null ) {
 
 		// store which mode the drag stats are in
 		super( scene, camera, domElement );
@@ -84,15 +78,23 @@ export class GlobeControls extends EnvironmentControls {
 		this._rotationMode = 0;
 		this.maxZoom = 0.01;
 
+		// camera pose at the start of a drag used as the reference for path-independent
+		// "arcball" rotation, along with the total rotation applied relative to it
+		this._dragBaselineMatrix = new Matrix4();
+		this._dragBaselineRotation = new Quaternion();
+		this._dragBaselineSet = false;
+
 		/**
-		 * Fraction of the near plane distance added as a buffer. Default is 0.25.
+		 * Fraction of the near plane distance added as a buffer.
 		 * @type {number}
+		 * @default 0.25
 		 */
 		this.nearMargin = 0.25;
 
 		/**
-		 * Fraction of the far plane distance added as a buffer. Default is 0.
+		 * Fraction of the far plane distance added as a buffer.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
@@ -101,44 +103,31 @@ export class GlobeControls extends EnvironmentControls {
 		/**
 		 * Accumulated globe rotation inertia quaternion. Applied each frame when globe inertia is active.
 		 * @type {Quaternion}
+		 * @default new Quaternion()
 		 */
 		this.globeInertia = new Quaternion();
 
 		/**
 		 * Magnitude of the current globe rotation inertia. Decays to zero over time.
 		 * @type {number}
+		 * @default 0
 		 */
 		this.globeInertiaFactor = 0;
 
 		/**
-		 * The ellipsoid model used for surface interaction and up-direction calculation. Defaults to WGS84.
+		 * The ellipsoid model used for surface interaction and up-direction calculation.
 		 * @type {Ellipsoid}
+		 * @default WGS84_ELLIPSOID
 		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
 		/**
 		 * The Three.js group whose world matrix defines the ellipsoid's coordinate frame.
 		 * @type {Group}
+		 * @default new Group()
 		 */
 		this.ellipsoidGroup = new Group();
 		this._ellipsoidFrameInverse = new Matrix4();
-
-		if ( tilesRenderer !== null ) {
-
-			this.setTilesRenderer( tilesRenderer );
-
-		}
-
-	}
-
-	setTilesRenderer( tilesRenderer ) {
-
-		super.setTilesRenderer( tilesRenderer );
-		if ( tilesRenderer !== null ) {
-
-			this.setEllipsoid( tilesRenderer.ellipsoid, tilesRenderer.group );
-
-		}
 
 	}
 
@@ -279,7 +268,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.adjustCamera( camera );
 
 		// align the camera up vector if the camera as updated
-		if ( adjustCameraRotation && this._isNearControls() ) {
+		if ( adjustCameraRotation && ( this._isNearControls() || this.state === FREE_ROTATE ) ) {
 
 			this.getCameraUpDirection( _globalUp );
 			this._alignCameraUp( _globalUp, 1 );
@@ -358,6 +347,7 @@ export class GlobeControls extends EnvironmentControls {
 		super.setState( ...args );
 		this._dragMode = 0;
 		this._rotationMode = 0;
+		this._dragBaselineSet = false;
 
 	}
 
@@ -459,6 +449,57 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	_getFlightSpeedScale() {
+
+		// Scale speed proportionally to altitude so movement feels consistent at any distance.
+		// The 1000 m floor prevents movement becoming imperceptibly slow near the surface.
+		const altitude = this.getDistanceToCenter() - this._getMaxWorldRadius();
+		return 2 * Math.max( altitude, 1000 );
+
+	}
+
+	_updateFlight( deltaTime ) {
+
+		const { camera } = this;
+
+		const didFly = super._updateFlight( deltaTime );
+		if ( didFly ) {
+
+			// the camera is moving outside of the drag logic so the drag baseline must be re-captured
+			this._dragBaselineSet = false;
+
+			// prevent flying past the point where the globe would be too small, just like mouse zoom.
+			const maxDistance = this._getMaxPerspectiveDistance();
+			const distToCenter = this.getDistanceToCenter();
+			if ( distToCenter > maxDistance ) {
+
+				this.getVectorToCenter( _vec ).normalize();
+				camera.position.addScaledVector( _vec, distToCenter - maxDistance );
+				camera.updateMatrixWorld();
+
+			}
+
+			// Outside the near-controls zone (high altitude / space view), gently nudge the
+			// camera to keep the globe centered and the horizon level — matching the behavior
+			// of scroll-zoom at the same distance. Alpha scales from 0 at the transition
+			// threshold to full strength at maxDistance.
+			if ( ! this._isNearControls() ) {
+
+				const distanceAlpha = MathUtils.clamp(
+					MathUtils.mapLinear( this.getDistanceToCenter(), this._getPerspectiveTransitionDistance(), maxDistance, 0, 1 ),
+					0, 1,
+				);
+				this._tiltTowardsCenter( 0.02 * distanceAlpha );
+				this._alignCameraUpToNorth( 0.01 * distanceAlpha );
+
+			}
+
+		}
+
+		return didFly;
+
+	}
+
 	_updatePosition( deltaTime ) {
 
 		if ( this.state === DRAG ) {
@@ -484,10 +525,27 @@ export class GlobeControls extends EnvironmentControls {
 			const pivotDir = _pos;
 			const newPivotDir = _targetRight;
 
-			// get the pointer and ray
+			// Capture the camera pose at the start of the drag. The total rotation from the
+			// initial grab direction to the current cursor direction is applied to this
+			// baseline pose every frame ("arcball" style) so the drag is path-independent
+			// and the globe does not accumulate roll when the cursor is moved in a loop.
+			// The baseline is invalidated when another interaction moves the camera mid-drag.
+			if ( ! this._dragBaselineSet ) {
+
+				this._dragBaselineMatrix.copy( camera.matrixWorld );
+				this._dragBaselineRotation.identity();
+				this._dragBaselineSet = true;
+
+			}
+
+			// get the pointer and cast the ray from the baseline camera pose so the mapping
+			// from cursor position to globe surface is stable for the duration of the drag
 			pointerTracker.getCenterPoint( _pointer );
 			adjustedPointerToCoords( _pointer, domElement, _pointer );
+			_invMatrix.copy( camera.matrixWorld );
+			camera.matrixWorld.copy( this._dragBaselineMatrix );
 			setRaycasterFromCamera( raycaster, _pointer, camera );
+			camera.matrixWorld.copy( _invMatrix );
 
 			// transform to ellipsoid frame
 			raycaster.ray.applyMatrix4( ellipsoidFrameInverse );
@@ -497,12 +555,22 @@ export class GlobeControls extends EnvironmentControls {
 			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( ellipsoidFrameInverse ).length();
 			_ellipsoid.radius.setScalar( pivotRadius );
 
-			// if we drag off the sphere then end the operation and follow through on the inertia
+			// If we drag off the sphere then clamp to the point on the horizon circle visible from
+			// the camera at the cursor's azimuth so the drag continues to track the cursor as
+			// closely as possible until the pointer is actually released.
 			if ( ! _ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
 
-				this.resetState();
-				this._updateInertia( deltaTime );
-				return;
+				// NOTE: this is finding the horizon tangent for a sphere and not the true ellipsoid
+				const { origin, direction } = raycaster.ray;
+
+				// axis from the globe center to the camera and the cursor direction about it
+				const axis = pivotDir.copy( origin ).normalize();
+				const azimuth = newPivotDir.copy( direction ).addScaledVector( axis, - axis.dot( direction ) ).normalize();
+
+				// the horizon circle sits along the axis at the tangent distance from the center
+				const cameraDistance = origin.length();
+				const horizonRadius = pivotRadius * Math.sqrt( Math.max( 1 - ( pivotRadius / cameraDistance ) ** 2, 0 ) );
+				_vec.copy( axis ).multiplyScalar( pivotRadius * pivotRadius / cameraDistance ).addScaledVector( azimuth, horizonRadius );
 
 			}
 
@@ -513,12 +581,16 @@ export class GlobeControls extends EnvironmentControls {
 			pivotDir.subVectors( pivotPoint, _center ).normalize();
 			newPivotDir.subVectors( _vec, _center ).normalize();
 
-			// construct the rotation
+			// construct the total rotation relative to the baseline pose
 			_quaternion.setFromUnitVectors( newPivotDir, pivotDir );
-			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
 
-			// apply the rotation
-			camera.matrixWorld.premultiply( _rotMatrix );
+			// derive the frame-to-frame rotation for inertia before updating the baseline rotation
+			_quaternion2.copy( this._dragBaselineRotation ).invert().premultiply( _quaternion );
+			this._dragBaselineRotation.copy( _quaternion );
+
+			// apply the total rotation to the baseline camera pose
+			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+			camera.matrixWorld.copy( this._dragBaselineMatrix ).premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
@@ -527,7 +599,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			} else {
 
-				this.globeInertia.copy( _quaternion );
+				this.globeInertia.copy( _quaternion2 );
 				this.globeInertiaFactor = 1 / deltaTime;
 				this.inertiaStableFrames = 0;
 
@@ -540,6 +612,14 @@ export class GlobeControls extends EnvironmentControls {
 	// disable rotation once we're outside the control transition
 	_updateRotation( ...args ) {
 
+		// FREE_ROTATE is always allowed regardless of globe proximity
+		if ( this.state === FREE_ROTATE ) {
+
+			super._updateRotation( ...args );
+			return;
+
+		}
+
 		if ( this._rotationMode === 1 || this._isNearControls() ) {
 
 			this._rotationMode = 1;
@@ -551,7 +631,6 @@ export class GlobeControls extends EnvironmentControls {
 			this._rotationMode = - 1;
 
 		}
-
 
 	}
 
@@ -570,6 +649,9 @@ export class GlobeControls extends EnvironmentControls {
 		this.dragInertia.set( 0, 0, 0 );
 		this.globeInertia.identity();
 		this.globeInertiaFactor = 0;
+
+		// the camera is moving outside of the drag logic so the drag baseline must be re-captured
+		this._dragBaselineSet = false;
 
 		// used to scale the tilt transitions based on zoom intensity
 		const deltaAlpha = MathUtils.clamp( MathUtils.mapLinear( Math.abs( zoomDelta ), 0, 20, 0, 1 ), 0, 1 );
@@ -622,7 +704,7 @@ export class GlobeControls extends EnvironmentControls {
 			// calculate zoom in a similar way to environment controls so
 			// the zoom speeds are comparable
 			const dist = this.getDistanceToCenter() - this._getMaxWorldRadius();
-			const scale = zoomDelta * dist * zoomSpeed * 0.0025;
+			const scale = zoomDelta * dist * zoomSpeed * ZOOM_DELTA_SCALAR;
 			const clampedScale = Math.max( scale, Math.min( this.getDistanceToCenter() - maxDistance, 0 ) );
 
 			// zoom out directly from the globe center
@@ -641,11 +723,10 @@ export class GlobeControls extends EnvironmentControls {
 			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.2, distanceAlpha * deltaAlpha ) );
 
 			const scale = this.zoomDelta;
-			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
-			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			const scaleFactor = Math.pow( 0.95, - zoomSpeed * scale * 0.05 );
 
 			const maxScaleFactor = minZoom / camera.zoom;
-			const clampedScaleFactor = Math.max( scaleFactor * zoomSpeed, Math.min( maxScaleFactor, 1 ) );
+			const clampedScaleFactor = Math.max( scaleFactor, Math.min( maxScaleFactor, 1 ) );
 
 			camera.zoom = Math.min( maxZoom, camera.zoom * clampedScaleFactor );
 			camera.updateProjectionMatrix();

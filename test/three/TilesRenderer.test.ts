@@ -33,7 +33,6 @@ function typecheck( renderer: TilesRenderer ) {
 	renderer.addEventListener( 'load-tileset', loadTileset );
 	renderer.addEventListener( 'tiles-load-start', emptyEvent );
 	renderer.addEventListener( 'tiles-load-end', emptyEvent );
-	renderer.addEventListener( 'load-content', emptyEvent );
 	renderer.addEventListener( 'load-model', loadModel );
 	renderer.addEventListener( 'dispose-model', disposeModel );
 	renderer.addEventListener( 'tile-visibility-change', tileVisibilityChange );
@@ -57,5 +56,24 @@ test( 'TilesRenderer should not throw', () => {
 		typecheck( renderer );
 
 	} ).not.toThrow();
+
+} );
+
+test( 'TilesRenderer should keep visible inactive tiles parented to the group', () => {
+
+	const renderer = new TilesRenderer();
+	const scene = new Object3D();
+	const tile = { engineData: { scene } } as Tile;
+
+	renderer.setTileActive( tile, true );
+	renderer.setTileVisible( tile, true );
+	renderer.setTileActive( tile, false );
+
+	// A fade plugin can keep an inactive tile visible until the fade completes.
+	// Keep the logical parent so the group transform remains in matrixWorld.
+	expect( scene.parent ).toBe( renderer.group );
+
+	renderer.setTileVisible( tile, false );
+	expect( scene.parent ).toBe( null );
 
 } );

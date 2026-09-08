@@ -105,7 +105,8 @@ function init() {
 				url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 			} ),
 			center: true,
-			shape: 'ellipsoid',
+			projection: 'ellipsoid',
+			applyOverlayTexture: true,
 		} ),
 	);
 

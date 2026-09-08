@@ -45,8 +45,11 @@ function correctTupleUnits( tuple, crs ) {
 
 	if ( isWebMercator( crs ) ) {
 
-		tuple[ 0 ] = mercatorProjection.convertNormalizedToLongitude( 0.5 + tuple[ 0 ] / EQUATOR_CIRCUMFERENCE );
-		tuple[ 1 ] = mercatorProjection.convertNormalizedToLatitude( 0.5 + tuple[ 1 ] / EQUATOR_CIRCUMFERENCE );
+		mercatorProjection.fromNormalizedToCartographic(
+			0.5 + tuple[ 0 ] / EQUATOR_CIRCUMFERENCE,
+			0.5 + tuple[ 1 ] / EQUATOR_CIRCUMFERENCE,
+			tuple,
+		);
 
 		// to degrees
 		tuple[ 0 ] *= MathUtils.RAD2DEG;
@@ -67,7 +70,7 @@ function tupleToRadians( tuple ) {
 
 /**
  * Loader that fetches and parses a WMTS `GetCapabilities` XML document into a structured
- * JavaScript object. The result can be passed directly to `WMTSTilesPlugin`.
+ * JavaScript object. The result can be used to configure `WMTSImageSource`.
  *
  * The parsed result has the shape:
  * ```

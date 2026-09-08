@@ -2,6 +2,7 @@
 import { ImageOverlay } from './ImageOverlayPlugin.js';
 import { MVTImageSource } from './sources/MVTImageSource.js';
 import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
+import { PriorityQueue } from '3d-tiles-renderer/core';
 
 /**
  * @callback MVTGetStyleCallback
@@ -13,19 +14,13 @@ import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
 /**
  * Overlay that renders XYZ-template MVT vector tiles on top of 3D tile geometry.
  * See the {@link https://github.com/mapbox/vector-tile-spec Mapbox Vector Tile specification}.
- *
- * Requires the optional peer dependencies `@mapbox/vector-tile` and `pbf`, which are
- * imported dynamically on first use and must be installed separately:
- * ```
- * npm install @mapbox/vector-tile pbf
- * ```
  * @extends ImageOverlay
  * @param {Object} [options]
  * @param {string} [options.url] URL template with `{x}`, `{y}`, `{z}` placeholders.
  * @param {number} [options.levels=20] Number of zoom levels.
  * @param {string} [options.projection='EPSG:3857'] Projection scheme identifier.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
- * @param {MVTGetStyleCallback} [options.getStyle] Per-feature style callback.
+ * @param {MVTGetStyleCallback} [options.getStyle] Per-feature style callback. If not provided then no content will draw.
  */
 export class MVTOverlay extends ImageOverlay {
 
@@ -47,10 +42,32 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
+	get fetchOptions() {
+
+		return this.imageSource.fetchOptions;
+
+	}
+
+	set fetchOptions( v ) {
+
+		this.imageSource.fetchOptions = v;
+
+	}
+
+	get resolution() {
+
+		return this.imageSource.resolution;
+
+	}
+
 	constructor( options = {} ) {
 
 		super( options );
 		this.imageSource = options.imageSource ?? new MVTImageSource( options );
+
+		this._redrawQueue = new PriorityQueue();
+		this._redrawQueue.maxJobs = 4;
+		this._redrawQueue.priorityCallback = () => 0;
 
 	}
 
@@ -61,12 +78,14 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
-	calculateLevel( range ) {
+	// the MVTOverlay provides an optional resolution argument so that
+	// MVTAnnotationsPlugin can adjust it to prevent large amounts of
+	// annotations from loading.
+	calculateLevel( range, resolution = this.resolution ) {
 
 		const [ minX, minY, maxX, maxY ] = range;
 		const w = maxX - minX;
 		const h = maxY - minY;
-		const resolution = this.imageSource.resolution;
 		const maxLevel = this.tiling.maxLevel;
 
 		let level = 0;
@@ -92,27 +111,27 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
-	hasContent( range ) {
+	hasContent( range, level = this.calculateLevel( range ) ) {
 
-		return this.imageSource.hasContent( ...range, this.calculateLevel( range ) );
-
-	}
-
-	getTexture( range ) {
-
-		return this.imageSource.get( ...range, this.calculateLevel( range ) );
+		return this.imageSource.hasContent( ...range, level );
 
 	}
 
-	lockTexture( range ) {
+	getTexture( range, level = this.calculateLevel( range ) ) {
 
-		return this.imageSource.lock( ...range, this.calculateLevel( range ) );
+		return this.imageSource.get( ...range, level );
 
 	}
 
-	releaseTexture( range ) {
+	lockTexture( range, level = this.calculateLevel( range ) ) {
 
-		this.imageSource.release( ...range, this.calculateLevel( range ) );
+		return this.imageSource.lock( ...range, level );
+
+	}
+
+	releaseTexture( range, level = this.calculateLevel( range ) ) {
+
+		this.imageSource.release( ...range, level );
 
 	}
 
@@ -128,9 +147,52 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
+	setRegionVisible( range, visible ) {
+
+		super.setRegionVisible( range, visible );
+
+		if ( visible ) {
+
+			const { _redrawQueue } = this;
+			const key = range.join( '_' ) + '_' + this.calculateLevel( range );
+			if ( _redrawQueue.has( key ) ) {
+
+				_redrawQueue.flush( key );
+
+			}
+
+		}
+
+	}
+
 	redraw() {
 
-		this.imageSource.redraw();
+		const {
+			imageSource,
+			_redrawQueue,
+			_visibleRegionCounts,
+		} = this;
+
+		for ( const { range } of _visibleRegionCounts.values() ) {
+
+			imageSource.redraw( ...range, this.calculateLevel( range ) );
+
+		}
+
+		imageSource.forEachItem( ( _, args ) => {
+
+			const key = args.join( '_' );
+			if ( ! _visibleRegionCounts.has( key ) && ! _redrawQueue.has( key ) ) {
+
+				_redrawQueue.add( key, () => {
+
+					imageSource.redraw( ...args );
+
+				} );
+
+			}
+
+		} );
 
 	}
 
@@ -140,12 +202,9 @@ export class MVTOverlay extends ImageOverlay {
  * Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
  * Projection and zoom levels are read automatically from the PMTiles archive header.
  *
- * Requires the optional peer dependency `pmtiles`, which is imported dynamically on first use
- * and must be installed separately. Vector archives additionally require `@mapbox/vector-tile`
- * and `pbf`:
- * ```
- * npm install pmtiles @mapbox/vector-tile pbf
- * ```
+ * @note Direct use of PMTiles requires range requests, which are not automatically cached
+ * by the browser. It's recommended to implement a service worker to cache response content
+ * to save bandwidth.
  * @extends MVTOverlay
  * @param {Object} [options]
  * @param {string} [options.url] URL to the `.pmtiles` archive.

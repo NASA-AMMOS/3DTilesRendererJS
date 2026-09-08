@@ -51,6 +51,7 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 | [Cesium Ion Mars](https://nasa-ammos.github.io/3DTilesRendererJS/three/ionLunar.html?mars) | Mars surface tiles |
 | [Google Photorealistic](https://nasa-ammos.github.io/3DTilesRendererJS/three/googleMapsAerial.html) | Google Photorealistic Tiles |
 | [Google Globe](https://nasa-ammos.github.io/3DTilesRendererJS/three/googleMapsExample.html) | Google Globe Tiles |
+| [PLATEAU](https://nasa-ammos.github.io/3DTilesRendererJS/three/plateau.html) | PLATEAU city data over Cesium World Terrain |
 | **Customization** | |
 | [Custom Material](https://nasa-ammos.github.io/3DTilesRendererJS/three/customMaterial.html) | Using a custom material |
 | [Offscreen Shadows](https://nasa-ammos.github.io/3DTilesRendererJS/three/offscreenShadows.html) | Shadows from offscreen tiles |
@@ -68,6 +69,25 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 | [Vector Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/three/pmtiles.html) | Mapbox Vector Tiles and Protomap Tiles overlays |
 
 ¹ Requires a [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) or [Cesium Ion API Key](https://cesium.com/platform/cesium-ion/)
+
+# Community Resources
+
+Here is a reference to existing 3DTilesRendererJS integrations:
+
+- [three-geospatial](https://github.com/takram-design-engineering/three-geospatial): Clouds and atmosphere rendering via a three.js geospatial rendering modules, alongside 3DTilesRendererJS.
+- [3D Tiles in MapLibre Guide](https://maplibre.org/maplibre-gl-js/docs/examples/add-3d-tiles-using-threejs/): Official example showing how to render 3D tiles using a synced Three.js layer.
+- [Giro3D](https://gitlab.com/giro3d/giro3d): Framework for visualizing and interacting with heterogenous geospatial data in the browser, 2D, 2.5D and 3D data.
+- [iTowns](https://github.com/iTowns/itowns/): Framework designed for the efficient visualization, navigation, and interaction with 2D and 3D geospatial data on the web.
+- [threepipe Plugin](https://threepipe.org/package/plugin-3d-tiles-renderer.html): Plugin for the threepipe rendering framework integrating 3DTilesRendererJS.
+- [3DBAG Viewer](https://github.com/3DBAG/3dbag-viewer): Web viewer for the 3DBAG dataset, a nationwide 3D model of all buildings in the Netherlands built with roofer.
+- [Babylon.js Guide](https://doc.babylonjs.com/features/featuresDeepDive/geospatial/loading3dTiles/): Official documentation on integrating 3DTilesRendererJS into your Babylon.js project.
+- [Community Plugins](https://github.com/NASA-AMMOS/3DTilesRendererJS/tree/master/src/three/plugins#community-plugins): Additional community-maintained threejs plugins for 3DTilesRendererJS.
+
+# Gotchas
+
+Some behaviors to be aware of when configuring the renderer:
+
+- **Cache limits are hard caps.** No new tiles load once the `LRUCache` reaches `maxSize` or `maxBytesSize`. If the tiles needed for the current view do not fit then coarser tiles are displayed and refinement stops. Monitor `lruCache.cachedBytes` and `lruCache.isFull()` and raise `maxBytesSize` or `errorTarget` when a view needs more detail than fits.
 
 # LICENSE
 

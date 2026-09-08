@@ -230,7 +230,7 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	parseToMesh( buffer, tile, extension, uri ) {
+	parseToMesh( buffer, tile, extension, url ) {
 
 		const {
 			skirtLength,
@@ -248,7 +248,7 @@ export class QuantizedMeshPlugin {
 		if ( extension === 'quantized_tile_split' ) {
 
 			// split the parent tile
-			const searchParams = new URL( uri ).searchParams;
+			const searchParams = new URL( url ).searchParams;
 			const left = searchParams.get( 'left' ) === 'true';
 			const bottom = searchParams.get( 'bottom' ) === 'true';
 
@@ -443,10 +443,10 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	fetchData( uri, options ) {
+	fetchData( url, options ) {
 
 		// if this is our custom url indicating a tile split then return fake response
-		if ( /quantized_tile_split/.test( uri ) ) {
+		if ( /quantized_tile_split/.test( url ) ) {
 
 			return new ArrayBuffer();
 

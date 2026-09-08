@@ -36,11 +36,11 @@ export class GLTFLoader extends LoaderBase {
 
 	/**
 	 * @param {ArrayBuffer} buffer - The raw GLTF or GLB file data.
-	 * @param {string} uri - URI used for resolving relative resources.
+	 * @param {string} url - URL used for resolving relative resources.
 	 * @param {string} extension - File extension, either `'gltf'` or `'glb'`.
 	 * @returns {Promise<{scene: TransformNode, container: AssetContainer, metadata: Object|null}>}
 	 */
-	async parse( buffer, uri, extension ) {
+	async parse( buffer, url, extension ) {
 
 		const { scene, workingPath, adjustmentTransform } = this;
 
@@ -56,7 +56,7 @@ export class GLTFLoader extends LoaderBase {
 		const pluginExtension = extension === 'gltf' ? '.gltf' : '.glb';
 		let metadata = null;
 		const container = await LoadAssetContainerAsync(
-			new File( [ buffer ], uri ),
+			new File( [ buffer ], url ),
 			scene,
 			{
 				pluginExtension,
