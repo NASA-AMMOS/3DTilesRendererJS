@@ -45,8 +45,9 @@ function canUnconditionallyRefine( tile ) {
 
 }
 
-// Resets the frame information for the given tile
-function resetFrameState( tile, renderer ) {
+// Resets the frame information for the given tile. Computing the view error can be skipped
+// by passes that only rotate the frame state.
+function resetFrameState( tile, renderer, computeViewError = true ) {
 
 	if ( ! isProcessed( tile ) ) {
 
@@ -76,10 +77,14 @@ function resetFrameState( tile, renderer ) {
 		tile.traversal.allUsedChildrenProcessed = false;
 
 		// update tile frustum and error state
-		renderer.calculateTileViewErrorWithPlugin( tile, viewErrorTarget );
-		tile.traversal.inFrustum = viewErrorTarget.inView;
-		tile.traversal.error = viewErrorTarget.error;
-		tile.traversal.distanceFromCamera = viewErrorTarget.distanceFromCamera;
+		if ( computeViewError ) {
+
+			renderer.calculateTileViewErrorWithPlugin( tile, viewErrorTarget );
+			tile.traversal.inFrustum = viewErrorTarget.inView;
+			tile.traversal.error = viewErrorTarget.error;
+			tile.traversal.distanceFromCamera = viewErrorTarget.distanceFromCamera;
+
+		}
 
 		// update whether this tile can be unconditionally refined
 		tile.traversal.unconditionallyRefine = tile.internal.hasUnrenderableContent;
@@ -486,7 +491,7 @@ function markVisibleTiles( tile, renderer ) {
 // Final traverse to toggle tile visibility.
 function toggleTiles( tile, renderer ) {
 
-	resetFrameState( tile, renderer );
+	resetFrameState( tile, renderer, false );
 
 	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed ) {
@@ -577,7 +582,7 @@ function toggleTiles( tile, renderer ) {
 			// if the tile was used last frame but not this one then there's potential for the tile
 			// to not have been visited during the traversal, meaning it hasn't been reset and has
 			// stale values. This ensures the values are not stale.
-			resetFrameState( tile, renderer );
+			resetFrameState( tile, renderer, false );
 
 		}
 
