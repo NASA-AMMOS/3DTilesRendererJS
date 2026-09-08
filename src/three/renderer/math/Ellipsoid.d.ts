@@ -7,6 +7,7 @@ export const OBJECT_FRAME: Frames;
 
 export class Ellipsoid {
 
+	readonly isEllipsoid: true;
 	radius: Vector3;
 	name: string;
 

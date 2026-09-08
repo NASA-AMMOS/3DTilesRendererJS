@@ -108,7 +108,7 @@ function initTiles() {
 
 	terrainPlugin.heightScale = options.planar ? options.heightScale * PLANAR_HEIGHT_SCALE : options.heightScale;
 	terrainPlugin.unlit = options.unlit;
-	terrainPlugin.shape = options.planar ? 'planar' : 'ellipsoid';
+	terrainPlugin.projection = options.planar ? 'source' : 'ellipsoid';
 	terrainPlugin.overlay = overlay;
 	terrainPlugin.applyOverlayTexture = true;
 	tiles.registerPlugin( terrainPlugin );

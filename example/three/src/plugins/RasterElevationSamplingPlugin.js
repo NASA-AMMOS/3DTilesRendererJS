@@ -24,7 +24,7 @@ const _cart = {};
 
 // computes the per-vertex cartographic positions and total range of the meshes, unwrapping
 // longitudes so ranges crossing the antimeridian stay contiguous
-function getMeshesCartographicData( meshes, ellipsoid, meshToEllipsoidMatrix ) {
+function getMeshesCartographicData( meshes, surface, meshToSurfaceMatrix ) {
 
 	const uvs = [];
 	let minLon = Infinity;
@@ -39,11 +39,11 @@ function getMeshesCartographicData( meshes, ellipsoid, meshToEllipsoidMatrix ) {
 
 		const uv = [];
 		const posAttr = mesh.geometry.getAttribute( 'position' );
-		_fullMatrix.copy( mesh.matrixWorld ).premultiply( meshToEllipsoidMatrix );
+		_fullMatrix.copy( mesh.matrixWorld ).premultiply( meshToSurfaceMatrix );
 		for ( let i = 0, l = posAttr.count; i < l; i ++ ) {
 
 			_vertex.fromBufferAttribute( posAttr, i ).applyMatrix4( _fullMatrix );
-			ellipsoid.getPositionToCartographic( _vertex, _cart );
+			surface.getPositionToCartographic( _vertex, _cart );
 
 			let lon = _cart.lon;
 			if ( centerLon === null ) {
@@ -458,7 +458,7 @@ export class RasterElevationSamplingPlugin {
 
 		}
 
-		const { uvs, region } = getMeshesCartographicData( meshes, tiles.ellipsoid, _matrix );
+		const { uvs, region } = getMeshesCartographicData( meshes, tiles.surface, _matrix );
 		const [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ] = region;
 		if ( ! ( maxLon > minLon ) || ! ( maxLat > minLat ) ) {
 

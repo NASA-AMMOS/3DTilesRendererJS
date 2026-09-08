@@ -11,6 +11,7 @@ export * from './batched/BatchedTilesPlugin.js';
 export * from './TileFlatteningPlugin.js';
 export * from './QuantizedMeshPlugin.js';
 export * from './images/ImageOverlayPlugin.js';
+export * from './images/utils/ProjectedSurface.js';
 export * from './LoadRegionPlugin.js';
 export * from './DebugTilesPlugin.js';
 export * from './mvt/MVTAnnotationsPlugin.js';

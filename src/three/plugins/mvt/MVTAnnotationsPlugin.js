@@ -645,6 +645,7 @@ export class MVTAnnotationsPlugin {
 
 				tiles.getResolution( camera, occupancy.resolution );
 				occupancy.matrix.copy( tiles.group.matrixWorld );
+				occupancy.useEllipsoidSurface = Boolean( tiles.surface.isEllipsoid );
 
 			}
 
@@ -1024,7 +1025,7 @@ export class MVTAnnotationsPlugin {
 		// TODO: why are we passing range vs region here?
 		scene.updateMatrixWorld();
 		const meshes = collectMeshes( scene );
-		const { range } = getMeshesCartographicRange( meshes, tiles.ellipsoid, _matrix, overlay.projection );
+		const { range } = getMeshesCartographicRange( meshes, tiles.surface, _matrix, overlay.projection );
 
 		// TODO: why not process here?
 		this.tileLoadState.set( tile, range );
