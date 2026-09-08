@@ -23,7 +23,8 @@ let camera, controls, scene, renderer, tiles;
 const params = {
 	errorTarget: 2,
 	pointScale: 1,
-	roundPoints: false,
+	pointShape: 'round',
+	debugNodeColors: false,
 	displayBoxBounds: false,
 	dataset: 'lion',
 };
@@ -78,7 +79,16 @@ function init() {
 		tiles.getPluginByName( 'POTREE_PLUGIN' ).pointScale = v;
 
 	} );
-	gui.add( params, 'roundPoints' ).name( 'round points' ).onChange( initTiles );
+	gui.add( params, 'pointShape', [ 'square', 'round', 'sphere' ] ).name( 'point shape' ).onChange( v => {
+
+		tiles.getPluginByName( 'POTREE_PLUGIN' ).pointShape = v;
+
+	} );
+	gui.add( params, 'debugNodeColors' ).name( 'node colors' ).onChange( v => {
+
+		tiles.getPluginByName( 'POTREE_PLUGIN' ).debugNodeColors = v;
+
+	} );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize );
@@ -97,7 +107,7 @@ function initTiles() {
 	tiles = new TilesRenderer( DATASETS[ params.dataset ] );
 	tiles.registerPlugin( new PotreePlugin( {
 		pointScale: params.pointScale,
-		roundPoints: params.roundPoints,
+		pointShape: params.pointShape,
 	} ) );
 	tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: params.displayBoxBounds } ) );
 	tiles.errorTarget = params.errorTarget;
