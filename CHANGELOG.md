@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MVTGlyphAtlasTexture: Fix "drawChar" centering glyphs using the previously assigned canvas font.
 - MVTGlyphAtlasTexture: Fix SVG icon outlines rendering at half the width of text outlines for the same "strokeWidth".
 - TerrainLambertMaterial: Fix dark lines along tile edges when the terrain is viewed from above.
+- BatchedTilesPlugin: Fix bug where tiles were not transformed properly before being added to the batched mesh instance.
 
 ### Changed
 - MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
