@@ -176,7 +176,6 @@ function initTiles() {
 	tiles.downloadQueue.maxJobsPerOrigin = 40;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
-	window.TILES = tiles;
 
 	if ( planar ) {
 
