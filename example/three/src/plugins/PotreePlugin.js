@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute, Points, PointsMaterial } from 'three';
+import { BufferGeometry, BufferAttribute, Points, PointsMaterial, DataTexture, NearestFilter } from 'three';
 
 // Potree v1 point attribute byte layouts, keyed by attribute name string
 const POTREE_V1_ATTR = {
@@ -18,6 +18,130 @@ const POTREE_V1_ATTR = {
 	'SOURCE_ID': { byteSize: 2, numElements: 1, type: 'uint16' },
 	'RGB565': { byteSize: 2, numElements: 1, type: 'uint16' },
 };
+
+// sRGB transfer function to linear, with a lookup table for the 8-bit values
+function srgbToLinear( c ) {
+
+	return c < 0.04045 ? c * 0.0773993808 : Math.pow( c * 0.9478672986 + 0.0521327014, 2.4 );
+
+}
+
+const SRGB_LUT = new Float32Array( 256 );
+for ( let i = 0; i < 256; i ++ ) {
+
+	SRGB_LUT[ i ] = srgbToLinear( i / 255 );
+
+}
+
+// Point spacing is the average distance between points, so points are drawn somewhat larger than
+// the spacing to cover the gaps between them. Potree uses the same factor.
+const SPACING_COVERAGE_FACTOR = 1.7;
+
+// Width of the visible node hierarchy texture, matching potree
+const VISIBLE_NODES_TEXTURE_SIZE = 2048;
+
+// Vertex shader chunk performing potree's per point size lookup: starting from the point's own
+// node, walk down the visible node hierarchy texture through the octant containing the point.
+// The returned depth is the number of levels displayed below the node at the point's position,
+// and the point is sized to the spacing of that deepest level so the points of a coarse node
+// shrink to match wherever finer nodes are displayed on top of it.
+const VISIBLE_DEPTH_CHUNK = /* glsl */ `
+	uniform sampler2D uVisibleNodes;
+	uniform float uVNStart;
+	uniform float uLevel;
+	uniform float uNodeSize;
+	uniform vec3 uNodeMinOffset;
+
+	// number of set bits below the given bit index
+	float numberOfOnes( float number, float index ) {
+
+		float result = 0.0;
+		for ( float i = 0.0; i < 8.0; i ++ ) {
+
+			if ( i > index ) break;
+			if ( mod( floor( number / pow( 2.0, i ) ), 2.0 ) != 0.0 ) result ++;
+
+		}
+
+		return result;
+
+	}
+
+	float getVisibleDepth( vec3 posInNode ) {
+
+		vec3 offset = vec3( 0.0 );
+		float iOffset = uVNStart;
+		float depth = 0.0;
+		for ( float i = 0.0; i < 20.0; i ++ ) {
+
+			float nodeSize = uNodeSize / pow( 2.0, i );
+			vec3 index3d = floor( ( posInNode - offset ) / nodeSize + 0.5 );
+			float index = 4.0 * index3d.x + 2.0 * index3d.y + index3d.z;
+
+			vec4 value = texture2D( uVisibleNodes, vec2( ( iOffset + 0.5 ) / ${ VISIBLE_NODES_TEXTURE_SIZE.toFixed( 1 ) }, 0.5 ) );
+			float mask = floor( value.r * 255.0 + 0.5 );
+			if ( mod( floor( mask / pow( 2.0, index ) ), 2.0 ) == 0.0 ) {
+
+				return depth;
+
+			}
+
+			float advance =
+				floor( value.g * 255.0 + 0.5 ) * 256.0 +
+				floor( value.b * 255.0 + 0.5 ) +
+				numberOfOnes( mask, index - 1.0 );
+			iOffset += advance;
+			depth ++;
+			offset += nodeSize * 0.5 * index3d;
+
+		}
+
+		return depth;
+
+	}
+`;
+
+// Rewires the material to size each point by the deepest visible node at its position, clamped
+// the way potree does with its "minSize" of 2 pixels so distant points do not shrink below a
+// pixel and drop out. Optionally the corners of the sprite are discarded so points draw as
+// circles, which read as a continuous surface where they overlap rather than as a grid of
+// squares.
+function patchPointsMaterial( material, uniforms, roundPoints, minPointSize ) {
+
+	material.onBeforeCompile = shader => {
+
+		Object.assign( shader.uniforms, uniforms );
+
+		shader.vertexShader = shader.vertexShader
+			.replace(
+				'uniform float size;',
+				`uniform float size;
+				${ VISIBLE_DEPTH_CHUNK }`
+			)
+			.replace(
+				'#include <logdepthbuf_vertex>',
+				`float visibleDepth = getVisibleDepth( position + uNodeMinOffset );
+				gl_PointSize = ( size / pow( 2.0, visibleDepth ) ) * ( scale / - mvPosition.z );
+				gl_PointSize = max( gl_PointSize, ${ minPointSize.toFixed( 1 ) } );
+				#include <logdepthbuf_vertex>`
+			);
+
+		if ( roundPoints ) {
+
+			shader.fragmentShader = shader.fragmentShader.replace(
+				'#include <clipping_planes_fragment>',
+				`#include <clipping_planes_fragment>
+				vec2 pointOffset = gl_PointCoord - 0.5;
+				if ( dot( pointOffset, pointOffset ) > 0.25 ) discard;`
+			);
+
+		}
+
+	};
+
+	material.customProgramCacheKey = () => `potree_points_${ roundPoints }_${ minPointSize }`;
+
+}
 
 // Byte size per element for Potree v2 type strings
 function v2ElementSize( type ) {
@@ -80,15 +204,30 @@ function getChildBoundingBox( parentMin, parentMax, octant ) {
 
 }
 
-// Parse a Potree v1 .hrc hierarchy file.
-// Format: BFS-ordered 5-byte entries — childMask(uint8) + numPoints(uint32 LE).
-// chunkRoot identifies the subtree directory where this chunk's data files live
-// (e.g. 'r' for the root chunk → all data at octreeDir/r/{nodeKey}.bin).
-function v1ParseHierarchy( buffer, chunkRoot ) {
+// Directory path of a v1 node's files, mirroring potree's "getHierarchyPath": the key digits
+// grouped into subdirectories of "hierarchyStepSize" characters under the root chunk "r".
+function v1HierarchyPath( key, stepSize ) {
+
+	let path = 'r/';
+	const indices = key.slice( 1 );
+	const numParts = Math.floor( indices.length / stepSize );
+	for ( let i = 0; i < numParts; i ++ ) {
+
+		path += indices.substr( i * stepSize, stepSize ) + '/';
+
+	}
+
+	return path.slice( 0, - 1 );
+
+}
+
+// Parse a Potree v1 .hrc hierarchy chunk into the given map, rooted at "rootKey".
+// Format: BFS-ordered 5-byte entries — childMask(uint8) + numPoints(uint32 LE). A chunk covers
+// "hierarchyStepSize" levels below its root; nodes at the boundary carry their own .hrc file.
+function v1ParseHierarchy( buffer, rootKey, hierarchy ) {
 
 	const view = new DataView( buffer );
-	const hierarchy = new Map();
-	const queue = [ 'r' ];
+	const queue = [ rootKey ];
 	let offset = 0;
 
 	for ( let i = 0; offset + 5 <= buffer.byteLength; i ++, offset += 5 ) {
@@ -103,7 +242,7 @@ function v1ParseHierarchy( buffer, chunkRoot ) {
 
 		}
 
-		hierarchy.set( key, { childMask, numPoints, chunkRoot } );
+		hierarchy.set( key, { childMask, numPoints } );
 
 		for ( let octant = 0; octant < 8; octant ++ ) {
 
@@ -121,23 +260,24 @@ function v1ParseHierarchy( buffer, chunkRoot ) {
 
 }
 
-// Parse a Potree v2 hierarchy.bin file.
+// Parse a Potree v2 hierarchy.bin chunk into the given map, rooted at "rootKey".
 // Format: BFS-ordered 22-byte entries —
 //   type(uint8) + childMask(uint8) + numPoints(uint32 LE) +
 //   byteOffset(int64 LE) + byteSize(int64 LE).
-// type 4 = proxy node pointing to a sub-hierarchy file; treated as leaf here.
-function v2ParseHierarchy( buffer ) {
+// Proxy entries (type 2) reference a sub-chunk elsewhere in the same file, whose first entry
+// carries the node's real point data range, so they recurse rather than queue children. Since
+// the whole file is fetched up front the sub-chunks are parsed eagerly.
+function v2ParseHierarchy( buffer, rootKey, chunkStart, chunkSize, hierarchy ) {
 
-	const view = new DataView( buffer );
-	const hierarchy = new Map();
-	const queue = [ 'r' ];
+	const view = new DataView( buffer, chunkStart, chunkSize );
+	const queue = [ rootKey ];
 	let offset = 0;
 
-	for ( let i = 0; offset + 22 <= buffer.byteLength; i ++, offset += 22 ) {
+	for ( let i = 0; offset + 22 <= chunkSize; i ++, offset += 22 ) {
 
 		const type = view.getUint8( offset );
 		const childMask = view.getUint8( offset + 1 );
-		const numPoints = view.getUint32( offset + 2, true );
+		let numPoints = view.getUint32( offset + 2, true );
 		const byteOffset = view.getBigInt64( offset + 6, true );
 		const byteSize = view.getBigInt64( offset + 14, true );
 		const key = queue[ i ];
@@ -148,13 +288,26 @@ function v2ParseHierarchy( buffer ) {
 
 		}
 
-		// Proxy nodes (type 4) reference a separate hierarchy file; treat as leaves
-		const effectiveChildMask = ( type === 4 ) ? 0 : childMask;
-		hierarchy.set( key, { childMask: effectiveChildMask, numPoints, byteOffset, byteSize } );
+		// The first entry of a sub-chunk is the chunk root itself, replacing its proxy entry
+		if ( type === 2 && i !== 0 ) {
+
+			v2ParseHierarchy( buffer, key, Number( byteOffset ), Number( byteSize ), hierarchy );
+			continue;
+
+		}
+
+		// nodes with no data erroneously report points (potree issue #1125)
+		if ( byteSize === 0n ) {
+
+			numPoints = 0;
+
+		}
+
+		hierarchy.set( key, { childMask, numPoints, byteOffset, byteSize } );
 
 		for ( let octant = 0; octant < 8; octant ++ ) {
 
-			if ( effectiveChildMask & ( 1 << octant ) ) {
+			if ( childMask & ( 1 << octant ) ) {
 
 				queue.push( key + octant );
 
@@ -181,21 +334,79 @@ function v2ParseHierarchy( buffer ) {
  *
  * Potree uses additive LOD (`refine: 'ADD'`): parent nodes remain visible while
  * higher-density children load in.
+ *
+ * @param {Object} [options]
+ * @param {number} [options.pointScale=1] Multiplier on the point size, which is derived from the
+ *   point spacing of the finest level displayed. Can be adjusted dynamically.
+ * @param {boolean} [options.roundPoints=false] Clip the point sprites to a circle. Square
+ *   points tile the surface with no gaps between them, matching the potree default.
+ * @param {number} [options.minPointSize=2] Smallest point size in pixels, so distant points do
+ *   not shrink below a pixel and drop out.
  */
 export class PotreePlugin {
 
-	constructor() {
+	get pointScale() {
+
+		return this._pointScale;
+
+	}
+
+	set pointScale( value ) {
+
+		if ( value !== this._pointScale ) {
+
+			this._pointScale = value;
+			this._updatePointScales();
+
+		}
+
+	}
+
+	constructor( options = {} ) {
+
+		const {
+			pointScale = 1,
+			roundPoints = false,
+			minPointSize = 2,
+		} = options;
 
 		this.name = 'POTREE_PLUGIN';
 		this.priority = - 1000;
 
 		this.tiles = null;
+		this.roundPoints = roundPoints;
+		this.minPointSize = minPointSize;
+
+		this._pointScale = pointScale;
+		this._visibilityNeedsUpdate = false;
+		this._onVisibilityChange = () => this._visibilityNeedsUpdate = true;
+		this._onUpdateAfter = () => {
+
+			if ( this._visibilityNeedsUpdate ) {
+
+				this._visibilityNeedsUpdate = false;
+				this._updateVisibleNodesTexture();
+
+			}
+
+		};
+
+		// the visible node hierarchy shared by every material, encoded per texel as the octant
+		// mask of the visible children (r) and the offset to the first of them (g, b)
+		this._visibleNodesTexture = new DataTexture(
+			new Uint8Array( VISIBLE_NODES_TEXTURE_SIZE * 4 ),
+			VISIBLE_NODES_TEXTURE_SIZE,
+			1,
+		);
+		this._visibleNodesTexture.minFilter = NearestFilter;
+		this._visibleNodesTexture.magFilter = NearestFilter;
 
 		this._version = null;
 		this._metadata = null;
 		this._hierarchy = null;
 		this._dataBaseUrl = null;
 		this._octreeUrl = null;
+		this._loadedChunks = null;
 
 	}
 
@@ -205,13 +416,24 @@ export class PotreePlugin {
 
 		this.tiles = tiles;
 
+		// the displayed set of tiles determines the point sizes, so they are refreshed after the
+		// traversal of any frame that changed which tiles are displayed
+		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		tiles.addEventListener( 'update-after', this._onUpdateAfter );
+
 	}
 
 	dispose() {
 
+		const { tiles } = this;
+		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+		this._visibleNodesTexture.dispose();
+
 		this.tiles = null;
 		this._hierarchy = null;
 		this._metadata = null;
+		this._loadedChunks = null;
 
 	}
 
@@ -253,22 +475,26 @@ export class PotreePlugin {
 			this._dataBaseUrl = baseUrl;
 			this._octreeUrl = new URL( 'octree.bin', baseUrl ).href;
 
+			// the root chunk spans the first "firstChunkSize" bytes and proxy entries reference
+			// the sub-chunks by byte range, all within the same file
 			const hierUrl = new URL( 'hierarchy.bin', baseUrl ).href;
 			const hierRes = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( hierUrl, tiles.fetchOptions ) );
 			const hierBuf = await hierRes.arrayBuffer();
-			this._hierarchy = v2ParseHierarchy( hierBuf );
+			const firstChunkSize = json.hierarchy ? json.hierarchy.firstChunkSize : hierBuf.byteLength;
+			this._hierarchy = v2ParseHierarchy( hierBuf, 'r', 0, firstChunkSize, new Map() );
 
 		} else {
 
 			const octreeDir = json.octreeDir || 'data';
 			this._dataBaseUrl = new URL( octreeDir + '/', baseUrl ).href;
 
-			// v1 layout: the root hierarchy and all its node data files live in
-			// {octreeDir}/r/ — the chunk directory named after the chunk root key.
+			// v1 layout: each hierarchy chunk and the node data files for its levels live in a
+			// directory derived from the chunk root key. The root chunk is at {octreeDir}/r/r.hrc.
 			const hierUrl = new URL( 'r/r.hrc', this._dataBaseUrl ).href;
 			const hierRes = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( hierUrl, tiles.fetchOptions ) );
 			const hierBuf = await hierRes.arrayBuffer();
-			this._hierarchy = v1ParseHierarchy( hierBuf, 'r' );
+			this._hierarchy = v1ParseHierarchy( hierBuf, 'r', new Map() );
+			this._loadedChunks = new Set( [ 'r' ] );
 
 		}
 
@@ -307,6 +533,13 @@ export class PotreePlugin {
 
 		if ( this._version === 2 ) {
 
+			// nodes with no data hold no byte range to request
+			if ( node.byteSize === 0n ) {
+
+				return new Response( new ArrayBuffer( 0 ) );
+
+			}
+
 			const start = node.byteOffset;
 			const end = node.byteOffset + node.byteSize - 1n;
 			return fetch( this._octreeUrl, {
@@ -319,10 +552,30 @@ export class PotreePlugin {
 
 		} else {
 
-			// v1: data files live in {octreeDir}/{chunkRoot}/{nodeKey}.bin
-			return fetch( `${ this._dataBaseUrl }${ node.chunkRoot }/${ nodeKey }.bin`, options );
+			return this._fetchV1NodeData( nodeKey, options );
 
 		}
+
+	}
+
+	// Fetch a v1 node's bin file, first loading the hierarchy chunk the node roots when it
+	// sits at a chunk boundary so its children become expandable.
+	async _fetchV1NodeData( nodeKey, options ) {
+
+		const { hierarchyStepSize } = this._metadata;
+		const level = nodeKey.length - 1;
+		const path = v1HierarchyPath( nodeKey, hierarchyStepSize );
+
+		if ( level > 0 && level % hierarchyStepSize === 0 && ! this._loadedChunks.has( nodeKey ) ) {
+
+			this._loadedChunks.add( nodeKey );
+			const hierRes = await fetch( `${ this._dataBaseUrl }${ path }/${ nodeKey }.hrc`, options );
+			const hierBuf = await hierRes.arrayBuffer();
+			v1ParseHierarchy( hierBuf, nodeKey, this._hierarchy );
+
+		}
+
+		return fetch( `${ this._dataBaseUrl }${ path }/${ nodeKey }.bin`, options );
 
 	}
 
@@ -337,8 +590,9 @@ export class PotreePlugin {
 		const nodeKey = String( uri ).split( '/' ).pop().replace( /\.potree$/, '' );
 		const node = this._hierarchy.get( nodeKey );
 
+		// the tile geometric error is the node's point spacing, which sets the point size
 		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
-		const points = this._decodePointBuffer( buffer, node.numPoints, tileMin, tileMax );
+		const points = this._decodePointBuffer( buffer, node.numPoints, tileMin, tileMax, tile.geometricError, nodeKey.length - 1 );
 		this._expandChildren( tile );
 		return points;
 
@@ -373,6 +627,7 @@ export class PotreePlugin {
 		const min = [ bb.lx, bb.ly, bb.lz ];
 		const max = [ bb.ux, bb.uy, bb.uz ];
 		const spacing = json.spacing || 1;
+		const hierarchyStepSize = json.hierarchyStepSize || 5;
 
 		const attrNames = Array.isArray( json.pointAttributes )
 			? json.pointAttributes
@@ -401,6 +656,7 @@ export class PotreePlugin {
 		return {
 			version: 1,
 			spacing,
+			hierarchyStepSize,
 			scale: [ scale, scale, scale ],
 			offset: min,
 			boundingBox: { min, max },
@@ -453,7 +709,7 @@ export class PotreePlugin {
 
 	// Decode a raw point buffer into a THREE.Points scene object.
 	// Positions are stored relative to the tile bbox center for float32 precision.
-	_decodePointBuffer( buffer, numPoints, tileMin, tileMax ) {
+	_decodePointBuffer( buffer, numPoints, tileMin, tileMax, spacing, level ) {
 
 		const { _metadata: metadata } = this;
 		const { attributes } = metadata;
@@ -547,16 +803,16 @@ export class PotreePlugin {
 				if ( attr.type === 'uint16' ) {
 
 					// v2 rgb stored as uint16 per channel (0–65535)
-					colors[ i * 3 ] = view.getUint16( off, true ) / 65535;
-					colors[ i * 3 + 1 ] = view.getUint16( off + 2, true ) / 65535;
-					colors[ i * 3 + 2 ] = view.getUint16( off + 4, true ) / 65535;
+					colors[ i * 3 ] = srgbToLinear( view.getUint16( off, true ) / 65535 );
+					colors[ i * 3 + 1 ] = srgbToLinear( view.getUint16( off + 2, true ) / 65535 );
+					colors[ i * 3 + 2 ] = srgbToLinear( view.getUint16( off + 4, true ) / 65535 );
 
 				} else {
 
 					// uint8 per channel (0–255): v1 COLOR_PACKED, RGB, RGBA; v2 rgb uint8
-					colors[ i * 3 ] = view.getUint8( off ) / 255;
-					colors[ i * 3 + 1 ] = view.getUint8( off + 1 ) / 255;
-					colors[ i * 3 + 2 ] = view.getUint8( off + 2 ) / 255;
+					colors[ i * 3 ] = SRGB_LUT[ view.getUint8( off ) ];
+					colors[ i * 3 + 1 ] = SRGB_LUT[ view.getUint8( off + 1 ) ];
+					colors[ i * 3 + 2 ] = SRGB_LUT[ view.getUint8( off + 2 ) ];
 
 				}
 
@@ -587,16 +843,151 @@ export class PotreePlugin {
 
 		}
 
+		// The material size is the point spacing of the node's own level, in world units. The
+		// vertex shader divides it by two for every level of the visible node hierarchy displayed
+		// below the node at the point's position.
 		const material = new PointsMaterial( {
 			vertexColors: !! colors,
-			sizeAttenuation: false,
+			sizeAttenuation: true,
+			size: spacing * SPACING_COVERAGE_FACTOR * this._pointScale,
 		} );
+		material.userData.spacing = spacing;
+		material.userData.uniforms = {
+			uVisibleNodes: { value: this._visibleNodesTexture },
+			uVNStart: { value: 0 },
+			uLevel: { value: level },
+			uNodeSize: { value: ( tileMax[ 0 ] - tileMin[ 0 ] ) },
+			uNodeMinOffset: { value: [ ocx - tileMin[ 0 ], ocy - tileMin[ 1 ], ocz - tileMin[ 2 ] ] },
+		};
+
+		patchPointsMaterial( material, material.userData.uniforms, this.roundPoints, this.minPointSize );
 
 		// Offset the mesh by the tile bbox center so positions are near the origin
 		const points = new Points( geometry, material );
 		points.position.set( ocx, ocy, ocz );
 		points.updateMatrix();
 		return points;
+
+	}
+
+	// Encode the displayed tile hierarchy into the visible nodes texture the way potree does: one
+	// texel per displayed tile in breadth-first order holding the octant mask of its displayed
+	// children and the offset from the tile's texel to its first child's, and assign each tile's
+	// starting texel index. The shader walks this structure per point.
+	_updateVisibleNodesTexture() {
+
+		const { tiles } = this;
+		const { visibleTiles } = tiles;
+
+		// collect the displayed tiles in breadth-first order
+		const list = [];
+		const indices = new Map();
+		if ( tiles.root && visibleTiles.has( tiles.root ) ) {
+
+			list.push( tiles.root );
+
+		}
+
+		for ( let i = 0; i < list.length && list.length < VISIBLE_NODES_TEXTURE_SIZE; i ++ ) {
+
+			indices.set( list[ i ], i );
+			const children = list[ i ].children;
+			for ( let c = 0, l = children.length; c < l; c ++ ) {
+
+				if ( visibleTiles.has( children[ c ] ) ) {
+
+					list.push( children[ c ] );
+
+				}
+
+			}
+
+		}
+
+		// encode the mask and first child offset of every displayed tile
+		const texture = this._visibleNodesTexture;
+		const data = texture.image.data;
+		data.fill( 0 );
+		for ( let i = 0, l = Math.min( list.length, VISIBLE_NODES_TEXTURE_SIZE ); i < l; i ++ ) {
+
+			const tile = list[ i ];
+			let mask = 0;
+			let firstChildIndex = 0;
+			const children = tile.children;
+			for ( let c = 0, cl = children.length; c < cl; c ++ ) {
+
+				const child = children[ c ];
+				const childIndex = indices.get( child );
+				if ( childIndex === undefined ) {
+
+					continue;
+
+				}
+
+				// the child key's last digit is its octant within the parent
+				const uri = child.content.uri;
+				const octant = parseInt( uri.charAt( uri.length - '.potree'.length - 1 ) );
+				mask |= 1 << octant;
+				firstChildIndex = firstChildIndex === 0 ? childIndex : Math.min( firstChildIndex, childIndex );
+
+			}
+
+			const advance = firstChildIndex === 0 ? 0 : firstChildIndex - i;
+			data[ i * 4 ] = mask;
+			data[ i * 4 + 1 ] = advance >> 8;
+			data[ i * 4 + 2 ] = advance & 0xff;
+
+		}
+
+		texture.needsUpdate = true;
+
+		// point each displayed tile's material at its texel
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			const index = indices.get( tile );
+			if ( index === undefined ) {
+
+				return;
+
+			}
+
+			scene.traverse( c => {
+
+				if ( c.isPoints ) {
+
+					c.material.userData.uniforms.uVNStart.value = index;
+
+				}
+
+			} );
+
+		} );
+
+	}
+
+	// Refresh the material sizes of the loaded tiles for the current point scale
+	_updatePointScales() {
+
+		const { tiles } = this;
+		if ( ! tiles ) {
+
+			return;
+
+		}
+
+		tiles.forEachLoadedModel( scene => {
+
+			scene.traverse( c => {
+
+				if ( c.isPoints ) {
+
+					c.material.size = c.material.userData.spacing * SPACING_COVERAGE_FACTOR * this._pointScale;
+
+				}
+
+			} );
+
+		} );
 
 	}
 
