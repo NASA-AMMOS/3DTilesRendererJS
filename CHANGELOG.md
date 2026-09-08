@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.
 - ProjectedSurface: Add a surface definition for tile geometry flattened onto a projected plane.
 - GeneratedSurfacePlugin, TerrainRGBMeshPlugin: Add "projection" option to select the displayed surface shape, including displaying planar content in a different projection than it is stored in. Deprecates the "shape" option.
+- ProjectionScheme: Added support for EPSG:8857, equal earth projection.
 
 ### Fixed
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
