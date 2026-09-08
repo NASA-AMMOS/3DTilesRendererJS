@@ -2,6 +2,63 @@ import { MathUtils } from 'three';
 
 const DERIVATIVE_EPSILON = 1e-5;
 
+// Equal Earth projection polynomial coefficients (Šavrič, Patterson, Jenny 2018), ported from
+// d3-geo: https://github.com/d3/d3-geo/blob/main/src/projection/equalEarth.js
+const EE_A1 = 1.340264;
+const EE_A2 = - 0.081106;
+const EE_A3 = 0.000893;
+const EE_A4 = 0.003796;
+const EE_M = Math.sqrt( 3 ) / 2;
+const EE_NEWTON_EPSILON = 1e-12;
+const EE_NEWTON_ITERATIONS = 12;
+
+// forward equal earth projection of a cartographic point on the unit sphere
+function equalEarthProject( lon, lat, target ) {
+
+	const l = Math.asin( EE_M * Math.sin( lat ) );
+	const l2 = l * l;
+	const l6 = l2 * l2 * l2;
+	target[ 0 ] = lon * Math.cos( l ) / ( EE_M * ( EE_A1 + 3 * EE_A2 * l2 + l6 * ( 7 * EE_A3 + 9 * EE_A4 * l2 ) ) );
+	target[ 1 ] = l * ( EE_A1 + EE_A2 * l2 + l6 * ( EE_A3 + EE_A4 * l2 ) );
+
+	return target;
+
+}
+
+// inverse equal earth projection, solving the parametric latitude with newton iteration
+function equalEarthUnproject( x, y, target ) {
+
+	let l = y;
+	let l2 = l * l;
+	let l6 = l2 * l2 * l2;
+	for ( let i = 0; i < EE_NEWTON_ITERATIONS; i ++ ) {
+
+		const fy = l * ( EE_A1 + EE_A2 * l2 + l6 * ( EE_A3 + EE_A4 * l2 ) ) - y;
+		const fpy = EE_A1 + 3 * EE_A2 * l2 + l6 * ( 7 * EE_A3 + 9 * EE_A4 * l2 );
+		const delta = fy / fpy;
+		l -= delta;
+		l2 = l * l;
+		l6 = l2 * l2 * l2;
+
+		if ( Math.abs( delta ) < EE_NEWTON_EPSILON ) {
+
+			break;
+
+		}
+
+	}
+
+	target[ 0 ] = EE_M * x * ( EE_A1 + 3 * EE_A2 * l2 + l6 * ( 7 * EE_A3 + 9 * EE_A4 * l2 ) ) / Math.cos( l );
+	target[ 1 ] = Math.asin( Math.sin( l ) / EE_M );
+
+	return target;
+
+}
+
+// extents of the projected equal earth plane on the unit sphere
+const EE_MAX_X = equalEarthProject( Math.PI, 0, [ 0, 0 ] )[ 0 ];
+const EE_MAX_Y = equalEarthProject( 0, Math.PI / 2, [ 0, 0 ] )[ 1 ];
+
 const _point = [ 0, 0 ];
 const _derivPoint = [ 0, 0 ];
 
@@ -45,6 +102,12 @@ export class ProjectionScheme {
 
 			// mercator
 			case 'EPSG:3857':
+				this.tileCountX = 1;
+				this.tileCountY = 1;
+				break;
+
+			// equal earth
+			case 'EPSG:8857':
 				this.tileCountX = 1;
 				this.tileCountY = 1;
 				break;
@@ -119,6 +182,14 @@ export class ProjectionScheme {
 
 			}
 
+			// equal earth - the curved map footprint sits inside the rectangular image frame, so
+			// the frame corners hold no data
+			case 'EPSG:8857':
+				equalEarthProject( x, y, target );
+				target[ 0 ] = MathUtils.mapLinear( target[ 0 ], - EE_MAX_X, EE_MAX_X, 0, 1 );
+				target[ 1 ] = MathUtils.mapLinear( target[ 1 ], - EE_MAX_Y, EE_MAX_Y, 0, 1 );
+				break;
+
 			// equirect
 			default:
 				target[ 0 ] = ( x + Math.PI ) / ( 2 * Math.PI );
@@ -158,6 +229,14 @@ export class ProjectionScheme {
 
 			}
 
+			case 'EPSG:8857':
+				equalEarthUnproject(
+					MathUtils.mapLinear( x, 0, 1, - EE_MAX_X, EE_MAX_X ),
+					MathUtils.mapLinear( y, 0, 1, - EE_MAX_Y, EE_MAX_Y ),
+					target,
+				);
+				break;
+
 			// equirect
 			default:
 				target[ 0 ] = MathUtils.mapLinear( x, 0, 1, - Math.PI, Math.PI );
@@ -185,6 +264,10 @@ export class ProjectionScheme {
 
 			case 'EPSG:3857':
 				return [ 2 * Math.PI, 2 * Math.PI ];
+
+			// equal earth
+			case 'EPSG:8857':
+				return [ 2 * EE_MAX_X, 2 * EE_MAX_Y ];
 
 			case 'none':
 				return [ 1, 1 ];
