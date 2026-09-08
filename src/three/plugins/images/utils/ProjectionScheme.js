@@ -2,7 +2,8 @@ import { MathUtils } from 'three';
 
 const DERIVATIVE_EPSILON = 1e-5;
 
-// Equal Earth projection polynomial coefficients ( Šavrič, Patterson, Jenny 2018 )
+// Equal Earth projection polynomial coefficients (Šavrič, Patterson, Jenny 2018), ported from
+// d3-geo: https://github.com/d3/d3-geo/blob/main/src/projection/equalEarth.js
 const EE_A1 = 1.340264;
 const EE_A2 = - 0.081106;
 const EE_A3 = 0.000893;
@@ -14,11 +15,11 @@ const EE_NEWTON_ITERATIONS = 12;
 // forward equal earth projection of a cartographic point on the unit sphere
 function equalEarthProject( lon, lat, target ) {
 
-	const t = Math.asin( EE_M * Math.sin( lat ) );
-	const t2 = t * t;
-	const t6 = t2 * t2 * t2;
-	target[ 0 ] = lon * Math.cos( t ) / ( EE_M * ( EE_A1 + 3 * EE_A2 * t2 + t6 * ( 7 * EE_A3 + 9 * EE_A4 * t2 ) ) );
-	target[ 1 ] = t * ( EE_A1 + EE_A2 * t2 + t6 * ( EE_A3 + EE_A4 * t2 ) );
+	const l = Math.asin( EE_M * Math.sin( lat ) );
+	const l2 = l * l;
+	const l6 = l2 * l2 * l2;
+	target[ 0 ] = lon * Math.cos( l ) / ( EE_M * ( EE_A1 + 3 * EE_A2 * l2 + l6 * ( 7 * EE_A3 + 9 * EE_A4 * l2 ) ) );
+	target[ 1 ] = l * ( EE_A1 + EE_A2 * l2 + l6 * ( EE_A3 + EE_A4 * l2 ) );
 
 	return target;
 
@@ -27,17 +28,17 @@ function equalEarthProject( lon, lat, target ) {
 // inverse equal earth projection, solving the parametric latitude with newton iteration
 function equalEarthUnproject( x, y, target ) {
 
-	let t = y;
-	let t2 = t * t;
-	let t6 = t2 * t2 * t2;
+	let l = y;
+	let l2 = l * l;
+	let l6 = l2 * l2 * l2;
 	for ( let i = 0; i < EE_NEWTON_ITERATIONS; i ++ ) {
 
-		const fy = t * ( EE_A1 + EE_A2 * t2 + t6 * ( EE_A3 + EE_A4 * t2 ) ) - y;
-		const fpy = EE_A1 + 3 * EE_A2 * t2 + t6 * ( 7 * EE_A3 + 9 * EE_A4 * t2 );
+		const fy = l * ( EE_A1 + EE_A2 * l2 + l6 * ( EE_A3 + EE_A4 * l2 ) ) - y;
+		const fpy = EE_A1 + 3 * EE_A2 * l2 + l6 * ( 7 * EE_A3 + 9 * EE_A4 * l2 );
 		const delta = fy / fpy;
-		t -= delta;
-		t2 = t * t;
-		t6 = t2 * t2 * t2;
+		l -= delta;
+		l2 = l * l;
+		l6 = l2 * l2 * l2;
 
 		if ( Math.abs( delta ) < EE_NEWTON_EPSILON ) {
 
@@ -47,8 +48,8 @@ function equalEarthUnproject( x, y, target ) {
 
 	}
 
-	target[ 0 ] = EE_M * x * ( EE_A1 + 3 * EE_A2 * t2 + t6 * ( 7 * EE_A3 + 9 * EE_A4 * t2 ) ) / Math.cos( t );
-	target[ 1 ] = Math.asin( Math.sin( t ) / EE_M );
+	target[ 0 ] = EE_M * x * ( EE_A1 + 3 * EE_A2 * l2 + l6 * ( 7 * EE_A3 + 9 * EE_A4 * l2 ) ) / Math.cos( l );
+	target[ 1 ] = Math.asin( Math.sin( l ) / EE_M );
 
 	return target;
 
@@ -181,6 +182,8 @@ export class ProjectionScheme {
 
 			}
 
+			// equal earth - the curved map footprint sits inside the rectangular image frame, so
+			// the frame corners hold no data
 			case 'EPSG:8857':
 				equalEarthProject( x, y, target );
 				target[ 0 ] = MathUtils.mapLinear( target[ 0 ], - EE_MAX_X, EE_MAX_X, 0, 1 );

@@ -17,7 +17,7 @@ export class TerrainLambertMaterial extends MeshLambertMaterial {
 					uniform float bumpScale;
 
 					// relative determinant threshold below which the geometry is considered edge-on
-					const float DEGENERATE_DET_EPSILON = 1e-5;
+					const float DEGENERATE_DET_EPSILON = 1e-3;
 
 					// central differences at one texel spacing so the gradient interpolates across texels
 					vec2 dHdxy_fwd() {
