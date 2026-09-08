@@ -803,9 +803,6 @@ constructor(
 		// scheme.
 		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
 
-		// Deprecated: use `projection` instead.
-		shape?: string,
-
 		// For Mercator ellipsoid mode, snap poles to ±90° lat.
 		endCaps = true: boolean,
 
@@ -821,29 +818,6 @@ constructor(
 	}
 )
 ```
-
-### .getCartographicFromPosition
-
-```js
-getCartographicFromPosition( position: Vector3, target = {}: Object ): Object
-```
-
-Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
-to the target object.
-
-
-### .getPositionFromCartographic
-
-```js
-getPositionFromCartographic(
-	lat: number,
-	lon: number,
-	target = new Vector3(): Vector3
-): Vector3
-```
-
-Returns the world-space position for a given cartographic coordinate.
-
 
 ## GLTFCesiumRTCExtension
 
@@ -1943,9 +1917,6 @@ constructor(
 		// source projection, or on a plane in the named projection
 		// scheme.
 		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
-
-		// Deprecated: use `projection` instead.
-		shape?: 'ellipsoid' | 'planar',
 
 		// Snap poles to ±90° lat.
 		endCaps = true: boolean,
