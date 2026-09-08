@@ -182,6 +182,8 @@ export class ProjectionScheme {
 
 			}
 
+			// equal earth - the curved map footprint sits inside the rectangular image frame, so
+			// the frame corners hold no data
 			case 'EPSG:8857':
 				equalEarthProject( x, y, target );
 				target[ 0 ] = MathUtils.mapLinear( target[ 0 ], - EE_MAX_X, EE_MAX_X, 0, 1 );
