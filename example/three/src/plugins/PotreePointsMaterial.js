@@ -1,4 +1,4 @@
-import { PointsMaterial, Vector3 } from 'three';
+import { PointsMaterial, Vector2, Vector3 } from 'three';
 
 /**
  * Width of the active node hierarchy texture - node texels wrap into rows so growing node
@@ -63,6 +63,23 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 	}
 
+	get edl() {
+
+		return this._edl;
+
+	}
+
+	set edl( value ) {
+
+		if ( value !== this._edl ) {
+
+			this._edl = value;
+			this._updateDefines();
+
+		}
+
+	}
+
 	get debugColorMode() {
 
 		return this._debugColorMode;
@@ -86,6 +103,8 @@ export class PotreePointsMaterial extends PointsMaterial {
 			pointShape = 'round',
 			minPointSize = 2,
 			debugColorMode = 'none',
+			edl = false,
+			edlRadius = 1.4,
 			...rest
 		} = params;
 
@@ -93,6 +112,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 		this._pointShape = pointShape;
 		this._debugColorMode = debugColorMode;
+		this._edl = edl;
 
 		this.defines = {};
 		this.uniforms = {
@@ -101,6 +121,12 @@ export class PotreePointsMaterial extends PointsMaterial {
 			uNodeMinOffset: { value: new Vector3() },
 			uMinPointSize: { value: minPointSize },
 			uTileId: { value: 0 },
+
+			uEdlTexture: { value: null },
+			uEdlResolution: { value: new Vector2( 1, 1 ) },
+			uEdlStrength: { value: 0 },
+			uEdlRadius: { value: edlRadius },
+			uEdlDepthPass: { value: false },
 		};
 
 		this._updateDefines();
@@ -123,6 +149,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 						varying float vRadius;
 						varying float vNodeId;
 						varying float vDepth;
+						varying float vLogDepth;
 
 						// number of set bits below the given bit index
 						uint numberOfOnes( uint mask, int index ) {
@@ -211,6 +238,9 @@ export class PotreePointsMaterial extends PointsMaterial {
 						vNodeId = activeResult.y;
 						vDepth = activeResult.x;
 
+						// log view depth, which the eye dome lighting pass reads back from alpha
+						vLogDepth = log2( - mvPosition.z );
+
 						#include <logdepthbuf_vertex>
 					`
 				);
@@ -227,6 +257,45 @@ export class PotreePointsMaterial extends PointsMaterial {
 					varying float vRadius;
 					varying float vNodeId;
 					varying float vDepth;
+					varying float vLogDepth;
+
+					#ifdef EDL_ENABLED
+
+						uniform sampler2D uEdlTexture;
+						uniform vec2 uEdlResolution;
+						uniform float uEdlStrength;
+						uniform float uEdlRadius;
+						uniform bool uEdlDepthPass;
+
+						// Eye dome lighting, adapted from potree's "edl.fs". Compares this point's
+						// log depth against a ring of neighbours in the pre-pass target, so points
+						// standing in front of their surroundings darken at the edges.
+						float edlShade( float logDepth ) {
+
+							vec2 uv = gl_FragCoord.xy / uEdlResolution;
+							vec2 uvRadius = uEdlRadius / uEdlResolution;
+
+							float sum = 0.0;
+							for ( int i = 0; i < 8; i ++ ) {
+
+								float angle = 6.2831853 * float( i ) / 8.0;
+								vec2 offset = 1.0 * uvRadius * vec2( cos( angle ), sin( angle ) );
+								float neighbourDepth = texture2D( uEdlTexture, uv + offset ).r;
+
+								// an empty neighbour means nothing was drawn there, so it is skipped
+								if ( neighbourDepth != 0.0 ) {
+
+									sum += max( 0.0, logDepth - neighbourDepth );
+
+								}
+
+							}
+
+							return exp( - ( sum / 8.0 ) * 300.0 * uEdlStrength );
+
+						}
+
+					#endif
 
 					// spread sequential ids into visually distinct colors
 					vec3 idToColor( float id ) {
@@ -265,6 +334,32 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 						float hue = vDepth / 8.0;
 						diffuseColor.rgb = clamp( abs( fract( hue + vec3( 0.0, 2.0 / 3.0, 1.0 / 3.0 ) ) * 6.0 - 3.0 ) - 1.0, 0.0, 1.0 );
+
+					#endif
+					`
+				)
+				.replace(
+					'#include <colorspace_fragment>',
+					/* glsl */`
+					#include <colorspace_fragment>
+
+					#ifdef EDL_ENABLED
+
+						if ( uEdlDepthPass ) {
+
+							// the pre-pass target is a single red channel holding the log depth
+							// for the shading pass to sample
+							gl_FragColor.r = vLogDepth;
+							return;
+
+						} else {
+
+							// Shading happens after the color space conversion so the falloff lands
+							// on the encoded color, the way potree's post process applies it. Alpha
+							// is left as the material opacity.
+							gl_FragColor.rgb *= vec3( edlShade( vLogDepth ) );
+
+						}
 
 					#endif
 					`
@@ -318,6 +413,9 @@ export class PotreePointsMaterial extends PointsMaterial {
 		delete defines.DEBUG_NODE_COLORS;
 		delete defines.DEBUG_DEPTH_COLORS;
 		delete defines.DEBUG_TILE_COLORS;
+		delete defines.EDL_ENABLED;
+
+		if ( this._edl ) defines.EDL_ENABLED = '';
 
 		if ( this._pointShape === 'round' ) defines.ROUND_POINTS = '';
 		if ( this._pointShape === 'sphere' ) defines.SPHERE_POINTS = '';

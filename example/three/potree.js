@@ -30,9 +30,11 @@ let camera, controls, scene, renderer, tiles;
 const params = {
 	enable: true,
 	errorTarget: 1,
-	maxDepth: 1,
 	pointScale: 1,
 	pointShape: 'round',
+	edl: false,
+	edlStrength: 0.4,
+	edlRadius: 1.4,
 	debugColorMode: 'none',
 	displayBoxBounds: false,
 	dataset: 'lion',
@@ -123,12 +125,6 @@ function init() {
 		tiles.errorTarget = v;
 
 	} );
-	tilesFolder.add( params, 'maxDepth', 1, 20, 1 ).name( 'max depth' ).onChange( v => {
-
-		tiles.maxDepth = v;
-
-	} );
-
 	const pointsFolder = gui.addFolder( 'points' );
 	pointsFolder.add( params, 'pointScale', 0.25, 4 ).name( 'point scale' ).onChange( v => {
 
@@ -138,6 +134,21 @@ function init() {
 	pointsFolder.add( params, 'pointShape', [ 'square', 'round', 'sphere' ] ).name( 'point shape' ).onChange( v => {
 
 		tiles.getPluginByName( 'POTREE_PLUGIN' ).pointShape = v;
+
+	} );
+	pointsFolder.add( params, 'edl' ).name( 'edl' ).onChange( v => {
+
+		tiles.getPluginByName( 'POTREE_PLUGIN' ).edlStrength = v ? params.edlStrength : 0;
+
+	} );
+	pointsFolder.add( params, 'edlStrength', 0.05, 2 ).name( 'edl strength' ).onChange( v => {
+
+		if ( params.edl ) tiles.getPluginByName( 'POTREE_PLUGIN' ).edlStrength = v;
+
+	} );
+	pointsFolder.add( params, 'edlRadius', 1, 4, 0.01 ).name( 'edl radius' ).onChange( v => {
+
+		tiles.getPluginByName( 'POTREE_PLUGIN' ).edlRadius = v;
 
 	} );
 
@@ -172,10 +183,11 @@ function initTiles() {
 		url: DATASETS[ params.dataset ],
 		pointScale: params.pointScale,
 		pointShape: params.pointShape,
+		edlStrength: params.edl ? params.edlStrength : 0,
+		edlRadius: params.edlRadius,
 	} ) );
 	tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: params.displayBoxBounds } ) );
 	tiles.errorTarget = params.errorTarget;
-	tiles.maxDepth = params.maxDepth;
 	tiles.setCamera( camera );
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
