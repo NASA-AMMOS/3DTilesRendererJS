@@ -785,7 +785,7 @@ image overlay data.
 
 The tiling scheme and projection are derived from a provided overlay.
 If the source's projection is cartographic (any EPSG scheme), the plugin supports
-both planar and ellipsoidal geometry via the `shape` option.
+both planar and ellipsoidal geometry via the `projection` option.
 
 
 ### .constructor
@@ -798,9 +798,10 @@ constructor(
 		// generated tile meshes.
 		overlay = null: ImageOverlay,
 
-		// Geometry shape: `'planar'` or `'ellipsoid'`. Only  
-		// meaningful for cartographic sources.
-		shape = 'ellipsoid': string,
+		// Display the tiles on the   ellipsoid, on a plane in the
+		// source projection, or on a plane in the named projection
+		// scheme.
+		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
 
 		// For Mercator ellipsoid mode, snap poles to ±90° lat.
 		endCaps = true: boolean,
@@ -817,29 +818,6 @@ constructor(
 	}
 )
 ```
-
-### .getCartographicFromPosition
-
-```js
-getCartographicFromPosition( position: Vector3, target = {}: Object ): Object
-```
-
-Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
-to the target object.
-
-
-### .getPositionFromCartographic
-
-```js
-getPositionFromCartographic(
-	lat: number,
-	lon: number,
-	target = new Vector3(): Vector3
-): Vector3
-```
-
-Returns the world-space position for a given cartographic coordinate.
-
 
 ## GLTFCesiumRTCExtension
 
@@ -1461,7 +1439,7 @@ drawSVG(
 		// CSS stroke color, or null to skip stroke.
 		strokeStyle = null: string | null,
 
-		// Stroke width in SVG user units before scaling.
+		// Visible stroke width in atlas pixels.
 		strokeWidth = 1: number,
 
 		// Fraction of the slot size the icon occupies (0–1).
@@ -1922,7 +1900,10 @@ constructor(
 		// Highest zoom level the source provides.
 		maxZoom = 15: number,
 
-		// Vertical exaggeration. Can be adjusted dynamically.
+		// Factor applied to the meter elevations. A pure vertical  
+		// exaggeration on the ellipsoid, while planar projections need
+		// the meters-to-world conversion   folded in. Can be adjusted
+		// dynamically.
 		heightScale = 1: number,
 
 		// Overlay used to texture the tiles when  
@@ -1935,8 +1916,10 @@ constructor(
 		// Render the tiles without lighting or terrain normals.
 		unlit = false: boolean,
 
-		// Surface shape.
-		shape = 'ellipsoid': 'ellipsoid' | 'planar',
+		// Display the tiles on the   ellipsoid, on a plane in the
+		// source projection, or on a plane in the named projection
+		// scheme.
+		projection = 'ellipsoid': 'ellipsoid' | 'source' | string,
 
 		// Snap poles to ±90° lat.
 		endCaps = true: boolean,

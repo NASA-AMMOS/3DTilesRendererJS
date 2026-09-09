@@ -16,6 +16,9 @@ export class TerrainLambertMaterial extends MeshLambertMaterial {
 					uniform sampler2D bumpMap;
 					uniform float bumpScale;
 
+					// relative determinant threshold below which the geometry is considered edge-on
+					const float DEGENERATE_DET_EPSILON = 1e-3;
+
 					// central differences at one texel spacing so the gradient interpolates across texels
 					vec2 dHdxy_fwd() {
 
@@ -46,6 +49,14 @@ export class TerrainLambertMaterial extends MeshLambertMaterial {
 						vec3 R2 = cross( vN, vSigmaX );
 
 						float fDet = dot( vSigmaX, R1 ) * faceDirection;
+
+						// Edge-on geometry, such as the tile skirts, has a degenerate determinant that
+						// amplifies the gradient into a garbage normal, so fall back to the surface normal.
+						if ( abs( fDet ) < DEGENERATE_DET_EPSILON * length( vSigmaX ) * length( vSigmaY ) ) {
+
+							return surf_norm;
+
+						}
 
 						vec3 vGrad = sign( fDet ) * ( dHdxy.x * R1 + dHdxy.y * R2 );
 						return normalize( abs( fDet ) * surf_norm - vGrad );

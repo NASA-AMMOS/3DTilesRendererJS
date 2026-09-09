@@ -224,6 +224,15 @@ surfaces such as the Earth (see [WGS84_ELLIPSOID](WGS84_ELLIPSOID)). All geograp
 latitude and longitude in radians.
 
 
+### .isEllipsoid
+
+```js
+isEllipsoid: boolean
+```
+
+Flag indicating that this is an ellipsoid surface.
+
+
 ### .name
 
 ```js
@@ -996,6 +1005,17 @@ ellipsoid: Ellipsoid = WGS84_ELLIPSOID
 
 The ellipsoid definition used for the tileset. May be overridden by the
 `3DTILES_ellipsoid` extension. Specified in the local frame of `TilesRenderer.group`.
+
+
+### .surface
+
+```js
+surface: Object = this.ellipsoid
+```
+
+The surface definition used to map between cartographic values and the tile geometry
+in the local frame of `TilesRenderer.group`. Defaults to the ellipsoid and may be
+reassigned by plugins that flatten or reproject the tile geometry.
 
 
 ### .cameras

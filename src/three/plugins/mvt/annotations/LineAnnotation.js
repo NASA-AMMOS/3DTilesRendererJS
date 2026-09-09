@@ -80,7 +80,7 @@ export class LineAnnotation extends OccupancyAnnotation {
 	}
 
 	// update screen space points and cumulative values for text placement
-	updateTransform( matrix, resolution, cameraPosition ) {
+	updateTransform( matrix, resolution, cameraPosition, useEllipsoidSurface = true ) {
 
 		const {
 			positions,
@@ -126,12 +126,21 @@ export class LineAnnotation extends OccupancyAnnotation {
 			screenPos.y = ( - screenPos.y * 0.5 + 0.5 ) * resolution.height;
 			screenPos.z = MathUtils.mapLinear( screenPos.z, - 1, 1, 0, 1 );
 
-			// the sample sits on the surface, so its direction from the body center stands in for
-			// the normal. Matches the approximation in PointAnnotation.
-			if ( cameraPosition !== null && position.lengthSq() > 0 ) {
+			// approximate the surface normal as up on a flattened surface and as the direction
+			// from the body center on an ellipsoid. Matches PointAnnotation.
+			if ( cameraPosition !== null && ( ! useEllipsoidSurface || position.lengthSq() > 0 ) ) {
 
 				_delta.subVectors( cameraPosition, position ).normalize();
-				_normal.copy( position ).normalize();
+				if ( useEllipsoidSurface ) {
+
+					_normal.copy( position ).normalize();
+
+				} else {
+
+					_normal.set( 0, 0, 1 );
+
+				}
+
 				facingRatios[ i ] = _normal.dot( _delta );
 
 			} else {

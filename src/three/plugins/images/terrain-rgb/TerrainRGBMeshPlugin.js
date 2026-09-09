@@ -8,6 +8,8 @@ import {
 } from 'three';
 import { XYZImageSource } from '../sources/XYZImageSource.js';
 import { getCartographicToMeterDerivative } from '../utils/getCartographicToMeterDerivative.js';
+import { ProjectionScheme } from '../utils/ProjectionScheme.js';
+import { ProjectedSurface } from '../utils/ProjectedSurface.js';
 import { SkirtedPlaneGeometry } from './SkirtedPlaneGeometry.js';
 import { GridCache } from './GridCache.js';
 import { TerrainLambertMaterial } from './TerrainLambertMaterial.js';
@@ -116,16 +118,34 @@ function sampleGrid( grid, tu, tv ) {
  * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
  * @param {number} [options.tileDimension=256] Source tile pixel size.
  * @param {number} [options.maxZoom=15] Highest zoom level the source provides.
- * @param {number} [options.heightScale=1] Vertical exaggeration. Can be adjusted dynamically.
+ * @param {number} [options.heightScale=1] Factor applied to the meter elevations. A pure vertical
+ *   exaggeration on the ellipsoid, while planar projections need the meters-to-world conversion
+ *   folded in. Can be adjusted dynamically.
  * @param {ImageOverlay} [options.overlay=null] Overlay used to texture the tiles when
  *   `applyOverlayTexture` is enabled.
  * @param {boolean} [options.applyOverlayTexture=false] Whether to apply the overlay texture.
  * @param {boolean} [options.unlit=false] Render the tiles without lighting or terrain normals.
- * @param {('ellipsoid'|'planar')} [options.shape='ellipsoid'] Surface shape.
+ * @param {('ellipsoid'|'source'|string)} [options.projection='ellipsoid'] Display the tiles on the
+ *   ellipsoid, on a plane in the source projection, or on a plane in the named projection scheme.
  * @param {boolean} [options.endCaps=true] Snap poles to ±90° lat.
  * @param {boolean} [options.useRecommendedSettings=true] Apply recommended TilesRenderer settings.
  */
 export class TerrainRGBMeshPlugin {
+
+	// Deprecated: use "projection" instead
+	get shape() {
+
+		console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+		return this.projection === 'ellipsoid' ? 'ellipsoid' : 'planar';
+
+	}
+
+	set shape( v ) {
+
+		console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+		this.projection = v === 'planar' ? 'source' : 'ellipsoid';
+
+	}
 
 	get heightScale() {
 
@@ -154,7 +174,8 @@ export class TerrainRGBMeshPlugin {
 			overlay = null,
 			applyOverlayTexture = false,
 			unlit = false,
-			shape = 'ellipsoid',
+			shape = null,
+			projection = null,
 			endCaps = true,
 			useRecommendedSettings = true,
 		} = options;
@@ -169,7 +190,18 @@ export class TerrainRGBMeshPlugin {
 		this.overlay = overlay;
 		this.applyOverlayTexture = applyOverlayTexture;
 		this.unlit = unlit;
-		this.shape = shape;
+		this.projection = projection ?? 'ellipsoid';
+		if ( shape !== null ) {
+
+			console.warn( 'TerrainRGBMeshPlugin: "shape" is deprecated. Use "projection" instead.' );
+			if ( projection === null ) {
+
+				this.projection = shape === 'planar' ? 'source' : 'ellipsoid';
+
+			}
+
+		}
+
 		this.endCaps = endCaps;
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.heightScale = heightScale;
@@ -227,6 +259,28 @@ export class TerrainRGBMeshPlugin {
 
 		await this._source.init();
 		this._tiling = this._source.tiling;
+
+		// The tiling always comes from the data source. The surface embeds the display projection's
+		// normalized space in the local frame and all planar geometry flows through it.
+		const { projection } = this;
+		const displayProjection = projection === 'ellipsoid' || projection === 'source'
+			? this._tiling.projection
+			: new ProjectionScheme( projection );
+
+		const [ extentX, extentY ] = displayProjection.getProjectedExtents();
+		const planeAspect = extentX / extentY;
+
+		// register the surface so image overlays and other consumers can map between cartographic
+		// values and the planar frame
+		if ( this.projection !== 'ellipsoid' ) {
+
+			const surface = new ProjectedSurface( displayProjection );
+			surface.scale.set( planeAspect, 1 );
+			surface.offset.set( - planeAspect / 2, - 0.5 );
+			this.tiles.surface = surface;
+
+		}
+
 		return this.getTileset();
 
 	}
@@ -280,7 +334,7 @@ export class TerrainRGBMeshPlugin {
 		// Build the surface mesh displaced by the elevation texture, which also drives the bump map
 		// normals. Clones share the texture upload while each tile disposes its own reference.
 		const subview = this._getSubview( tile );
-		const mesh = this._useEllipsoid() ? this._createEllipsoidMesh( tile, subview ) : this._createPlanarMesh( tile, subview );
+		const mesh = this._createTerrainMesh( tile, subview );
 		const displacement = grid.clone();
 		mesh.material.displacementMap = displacement;
 		if ( ! this.unlit ) {
@@ -515,13 +569,6 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	// whether the plugin is loading as an ellipsoid or not
-	_useEllipsoid() {
-
-		return this._tiling.projection.isCartographic && this.shape === 'ellipsoid';
-
-	}
-
 	// normalized bounds of the render tile within its source tile
 	_getSubview( tile ) {
 
@@ -544,27 +591,31 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	_createEllipsoidMesh( tile, subview ) {
+	_createTerrainMesh( tile, subview ) {
 
-		const { tiles, endCaps, _tiling: tiling } = this;
-		const { projection } = tiling;
+		const { tiles, endCaps, unlit, _heightScale, _tiling } = this;
+		const { surface } = tiles;
+		const { projection } = _tiling;
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		const [ , south, , north ] = tile.boundingVolume.region;
-		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
+		const [ , south, , north ] = _tiling.getTileBounds( x, y, level );
+		const [ minU, minV, maxU, maxV ] = _tiling.getTileBounds( x, y, level, true, true );
 
 		const grid = tile[ HEIGHT_GRID ];
 		const [ tu0, tv0, tu1, tv1 ] = getSubviewUVBounds( grid, subview );
 
 		// new geometry positioned at the tile bounding sphere center
 		const geometry = new SkirtedPlaneGeometry( 1, 1, MESH_SIZE, MESH_SIZE );
-		const mesh = new Mesh( geometry, this.unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
+		const mesh = new Mesh( geometry, unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
 		tile.engineData.boundingVolume.getSphere( _sphere );
 		mesh.position.copy( _sphere.center );
 
-		// position the surface vertices on the ellipsoid, tracking the raw elevation range
+		// skip the pole snapping when the displayed projection cannot represent the poles
+		const snapToPoles = endCaps && ! ( surface.projection && surface.projection.isMercator );
+
+		// position the surface vertices on the surface, tracking the raw elevation range
 		const { position, normal, uv } = geometry.attributes;
 		const { surfaceVertexCount, skirtSourceIndices } = geometry;
 		const cols = MESH_SIZE + 1;
@@ -587,7 +638,7 @@ export class TerrainRGBMeshPlugin {
 			let lat = cart[ 1 ];
 
 			// snap edges to poles for Mercator to avoid seams
-			if ( projection.isMercator && endCaps ) {
+			if ( projection.isMercator && snapToPoles ) {
 
 				if ( maxV === 1 && vNorm === 1 ) {
 
@@ -638,8 +689,8 @@ export class TerrainRGBMeshPlugin {
 			const height = sampleGrid( grid, tu, tv );
 			if ( height < minHeight ) minHeight = height;
 			if ( height > maxHeight ) maxHeight = height;
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
-			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
+			surface.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
+			surface.getCartographicToNormal( lat, lon, _norm );
 
 			// update the geometry
 			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
@@ -648,14 +699,16 @@ export class TerrainRGBMeshPlugin {
 
 		}
 
-		// drop the skirt vertices from their source vertices along the surface normal
+		// drop the skirt vertices along the surface normal, far enough to cover the height
+		// mismatches with neighboring levels, which are bounded by the tile's elevation range
+		const skirtDepth = tile.geometricError + ( maxHeight - minHeight ) * _heightScale;
 		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
 
 			const src = skirtSourceIndices[ i ];
 			const dst = surfaceVertexCount + i;
 			_pos.fromBufferAttribute( position, src );
 			_norm.fromBufferAttribute( normal, src );
-			_pos.addScaledVector( _norm, - tile.geometricError );
+			_pos.addScaledVector( _norm, - skirtDepth );
 
 			position.setXYZ( dst, _pos.x, _pos.y, _pos.z );
 			normal.setXYZ( dst, _norm.x, _norm.y, _norm.z );
@@ -669,56 +722,9 @@ export class TerrainRGBMeshPlugin {
 
 	}
 
-	_createPlanarMesh( tile, subview ) {
-
-		const boundingBox = tile.boundingVolume.box;
-		const x = boundingBox[ 0 ];
-		const y = boundingBox[ 1 ];
-		const sx = boundingBox[ 3 ];
-		const sy = boundingBox[ 7 ];
-
-		const grid = tile[ HEIGHT_GRID ];
-		const [ tu0, tv0, tu1, tv1 ] = getSubviewUVBounds( grid, subview );
-
-		const geometry = new SkirtedPlaneGeometry( 2 * sx, 2 * sy, MESH_SIZE, MESH_SIZE );
-		const mesh = new Mesh( geometry, this.unlit ? new TerrainBasicMaterial() : new TerrainLambertMaterial() );
-		mesh.position.set( x, y, 0 );
-
-		// map the uvs into the texture subview, tracking the raw elevation range
-		const { position, uv } = geometry.attributes;
-		const { surfaceVertexCount, skirtSourceIndices } = geometry;
-		let minHeight = Infinity;
-		let maxHeight = - Infinity;
-		for ( let i = 0; i < surfaceVertexCount; i ++ ) {
-
-			const tu = MathUtils.mapLinear( uv.getX( i ), 0, 1, tu0, tu1 );
-			const tv = MathUtils.mapLinear( uv.getY( i ), 0, 1, tv0, tv1 );
-			const height = sampleGrid( grid, tu, tv );
-			if ( height < minHeight ) minHeight = height;
-			if ( height > maxHeight ) maxHeight = height;
-			uv.setXY( i, tu, tv );
-
-		}
-
-		// drop the skirt vertices below their source vertices
-		for ( let i = 0, l = skirtSourceIndices.length; i < l; i ++ ) {
-
-			const src = skirtSourceIndices[ i ];
-			position.setZ( surfaceVertexCount + i, - tile.geometricError );
-			uv.setXY( surfaceVertexCount + i, uv.getX( src ), uv.getY( src ) );
-
-		}
-
-		tile[ HEIGHT_RANGE ] = { min: minHeight, max: maxHeight };
-		this._updateBoundingVolume( tile );
-		return mesh;
-
-	}
-
-	// Writes the tile's elevation range onto its bounding volume: the measured range once its
-	// elevation data has loaded, or the fixed conservative range before then. The range is padded
-	// by the geometric error since it covers the expected deviation from the true surface,
-	// enclosing detail that finer levels can add as well as the skirts.
+	// Writes the tile's elevation range onto its bounding volume: the measured range once the
+	// elevation data has loaded, or the fixed conservative range before then. The range is
+	// padded by the geometric error and the low bound dropped further to enclose the skirts.
 	_updateBoundingVolume( tile ) {
 
 		const scale = this._heightScale;
@@ -728,7 +734,7 @@ export class TerrainRGBMeshPlugin {
 		let min, max;
 		if ( range ) {
 
-			min = range.min * scale - pad;
+			min = range.min * scale - pad - ( range.max - range.min ) * scale;
 			max = range.max * scale + pad;
 
 		} else {
@@ -863,14 +869,15 @@ export class TerrainRGBMeshPlugin {
 
 	createBoundingVolume( x, y, level, regionHeight = 0 ) {
 
-		const { _tiling: tiling, endCaps } = this;
+		const { _tiling: tiling, endCaps, tiles } = this;
+		const { surface } = tiles;
 		const isRoot = level === - 1;
 
 		// a fixed elevation range covering all terrain, dropping the low bound by the skirt depth
 		const minHeight = MIN_ELEVATION * this.heightScale - regionHeight;
 		const maxHeight = MAX_ELEVATION * this.heightScale;
 
-		if ( this._useEllipsoid() ) {
+		if ( surface.isEllipsoid ) {
 
 			let normalizedBounds;
 			let cartBounds;
@@ -888,8 +895,17 @@ export class TerrainRGBMeshPlugin {
 
 			if ( endCaps ) {
 
-				if ( normalizedBounds[ 3 ] === 1 ) cartBounds[ 3 ] = Math.PI / 2;
-				if ( normalizedBounds[ 1 ] === 0 ) cartBounds[ 1 ] = - Math.PI / 2;
+				if ( normalizedBounds[ 3 ] === 1 ) {
+
+					cartBounds[ 3 ] = Math.PI / 2;
+
+				}
+
+				if ( normalizedBounds[ 1 ] === 0 ) {
+
+					cartBounds[ 1 ] = - Math.PI / 2;
+
+				}
 
 			}
 
@@ -908,22 +924,64 @@ export class TerrainRGBMeshPlugin {
 
 			}
 
-			// world space bounds from the normalized range, centered on the origin, with the
-			// elevation range along z
+			// Compute the plane bounds of the projected tile rect with the elevation range along z.
+			// Non-separable projections are widest at the row nearest the equator so it is sampled
+			// in addition to the corners.
 			const [ minX, minY, maxX, maxY ] = normalizedBounds;
-			const extentsX = tiling.aspectRatio * ( maxX - minX ) / 2;
-			const extentsY = ( maxY - minY ) / 2;
-			const centerX = tiling.aspectRatio * ( ( minX + maxX ) / 2 - 0.5 );
-			const centerY = ( minY + maxY ) / 2 - 0.5;
+			const equatorV = MathUtils.clamp( tiling.projection.fromCartographicToNormalized( 0, 0, _point )[ 1 ], minY, maxY );
 
-			return {
+			let bMinX = Infinity;
+			let bMinY = Infinity;
+			let bMaxX = - Infinity;
+			let bMaxY = - Infinity;
+			for ( const v of [ minY, maxY, equatorV ] ) {
+
+				for ( const u of [ minX, maxX ] ) {
+
+					// snap the edges of a pole-limited tiling to the poles to match the mesh
+					const [ lon, lat ] = tiling.projection.fromNormalizedToCartographic( u, v, _point );
+					let cappedLat = lat;
+					if ( endCaps && ! surface.projection.isMercator ) {
+
+						if ( v === 1 ) {
+
+							cappedLat = Math.PI / 2;
+
+						}
+
+						if ( v === 0 ) {
+
+							cappedLat = - Math.PI / 2;
+
+						}
+
+					}
+
+					surface.getCartographicToPosition( cappedLat, lon, 0, _pos );
+					bMinX = Math.min( bMinX, _pos.x );
+					bMinY = Math.min( bMinY, _pos.y );
+					bMaxX = Math.max( bMaxX, _pos.x );
+					bMaxY = Math.max( bMaxY, _pos.y );
+
+				}
+
+			}
+
+			const boundingVolume = {
 				box: [
-					centerX, centerY, ( minHeight + maxHeight ) / 2,
-					extentsX, 0.0, 0.0,
-					0.0, extentsY, 0.0,
+					( bMinX + bMaxX ) / 2, ( bMinY + bMaxY ) / 2, ( minHeight + maxHeight ) / 2,
+					( bMaxX - bMinX ) / 2, 0.0, 0.0,
+					0.0, ( bMaxY - bMinY ) / 2, 0.0,
 					0.0, 0.0, ( maxHeight - minHeight ) / 2,
 				],
 			};
+
+			// The cartographic range covered by the tile as [ west, south, east, north ] in radians,
+			// read by consumers like image overlays in place of a "region" volume. Ignored by the
+			// tiles renderer itself.
+			boundingVolume.cartographicRange = isRoot ? tiling.getContentBounds() : tiling.getTileBounds( x, y, level );
+
+			return boundingVolume;
 
 		}
 
@@ -931,8 +989,9 @@ export class TerrainRGBMeshPlugin {
 
 	createChild( x, y, level ) {
 
-		const { _tiling: tiling } = this;
+		const { _tiling: tiling, tiles } = this;
 		const { projection } = tiling;
+		const { surface } = tiles;
 		if ( ! tiling.getTileExists( x, y, level ) ) {
 
 			return null;
@@ -940,7 +999,7 @@ export class TerrainRGBMeshPlugin {
 		}
 
 		let geometricError;
-		if ( this._useEllipsoid() ) {
+		if ( surface.isEllipsoid ) {
 
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
@@ -961,15 +1020,14 @@ export class TerrainRGBMeshPlugin {
 			const [ lonFactor, latFactor ] = projection.getDerivativeAtNormalizedPoint( minU, midV, _point );
 
 			// calculate the size of a pixel on the surface
-			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
+			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( tiles.ellipsoid, midLat, east );
 			geometricError = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
 
 		} else {
 
-			// Size of one pixel in world space. The tile contents span [ 0, 1 ] along y and
-			// [ 0, aspectRatio ] along x.
+			// Size of one pixel in world space. The tile contents span the surface scale.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-			geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
+			geometricError = Math.max( surface.scale.x / pixelWidth, surface.scale.y / pixelHeight );
 
 		}
 

@@ -520,6 +520,8 @@ export class ImageOverlayPlugin {
 
 	}
 
+	// TODO: it may be better to split by sampling across the overlay projection axes rather than
+	// the display frame cardinal axes used here
 	_getSplitVectors( scene, tile, centerTarget = _center ) {
 
 		const { tiles, overlayInfo } = this;
@@ -546,7 +548,7 @@ export class ImageOverlayPlugin {
 
 				} else {
 
-					tiles.ellipsoid.getPositionToNormal( centerTarget, _normal );
+					tiles.surface.getPositionToNormal( centerTarget, _normal );
 					if ( _normal.length() < 1e-6 ) {
 
 						_normal.set( 1, 0, 0 );
@@ -728,7 +730,7 @@ export class ImageOverlayPlugin {
 			const boundingVolume = {};
 			if ( tile.boundingVolume.region ) {
 
-				boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.ellipsoid ).region;
+				boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.surface ).region;
 
 			}
 
@@ -1016,17 +1018,23 @@ export class ImageOverlayPlugin {
 
 				// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
 
-			} else if ( tile.boundingVolume.region ) {
+			} else {
 
-				// If the tile has a region bounding volume then mark the tiles to preload, clamped to the extents of
-				// the overlay image
-				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				let range = [ minLon, minLat, maxLon, maxLat ];
-				range = overlay.projection.clampToBounds( range );
-				range = overlay.projection.fromCartographicToNormalizedRange( range );
+				// mark the tiles covering the tile's cartographic range to preload, clamped to
+				// the extents of the overlay image
+				const cartRange = tile.boundingVolume.region ?? tile.boundingVolume.cartographicRange;
 
-				info.range = range;
-				overlay.lockTextureSafe( range );
+				if ( cartRange ) {
+
+					const [ minLon, minLat, maxLon, maxLat ] = cartRange;
+					let range = [ minLon, minLat, maxLon, maxLat ];
+					range = overlay.projection.clampToBounds( range );
+					range = overlay.projection.fromCartographicToNormalizedRange( range );
+
+					info.range = range;
+					overlay.lockTextureSafe( range );
+
+				}
 
 			}
 
@@ -1044,7 +1052,7 @@ export class ImageOverlayPlugin {
 		}
 
 		const { tiles, overlayInfo, tileControllers } = this;
-		const { ellipsoid } = tiles;
+		const { surface } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
 
@@ -1109,7 +1117,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection, info.range ) );
+			( { range, uvs } = getMeshesCartographicRange( meshes, surface, _matrix, projection, info.range ) );
 			heightInRange = true;
 
 		}

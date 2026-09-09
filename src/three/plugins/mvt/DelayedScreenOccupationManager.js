@@ -24,6 +24,18 @@ export class DelayedScreenOccupationManager extends EventDispatcher {
 
 	}
 
+	get useEllipsoidSurface() {
+
+		return this.manager.useEllipsoidSurface;
+
+	}
+
+	set useEllipsoidSurface( v ) {
+
+		this.manager.useEllipsoidSurface = v;
+
+	}
+
 	get resolution() {
 
 		return this.manager.resolution;

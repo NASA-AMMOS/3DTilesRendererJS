@@ -8,13 +8,28 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
 - GlobeControls: Adjust the globe controls to use stable orientation during rotation.
+- TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.
+- ProjectedSurface: Add a surface definition for tile geometry flattened onto a projected plane.
+- GeneratedSurfacePlugin, TerrainRGBMeshPlugin: Add "projection" option to select the displayed surface shape, including displaying planar content in a different projection than it is stored in. Deprecates the "shape" option.
+- ProjectionScheme: Added support for EPSG:8857, equal earth projection.
 - ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
+- MVTAnnotationsPlugin: Fix a crash when a tile visibility event is dispatched after the tile has been disposed.
+- MVTGlyphs: Fix "update" throwing when called before the glyphs have been rendered for the first time.
+- MVTGlyphAtlasTexture: Fix "drawChar" centering glyphs using the previously assigned canvas font.
+- MVTGlyphAtlasTexture: Fix SVG icon outlines rendering at half the width of text outlines for the same "strokeWidth".
+- TerrainLambertMaterial: Fix dark lines along tile edges when the terrain is viewed from above.
+- BatchedTilesPlugin: Fix bug where tiles were not transformed properly before being added to the batched mesh instance.
 
 ### Changed
 - MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
+- Traversal: Skip recomputing the view error for tiles that are only visited to update their frame state, significantly reducing traversal time.
+- MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
+- ImageOverlayPlugin, MVTAnnotationsPlugin: Map draped textures and annotations through "TilesRenderer.surface" so they support flattened, projected surfaces.
+- QueryManager: Deprecate the r3f QueryManager class.
+- GeneratedSurfacePlugin: Deprecate "getCartographicFromPosition" and "getPositionFromCartographic" in favor of the "TilesRenderer.surface" functions.
 
 ## [0.5.2] - 2026.08.24
 ### Added

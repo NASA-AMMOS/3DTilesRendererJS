@@ -6,10 +6,26 @@ import {
 	Vector2,
 	Matrix4,
 	MathUtils,
+	AmbientLight,
+	DirectionalLight,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, XYZTilesOverlay, CesiumIonOverlay } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, TerrainRGBMeshPlugin, PMTilesOverlay, MVTAnnotationsPlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { ExampleAnnotationsDriver } from './src/ExampleAnnotationsDriver.js';
+
+// Protomaps "Light" theme from protomaps/basemaps flavors.ts
+const MVT_LAYERS = {
+	earth: { fill: '#e2dfda', order: 0 },
+	water: { fill: '#80deea', order: 1 },
+	landcover: { fill: '#c4e7d2', order: 2 },
+	landuse: { fill: '#cfddd5', order: 3 },
+	natural: { fill: '#e2e0d7', order: 4 },
+	buildings: { fill: '#cccccc', order: 5 },
+	roads: { stroke: '#ebebeb', order: 6 },
+	transit: { stroke: '#a7b1b3', order: 7 },
+	boundaries: { stroke: '#adadad', order: 8 },
+};
 
 let controls, scene, renderer;
 let tiles, camera, surfacePlugin;
@@ -19,19 +35,28 @@ const raycaster = new Raycaster();
 const mouse = new Vector2();
 const coordsEl = document.getElementById( 'coords' );
 
+const EARTH_RADIUS = 6378137;
+
+// display projection options by name
+const PROJECTIONS = {
+	'ellipsoid': 'ellipsoid',
+	'mercator': 'EPSG:3857',
+	'equirect': 'EPSG:4326',
+	'equal earth': 'EPSG:8857',
+};
+
+// meters-to-world factor for the planar shape, derived from the display projection on load
+let planarHeightScale = 1;
+
 const params = {
 
 	errorTarget: 1,
-	planar: false,
-	overlay: 'OpenStreetMap',
+	heightScale: 1,
+	projection: 'equal earth',
 
 };
 
-// throttled render function
-const scheduleRender = throttle( render );
-
 init();
-render();
 
 function init() {
 
@@ -40,14 +65,23 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x111111 );
+	renderer.setAnimationLoop( render );
 
 	document.body.appendChild( renderer.domElement );
 
 	// scene
 	scene = new Scene();
 
+	// lights for the displaced terrain material
+	const ambientLight = new AmbientLight( 0xffffff, 1.0 );
+	scene.add( ambientLight );
+
+	const directionalLight = new DirectionalLight( 0xffffff, 2.5 );
+	directionalLight.position.set( 1, 2, 3 );
+	scene.add( directionalLight );
+
 	// set up cameras and ortho / perspective transition
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.0001, 10000 );
 
 	initTiles();
 
@@ -58,12 +92,15 @@ function init() {
 
 	// gui initialization
 	const gui = new GUI();
-	gui.add( params, 'planar' ).onChange( initTiles );
-	gui.add( params, 'overlay', [ 'OpenStreetMap', 'Sentinel-2' ] ).onChange( initTiles );
+	gui.add( params, 'projection', Object.keys( PROJECTIONS ) ).onChange( initTiles );
+	gui.add( params, 'heightScale', 0, 10 ).onChange( v => {
+
+		surfacePlugin.heightScale = params.projection !== 'ellipsoid' ? v * planarHeightScale : v;
+
+	} );
 	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
-		scheduleRender();
 
 	} );
 
@@ -85,29 +122,62 @@ function initTiles() {
 
 	}
 
-	const overlay = params.overlay === 'Sentinel-2'
-		? new CesiumIonOverlay( { assetId: 3954, apiToken: import.meta.env.VITE_ION_KEY } )
-		: new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } );
+	const planar = params.projection !== 'ellipsoid';
+
+	// vector MVT data rendered to tile textures via the style callback
+	const overlay = new PMTilesOverlay( {
+		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+		getStyle: layerName => MVT_LAYERS[ layerName ] ?? null,
+	} );
 
 	// tiles
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	surfacePlugin = new GeneratedSurfacePlugin( {
+
+	// terrain tiles displaced by Terrain-RGB elevation data, with the overlay applied to the
+	// lit tile materials directly for a hill-shaded look
+	surfacePlugin = new TerrainRGBMeshPlugin( {
+		url: 'https://terrain.reearth.land/mapterhorn-egm08/mapbox/elevation/{z}/{x}/{y}.png',
+		tileDimension: 512,
+		maxZoom: 14,
+		projection: PROJECTIONS[ params.projection ],
 		overlay,
-		shape: params.planar ? 'planar' : 'ellipsoid',
 		applyOverlayTexture: true,
 	} );
+
+	if ( planar ) {
+
+		// scale the meter elevations into the planar world, where one unit spans the height
+		// of the projected map
+		tiles.addEventListener( 'load-root-tileset', () => {
+
+			const [ , extentY ] = tiles.surface.projection.getProjectedExtents();
+			planarHeightScale = 1 / ( extentY * EARTH_RADIUS );
+			surfacePlugin.heightScale = params.heightScale * planarHeightScale;
+
+		} );
+
+	} else {
+
+		surfacePlugin.heightScale = params.heightScale;
+
+	}
+
 	tiles.registerPlugin( surfacePlugin );
+
+	// road and point annotations parsed from the same vector data
+	const driver = new ExampleAnnotationsDriver();
+	tiles.registerPlugin( new MVTAnnotationsPlugin( { overlay, camera, driver, resolution: 100 } ) );
 
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;
-	tiles.parseQueue.maxJobs = 3;
+	tiles.parseQueue.maxJobs = 6;
+	tiles.downloadQueue.maxJobsPerOrigin = 40;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
-	window.TILES = tiles;
 
-	if ( params.planar ) {
+	if ( planar ) {
 
 		// create the controls
 		controls = new EnvironmentControls( scene, camera, renderer.domElement );
@@ -140,14 +210,6 @@ function initTiles() {
 
 	}
 
-	// listen to events to call render() on change
-	controls.addEventListener( 'change', scheduleRender );
-	controls.addEventListener( 'end', scheduleRender );
-	tiles.addEventListener( 'needs-render', scheduleRender );
-	tiles.addEventListener( 'needs-update', scheduleRender );
-
-	render();
-
 }
 
 function onWindowResize() {
@@ -157,8 +219,6 @@ function onWindowResize() {
 	camera.updateProjectionMatrix();
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
-	scheduleRender();
 
 }
 
@@ -198,26 +258,5 @@ function onMouseMove( e ) {
 		coordsEl.textContent = '';
 
 	}
-
-}
-
-function throttle( callback ) {
-
-	let scheduled = false;
-	return () => {
-
-		if ( ! scheduled ) {
-
-			scheduled = true;
-			requestAnimationFrame( () => {
-
-				scheduled = false;
-				callback();
-
-			} );
-
-		}
-
-	};
 
 }

@@ -363,6 +363,7 @@ export class MVTGlyphs extends Group {
 
 			this.position.set( 0, 0, 0 );
 			this.updateMatrixWorld( true );
+			return;
 
 		}
 

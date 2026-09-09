@@ -1,5 +1,4 @@
 import { Group } from 'three';
-import { EllipsoidRegion } from '3d-tiles-renderer/three';
 import { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from '../../objects/EllipsoidRegionHelper.js';
 import { ColorManager } from './ColorManager.js';
 
@@ -8,6 +7,14 @@ const ColorMode = {
 	LEVEL: 1,
 	TILE: 2,
 };
+
+// height range of the displayed region volumes in meters, placed near typical terrain height
+const REGION_MIN_HEIGHT = 600;
+const REGION_MAX_HEIGHT = 700;
+
+// height range in meters used on flattened surfaces where the ground sits exactly at zero
+const PLANAR_REGION_MIN_HEIGHT = 10;
+const PLANAR_REGION_MAX_HEIGHT = 50;
 
 export class HierarchyOverlay {
 
@@ -32,16 +39,31 @@ export class HierarchyOverlay {
 			const key = `${ x }_${ y }_${ level }`;
 			if ( visible ) {
 
-				const { ellipsoid, group } = this.tiles;
-				const [ minLon, minLat, maxLon, maxLat ] = this.tiling.getTileBounds( x, y, level, false, false );
+				const { tiles, tiling } = this;
+				const { surface, group } = tiles;
+				const [ minLon, minLat, maxLon, maxLat ] = tiling.getTileBounds( x, y, level, false, false );
 
-				const region = new EllipsoidRegion( ...ellipsoid.radius, minLat, maxLat, minLon, maxLon, 600, 700 );
+				// scale the meter heights into world units on a flattened surface
+				const heightScale = surface.isEllipsoid ? 1 : surface.scale.x / ( 2 * Math.PI * tiles.ellipsoid.radius.x );
+
+				// TODO: it may be better to implement a true helper class for this later.
+				// region-like adapter so the helpers generate the volume through the surface
+				const region = {
+					latStart: minLat, latEnd: maxLat,
+					lonStart: minLon, lonEnd: maxLon,
+					heightStart: ( surface.isEllipsoid ? REGION_MIN_HEIGHT : PLANAR_REGION_MIN_HEIGHT ) * heightScale,
+					heightEnd: ( surface.isEllipsoid ? REGION_MAX_HEIGHT : PLANAR_REGION_MAX_HEIGHT ) * heightScale,
+					getCartographicToPosition: ( lat, lon, height, target ) => surface.getCartographicToPosition( lat, lon, height, target ),
+					getCartographicToNormal: ( lat, lon, target ) => surface.getCartographicToNormal( lat, lon, target ),
+				};
+
 				const lineHelper = new EllipsoidRegionLineHelper( region );
+				const meshHelper = new EllipsoidRegionHelper( region );
+
 				lineHelper.material.depthWrite = false;
 				lineHelper.material.depthTest = false;
 				lineHelper.material.transparent = true;
 
-				const meshHelper = new EllipsoidRegionHelper( region );
 				meshHelper.material.transparent = true;
 				meshHelper.material.opacity = 0.1;
 				meshHelper.material.depthWrite = false;
