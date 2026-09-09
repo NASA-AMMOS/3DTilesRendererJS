@@ -2,8 +2,7 @@ import { BufferGeometry, BufferAttribute, Color, SRGBColorSpace, Vector3 } from 
 
 const _color = /* @__PURE__ */ new Color();
 
-// Directory path of a v1 node's files, mirroring potree's "getHierarchyPath": the key digits
-// grouped into subdirectories of "hierarchyStepSize" characters under the root chunk "r"
+// Directory path of a v1 node's files: the key digits grouped into folders of "stepSize" characters
 function v1HierarchyPath( key, stepSize ) {
 
 	let path = 'r/';
@@ -19,9 +18,8 @@ function v1HierarchyPath( key, stepSize ) {
 
 }
 
-// Parse a Potree v1 .hrc hierarchy chunk into the given map, rooted at "rootKey".
-// Format: BFS-ordered 5-byte entries of childMask(uint8) + numPoints(uint32 LE). A chunk covers
-// "hierarchyStepSize" levels below its root; nodes at the boundary carry their own .hrc file.
+// Parse a v1 .hrc hierarchy chunk into the given map: BFS-ordered entries of
+// childMask(uint8) + numPoints(uint32)
 function v1ParseHierarchy( buffer, rootKey, hierarchy ) {
 
 	const view = new DataView( buffer );
@@ -49,12 +47,8 @@ function v1ParseHierarchy( buffer, rootKey, hierarchy ) {
 
 }
 
-// Parse a Potree v2 hierarchy.bin chunk into the given map, rooted at "rootKey".
-// Format: BFS-ordered 22-byte entries of type(uint8) + childMask(uint8) + numPoints(uint32 LE) +
-// byteOffset(int64 LE) + byteSize(int64 LE). Proxy entries (type 2) reference a sub-chunk
-// elsewhere in the same file, whose first entry carries the node's real point data range, so
-// they recurse rather than queue children. The whole file is fetched up front so the sub-chunks
-// are parsed eagerly.
+// Parse a v2 hierarchy.bin chunk into the given map: BFS-ordered entries of type(uint8) +
+// childMask(uint8) + numPoints(uint32) + byteOffset(int64) + byteSize(int64)
 function v2ParseHierarchy( buffer, rootKey, chunkStart, chunkSize, hierarchy ) {
 
 	const view = new DataView( buffer, chunkStart, chunkSize );
@@ -70,7 +64,7 @@ function v2ParseHierarchy( buffer, rootKey, chunkStart, chunkSize, hierarchy ) {
 		const byteSize = view.getBigInt64( offset + 14, true );
 		const key = queue[ i ];
 
-		// the first entry of a sub-chunk is the chunk root itself, replacing its proxy entry
+		// proxy entries reference a sub-chunk in the same file, parsed in place of the node
 		if ( type === 2 && i !== 0 ) {
 
 			v2ParseHierarchy( buffer, key, Number( byteOffset ), Number( byteSize ), hierarchy );
@@ -103,7 +97,7 @@ function v2ParseHierarchy( buffer, rootKey, chunkStart, chunkSize, hierarchy ) {
 
 /**
  * Computes the min / max bounds of a child octant by halving the parent bounds.
- * Potree octant convention: bit2 (4)=x, bit1 (2)=y, bit0 (1)=z.
+ * Potree octant convention: bit2=x, bit1=y, bit0=z.
  * @param {number[]} parentMin
  * @param {number[]} parentMax
  * @param {number} octant
@@ -130,12 +124,9 @@ export function getChildBounds( parentMin, parentMax, octant ) {
 }
 
 /**
- * Loader for Potree point cloud datasets (v1.x and v2.0), separate from any rendering concerns.
- * Loads and normalizes the dataset metadata, loads the node hierarchy including its lazily
- * chunked portions, and parses raw node point buffers into buffer geometry.
- *
- * The dataset version is determined by the metadata filename: `cloud.js` for v1 and
- * `metadata.json` for v2. Network requests go through the overridable `fetchData` callback.
+ * Loader for Potree point cloud datasets (v1.x and v2.0). Loads the dataset metadata and node
+ * hierarchy and parses raw node point buffers into buffer geometry. The version is determined
+ * by the metadata filename: `cloud.js` for v1 and `metadata.json` for v2.
  */
 export class PotreeLoader {
 
@@ -155,16 +146,15 @@ export class PotreeLoader {
 		this.version = null;
 
 		/**
-		 * Dataset metadata with `spacing`, `scale`, `offset`, `boundingBox` and point
-		 * `attributes` fields, available after `load`. The v2 `metadata.json` content is used
-		 * as-is while v1 `cloud.js` is normalized to match it.
+		 * Dataset metadata in the v2 `metadata.json` form, v1 `cloud.js` normalized to match.
+		 * Available after `load`.
 		 * @type {Object|null}
 		 */
 		this.metadata = null;
 
 		/**
-		 * Node hierarchy keyed by node name ("r", "r0", ...), each entry holding `childMask` and
-		 * `numPoints`. Grows as chunked portions of the hierarchy load with the node data.
+		 * Node hierarchy keyed by node name ("r", "r0", ...). Grows as chunked portions of the
+		 * hierarchy load with the node data.
 		 * @type {Map<string, Object>|null}
 		 */
 		this.hierarchy = null;
@@ -176,8 +166,7 @@ export class PotreeLoader {
 	}
 
 	/**
-	 * Fetches the given url. Can be overridden to route requests through download queues or
-	 * other plugins.
+	 * Fetches the given url. Can be overridden to route requests through plugins.
 	 * @param {string} url
 	 * @param {Object} options
 	 * @returns {Promise<Response>}
@@ -213,8 +202,7 @@ export class PotreeLoader {
 
 		if ( version === 2 ) {
 
-			// The root chunk spans the first "firstChunkSize" bytes and proxy entries reference
-			// the sub-chunks by byte range, all within the same file.
+			// the root hierarchy chunk spans the first "firstChunkSize" bytes of hierarchy.bin
 			this._octreeUrl = new URL( 'octree.bin', baseUrl ).href;
 
 			const hierRes = await this.fetchData( new URL( 'hierarchy.bin', baseUrl ).href, this.fetchOptions );
@@ -223,8 +211,7 @@ export class PotreeLoader {
 
 		} else {
 
-			// Each v1 hierarchy chunk and the node data files for its levels live in a directory
-			// derived from the chunk root key, with the root chunk at {octreeDir}/r/r.hrc.
+			// the root hierarchy chunk lives at {octreeDir}/r/r.hrc
 			this._dataUrl = new URL( json.octreeDir + '/', baseUrl ).href;
 
 			const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataUrl ).href, this.fetchOptions );
@@ -237,8 +224,7 @@ export class PotreeLoader {
 	}
 
 	/**
-	 * Loads the raw point buffer of the given node, transparently loading any hierarchy chunk
-	 * the node roots so its children become available.
+	 * Loads the raw point buffer of the given node, along with any hierarchy chunk it roots.
 	 * @param {string} key Node name, e.g. "r012".
 	 * @param {Object} [options] Additional fetch options such as an abort signal.
 	 * @returns {Promise<ArrayBuffer>}
@@ -292,9 +278,9 @@ export class PotreeLoader {
 	}
 
 	/**
-	 * Parses a raw interleaved point buffer into buffer geometry with position, and optionally
-	 * color and intensity, attributes. The positions are stored relative to the center of the
-	 * given node bounds for float32 precision, returned separately.
+	 * Parses a raw interleaved point buffer into buffer geometry with position, and optional
+	 * color and intensity, attributes. Positions are made relative to the returned bounds
+	 * center for float32 precision.
 	 * @param {ArrayBuffer} buffer
 	 * @param {string} key Node name the buffer belongs to.
 	 * @param {number[]} min Node bounds minimum.
@@ -321,8 +307,7 @@ export class PotreeLoader {
 
 		} );
 
-		// The attributes we know how to decode. The alpha byte of "rgba" is dropped since potree
-		// itself never reads it - the format reserves it but no potree decoder or shader uses it.
+		// The attributes to decode. The alpha byte of "rgba" is dropped - potree never reads it.
 		const posIdx = attributes.findIndex( a => a.name === 'position' );
 		const colIdx = attributes.findIndex( a => a.name === 'rgb' || a.name === 'rgba' );
 		const intIdx = attributes.findIndex( a => a.name === 'intensity' );
@@ -332,8 +317,7 @@ export class PotreeLoader {
 		const intensities = intIdx !== - 1 ? new Float32Array( numPoints ) : null;
 		const view = new DataView( buffer );
 
-		// v1 positions are quantized relative to each node's own bounds minimum while v2
-		// positions use the global offset from metadata.json
+		// v1 positions are relative to the node bounds minimum, v2 to the global metadata offset
 		const posOffset = this.version === 1 ? min : offset;
 		for ( let i = 0; i < numPoints; i ++ ) {
 
@@ -405,8 +389,7 @@ export class PotreeLoader {
 	// Normalize cloud.js (v1) into the metadata.json (v2) format
 	_normalizeV1( json ) {
 
-		// v1 point attribute byte layouts keyed by the cloud.js attribute name, each mapped to
-		// its v2 attribute name equivalent
+		// v1 attribute layouts keyed by cloud.js name, mapped to their v2 name equivalents
 		const V1_ATTRIBUTES = {
 			'POSITION_CARTESIAN': { name: 'position', size: 12, type: 'int32' },
 			'COLOR_PACKED': { name: 'rgba', size: 4, type: 'uint8' },
