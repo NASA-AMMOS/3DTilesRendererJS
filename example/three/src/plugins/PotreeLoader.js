@@ -1,48 +1,6 @@
 import { BufferGeometry, BufferAttribute, Color, SRGBColorSpace, Vector3 } from 'three';
 
-// Potree v1 point attribute byte layouts, keyed by attribute name string
-const POTREE_V1_ATTR = {
-	'POSITION_CARTESIAN': { byteSize: 12, numElements: 3, type: 'int32' },
-	'COLOR_PACKED': { byteSize: 4, numElements: 4, type: 'uint8' },
-	'RGB': { byteSize: 3, numElements: 3, type: 'uint8' },
-	'RGBA': { byteSize: 4, numElements: 4, type: 'uint8' },
-	'INTENSITY': { byteSize: 2, numElements: 1, type: 'uint16' },
-	'INTENSITY_GRADIENT': { byteSize: 2, numElements: 1, type: 'uint16' },
-	'CLASSIFICATION': { byteSize: 1, numElements: 1, type: 'uint8' },
-	'NORMAL_FLOATS': { byteSize: 12, numElements: 3, type: 'float32' },
-	'NORMAL_SPHEREMAPPED': { byteSize: 2, numElements: 2, type: 'uint8' },
-	'NORMAL_OCT16': { byteSize: 2, numElements: 2, type: 'uint8' },
-	'GPS_TIME': { byteSize: 8, numElements: 1, type: 'float64' },
-	'RETURN_NUMBER': { byteSize: 1, numElements: 1, type: 'uint8' },
-	'NUMBER_OF_RETURNS': { byteSize: 1, numElements: 1, type: 'uint8' },
-	'SOURCE_ID': { byteSize: 2, numElements: 1, type: 'uint16' },
-	'RGB565': { byteSize: 2, numElements: 1, type: 'uint16' },
-};
-
-// Colors are stored as sRGB and converted to working-space values via a lookup table for the
-// 8-bit values
 const _color = /* @__PURE__ */ new Color();
-const SRGB_LUT = /* @__PURE__ */ new Float32Array( 256 );
-for ( let i = 0; i < 256; i ++ ) {
-
-	SRGB_LUT[ i ] = _color.setRGB( i / 255, 0, 0, SRGBColorSpace ).r;
-
-}
-
-// Byte size per element for Potree v2 type strings
-function v2ElementSize( type ) {
-
-	switch ( type ) {
-
-		case 'int8': case 'uint8': return 1;
-		case 'int16': case 'uint16': return 2;
-		case 'int32': case 'uint32': case 'float': return 4;
-		case 'int64': case 'uint64': case 'double': return 8;
-		default: return 4;
-
-	}
-
-}
 
 // Directory path of a v1 node's files, mirroring potree's "getHierarchyPath": the key digits
 // grouped into subdirectories of "hierarchyStepSize" characters under the root chunk "r"
@@ -75,13 +33,6 @@ function v1ParseHierarchy( buffer, rootKey, hierarchy ) {
 		const childMask = view.getUint8( offset );
 		const numPoints = view.getUint32( offset + 1, true );
 		const key = queue[ i ];
-
-		if ( key === undefined ) {
-
-			break;
-
-		}
-
 		hierarchy.set( key, { childMask, numPoints } );
 
 		for ( let octant = 0; octant < 8; octant ++ ) {
@@ -118,12 +69,6 @@ function v2ParseHierarchy( buffer, rootKey, chunkStart, chunkSize, hierarchy ) {
 		const byteOffset = view.getBigInt64( offset + 6, true );
 		const byteSize = view.getBigInt64( offset + 14, true );
 		const key = queue[ i ];
-
-		if ( key === undefined ) {
-
-			break;
-
-		}
 
 		// the first entry of a sub-chunk is the chunk root itself, replacing its proxy entry
 		if ( type === 2 && i !== 0 ) {
@@ -210,8 +155,9 @@ export class PotreeLoader {
 		this.version = null;
 
 		/**
-		 * Normalized dataset metadata with `spacing`, `boundingBox` and point `attributes`
-		 * fields, available after `load`.
+		 * Dataset metadata with `spacing`, `scale`, `offset`, `boundingBox` and point
+		 * `attributes` fields, available after `load`. The v2 `metadata.json` content is used
+		 * as-is while v1 `cloud.js` is normalized to match it.
 		 * @type {Object|null}
 		 */
 		this.metadata = null;
@@ -254,15 +200,15 @@ export class PotreeLoader {
 		const version = file === 'metadata.json' ? 2 : 1;
 
 		const res = await this.fetchData( url, this.fetchOptions );
-		if ( ! ( res instanceof Response ) || ! res.ok ) {
+		if ( ! res.ok ) {
 
-			throw new Error( `PotreeLoader: Could not fetch "${ url }" with status ${ res && res.status }` );
+			throw new Error( `PotreeLoader: Could not fetch "${ url }" with status ${ res.status }` );
 
 		}
 
 		const json = await res.json();
 		this.version = version;
-		this.metadata = version === 2 ? this._normalizeV2( json ) : this._normalizeV1( json );
+		this.metadata = version === 2 ? json : this._normalizeV1( json );
 		this.hierarchy = new Map();
 
 		if ( version === 2 ) {
@@ -273,15 +219,13 @@ export class PotreeLoader {
 
 			const hierRes = await this.fetchData( new URL( 'hierarchy.bin', baseUrl ).href, this.fetchOptions );
 			const hierBuf = await hierRes.arrayBuffer();
-			const firstChunkSize = json.hierarchy ? json.hierarchy.firstChunkSize : hierBuf.byteLength;
-			v2ParseHierarchy( hierBuf, 'r', 0, firstChunkSize, this.hierarchy );
+			v2ParseHierarchy( hierBuf, 'r', 0, json.hierarchy.firstChunkSize, this.hierarchy );
 
 		} else {
 
 			// Each v1 hierarchy chunk and the node data files for its levels live in a directory
 			// derived from the chunk root key, with the root chunk at {octreeDir}/r/r.hrc.
-			const octreeDir = json.octreeDir || 'data';
-			this._dataUrl = new URL( octreeDir + '/', baseUrl ).href;
+			this._dataUrl = new URL( json.octreeDir + '/', baseUrl ).href;
 
 			const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataUrl ).href, this.fetchOptions );
 			const hierBuf = await hierRes.arrayBuffer();
@@ -331,7 +275,7 @@ export class PotreeLoader {
 			const path = v1HierarchyPath( key, hierarchyStepSize );
 
 			// a chunk boundary node carries the hierarchy chunk below it in its own .hrc file
-			if ( level > 0 && level % hierarchyStepSize === 0 && ! this._loadedChunks.has( key ) ) {
+			if ( level % hierarchyStepSize === 0 && ! this._loadedChunks.has( key ) ) {
 
 				this._loadedChunks.add( key );
 				const hierRes = await this.fetchData( `${ this._dataUrl }${ path }/${ key }.hrc`, fetchOptions );
@@ -359,7 +303,7 @@ export class PotreeLoader {
 	 */
 	parsePointData( buffer, key, min, max ) {
 
-		const { attributes } = this.metadata;
+		const { attributes, scale, offset } = this.metadata;
 		const numPoints = this.hierarchy.get( key ).numPoints;
 		const center = new Vector3(
 			( min[ 0 ] + max[ 0 ] ) / 2,
@@ -372,72 +316,32 @@ export class PotreeLoader {
 		const attrOffsets = attributes.map( attr => {
 
 			const off = stride;
-			stride += attr.byteSize;
+			stride += attr.size;
 			return off;
 
 		} );
 
-		// the attributes we know how to decode
-		const posIdx = attributes.findIndex( a =>
-			a.name === 'POSITION_CARTESIAN' || a.name === 'position'
-		);
-		const colIdx = attributes.findIndex( a =>
-			a.name === 'COLOR_PACKED' || a.name === 'RGB' || a.name === 'RGBA' ||
-			a.name === 'rgb' || a.name === 'rgba'
-		);
-		const intIdx = attributes.findIndex( a =>
-			a.name === 'INTENSITY' || a.name === 'intensity'
-		);
+		// The attributes we know how to decode. The alpha byte of "rgba" is dropped since potree
+		// itself never reads it - the format reserves it but no potree decoder or shader uses it.
+		const posIdx = attributes.findIndex( a => a.name === 'position' );
+		const colIdx = attributes.findIndex( a => a.name === 'rgb' || a.name === 'rgba' );
+		const intIdx = attributes.findIndex( a => a.name === 'intensity' );
 
 		const positions = new Float32Array( numPoints * 3 );
 		const colors = colIdx !== - 1 ? new Float32Array( numPoints * 3 ) : null;
 		const intensities = intIdx !== - 1 ? new Float32Array( numPoints ) : null;
 		const view = new DataView( buffer );
 
+		// v1 positions are quantized relative to each node's own bounds minimum while v2
+		// positions use the global offset from metadata.json
+		const posOffset = this.version === 1 ? min : offset;
 		for ( let i = 0; i < numPoints; i ++ ) {
 
 			const base = i * stride;
-
-			if ( posIdx !== - 1 ) {
-
-				const attr = attributes[ posIdx ];
-				const off = base + attrOffsets[ posIdx ];
-				let wx, wy, wz;
-
-				if ( attr.type === 'int32' ) {
-
-					// v1 positions are quantized relative to each node's own bounds minimum
-					// while v2 positions use the global offset from metadata.json
-					const sc = attr.scale;
-					const ofs = this.version === 1 ? min : attr.offset;
-					wx = view.getInt32( off, true ) * sc[ 0 ] + ofs[ 0 ];
-					wy = view.getInt32( off + 4, true ) * sc[ 1 ] + ofs[ 1 ];
-					wz = view.getInt32( off + 8, true ) * sc[ 2 ] + ofs[ 2 ];
-
-				} else {
-
-					// float positions, uncommon but supported
-					wx = view.getFloat32( off, true );
-					wy = view.getFloat32( off + 4, true );
-					wz = view.getFloat32( off + 8, true );
-
-					if ( attr.scale ) {
-
-						const sc = attr.scale;
-						const ofs = attr.offset || [ 0, 0, 0 ];
-						wx = wx * sc[ 0 ] + ofs[ 0 ];
-						wy = wy * sc[ 1 ] + ofs[ 1 ];
-						wz = wz * sc[ 2 ] + ofs[ 2 ];
-
-					}
-
-				}
-
-				positions[ i * 3 ] = wx - center.x;
-				positions[ i * 3 + 1 ] = wy - center.y;
-				positions[ i * 3 + 2 ] = wz - center.z;
-
-			}
+			const posOff = base + attrOffsets[ posIdx ];
+			positions[ i * 3 ] = view.getInt32( posOff, true ) * scale[ 0 ] + posOffset[ 0 ] - center.x;
+			positions[ i * 3 + 1 ] = view.getInt32( posOff + 4, true ) * scale[ 1 ] + posOffset[ 1 ] - center.y;
+			positions[ i * 3 + 2 ] = view.getInt32( posOff + 8, true ) * scale[ 2 ] + posOffset[ 2 ] - center.z;
 
 			if ( colIdx !== - 1 ) {
 
@@ -457,10 +361,14 @@ export class PotreeLoader {
 
 				} else {
 
-					// sRGB uint8 per channel: v1 COLOR_PACKED, RGB, RGBA and v2 rgb
-					colors[ i * 3 ] = SRGB_LUT[ view.getUint8( off ) ];
-					colors[ i * 3 + 1 ] = SRGB_LUT[ view.getUint8( off + 1 ) ];
-					colors[ i * 3 + 2 ] = SRGB_LUT[ view.getUint8( off + 2 ) ];
+					// sRGB uint8 per channel
+					_color.setRGB(
+						view.getUint8( off ) / 255,
+						view.getUint8( off + 1 ) / 255,
+						view.getUint8( off + 2 ) / 255,
+						SRGBColorSpace,
+					);
+					_color.toArray( colors, i * 3 );
 
 				}
 
@@ -494,84 +402,41 @@ export class PotreeLoader {
 
 	}
 
-	// Normalize cloud.js (v1) into the shared metadata format
+	// Normalize cloud.js (v1) into the metadata.json (v2) format
 	_normalizeV1( json ) {
 
-		const scale = json.scale || 0.001;
-		const bb = json.boundingBox;
-		const min = [ bb.lx, bb.ly, bb.lz ];
-		const max = [ bb.ux, bb.uy, bb.uz ];
-
-		const attrNames = Array.isArray( json.pointAttributes )
-			? json.pointAttributes
-			: [ 'POSITION_CARTESIAN', 'COLOR_PACKED' ];
-
-		const attributes = [];
-		for ( let i = 0, l = attrNames.length; i < l; i ++ ) {
-
-			const name = attrNames[ i ];
-			const desc = POTREE_V1_ATTR[ name ];
-
-			if ( ! desc ) {
-
-				console.warn( `PotreeLoader: Unknown v1 attribute "${ name }", skipping.` );
-				continue;
-
-			}
-
-			// position is decoded via scale + node bounds offset while other attributes are raw
-			const attrScale = name === 'POSITION_CARTESIAN' ? [ scale, scale, scale ] : null;
-			const attrOffset = name === 'POSITION_CARTESIAN' ? min : null;
-			attributes.push( { name, ...desc, scale: attrScale, offset: attrOffset } );
-
-		}
-
-		return {
-			spacing: json.spacing || 1,
-			hierarchyStepSize: json.hierarchyStepSize || 5,
-			scale: [ scale, scale, scale ],
-			offset: min,
-			boundingBox: { min, max },
-			attributes,
+		// v1 point attribute byte layouts keyed by the cloud.js attribute name, each mapped to
+		// its v2 attribute name equivalent
+		const V1_ATTRIBUTES = {
+			'POSITION_CARTESIAN': { name: 'position', size: 12, type: 'int32' },
+			'COLOR_PACKED': { name: 'rgba', size: 4, type: 'uint8' },
+			'RGB': { name: 'rgb', size: 3, type: 'uint8' },
+			'RGBA': { name: 'rgba', size: 4, type: 'uint8' },
+			'INTENSITY': { name: 'intensity', size: 2, type: 'uint16' },
+			'INTENSITY_GRADIENT': { name: 'intensity gradient', size: 2, type: 'uint16' },
+			'CLASSIFICATION': { name: 'classification', size: 1, type: 'uint8' },
+			'NORMAL_FLOATS': { name: 'normal floats', size: 12, type: 'float32' },
+			'NORMAL_SPHEREMAPPED': { name: 'normal spheremapped', size: 2, type: 'uint8' },
+			'NORMAL_OCT16': { name: 'normal oct16', size: 2, type: 'uint8' },
+			'GPS_TIME': { name: 'gps-time', size: 8, type: 'float64' },
+			'RETURN_NUMBER': { name: 'return number', size: 1, type: 'uint8' },
+			'NUMBER_OF_RETURNS': { name: 'number of returns', size: 1, type: 'uint8' },
+			'SOURCE_ID': { name: 'point source id', size: 2, type: 'uint16' },
+			'RGB565': { name: 'rgb565', size: 2, type: 'uint16' },
 		};
 
-	}
-
-	// Normalize metadata.json (v2) into the shared metadata format
-	_normalizeV2( json ) {
-
-		const scale = Array.isArray( json.scale )
-			? json.scale
-			: [ json.scale, json.scale, json.scale ];
-		const offset = json.offset || [ 0, 0, 0 ];
+		const { scale } = json;
 		const bb = json.boundingBox;
-		const min = Array.isArray( bb.min ) ? bb.min : [ bb.min[ 0 ], bb.min[ 1 ], bb.min[ 2 ] ];
-		const max = Array.isArray( bb.max ) ? bb.max : [ bb.max[ 0 ], bb.max[ 1 ], bb.max[ 2 ] ];
-
-		const attributes = ( json.attributes || [] ).map( attr => {
-
-			const elementSize = attr.elementSize || v2ElementSize( attr.type );
-			const byteSize = attr.size || ( elementSize * ( attr.numElements || 1 ) );
-
-			// v2 position is decoded with the top-level scale and offset from metadata.json
-			const isPosition = attr.name === 'position';
-			return {
-				name: attr.name,
-				type: attr.type,
-				numElements: attr.numElements || 1,
-				elementSize,
-				byteSize,
-				scale: isPosition ? scale : null,
-				offset: isPosition ? offset : null,
-			};
-
-		} );
+		const attributes = json.pointAttributes.map( name => V1_ATTRIBUTES[ name ] );
 
 		return {
-			spacing: json.spacing || 1,
-			scale,
-			offset,
-			boundingBox: { min, max },
+			spacing: json.spacing,
+			hierarchyStepSize: json.hierarchyStepSize,
+			scale: [ scale, scale, scale ],
+			boundingBox: {
+				min: [ bb.lx, bb.ly, bb.lz ],
+				max: [ bb.ux, bb.uy, bb.uz ],
+			},
 			attributes,
 		};
 
