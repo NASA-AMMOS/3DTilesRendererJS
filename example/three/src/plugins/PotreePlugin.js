@@ -2,15 +2,14 @@ import { DataTexture, NearestFilter, Points, Vector3 } from 'three';
 import { PotreeLoader, getChildBounds } from './PotreeLoader.js';
 import { PotreePointsMaterial, ACTIVE_NODES_TEXTURE_SIZE } from './PotreePointsMaterial.js';
 
-// Point spacing is the average distance between points, so points are drawn somewhat larger than
-// the spacing to cover the gaps between them. Potree uses the same factor.
+// Points are drawn larger than the point spacing to cover the gaps between them - potree uses
+// the same factor
 const SPACING_COVERAGE_FACTOR = 1.7;
 
-// Node key from a tile content uri, e.g. ".../r012.potree" -> "r012". Keys are the potree node
-// names: "r" for the root with a child's octant digit appended per level.
+// Node key from a tile content uri, e.g. ".../r012.potree" -> "r012"
 function keyFromUri( uri ) {
 
-	return String( uri ).split( '/' ).pop().replace( /\.potree$/, '' );
+	return uri.split( '/' ).pop().replace( /\.potree$/, '' );
 
 }
 
@@ -42,27 +41,19 @@ function boxToMinMax( box ) {
  * Plugin that adds support for Potree point cloud datasets (v1.x and v2.0) via
  * {@link PotreeLoader}.
  *
- * `tiles.rootURL` must point directly to the dataset metadata file:
- * - Potree v1: `cloud.js`
- * - Potree v2: `metadata.json`
- *
- * Builds a synthetic 3D Tiles tileset and streams point cloud nodes on demand using the same
- * lazy-expansion and disposal pattern as `QuantizedMeshPlugin`.
- *
- * Potree uses additive LOD (`refine: 'ADD'`): parent nodes remain visible while higher-density
- * children load in. Each point is sized by the deepest active node at its position, resolved in
- * the vertex shader against a texture encoding the loaded node hierarchy and per node active
- * states.
+ * Builds a synthetic additive-refinement tileset and streams point cloud nodes on demand. Each
+ * point is sized by the deepest active node at its position, resolved in the vertex shader
+ * against a texture encoding the loaded node hierarchy and per node active states.
  *
  * @param {Object} [options]
- * @param {number} [options.pointScale=1] Multiplier on the point size, which is derived from the
- *   point spacing of the finest active level at each point. Can be adjusted dynamically.
- * @param {('square'|'round'|'sphere')} [options.pointShape='round'] Shape of the point sprites.
- *   Squares tile the surface with no gaps, circles read as a continuous organic surface, and
- *   spheres additionally write bulged depth values so overlapping points intersect. The sphere
- *   depth writes disable early depth testing, which has a fill rate cost. Can be adjusted
+ * @param {string|null} [options.url=null] Url of the dataset metadata file - `cloud.js` for v1
+ *   or `metadata.json` for v2. Falls back to `tiles.rootURL`.
+ * @param {number} [options.pointScale=1] Multiplier on the point size. Can be adjusted
  *   dynamically.
- * @param {number} [options.minPointSize=2] Smallest point size in pixels.
+ * @param {('square'|'round'|'sphere')} [options.pointShape='round'] Shape of the point sprites.
+ *   Can be adjusted dynamically.
+ * @param {number} [options.minPointSize=2] Smallest point size in pixels. Can be adjusted
+ *   dynamically.
  */
 export class PotreePlugin {
 
@@ -77,7 +68,7 @@ export class PotreePlugin {
 		if ( value !== this._pointScale ) {
 
 			this._pointScale = value;
-			this._updatePointScales();
+			this._updateMaterials();
 
 		}
 
@@ -94,7 +85,24 @@ export class PotreePlugin {
 		if ( value !== this._pointShape ) {
 
 			this._pointShape = value;
-			this._updateMaterialSettings();
+			this._updateMaterials();
+
+		}
+
+	}
+
+	get minPointSize() {
+
+		return this._minPointSize;
+
+	}
+
+	set minPointSize( value ) {
+
+		if ( value !== this._minPointSize ) {
+
+			this._minPointSize = value;
+			this._updateMaterials();
 
 		}
 
@@ -111,7 +119,7 @@ export class PotreePlugin {
 		if ( value !== this._debugNodeColors ) {
 
 			this._debugNodeColors = value;
-			this._updateMaterialSettings();
+			this._updateMaterials();
 
 		}
 
@@ -120,6 +128,7 @@ export class PotreePlugin {
 	constructor( options = {} ) {
 
 		const {
+			url = null,
 			pointScale = 1,
 			pointShape = 'round',
 			minPointSize = 2,
@@ -128,19 +137,18 @@ export class PotreePlugin {
 		this.name = 'POTREE_PLUGIN';
 		this.priority = - 1000;
 
+		this.url = url;
 		this.tiles = null;
 		this.loader = null;
-		this.minPointSize = minPointSize;
 
 		this._pointScale = pointScale;
 		this._pointShape = pointShape;
+		this._minPointSize = minPointSize;
 		this._debugNodeColors = false;
 
-		// The loaded node hierarchy shared by every material, encoded per texel as the octant
-		// mask of the loaded children (r), the offset to the first of them (g, b), and whether
-		// the node itself is active (a). Refreshed after the traversal of any frame that changed
-		// the active or loaded tile sets. The active set ignores frustum culling so point sizes
-		// stay stable as tiles pass in and out of view.
+		// The loaded node hierarchy shared by every material: per texel the loaded-children
+		// octant mask (r), offset to the first child texel (g, b), and the node's active flag
+		// (a). Rebuilt after any frame that changes the loaded or active tile sets.
 		this._activeNodesTexture = new DataTexture(
 			new Uint8Array( ACTIVE_NODES_TEXTURE_SIZE * 4 ),
 			ACTIVE_NODES_TEXTURE_SIZE,
@@ -164,10 +172,19 @@ export class PotreePlugin {
 	}
 
 	// Plugin lifecycle
-
 	init( tiles ) {
 
+		// route the loader requests through the other plugins
+		const loader = new PotreeLoader();
+		loader.fetchOptions = tiles.fetchOptions;
+		loader.fetchData = ( url, options ) => {
+
+			return tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, options ) );
+
+		};
+
 		this.tiles = tiles;
+		this.loader = loader;
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 
 	}
@@ -189,32 +206,21 @@ export class PotreePlugin {
 	}
 
 	// Tileset loading
-
 	async loadRootTileset() {
 
-		const { tiles } = this;
+		const { tiles, url, loader } = this;
 
 		// resolve the metadata file url
-		let metaUrl = new URL( tiles.rootURL, location.href ).href;
+		let metaUrl = new URL( url ?? tiles.rootURL, location.href ).href;
 		tiles.invokeAllPlugins( plugin => {
 
 			metaUrl = plugin.preprocessURL ? plugin.preprocessURL( metaUrl, null ) : metaUrl;
 
 		} );
 
-		// load the metadata and root hierarchy, routing requests through the other plugins
-		const loader = new PotreeLoader();
-		loader.fetchOptions = tiles.fetchOptions;
-		loader.fetchData = ( url, options ) => {
-
-			return tiles.invokeOnePlugin( plugin => plugin !== this && plugin.fetchData && plugin.fetchData( url, options ) );
-
-		};
-
+		// load the metadata and root hierarchy, then build the synthetic tileset
 		await loader.load( metaUrl );
-		this.loader = loader;
 
-		// build the synthetic tileset
 		const { spacing, boundingBox } = loader.metadata;
 		const tileset = {
 			asset: { version: '1.1' },
@@ -229,15 +235,15 @@ export class PotreePlugin {
 		};
 
 		tiles.preprocessTileset( tileset, metaUrl.slice( 0, metaUrl.lastIndexOf( '/' ) + 1 ) );
+
 		return tileset;
 
 	}
 
 	// Tile content hooks
-
 	fetchData( uri, options ) {
 
-		if ( ! /\.potree$/.test( String( uri ) ) ) {
+		if ( ! /\.potree$/.test( uri ) ) {
 
 			return null;
 
@@ -255,9 +261,8 @@ export class PotreePlugin {
 
 		}
 
-		// parse the points and size them in world units to the point spacing of the node's own
-		// level, which the vertex shader halves for every active level below the node at each
-		// point's position
+		// size the points in world units to the spacing of the node's own level, which the
+		// vertex shader halves per active level below the node
 		const key = keyFromUri( uri );
 		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
 		const { geometry, center } = this.loader.parsePointData( buffer, key, tileMin, tileMax );
@@ -267,10 +272,9 @@ export class PotreePlugin {
 			vertexColors: Boolean( geometry.attributes.color ),
 			size: spacing * SPACING_COVERAGE_FACTOR * this._pointScale,
 			pointShape: this._pointShape,
-			minPointSize: this.minPointSize,
+			minPointSize: this._minPointSize,
 			debugNodeColors: this._debugNodeColors,
 		} );
-		material.userData.spacing = spacing;
 		material.uniforms.uActiveNodes.value = this._activeNodesTexture;
 		material.uniforms.uNodeSize.value = tileMax[ 0 ] - tileMin[ 0 ];
 		material.uniforms.uNodeMinOffset.value.copy( center ).sub( new Vector3( ...tileMin ) );
@@ -288,12 +292,6 @@ export class PotreePlugin {
 
 	disposeTile( tile ) {
 
-		if ( ! tile.content?.uri || ! /\.potree$/.test( tile.content.uri ) ) {
-
-			return;
-
-		}
-
 		const { processNodeQueue } = this.tiles;
 		for ( let i = 0, l = tile.children.length; i < l; i ++ ) {
 
@@ -308,26 +306,18 @@ export class PotreePlugin {
 
 	// Tile expansion
 
-	// Lazily attach child tiles based on the hierarchy child mask once a node's content has
-	// been parsed
+	// Attach child tiles for the node's loaded hierarchy children once its content is parsed
 	_expandChildren( tile, key ) {
 
-		const { hierarchy } = this.loader;
-		const node = hierarchy.get( key );
-
-		if ( ! node || node.childMask === 0 ) {
-
-			return;
-
-		}
-
+		const { loader } = this;
+		const node = loader.hierarchy.get( key );
 		const [ parentMin, parentMax ] = boxToMinMax( tile.boundingVolume.box );
 		const childError = tile.geometricError / 2;
 
 		for ( let octant = 0; octant < 8; octant ++ ) {
 
 			const childKey = key + octant;
-			if ( ! ( node.childMask & ( 1 << octant ) ) || ! hierarchy.has( childKey ) ) {
+			if ( ! ( node.childMask & ( 1 << octant ) ) ) {
 
 				continue;
 
@@ -348,12 +338,10 @@ export class PotreePlugin {
 
 	// Point sizing
 
-	// Encode the loaded tile hierarchy into the nodes texture: the loaded tiles sorted by level
-	// then key, each texel holding the octant mask of the tile's loaded children (r), the offset
-	// from its texel to the first of them (g, b), and whether the tile itself is active (a).
-	// Sorting keeps every tile's children consecutive and in octant order, which the shader's
-	// walk relies on. Each tile's active flag comes only from its own state, since with additive
-	// refinement any subset of a node's descendants can be active at once.
+	// Encode the loaded tile hierarchy into the nodes texture, sorted by level then key so
+	// every tile's children are consecutive and in octant order as the shader's walk expects.
+	// Each tile's active flag comes only from its own state, since with additive refinement any
+	// subset of a node's descendants can be active at once.
 	_updateActiveNodesTexture() {
 
 		const { tiles } = this;
@@ -363,12 +351,7 @@ export class PotreePlugin {
 		const keys = new Map();
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			const uri = tile.content && tile.content.uri;
-			if ( uri && /\.potree$/.test( uri ) ) {
-
-				keys.set( tile, keyFromUri( uri ) );
-
-			}
+			keys.set( tile, keyFromUri( tile.content.uri ) );
 
 		} );
 
@@ -389,32 +372,27 @@ export class PotreePlugin {
 		const data = texture.image.data;
 		data.fill( 0 );
 
-		const indices = new Map();
 		const indexByKey = new Map();
-		const firstChildOffsets = new Map();
 		for ( let i = 0, l = list.length; i < l; i ++ ) {
 
-			const tile = list[ i ];
-			const key = keys.get( tile );
-			indices.set( tile, i );
+			const key = keys.get( list[ i ] );
 			indexByKey.set( key, i );
-			data[ i * 4 + 3 ] = activeTiles.has( tile ) ? 255 : 0;
+			data[ i * 4 + 3 ] = activeTiles.has( list[ i ] ) ? 255 : 0;
 
-			if ( key.length > 1 ) {
+			const parentIndex = indexByKey.get( key.slice( 0, - 1 ) );
+			if ( parentIndex !== undefined ) {
 
-				const parentIndex = indexByKey.get( key.slice( 0, - 1 ) );
-				if ( parentIndex !== undefined ) {
+				// siblings are consecutive so the first one encountered sets the child offset
+				if ( data[ parentIndex * 4 ] === 0 ) {
 
-					// the key's last digit is the tile's octant within its parent
-					const octant = parseInt( key.charAt( key.length - 1 ) );
-					const offset = Math.min( firstChildOffsets.get( parentIndex ) ?? Infinity, i - parentIndex );
-					firstChildOffsets.set( parentIndex, offset );
-
-					data[ parentIndex * 4 ] |= 1 << octant;
+					const offset = i - parentIndex;
 					data[ parentIndex * 4 + 1 ] = offset >> 8;
 					data[ parentIndex * 4 + 2 ] = offset & 0xff;
 
 				}
+
+				// the key's last digit is the tile's octant within its parent
+				data[ parentIndex * 4 ] |= 1 << parseInt( key.charAt( key.length - 1 ) );
 
 			}
 
@@ -423,73 +401,26 @@ export class PotreePlugin {
 		texture.needsUpdate = true;
 
 		// Point every loaded tile's material at its texel, or at the reserved empty texel when
-		// the list overflowed so a stale index can never be sampled.
+		// the list overflowed so a stale index is never sampled.
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			const index = indices.get( tile ) ?? ACTIVE_NODES_TEXTURE_SIZE - 1;
-			scene.traverse( c => {
-
-				if ( c.isPoints ) {
-
-					c.material.uniforms.uVNStart.value = index;
-
-				}
-
-			} );
+			const index = indexByKey.get( keys.get( tile ) ) ?? ACTIVE_NODES_TEXTURE_SIZE - 1;
+			scene.material.uniforms.uVNStart.value = index;
 
 		} );
 
 	}
 
-	// Refresh the material sizes of the loaded tiles for the current point scale
-	_updatePointScales() {
+	// Push the current point scale, shape, and debug settings onto the loaded materials
+	_updateMaterials() {
 
-		const { tiles } = this;
-		if ( ! tiles ) {
+		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			return;
-
-		}
-
-		tiles.forEachLoadedModel( scene => {
-
-			scene.traverse( c => {
-
-				if ( c.isPoints ) {
-
-					c.material.size = c.material.userData.spacing * SPACING_COVERAGE_FACTOR * this._pointScale;
-
-				}
-
-			} );
-
-		} );
-
-	}
-
-	// Push the current point shape and debug settings onto the loaded materials, which recompile
-	// themselves on change
-	_updateMaterialSettings() {
-
-		const { tiles } = this;
-		if ( ! tiles ) {
-
-			return;
-
-		}
-
-		tiles.forEachLoadedModel( scene => {
-
-			scene.traverse( c => {
-
-				if ( c.isPoints ) {
-
-					c.material.pointShape = this._pointShape;
-					c.material.debugNodeColors = this._debugNodeColors;
-
-				}
-
-			} );
+			const { material } = scene;
+			material.size = tile.geometricError * SPACING_COVERAGE_FACTOR * this._pointScale;
+			material.pointShape = this._pointShape;
+			material.minPointSize = this._minPointSize;
+			material.debugNodeColors = this._debugNodeColors;
 
 		} );
 

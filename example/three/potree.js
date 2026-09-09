@@ -104,8 +104,9 @@ function initTiles() {
 	}
 
 	// tiles
-	tiles = new TilesRenderer( DATASETS[ params.dataset ] );
+	tiles = new TilesRenderer();
 	tiles.registerPlugin( new PotreePlugin( {
+		url: DATASETS[ params.dataset ],
 		pointScale: params.pointScale,
 		pointShape: params.pointShape,
 	} ) );
