@@ -11,10 +11,15 @@ import { DebugTilesPlugin } from '3d-tiles-renderer/plugins';
 import { PotreePlugin } from './src/plugins/PotreePlugin.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-// Public Potree datasets hosted in the potree repository (CORS-enabled)
+// Public Potree datasets hosted in the potree repository, which is CORS-enabled. The data sets
+// on potree.org serve no CORS headers so they cannot be loaded here.
+const POTREE_POINTCLOUDS = 'https://raw.githubusercontent.com/potree/potree/refs/heads/develop/pointclouds/';
 const DATASETS = {
-	'lion': 'https://raw.githubusercontent.com/potree/potree/refs/heads/develop/pointclouds/lion_takanawa/cloud.js',
-	'lion normals': 'https://raw.githubusercontent.com/potree/potree/refs/heads/develop/pointclouds/lion_takanawa_normals/cloud.js',
+	'lion': `${ POTREE_POINTCLOUDS }lion_takanawa/cloud.js`,
+	'lion normals': `${ POTREE_POINTCLOUDS }lion_takanawa_normals/cloud.js`,
+	'heidentor': 'http://5.9.65.151/mschuetz/potree/resources/pointclouds/archpro/heidentor/cloud.js',
+	'retz': 'http://5.9.65.151/mschuetz/potree/resources/pointclouds/riegl/retz/cloud.js',
+	'vol total': `${ POTREE_POINTCLOUDS }vol_total/cloud.js`,
 };
 
 let camera, controls, scene, renderer, tiles;

@@ -47,6 +47,31 @@ function v1ParseHierarchy( buffer, rootKey, hierarchy ) {
 
 }
 
+// Parse a Potree 1.4 inline hierarchy into the given map. These data sets list every node in
+// cloud.js as a [ name, numPoints ] pair rather than using chunked ".hrc" files, so the child
+// masks are derived from which keys are present.
+function v1ParseInlineHierarchy( entries, hierarchy ) {
+
+	for ( let i = 0, l = entries.length; i < l; i ++ ) {
+
+		const [ name, numPoints ] = entries[ i ];
+		hierarchy.set( name, { childMask: 0, numPoints } );
+
+	}
+
+	hierarchy.forEach( ( node, name ) => {
+
+		if ( name.length > 1 ) {
+
+			const parent = hierarchy.get( name.slice( 0, - 1 ) );
+			parent.childMask |= 1 << parseInt( name.charAt( name.length - 1 ) );
+
+		}
+
+	} );
+
+}
+
 // Parse a v2 hierarchy.bin chunk into the given map: BFS-ordered entries of type(uint8) +
 // childMask(uint8) + numPoints(uint32) + byteOffset(int64) + byteSize(int64)
 function v2ParseHierarchy( buffer, rootKey, chunkStart, chunkSize, hierarchy ) {
@@ -162,6 +187,7 @@ export class PotreeLoader {
 		this._dataUrl = null;
 		this._octreeUrl = null;
 		this._loadedChunks = null;
+		this._inlineHierarchy = false;
 
 	}
 
@@ -211,13 +237,24 @@ export class PotreeLoader {
 
 		} else {
 
-			// the root hierarchy chunk lives at {octreeDir}/r/r.hrc
 			this._dataUrl = new URL( json.octreeDir + '/', baseUrl ).href;
 
-			const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataUrl ).href, this.fetchOptions );
-			const hierBuf = await hierRes.arrayBuffer();
-			v1ParseHierarchy( hierBuf, 'r', this.hierarchy );
-			this._loadedChunks = new Set( [ 'r' ] );
+			// Potree 1.4 embeds the whole hierarchy in cloud.js and stores the node files flat
+			// in the octree directory, while later versions chunk it into ".hrc" files rooted
+			// at {octreeDir}/r/r.hrc with the node files grouped into subdirectories.
+			this._inlineHierarchy = Boolean( json.hierarchy );
+			if ( this._inlineHierarchy ) {
+
+				v1ParseInlineHierarchy( json.hierarchy, this.hierarchy );
+
+			} else {
+
+				const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataUrl ).href, this.fetchOptions );
+				const hierBuf = await hierRes.arrayBuffer();
+				v1ParseHierarchy( hierBuf, 'r', this.hierarchy );
+				this._loadedChunks = new Set( [ 'r' ] );
+
+			}
 
 		}
 
@@ -252,6 +289,12 @@ export class PotreeLoader {
 					Range: `bytes=${ start }-${ end }`,
 				},
 			} );
+			return res.arrayBuffer();
+
+		} else if ( this._inlineHierarchy ) {
+
+			// 1.4 node files sit flat in the octree directory
+			const res = await this.fetchData( `${ this._dataUrl }${ key }.bin`, fetchOptions );
 			return res.arrayBuffer();
 
 		} else {

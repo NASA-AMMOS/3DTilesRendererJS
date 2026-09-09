@@ -1,4 +1,4 @@
-import { DataTexture, NearestFilter, Points, Vector3 } from 'three';
+import { DataTexture, NearestFilter, Points, RGBAIntegerFormat, UnsignedByteType, Vector3 } from 'three';
 import { PotreeLoader, getChildBounds } from './PotreeLoader.js';
 import { PotreePointsMaterial, NODES_TEXTURE_WIDTH } from './PotreePointsMaterial.js';
 
@@ -23,6 +23,24 @@ function makeBoundingBox( min, max ) {
 	const hy = ( max[ 1 ] - min[ 1 ] ) / 2;
 	const hz = ( max[ 2 ] - min[ 2 ] ) / 2;
 	return [ cx, cy, cz, hx, 0, 0, 0, hy, 0, 0, 0, hz ];
+
+}
+
+// The node hierarchy is stored in an integer texture so the shader reads the mask and offset
+// bytes directly rather than converting them back from normalized floats.
+function createNodesTexture( height ) {
+
+	const texture = new DataTexture(
+		new Uint8Array( NODES_TEXTURE_WIDTH * height * 4 ),
+		NODES_TEXTURE_WIDTH,
+		height,
+		RGBAIntegerFormat,
+		UnsignedByteType,
+	);
+	texture.internalFormat = 'RGBA8UI';
+	texture.minFilter = NearestFilter;
+	texture.magFilter = NearestFilter;
+	return texture;
 
 }
 
@@ -149,13 +167,7 @@ export class PotreePlugin {
 		// The active node hierarchy shared by every material: per texel the active-children
 		// octant mask (r) and the offset to the first child texel (g, b). Rebuilt after any
 		// frame that changes the active tile set.
-		this._activeNodesTexture = new DataTexture(
-			new Uint8Array( NODES_TEXTURE_WIDTH * 4 ),
-			NODES_TEXTURE_WIDTH,
-			1,
-		);
-		this._activeNodesTexture.minFilter = NearestFilter;
-		this._activeNodesTexture.magFilter = NearestFilter;
+		this._activeNodesTexture = createNodesTexture( 1 );
 
 		this._activeSetDirty = false;
 		this._onUpdateAfter = () => {
@@ -374,9 +386,7 @@ export class PotreePlugin {
 			while ( list.length > NODES_TEXTURE_WIDTH * height ) height *= 2;
 
 			texture.dispose();
-			texture = new DataTexture( new Uint8Array( NODES_TEXTURE_WIDTH * height * 4 ), NODES_TEXTURE_WIDTH, height );
-			texture.minFilter = NearestFilter;
-			texture.magFilter = NearestFilter;
+			texture = createNodesTexture( height );
 			this._activeNodesTexture = texture;
 
 			tiles.forEachLoadedModel( scene => {
@@ -397,22 +407,30 @@ export class PotreePlugin {
 			const key = keys.get( list[ i ] );
 			indexByKey.set( key, i );
 
-			const parentIndex = indexByKey.get( key.slice( 0, - 1 ) );
-			if ( parentIndex !== undefined ) {
+			if ( i === 0 ) {
 
-				// siblings are consecutive so the first one encountered sets the child offset
-				if ( data[ parentIndex * 4 ] === 0 ) {
-
-					const offset = i - parentIndex;
-					data[ parentIndex * 4 + 1 ] = offset >> 8;
-					data[ parentIndex * 4 + 2 ] = offset & 0xff;
-
-				}
-
-				// the key's last digit is the tile's octant within its parent
-				data[ parentIndex * 4 ] |= 1 << parseInt( key.charAt( key.length - 1 ) );
+				continue;
 
 			}
+
+			const parentKey = key.slice( 0, - 1 );
+			const parentIndex = indexByKey.get( parentKey );
+
+			// byte 0: child occupancy bit mask
+			// byte 1 & 2: split
+
+			// siblings are consecutive so the first one encountered sets the child offset
+			if ( data[ parentIndex * 4 ] === 0 ) {
+
+				const offset = i - parentIndex;
+				data[ parentIndex * 4 + 1 ] = offset >> 8;
+				data[ parentIndex * 4 + 2 ] = offset & 0xff;
+
+			}
+
+			// the key's last digit is the tile's octant within its parent
+			const octant = parseInt( key.charAt( key.length - 1 ) );
+			data[ parentIndex * 4 ] |= 1 << octant;
 
 		}
 

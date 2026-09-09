@@ -114,52 +114,54 @@ export class PotreePointsMaterial extends PointsMaterial {
 					/* glsl */`
 						uniform float size;
 						uniform float uMinPointSize;
-						uniform sampler2D uActiveNodes;
+						uniform usampler2D uActiveNodes;
 						uniform float uNodeSize;
 						uniform vec3 uNodeMinOffset;
 
 						varying vec3 vViewPosition;
 						varying float vRadius;
-						varying float vNodeIndex;
+						varying float vNodeId;
 						varying float vDepth;
 
-						// number of set bits at or below the given bit index
-						float numberOfOnes( float number, float index ) {
+						// number of set bits below the given bit index
+						uint numberOfOnes( uint mask, int index ) {
 
-							float result = 0.0;
-							for ( float i = 0.0; i < 8.0; i ++ ) {
+							uint bitsBelow = mask & ( ( 1u << uint( index ) ) - 1u );
+							uint count = 0u;
+							for ( int i = 0; i < 8; i ++ ) {
 
-								if ( i > index ) break;
-								if ( mod( floor( number / pow( 2.0, i ) ), 2.0 ) != 0.0 ) result ++;
+								count += ( bitsBelow >> uint( i ) ) & 1u;
 
 							}
 
-							return result;
+							return count;
 
 						}
 
 						// Walks down the active node hierarchy texture through the octant containing
 						// the point, returning the depth of the deepest active node on the path (x)
-						// and that node's texel index (y). Adapted from "getLOD" in potree's
-						// pointcloud.vs.
+						// and an id built from the octant path taken to reach it (y). The id is
+						// derived from the path rather than the texel index so that it stays stable
+						// as tiles load and unload and the texture is re-encoded. Adapted from
+						// "getLOD" in potree's pointcloud.vs.
 						vec2 getActiveDepth( vec3 posInNode ) {
 
 							vec3 offset = vec3( 0.0 );
-							float iOffset = 0.0;
-							float depth = 0.0;
-							for ( float i = 0.0; i < 20.0; i ++ ) {
+							int nodeIndex = 0;
+							int depth = 0;
+							uint nodePath = 0u;
+							for ( int i = 0; i < 20; i ++ ) {
 
-								int nodeIndex = int( iOffset );
-								vec4 value = texelFetch( uActiveNodes, ivec2( nodeIndex % ${ NODES_TEXTURE_WIDTH }, nodeIndex / ${ NODES_TEXTURE_WIDTH } ), 0 );
+								uvec4 value = texelFetch( uActiveNodes, ivec2( nodeIndex % ${ NODES_TEXTURE_WIDTH }, nodeIndex / ${ NODES_TEXTURE_WIDTH } ), 0 );
 
 								// octant of the current node containing the point
-								float nodeSize = uNodeSize / pow( 2.0, i );
+								float nodeSize = uNodeSize / pow( 2.0, float( i ) );
 								vec3 index3d = floor( ( posInNode - offset ) / nodeSize + 0.5 + ${ OCTANT_PLANE_BIAS } );
-								float index = 4.0 * index3d.x + 2.0 * index3d.y + index3d.z;
+								int index = int( 4.0 * index3d.x + 2.0 * index3d.y + index3d.z );
 
 								// stop when the octant holds no active child
-								float mask = floor( value.r * 255.0 + 0.5 );
-								if ( mod( floor( mask / pow( 2.0, index ) ), 2.0 ) == 0.0 ) {
+								uint mask = value.r;
+								if ( ( ( mask >> uint( index ) ) & 1u ) == 0u ) {
 
 									break;
 
@@ -167,16 +169,18 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 								// advance to the child's texel: the parent's first child offset plus
 								// the number of active siblings in lower octants
-								iOffset +=
-									floor( value.g * 255.0 + 0.5 ) * 256.0 +
-									floor( value.b * 255.0 + 0.5 ) +
-									numberOfOnes( mask, index - 1.0 );
+								nodeIndex += int( value.g * 256u + value.b + numberOfOnes( mask, index ) );
 								depth ++;
 								offset += nodeSize * 0.5 * index3d;
 
+								// append the octant to the path, offset by one so that trailing
+								// zeroes still change the id
+								nodePath = nodePath * 8u + uint( index ) + 1u;
+
 							}
 
-							return vec2( depth, iOffset );
+							// kept under 2^24 so the id survives the trip through a float varying
+							return vec2( float( depth ), float( nodePath % 16777216u ) );
 
 						}
 					`
@@ -188,15 +192,18 @@ export class PotreePointsMaterial extends PointsMaterial {
 						vec2 activeResult = getActiveDepth( position + uNodeMinOffset );
 						float worldSize = size / pow( 2.0, activeResult.x );
 
-						gl_PointSize = worldSize * ( scale / - mvPosition.z );
+						// The "scale" sizing uniform is half the viewport height with no field of
+						// view term, so three's point attenuation is not true world scale. The
+						// projection's y scale is 1 / tan( fov / 2 ), which restores it and matches
+						// potree's "projFactor".
+						float projFactor = scale * projectionMatrix[ 1 ][ 1 ] / - mvPosition.z;
+						gl_PointSize = worldSize * projFactor;
 						gl_PointSize = max( gl_PointSize, uMinPointSize );
 
-						// Half the view-space width the sprite actually covers, including the pixel
-						// clamp. The "scale" sizing uniform is half the viewport height with no fov
-						// factor so the projection's y scale converts pixels to view units.
+						// half the world size the sprite actually covers, including the pixel clamp
 						vViewPosition = mvPosition.xyz;
-						vRadius = 0.5 * gl_PointSize * ( - mvPosition.z ) / ( scale * projectionMatrix[ 1 ][ 1 ] );
-						vNodeIndex = activeResult.y;
+						vRadius = 0.5 * gl_PointSize / projFactor;
+						vNodeId = activeResult.y;
 						vDepth = activeResult.x;
 
 						#include <logdepthbuf_vertex>
@@ -212,7 +219,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 					varying vec3 vViewPosition;
 					varying float vRadius;
-					varying float vNodeIndex;
+					varying float vNodeId;
 					varying float vDepth;
 					`
 				)
@@ -224,7 +231,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 					// color each point by a hash of the node it is sized by
 					#ifdef DEBUG_NODE_COLORS
 
-						float id = vNodeIndex + 1.0;
+						float id = vNodeId + 1.0;
 						diffuseColor.rgb = vec3(
 							fract( sin( id * 12.9898 ) * 43758.5453 ),
 							fract( sin( id * 78.2330 ) * 12543.2341 ),
