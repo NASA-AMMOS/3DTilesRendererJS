@@ -176,15 +176,16 @@ function boxToMinMax( box ) {
  * point is sized by the deepest active node at its position, resolved in the vertex shader
  * against a texture encoding the active node hierarchy.
  *
+ * All the options below can be adjusted after construction.
  * @param {Object} [options]
- * @param {string|null} [options.url=null] Url of the dataset metadata file - `cloud.js` for v1
- *   or `metadata.json` for v2. Falls back to `tiles.rootURL`.
- * @param {number} [options.pointScale=1] Multiplier on the point size. Can be adjusted
- *   dynamically.
+ * @param {string|null} [options.url=null] Url of the dataset metadata file, `cloud.js` for v1 or `metadata.json` for v2. Falls back to `tiles.rootURL`.
+ * @param {number} [options.pointScale=1] Multiplier on the point size.
  * @param {('square'|'round'|'sphere')} [options.pointShape='round'] Shape of the point sprites.
- *   Can be adjusted dynamically.
- * @param {number} [options.minPointSize=2] Smallest point size in pixels. Can be adjusted
- *   dynamically.
+ * @param {number} [options.minPointSize=2] Smallest point size in pixels.
+ * @param {number} [options.edlStrength=0] Eye dome lighting falloff rate. Zero disables the effect and skips its depth pre-pass.
+ * @param {number} [options.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in css pixels, scaled by the renderer pixel ratio so the effect looks the same on every display.
+ * @param {boolean} [options.debugDepth=false] Draw the eye dome lighting depth target over the frame.
+ * @param {('none'|'node'|'depth'|'tile')} [options.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
  */
 export class PotreePlugin {
 
@@ -249,9 +250,8 @@ export class PotreePlugin {
 
 		if ( value !== this._edlStrength ) {
 
-			const wasEnabled = this._edlStrength > 0;
 			this._edlStrength = value;
-			if ( wasEnabled !== value > 0 ) this._updateMaterials();
+			this._updateMaterials();
 			this._updateDepthDebug();
 
 		}
@@ -264,6 +264,7 @@ export class PotreePlugin {
 
 	}
 
+	// scaled by the pixel ratio and pushed onto the materials by the depth pass
 	set edlRadius( value ) {
 
 		this._edlRadius = value;
@@ -314,6 +315,7 @@ export class PotreePlugin {
 			edlStrength = 0,
 			edlRadius = 1.4,
 			debugDepth = false,
+			debugColorMode = 'none',
 		} = options;
 
 		this.name = 'POTREE_PLUGIN';
@@ -326,15 +328,13 @@ export class PotreePlugin {
 		this._pointScale = pointScale;
 		this._pointShape = pointShape;
 		this._minPointSize = minPointSize;
-		this._debugColorMode = 'none';
+		this._debugColorMode = debugColorMode;
 		this._edlStrength = edlStrength;
 		this._edlRadius = edlRadius;
 
 		// Eye dome lighting renders the points to a depth target first so each point can compare
-		// itself against its neighbours while it rasterizes. The hook mesh exists purely to learn
-		// which renderer and camera are drawing.
-		// Single channel float: the pass stores only a log depth, and full float precision keeps
-		// the quantization steps from banding the shading when zoomed out.
+		// itself against its neighbours while it rasterizes. The target holds only a log depth, so
+		// a single channel is enough, and full float keeps quantization from banding the shading.
 		this._edlTarget = new WebGLRenderTarget( 1, 1, {
 			format: RedFormat,
 			type: FloatType,
@@ -482,6 +482,8 @@ export class PotreePlugin {
 			pointShape: this._pointShape,
 			minPointSize: this._minPointSize,
 			debugColorMode: this._debugColorMode,
+			edlStrength: this._edlStrength,
+			edlRadius: this._edlRadius,
 		} );
 		material.uniforms.uActiveNodes.value = this._activeNodesTexture;
 		material.uniforms.uTileId.value = idFromKey( key );
@@ -659,10 +661,8 @@ export class PotreePlugin {
 
 		}
 
-		// Gather the points without reparenting them. Their world matrices are already up to date
-		// from the render in progress, so the group must not recompute them. Only what is actually
-		// drawn is gathered - depth from a node the main pass skips would make the points in front
-		// of it compare against a surface that is not there and darken for no reason.
+		// Gather what the main pass draws without reparenting it. The world matrices are already up
+		// to date from the render in progress, so the group must not recompute them.
 		const children = this._edlGroup.children;
 		children.length = 0;
 		this.tiles.group.traverseVisible( child => {
@@ -700,8 +700,7 @@ export class PotreePlugin {
 			const { uniforms } = scene.material;
 			uniforms.uEdlTexture.value = target.texture;
 			uniforms.uEdlResolution.value.set( target.width, target.height );
-			uniforms.uEdlStrength.value = this._edlStrength;
-			uniforms.uEdlRadius.value = this._edlRadius;
+			uniforms.uEdlRadius.value = this._edlRadius * renderer.getPixelRatio();
 			uniforms.uEdlDepthPass.value = false;
 
 		} );
@@ -731,7 +730,7 @@ export class PotreePlugin {
 
 	}
 
-	// Push the current point scale, shape, and debug settings onto the loaded materials
+	// Push the current settings onto the loaded materials
 	_updateMaterials() {
 
 		const { spacing } = this.loader.metadata;
@@ -742,7 +741,7 @@ export class PotreePlugin {
 			material.pointShape = this._pointShape;
 			material.minPointSize = this._minPointSize;
 			material.debugColorMode = this._debugColorMode;
-			material.edl = this._edlStrength > 0;
+			material.edlStrength = this._edlStrength;
 
 		} );
 

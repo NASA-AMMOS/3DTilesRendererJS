@@ -1,36 +1,30 @@
 import { PointsMaterial, Vector2, Vector3 } from 'three';
 
 /**
- * Width of the active node hierarchy texture - node texels wrap into rows so growing node
- * counts extend the texture height rather than running into the platform width limit.
+ * Width of the active node hierarchy texture. Texels wrap into rows so the texture grows in
+ * height rather than hitting the platform width limit.
  */
 export const NODES_TEXTURE_WIDTH = 2048;
 
-// Bias applied to the octant selection so quantized points lying exactly on octant planes
-// resolve to the same side in every node's frame
+// Nudges octant selection so points lying exactly on an octant plane resolve the same way in
+// every node's frame
 const OCTANT_PLANE_BIAS = 0.00005;
 
 /**
- * PointsMaterial that sizes each point by the deepest active node at its position, resolved in
- * the vertex shader by walking a texture encoding the active node hierarchy down from the root.
- * The `size` property is the world-space point spacing of the root level, halved per active
- * level found below the root.
+ * PointsMaterial that sizes each point by the deepest active node containing it, found by walking
+ * the active node hierarchy texture in the vertex shader. `size` is the root level point spacing,
+ * halved per active level below the root.
  *
- * Uniforms to assign after construction:
- * - `uActiveNodes`: the hierarchy texture, one texel per node in row-major order with the root
- *   node first and `NODES_TEXTURE_WIDTH` texels per row.
- * - `uNodeSize`: world size of the root cube.
- * - `uNodeMinOffset`: offset from mesh-local vertex positions to root-min-relative positions.
+ * Assign after construction: `uActiveNodes` (hierarchy texture, root texel first), `uNodeSize`
+ * (world size of the root cube) and `uNodeMinOffset` (mesh local to root min offset).
  *
+ * All the properties below can be adjusted after construction.
  * @param {Object} [params] PointsMaterial parameters plus the properties below.
- * @param {('square'|'round'|'sphere')} [params.pointShape='round'] Shape of the point sprites.
- *   Spheres additionally write bulged depth values so overlapping points intersect, which has a
- *   fill rate cost. Can be adjusted dynamically.
- * @param {number} [params.minPointSize=2] Smallest projected point size in pixels. Can be
- *   adjusted dynamically.
- * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Debug visualization -
- *   color each point by the node it is sized by, by the depth of that node, or by the node the
- *   point itself came from. Can be adjusted dynamically.
+ * @param {('square'|'round'|'sphere')} [params.pointShape='round'] Sprite shape. Spheres write bulged depth so overlapping points intersect, at a fill rate cost.
+ * @param {number} [params.minPointSize=2] Smallest projected point size in pixels.
+ * @param {boolean} [params.edl=false] Whether to apply eye dome lighting shading.
+ * @param {number} [params.edlRadius=1.4] Pixel radius of the eye dome lighting neighbour ring.
+ * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
  */
 export class PotreePointsMaterial extends PointsMaterial {
 
@@ -63,20 +57,30 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 	}
 
-	get edl() {
+	get edlStrength() {
 
-		return this._edl;
+		return this.uniforms.uEdlStrength.value;
 
 	}
 
-	set edl( value ) {
+	// zero compiles the effect out rather than scaling it to nothing
+	set edlStrength( value ) {
 
-		if ( value !== this._edl ) {
+		const wasEnabled = this.uniforms.uEdlStrength.value > 0;
+		this.uniforms.uEdlStrength.value = value;
+		if ( wasEnabled !== value > 0 ) this._updateDefines();
 
-			this._edl = value;
-			this._updateDefines();
+	}
 
-		}
+	get edlRadius() {
+
+		return this.uniforms.uEdlRadius.value;
+
+	}
+
+	set edlRadius( value ) {
+
+		this.uniforms.uEdlRadius.value = value;
 
 	}
 
@@ -103,7 +107,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 			pointShape = 'round',
 			minPointSize = 2,
 			debugColorMode = 'none',
-			edl = false,
+			edlStrength = 0,
 			edlRadius = 1.4,
 			...rest
 		} = params;
@@ -112,7 +116,6 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 		this._pointShape = pointShape;
 		this._debugColorMode = debugColorMode;
-		this._edl = edl;
 
 		this.defines = {};
 		this.uniforms = {
@@ -124,7 +127,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 			uEdlTexture: { value: null },
 			uEdlResolution: { value: new Vector2( 1, 1 ) },
-			uEdlStrength: { value: 0 },
+			uEdlStrength: { value: edlStrength },
 			uEdlRadius: { value: edlRadius },
 			uEdlDepthPass: { value: false },
 		};
@@ -166,11 +169,10 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 						}
 
-						// Walks down the active node hierarchy texture through the octant containing
-						// the point, returning the depth of the deepest active node on the path (x)
-						// and an id built from the octant path taken to reach it (y). The id is
-						// derived from the path rather than the texel index so that it stays stable
-						// as tiles load and unload and the texture is re-encoded. Adapted from
+						// Walks the hierarchy texture through the octants containing the point,
+						// returning the deepest active depth (x), an id for that node (y) and its
+						// lod offset (z). The id comes from the octant path rather than the texel
+						// index so it stays stable as the texture is re-encoded. Adapted from
 						// "getLOD" in potree's pointcloud.vs.
 						vec3 getActiveDepth( vec3 posInNode ) {
 
@@ -219,26 +221,24 @@ export class PotreePointsMaterial extends PointsMaterial {
 				.replace(
 					'#include <logdepthbuf_vertex>',
 					/* glsl */`
-						// Scale the point by the deepest active node it falls in, shifted by that
-						// node's density based lod offset the way potree's "getLOD" does.
+						// size the point by the deepest active node it falls in, shifted by that
+						// node's density based lod offset
 						vec3 activeResult = getActiveDepth( position + uNodeMinOffset );
 						float worldSize = size / pow( 2.0, activeResult.x + activeResult.z );
 
-						// The "scale" sizing uniform is half the viewport height with no field of
-						// view term, so three's point attenuation is not true world scale. The
-						// projection's y scale is 1 / tan( fov / 2 ), which restores it and matches
-						// potree's "projFactor".
+						// three's "scale" uniform omits the 1 / tan( fov / 2 ) term, so its point
+						// attenuation is not true world scale. The projection's y scale restores it
+						// and matches potree's "projFactor".
 						float projFactor = scale * projectionMatrix[ 1 ][ 1 ] / - mvPosition.z;
 						gl_PointSize = worldSize * projFactor;
 						gl_PointSize = max( gl_PointSize, uMinPointSize );
 
-						// half the world size the sprite actually covers, including the pixel clamp
 						vViewPosition = mvPosition.xyz;
-						vRadius = 0.5 * gl_PointSize / projFactor;
 						vNodeId = activeResult.y;
 						vDepth = activeResult.x;
 
-						// log view depth, which the eye dome lighting pass reads back from alpha
+						// half the world size the sprite covers, including the pixel clamp
+						vRadius = 0.5 * gl_PointSize / projFactor;
 						vLogDepth = log2( - mvPosition.z );
 
 						#include <logdepthbuf_vertex>
@@ -267,9 +267,9 @@ export class PotreePointsMaterial extends PointsMaterial {
 						uniform float uEdlRadius;
 						uniform bool uEdlDepthPass;
 
-						// Eye dome lighting, adapted from potree's "edl.fs". Compares this point's
-						// log depth against a ring of neighbours in the pre-pass target, so points
-						// standing in front of their surroundings darken at the edges.
+						// Eye dome lighting, adapted from potree's "edl.fs". Darkens a point by
+						// how far it sits behind a ring of neighbours in the pre-pass target, so
+						// silhouettes and creases pick up shading.
 						float edlShade( float logDepth ) {
 
 							vec2 uv = gl_FragCoord.xy / uEdlResolution;
@@ -279,10 +279,10 @@ export class PotreePointsMaterial extends PointsMaterial {
 							for ( int i = 0; i < 8; i ++ ) {
 
 								float angle = 6.2831853 * float( i ) / 8.0;
-								vec2 offset = 1.0 * uvRadius * vec2( cos( angle ), sin( angle ) );
+								vec2 offset = uvRadius * vec2( cos( angle ), sin( angle ) );
 								float neighbourDepth = texture2D( uEdlTexture, uv + offset ).r;
 
-								// an empty neighbour means nothing was drawn there, so it is skipped
+								// zero means nothing was drawn there, so it contributes nothing
 								if ( neighbourDepth != 0.0 ) {
 
 									sum += max( 0.0, logDepth - neighbourDepth );
@@ -345,21 +345,18 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 					#ifdef EDL_ENABLED
 
+						// the pre-pass target is a single red channel holding the log depth for the
+						// shading pass to sample
 						if ( uEdlDepthPass ) {
 
-							// the pre-pass target is a single red channel holding the log depth
-							// for the shading pass to sample
 							gl_FragColor.r = vLogDepth;
 							return;
 
-						} else {
-
-							// Shading happens after the color space conversion so the falloff lands
-							// on the encoded color, the way potree's post process applies it. Alpha
-							// is left as the material opacity.
-							gl_FragColor.rgb *= vec3( edlShade( vLogDepth ) );
-
 						}
+
+						// shading runs after the color space conversion so the falloff lands on the
+						// encoded color, the way potree's post process applies it
+						gl_FragColor.rgb *= edlShade( vLogDepth );
 
 					#endif
 					`
@@ -384,10 +381,9 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 					#ifdef SPHERE_POINTS
 
-						// Intersect the view ray through this fragment with the point's sphere and
-						// write the depth of the intersection so overlapping points meet as solid
-						// spheres fixed in space. The fragment's view position lies on the sprite
-						// plane at the point's depth.
+						// Intersect the view ray through this fragment with the point's sphere and write
+						// the intersection depth so overlapping points meet as solid spheres fixed in
+						// space, rather than as flat discs.
 						vec3 rayDir = normalize( vViewPosition + vec3( pointOffset * vRadius, 0.0 ) );
 						float rayDot = dot( vViewPosition, rayDir );
 						float disc = rayDot * rayDot - dot( vViewPosition, vViewPosition ) + vRadius * vRadius;
@@ -404,25 +400,18 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 	}
 
-	// Set the shader feature defines for the current point shape and debug settings
+	// Rebuild the shader feature defines for the current shape, debug and edl settings
 	_updateDefines() {
 
-		const { defines } = this;
-		delete defines.ROUND_POINTS;
-		delete defines.SPHERE_POINTS;
-		delete defines.DEBUG_NODE_COLORS;
-		delete defines.DEBUG_DEPTH_COLORS;
-		delete defines.DEBUG_TILE_COLORS;
-		delete defines.EDL_ENABLED;
-
-		if ( this._edl ) defines.EDL_ENABLED = '';
-
+		const defines = {};
+		if ( this.uniforms.uEdlStrength.value > 0 ) defines.EDL_ENABLED = '';
 		if ( this._pointShape === 'round' ) defines.ROUND_POINTS = '';
 		if ( this._pointShape === 'sphere' ) defines.SPHERE_POINTS = '';
 		if ( this._debugColorMode === 'node' ) defines.DEBUG_NODE_COLORS = '';
 		if ( this._debugColorMode === 'depth' ) defines.DEBUG_DEPTH_COLORS = '';
 		if ( this._debugColorMode === 'tile' ) defines.DEBUG_TILE_COLORS = '';
 
+		this.defines = defines;
 		this.needsUpdate = true;
 
 	}
