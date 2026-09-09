@@ -25,11 +25,11 @@ const DATASETS = {
 let camera, controls, scene, renderer, tiles;
 
 // With node geometric error set to the potree point spacing, the error target is the point
-// spacing projected on screen in pixels. Potree's own defaults refine until the projected
-// spacing is ~2-3 pixels, so small values are needed for a comparable density.
+// spacing projected on screen in pixels, so small values are needed for a comparable density.
+// A target of 1 refines at close to the same rate as potree's default node pixel size.
 const params = {
 	enable: true,
-	errorTarget: 2,
+	errorTarget: 1,
 	maxDepth: 1,
 	pointScale: 1,
 	pointShape: 'round',
@@ -147,7 +147,7 @@ function init() {
 		tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = v;
 
 	} );
-	debugFolder.add( params, 'debugColorMode', [ 'none', 'node', 'depth' ] ).name( 'color mode' ).onChange( v => {
+	debugFolder.add( params, 'debugColorMode', [ 'none', 'node', 'depth', 'tile' ] ).name( 'color mode' ).onChange( v => {
 
 		tiles.getPluginByName( 'POTREE_PLUGIN' ).debugColorMode = v;
 
@@ -181,7 +181,8 @@ function initTiles() {
 	scene.add( tiles.group );
 	window.TILES = tiles;
 
-	// center the cloud at the origin once the bounds are known
+	// center the cloud at the origin and frame it once the bounds are known. The data sets
+	// range from a few meters to hundreds, so the camera and controls are scaled to fit.
 	tiles.addEventListener( 'load-root-tileset', () => {
 
 		const sphere = new Sphere();
@@ -189,6 +190,17 @@ function initTiles() {
 		tiles.group.updateMatrixWorld();
 		sphere.applyMatrix4( tiles.group.matrixWorld );
 		tiles.group.position.sub( sphere.center );
+
+		const { radius } = sphere;
+		camera.position.set( 0.6, 0.4, 1 ).normalize().multiplyScalar( radius * 2.5 );
+		camera.near = radius / 100;
+		camera.far = radius * 100;
+		camera.updateProjectionMatrix();
+		camera.lookAt( 0, 0, 0 );
+
+		controls.minDistance = radius / 50;
+		controls.maxDistance = radius * 20;
+		controls.raycaster.params.Points.threshold = radius / 200;
 
 	} );
 

@@ -2,6 +2,11 @@ import { BufferGeometry, BufferAttribute, Color, SRGBColorSpace, Vector3 } from 
 
 const _color = /* @__PURE__ */ new Color();
 
+// TODO: v2 clouds carry a node "density" that potree uses to offset the point size, computed by
+// binning the node's points into a 32 cell occupancy grid and taking the average number of points
+// per occupied cell. Potree only does this for v2, and does it in a worker. Adding it here would
+// mean per point work on the main thread, so it is left out until the v2 path needs it.
+
 // Directory path of a v1 node's files: the key digits grouped into folders of "stepSize" characters
 function v1HierarchyPath( key, stepSize ) {
 
@@ -333,13 +338,6 @@ export class PotreeLoader {
 	parsePointData( buffer, key, min, max ) {
 
 		const { attributes, scale, offset } = this.metadata;
-		const numPoints = this.hierarchy.get( key ).numPoints;
-		const center = new Vector3(
-			( min[ 0 ] + max[ 0 ] ) / 2,
-			( min[ 1 ] + max[ 1 ] ) / 2,
-			( min[ 2 ] + max[ 2 ] ) / 2,
-		);
-
 		// per-attribute byte offsets within the interleaved point record
 		let stride = 0;
 		const attrOffsets = attributes.map( attr => {
@@ -349,6 +347,15 @@ export class PotreeLoader {
 			return off;
 
 		} );
+
+		// The point count comes from the buffer rather than the hierarchy, matching potree. The
+		// hierarchy count is unreliable - many nodes report zero while their files hold points.
+		const numPoints = Math.floor( buffer.byteLength / stride );
+		const center = new Vector3(
+			( min[ 0 ] + max[ 0 ] ) / 2,
+			( min[ 1 ] + max[ 1 ] ) / 2,
+			( min[ 2 ] + max[ 2 ] ) / 2,
+		);
 
 		// The attributes to decode. The alpha byte of "rgba" is dropped - potree never reads it.
 		const posIdx = attributes.findIndex( a => a.name === 'position' );

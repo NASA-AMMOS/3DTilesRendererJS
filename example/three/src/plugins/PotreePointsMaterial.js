@@ -28,9 +28,9 @@ const OCTANT_PLANE_BIAS = 0.00005;
  *   fill rate cost. Can be adjusted dynamically.
  * @param {number} [params.minPointSize=2] Smallest projected point size in pixels. Can be
  *   adjusted dynamically.
- * @param {('none'|'node'|'depth')} [params.debugColorMode='none'] Debug visualization - color
- *   each point by a hash of the node it is sized by or by the depth of that node. Can be
- *   adjusted dynamically.
+ * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Debug visualization -
+ *   color each point by the node it is sized by, by the depth of that node, or by the node the
+ *   point itself came from. Can be adjusted dynamically.
  */
 export class PotreePointsMaterial extends PointsMaterial {
 
@@ -100,6 +100,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 			uNodeSize: { value: 1 },
 			uNodeMinOffset: { value: new Vector3() },
 			uMinPointSize: { value: minPointSize },
+			uTileId: { value: 0 },
 		};
 
 		this._updateDefines();
@@ -144,12 +145,13 @@ export class PotreePointsMaterial extends PointsMaterial {
 						// derived from the path rather than the texel index so that it stays stable
 						// as tiles load and unload and the texture is re-encoded. Adapted from
 						// "getLOD" in potree's pointcloud.vs.
-						vec2 getActiveDepth( vec3 posInNode ) {
+						vec3 getActiveDepth( vec3 posInNode ) {
 
 							vec3 offset = vec3( 0.0 );
 							int nodeIndex = 0;
 							int depth = 0;
 							uint nodePath = 0u;
+							float lodOffset = 0.0;
 							for ( int i = 0; i < 20; i ++ ) {
 
 								uvec4 value = texelFetch( uActiveNodes, ivec2( nodeIndex % ${ NODES_TEXTURE_WIDTH }, nodeIndex / ${ NODES_TEXTURE_WIDTH } ), 0 );
@@ -159,10 +161,12 @@ export class PotreePointsMaterial extends PointsMaterial {
 								vec3 index3d = floor( ( posInNode - offset ) / nodeSize + 0.5 + ${ OCTANT_PLANE_BIAS } );
 								int index = int( 4.0 * index3d.x + 2.0 * index3d.y + index3d.z );
 
-								// stop when the octant holds no active child
+								// stop when the octant holds no active child, taking the lod offset of
+								// the node the walk ends on
 								uint mask = value.r;
 								if ( ( ( mask >> uint( index ) ) & 1u ) == 0u ) {
 
+									lodOffset = float( value.a ) / 10.0 - 10.0;
 									break;
 
 								}
@@ -180,7 +184,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 							}
 
 							// kept under 2^24 so the id survives the trip through a float varying
-							return vec2( float( depth ), float( nodePath % 16777216u ) );
+							return vec3( float( depth ), float( nodePath % 16777216u ), lodOffset );
 
 						}
 					`
@@ -188,9 +192,10 @@ export class PotreePointsMaterial extends PointsMaterial {
 				.replace(
 					'#include <logdepthbuf_vertex>',
 					/* glsl */`
-						// scale the point by the deepest active node it falls in
-						vec2 activeResult = getActiveDepth( position + uNodeMinOffset );
-						float worldSize = size / pow( 2.0, activeResult.x );
+						// Scale the point by the deepest active node it falls in, shifted by that
+						// node's density based lod offset the way potree's "getLOD" does.
+						vec3 activeResult = getActiveDepth( position + uNodeMinOffset );
+						float worldSize = size / pow( 2.0, activeResult.x + activeResult.z );
 
 						// The "scale" sizing uniform is half the viewport height with no field of
 						// view term, so three's point attenuation is not true world scale. The
@@ -216,11 +221,23 @@ export class PotreePointsMaterial extends PointsMaterial {
 					/* glsl */`
 					uniform float opacity;
 					uniform mat4 projectionMatrix;
+					uniform float uTileId;
 
 					varying vec3 vViewPosition;
 					varying float vRadius;
 					varying float vNodeId;
 					varying float vDepth;
+
+					// spread sequential ids into visually distinct colors
+					vec3 idToColor( float id ) {
+
+						return vec3(
+							fract( sin( id * 12.9898 ) * 43758.5453 ),
+							fract( sin( id * 78.2330 ) * 12543.2341 ),
+							fract( sin( id * 3.7010 ) * 26445.3450 )
+						);
+
+					}
 					`
 				)
 				.replace(
@@ -231,12 +248,15 @@ export class PotreePointsMaterial extends PointsMaterial {
 					// color each point by a hash of the node it is sized by
 					#ifdef DEBUG_NODE_COLORS
 
-						float id = vNodeId + 1.0;
-						diffuseColor.rgb = vec3(
-							fract( sin( id * 12.9898 ) * 43758.5453 ),
-							fract( sin( id * 78.2330 ) * 12543.2341 ),
-							fract( sin( id * 3.7010 ) * 26445.3450 )
-						);
+						diffuseColor.rgb = idToColor( vNodeId + 1.0 );
+
+					#endif
+
+					// Color each point by the node the point itself came from, rather than the one
+					// it is sized by, which shows how the tiles overlap in a given area.
+					#ifdef DEBUG_TILE_COLORS
+
+						diffuseColor.rgb = idToColor( uTileId + 1.0 );
 
 					#endif
 
@@ -297,11 +317,13 @@ export class PotreePointsMaterial extends PointsMaterial {
 		delete defines.SPHERE_POINTS;
 		delete defines.DEBUG_NODE_COLORS;
 		delete defines.DEBUG_DEPTH_COLORS;
+		delete defines.DEBUG_TILE_COLORS;
 
 		if ( this._pointShape === 'round' ) defines.ROUND_POINTS = '';
 		if ( this._pointShape === 'sphere' ) defines.SPHERE_POINTS = '';
 		if ( this._debugColorMode === 'node' ) defines.DEBUG_NODE_COLORS = '';
 		if ( this._debugColorMode === 'depth' ) defines.DEBUG_DEPTH_COLORS = '';
+		if ( this._debugColorMode === 'tile' ) defines.DEBUG_TILE_COLORS = '';
 
 		this.needsUpdate = true;
 

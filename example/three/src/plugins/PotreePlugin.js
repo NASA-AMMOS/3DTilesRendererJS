@@ -13,6 +13,21 @@ function keyFromUri( uri ) {
 
 }
 
+// Id built from the key's octant path, matching the one the shader accumulates while walking so
+// the "node" and "tile" debug colors can be compared directly.
+function idFromKey( key ) {
+
+	let id = 0;
+	for ( let i = 1, l = key.length; i < l; i ++ ) {
+
+		id = ( id * 8 + parseInt( key[ i ] ) + 1 ) % 16777216;
+
+	}
+
+	return id;
+
+}
+
 // Build a 3D Tiles box array [cx,cy,cz, hx,0,0, 0,hy,0, 0,0,hz] from min/max
 function makeBoundingBox( min, max ) {
 
@@ -288,6 +303,7 @@ export class PotreePlugin {
 			debugColorMode: this._debugColorMode,
 		} );
 		material.uniforms.uActiveNodes.value = this._activeNodesTexture;
+		material.uniforms.uTileId.value = idFromKey( key );
 		material.uniforms.uNodeSize.value = boundingBox.max[ 0 ] - boundingBox.min[ 0 ];
 		material.uniforms.uNodeMinOffset.value.copy( center ).sub( new Vector3( ...boundingBox.min ) );
 
@@ -406,6 +422,11 @@ export class PotreePlugin {
 
 			const key = keys.get( list[ i ] );
 			indexByKey.set( key, i );
+
+			// byte 3: potree's lod offset, which shifts the point size by the node's measured
+			// density. 100 is its "no offset" encoding, which is all we have to report since we
+			// do not measure density.
+			data[ i * 4 + 3 ] = 100;
 
 			if ( i === 0 ) {
 
