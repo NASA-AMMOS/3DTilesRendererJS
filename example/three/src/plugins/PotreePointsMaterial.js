@@ -1,9 +1,10 @@
 import { PointsMaterial, Vector3 } from 'three';
 
 /**
- * Width of the active node hierarchy texture the material samples, matching potree.
+ * Width of the active node hierarchy texture - node texels wrap into rows so growing node
+ * counts extend the texture height rather than running into the platform width limit.
  */
-export const ACTIVE_NODES_TEXTURE_SIZE = 2048;
+export const NODES_TEXTURE_WIDTH = 2048;
 
 // Bias applied to the octant selection so quantized points lying exactly on octant planes
 // resolve to the same side in every node's frame
@@ -11,15 +12,15 @@ const OCTANT_PLANE_BIAS = 0.00005;
 
 /**
  * PointsMaterial that sizes each point by the deepest active node at its position, resolved in
- * the vertex shader by walking a texture encoding the loaded node hierarchy and per node active
- * states. The `size` property is the world-space point spacing of the node's own level, halved
- * per active level found below the node.
+ * the vertex shader by walking a texture encoding the active node hierarchy down from the root.
+ * The `size` property is the world-space point spacing of the root level, halved per active
+ * level found below the root.
  *
  * Uniforms to assign after construction:
- * - `uActiveNodes`: the hierarchy texture, `ACTIVE_NODES_TEXTURE_SIZE` x 1 texels.
- * - `uVNStart`: the node's texel index in the hierarchy texture.
- * - `uNodeSize`: world size of the node's cube.
- * - `uNodeMinOffset`: offset from mesh-local vertex positions to node-local positions.
+ * - `uActiveNodes`: the hierarchy texture, one texel per node in row-major order with the root
+ *   node first and `NODES_TEXTURE_WIDTH` texels per row.
+ * - `uNodeSize`: world size of the root cube.
+ * - `uNodeMinOffset`: offset from mesh-local vertex positions to root-min-relative positions.
  *
  * @param {Object} [params] PointsMaterial parameters plus the properties below.
  * @param {('square'|'round'|'sphere')} [params.pointShape='round'] Shape of the point sprites.
@@ -27,8 +28,9 @@ const OCTANT_PLANE_BIAS = 0.00005;
  *   fill rate cost. Can be adjusted dynamically.
  * @param {number} [params.minPointSize=2] Smallest projected point size in pixels. Can be
  *   adjusted dynamically.
- * @param {boolean} [params.debugNodeColors=false] Color each point by a hash of the node it is
- *   sized by. Can be adjusted dynamically.
+ * @param {('none'|'node'|'depth')} [params.debugColorMode='none'] Debug visualization - color
+ *   each point by a hash of the node it is sized by or by the depth of that node. Can be
+ *   adjusted dynamically.
  */
 export class PotreePointsMaterial extends PointsMaterial {
 
@@ -61,17 +63,17 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 	}
 
-	get debugNodeColors() {
+	get debugColorMode() {
 
-		return this._debugNodeColors;
+		return this._debugColorMode;
 
 	}
 
-	set debugNodeColors( value ) {
+	set debugColorMode( value ) {
 
-		if ( value !== this._debugNodeColors ) {
+		if ( value !== this._debugColorMode ) {
 
-			this._debugNodeColors = value;
+			this._debugColorMode = value;
 			this._updateDefines();
 
 		}
@@ -83,19 +85,18 @@ export class PotreePointsMaterial extends PointsMaterial {
 		const {
 			pointShape = 'round',
 			minPointSize = 2,
-			debugNodeColors = false,
+			debugColorMode = 'none',
 			...rest
 		} = params;
 
 		super( rest );
 
 		this._pointShape = pointShape;
-		this._debugNodeColors = debugNodeColors;
+		this._debugColorMode = debugColorMode;
 
 		this.defines = {};
 		this.uniforms = {
 			uActiveNodes: { value: null },
-			uVNStart: { value: 0 },
 			uNodeSize: { value: 1 },
 			uNodeMinOffset: { value: new Vector3() },
 			uMinPointSize: { value: minPointSize },
@@ -114,13 +115,13 @@ export class PotreePointsMaterial extends PointsMaterial {
 						uniform float size;
 						uniform float uMinPointSize;
 						uniform sampler2D uActiveNodes;
-						uniform float uVNStart;
 						uniform float uNodeSize;
 						uniform vec3 uNodeMinOffset;
 
 						varying vec3 vViewPosition;
 						varying float vRadius;
 						varying float vNodeIndex;
+						varying float vDepth;
 
 						// number of set bits at or below the given bit index
 						float numberOfOnes( float number, float index ) {
@@ -137,42 +138,35 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 						}
 
-						// Walks down the loaded node hierarchy texture through the octant containing
-						// the point, returning the depth of the deepest node marked active along the
-						// way (x) and that node's texel index (y). The structure is the loaded tree
-						// rather than the active set so an inactive intermediate node does not hide
-						// the active nodes below it. Adapted from "getLOD" in potree's pointcloud.vs.
+						// Walks down the active node hierarchy texture through the octant containing
+						// the point, returning the depth of the deepest active node on the path (x)
+						// and that node's texel index (y). Adapted from "getLOD" in potree's
+						// pointcloud.vs.
 						vec2 getActiveDepth( vec3 posInNode ) {
 
 							vec3 offset = vec3( 0.0 );
-							float iOffset = uVNStart;
+							float iOffset = 0.0;
 							float depth = 0.0;
-							vec2 deepest = vec2( 0.0, uVNStart );
 							for ( float i = 0.0; i < 20.0; i ++ ) {
 
-								// track the deepest node marked active along the path
-								vec4 value = texture2D( uActiveNodes, vec2( ( iOffset + 0.5 ) / ${ ACTIVE_NODES_TEXTURE_SIZE.toFixed( 1 ) }, 0.5 ) );
-								if ( value.a > 0.5 ) {
-
-									deepest = vec2( depth, iOffset );
-
-								}
+								int nodeIndex = int( iOffset );
+								vec4 value = texelFetch( uActiveNodes, ivec2( nodeIndex % ${ NODES_TEXTURE_WIDTH }, nodeIndex / ${ NODES_TEXTURE_WIDTH } ), 0 );
 
 								// octant of the current node containing the point
 								float nodeSize = uNodeSize / pow( 2.0, i );
 								vec3 index3d = floor( ( posInNode - offset ) / nodeSize + 0.5 + ${ OCTANT_PLANE_BIAS } );
 								float index = 4.0 * index3d.x + 2.0 * index3d.y + index3d.z;
 
-								// stop when the octant holds no loaded child
+								// stop when the octant holds no active child
 								float mask = floor( value.r * 255.0 + 0.5 );
 								if ( mod( floor( mask / pow( 2.0, index ) ), 2.0 ) == 0.0 ) {
 
-									return deepest;
+									break;
 
 								}
 
 								// advance to the child's texel: the parent's first child offset plus
-								// the number of loaded siblings in lower octants
+								// the number of active siblings in lower octants
 								iOffset +=
 									floor( value.g * 255.0 + 0.5 ) * 256.0 +
 									floor( value.b * 255.0 + 0.5 ) +
@@ -182,7 +176,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 							}
 
-							return deepest;
+							return vec2( depth, iOffset );
 
 						}
 					`
@@ -197,9 +191,13 @@ export class PotreePointsMaterial extends PointsMaterial {
 						gl_PointSize = worldSize * ( scale / - mvPosition.z );
 						gl_PointSize = max( gl_PointSize, uMinPointSize );
 
+						// Half the view-space width the sprite actually covers, including the pixel
+						// clamp. The "scale" sizing uniform is half the viewport height with no fov
+						// factor so the projection's y scale converts pixels to view units.
 						vViewPosition = mvPosition.xyz;
-						vRadius = worldSize * 0.5;
+						vRadius = 0.5 * gl_PointSize * ( - mvPosition.z ) / ( scale * projectionMatrix[ 1 ][ 1 ] );
 						vNodeIndex = activeResult.y;
+						vDepth = activeResult.x;
 
 						#include <logdepthbuf_vertex>
 					`
@@ -215,6 +213,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 					varying vec3 vViewPosition;
 					varying float vRadius;
 					varying float vNodeIndex;
+					varying float vDepth;
 					`
 				)
 				.replace(
@@ -225,11 +224,20 @@ export class PotreePointsMaterial extends PointsMaterial {
 					// color each point by a hash of the node it is sized by
 					#ifdef DEBUG_NODE_COLORS
 
+						float id = vNodeIndex + 1.0;
 						diffuseColor.rgb = vec3(
-							fract( sin( vNodeIndex * 12.9898 ) * 43758.5453 ),
-							fract( sin( vNodeIndex * 78.2330 ) * 12543.2341 ),
-							fract( sin( vNodeIndex * 3.7010 ) * 26445.3450 )
+							fract( sin( id * 12.9898 ) * 43758.5453 ),
+							fract( sin( id * 78.2330 ) * 12543.2341 ),
+							fract( sin( id * 3.7010 ) * 26445.3450 )
 						);
+
+					#endif
+
+					// color each point by the depth of the node it is sized by, one hue per level
+					#ifdef DEBUG_DEPTH_COLORS
+
+						float hue = vDepth / 8.0;
+						diffuseColor.rgb = clamp( abs( fract( hue + vec3( 0.0, 2.0 / 3.0, 1.0 / 3.0 ) ) * 6.0 - 3.0 ) - 1.0, 0.0, 1.0 );
 
 					#endif
 					`
@@ -239,22 +247,32 @@ export class PotreePointsMaterial extends PointsMaterial {
 					/* glsl */`
 					#include <clipping_planes_fragment>
 
+					#if defined( ROUND_POINTS ) || defined( SPHERE_POINTS )
+
+						vec2 pointOffset = gl_PointCoord * 2.0 - 1.0;
+
+					#endif
+
 					#ifdef ROUND_POINTS
 
 						// discard the sprite corners so points draw as circles
-						vec2 pointOffset = gl_PointCoord * 2.0 - 1.0;
-						float radiusSq = dot( pointOffset, pointOffset );
-						if ( radiusSq > 1.0 ) discard;
+						if ( dot( pointOffset, pointOffset ) > 1.0 ) discard;
 
 					#endif
 
 					#ifdef SPHERE_POINTS
 
-						// project the view position bulged toward the camera by the sphere surface
-						vec4 spherePos = vec4( vViewPosition, 1.0 );
-						spherePos.z += sqrt( 1.0 - radiusSq ) * vRadius;
-						spherePos = projectionMatrix * spherePos;
-						gl_FragDepth = ( spherePos.z / spherePos.w ) * 0.5 + 0.5;
+						// Intersect the view ray through this fragment with the point's sphere and
+						// write the depth of the intersection so overlapping points meet as solid
+						// spheres fixed in space. The fragment's view position lies on the sprite
+						// plane at the point's depth.
+						vec3 rayDir = normalize( vViewPosition + vec3( pointOffset * vRadius, 0.0 ) );
+						float rayDot = dot( vViewPosition, rayDir );
+						float disc = rayDot * rayDot - dot( vViewPosition, vViewPosition ) + vRadius * vRadius;
+						if ( disc < 0.0 ) discard;
+
+						vec4 clipPos = projectionMatrix * vec4( rayDir * ( rayDot - sqrt( disc ) ), 1.0 );
+						gl_FragDepth = ( clipPos.z / clipPos.w ) * 0.5 + 0.5;
 
 					#endif
 					`
@@ -271,10 +289,12 @@ export class PotreePointsMaterial extends PointsMaterial {
 		delete defines.ROUND_POINTS;
 		delete defines.SPHERE_POINTS;
 		delete defines.DEBUG_NODE_COLORS;
+		delete defines.DEBUG_DEPTH_COLORS;
 
-		if ( this._pointShape !== 'square' ) defines.ROUND_POINTS = '';
+		if ( this._pointShape === 'round' ) defines.ROUND_POINTS = '';
 		if ( this._pointShape === 'sphere' ) defines.SPHERE_POINTS = '';
-		if ( this._debugNodeColors ) defines.DEBUG_NODE_COLORS = '';
+		if ( this._debugColorMode === 'node' ) defines.DEBUG_NODE_COLORS = '';
+		if ( this._debugColorMode === 'depth' ) defines.DEBUG_DEPTH_COLORS = '';
 
 		this.needsUpdate = true;
 

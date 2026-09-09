@@ -3,6 +3,8 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Sphere,
+	Raycaster,
+	Vector2,
 } from 'three';
 import { TilesRenderer, EnvironmentControls } from '3d-tiles-renderer';
 import { DebugTilesPlugin } from '3d-tiles-renderer/plugins';
@@ -21,10 +23,12 @@ let camera, controls, scene, renderer, tiles;
 // spacing projected on screen in pixels. Potree's own defaults refine until the projected
 // spacing is ~2-3 pixels, so small values are needed for a comparable density.
 const params = {
+	enable: true,
 	errorTarget: 2,
+	maxDepth: 1,
 	pointScale: 1,
 	pointShape: 'round',
-	debugNodeColors: false,
+	debugColorMode: 'none',
 	displayBoxBounds: false,
 	dataset: 'lion',
 };
@@ -61,32 +65,86 @@ function init() {
 
 	initTiles();
 
+	// on click log the tile the picked point belongs to and expose it as window.TILE
+	const downPointer = new Vector2();
+	renderer.domElement.addEventListener( 'pointerdown', e => {
+
+		downPointer.set( e.clientX, e.clientY );
+
+	} );
+	renderer.domElement.addEventListener( 'pointerup', e => {
+
+		// ignore drags
+		if ( Math.abs( e.clientX - downPointer.x ) > 2 || Math.abs( e.clientY - downPointer.y ) > 2 ) {
+
+			return;
+
+		}
+
+		const raycaster = new Raycaster();
+		raycaster.params.Points.threshold = 0.1;
+		raycaster.setFromCamera( new Vector2(
+			( e.clientX / window.innerWidth ) * 2 - 1,
+			- ( e.clientY / window.innerHeight ) * 2 + 1,
+		), camera );
+
+		// three.js raycasting ignores the "visible" flag so filter hidden points out manually
+		const hit = raycaster.intersectObject( tiles.group, true ).find( h => h.object.visible );
+		if ( hit ) {
+
+			tiles.forEachLoadedModel( ( scene, tile ) => {
+
+				if ( scene === hit.object ) {
+
+					window.TILE = tile;
+					console.log( tile );
+
+				}
+
+			} );
+
+		}
+
+	} );
+
 	// gui
 	const gui = new GUI();
 	gui.add( params, 'dataset', Object.keys( DATASETS ) ).onChange( initTiles );
-	gui.add( params, 'errorTarget', 0.5, 16, 0.1 ).name( 'error target' ).onChange( v => {
+
+	const tilesFolder = gui.addFolder( 'tiles' );
+	tilesFolder.add( params, 'enable' );
+	tilesFolder.add( params, 'errorTarget', 0.5, 16, 0.1 ).name( 'error target' ).onChange( v => {
 
 		tiles.errorTarget = v;
 
 	} );
-	gui.add( params, 'displayBoxBounds' ).name( 'bounding boxes' ).onChange( v => {
+	tilesFolder.add( params, 'maxDepth', 1, 20, 1 ).name( 'max depth' ).onChange( v => {
 
-		tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = v;
+		tiles.maxDepth = v;
 
 	} );
-	gui.add( params, 'pointScale', 0.25, 4 ).name( 'point scale' ).onChange( v => {
+
+	const pointsFolder = gui.addFolder( 'points' );
+	pointsFolder.add( params, 'pointScale', 0.25, 4 ).name( 'point scale' ).onChange( v => {
 
 		tiles.getPluginByName( 'POTREE_PLUGIN' ).pointScale = v;
 
 	} );
-	gui.add( params, 'pointShape', [ 'square', 'round', 'sphere' ] ).name( 'point shape' ).onChange( v => {
+	pointsFolder.add( params, 'pointShape', [ 'square', 'round', 'sphere' ] ).name( 'point shape' ).onChange( v => {
 
 		tiles.getPluginByName( 'POTREE_PLUGIN' ).pointShape = v;
 
 	} );
-	gui.add( params, 'debugNodeColors' ).name( 'node colors' ).onChange( v => {
 
-		tiles.getPluginByName( 'POTREE_PLUGIN' ).debugNodeColors = v;
+	const debugFolder = gui.addFolder( 'debug' );
+	debugFolder.add( params, 'displayBoxBounds' ).name( 'bounding boxes' ).onChange( v => {
+
+		tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = v;
+
+	} );
+	debugFolder.add( params, 'debugColorMode', [ 'none', 'node', 'depth' ] ).name( 'color mode' ).onChange( v => {
+
+		tiles.getPluginByName( 'POTREE_PLUGIN' ).debugColorMode = v;
 
 	} );
 
@@ -112,6 +170,7 @@ function initTiles() {
 	} ) );
 	tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: params.displayBoxBounds } ) );
 	tiles.errorTarget = params.errorTarget;
+	tiles.maxDepth = params.maxDepth;
 	tiles.setCamera( camera );
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
@@ -144,9 +203,14 @@ function render() {
 
 	controls.update();
 
-	tiles.setCamera( camera );
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.update();
+	// pause updates to freeze the tile set and inspect the current state up close
+	if ( params.enable ) {
+
+		tiles.setCamera( camera );
+		tiles.setResolutionFromRenderer( camera, renderer );
+		tiles.update();
+
+	}
 
 	renderer.render( scene, camera );
 

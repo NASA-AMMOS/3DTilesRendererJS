@@ -1,6 +1,6 @@
 import { DataTexture, NearestFilter, Points, Vector3 } from 'three';
 import { PotreeLoader, getChildBounds } from './PotreeLoader.js';
-import { PotreePointsMaterial, ACTIVE_NODES_TEXTURE_SIZE } from './PotreePointsMaterial.js';
+import { PotreePointsMaterial, NODES_TEXTURE_WIDTH } from './PotreePointsMaterial.js';
 
 // Points are drawn larger than the point spacing to cover the gaps between them - potree uses
 // the same factor
@@ -43,7 +43,7 @@ function boxToMinMax( box ) {
  *
  * Builds a synthetic additive-refinement tileset and streams point cloud nodes on demand. Each
  * point is sized by the deepest active node at its position, resolved in the vertex shader
- * against a texture encoding the loaded node hierarchy and per node active states.
+ * against a texture encoding the active node hierarchy.
  *
  * @param {Object} [options]
  * @param {string|null} [options.url=null] Url of the dataset metadata file - `cloud.js` for v1
@@ -108,17 +108,17 @@ export class PotreePlugin {
 
 	}
 
-	get debugNodeColors() {
+	get debugColorMode() {
 
-		return this._debugNodeColors;
+		return this._debugColorMode;
 
 	}
 
-	set debugNodeColors( value ) {
+	set debugColorMode( value ) {
 
-		if ( value !== this._debugNodeColors ) {
+		if ( value !== this._debugColorMode ) {
 
-			this._debugNodeColors = value;
+			this._debugColorMode = value;
 			this._updateMaterials();
 
 		}
@@ -144,14 +144,14 @@ export class PotreePlugin {
 		this._pointScale = pointScale;
 		this._pointShape = pointShape;
 		this._minPointSize = minPointSize;
-		this._debugNodeColors = false;
+		this._debugColorMode = 'none';
 
-		// The loaded node hierarchy shared by every material: per texel the loaded-children
-		// octant mask (r), offset to the first child texel (g, b), and the node's active flag
-		// (a). Rebuilt after any frame that changes the loaded or active tile sets.
+		// The active node hierarchy shared by every material: per texel the active-children
+		// octant mask (r) and the offset to the first child texel (g, b). Rebuilt after any
+		// frame that changes the active tile set.
 		this._activeNodesTexture = new DataTexture(
-			new Uint8Array( ACTIVE_NODES_TEXTURE_SIZE * 4 ),
-			ACTIVE_NODES_TEXTURE_SIZE,
+			new Uint8Array( NODES_TEXTURE_WIDTH * 4 ),
+			NODES_TEXTURE_WIDTH,
 			1,
 		);
 		this._activeNodesTexture.minFilter = NearestFilter;
@@ -261,23 +261,23 @@ export class PotreePlugin {
 
 		}
 
-		// size the points in world units to the spacing of the node's own level, which the
-		// vertex shader halves per active level below the node
+		// size the points in world units to the root level spacing, which the vertex shader
+		// halves per active level below the root at each point's position
 		const key = keyFromUri( uri );
 		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
 		const { geometry, center } = this.loader.parsePointData( buffer, key, tileMin, tileMax );
 
-		const spacing = tile.geometricError;
+		const { spacing, boundingBox } = this.loader.metadata;
 		const material = new PotreePointsMaterial( {
 			vertexColors: Boolean( geometry.attributes.color ),
 			size: spacing * SPACING_COVERAGE_FACTOR * this._pointScale,
 			pointShape: this._pointShape,
 			minPointSize: this._minPointSize,
-			debugNodeColors: this._debugNodeColors,
+			debugColorMode: this._debugColorMode,
 		} );
 		material.uniforms.uActiveNodes.value = this._activeNodesTexture;
-		material.uniforms.uNodeSize.value = tileMax[ 0 ] - tileMin[ 0 ];
-		material.uniforms.uNodeMinOffset.value.copy( center ).sub( new Vector3( ...tileMin ) );
+		material.uniforms.uNodeSize.value = boundingBox.max[ 0 ] - boundingBox.min[ 0 ];
+		material.uniforms.uNodeMinOffset.value.copy( center ).sub( new Vector3( ...boundingBox.min ) );
 
 		// offset the points by the node center so vertex positions stay near the origin
 		const points = new Points( geometry, material );
@@ -286,6 +286,8 @@ export class PotreePlugin {
 
 		this._expandChildren( tile, key );
 		this._activeSetDirty = true;
+
+		// points.visible = tile.internal.depth === 2;
 		return points;
 
 	}
@@ -338,18 +340,17 @@ export class PotreePlugin {
 
 	// Point sizing
 
-	// Encode the loaded tile hierarchy into the nodes texture, sorted by level then key so
+	// Encode the active tile hierarchy into the nodes texture, sorted by level then key so
 	// every tile's children are consecutive and in octant order as the shader's walk expects.
-	// Each tile's active flag comes only from its own state, since with additive refinement any
-	// subset of a node's descendants can be active at once.
+	// The set is a connected tree since with additive refinement a tile is only active when its
+	// ancestors are.
 	_updateActiveNodesTexture() {
 
 		const { tiles } = this;
-		const { activeTiles } = tiles;
 
-		// collect the loaded tiles sorted by level then key
+		// collect the active tiles sorted by level then key
 		const keys = new Map();
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		tiles.activeTiles.forEach( tile => {
 
 			keys.set( tile, keyFromUri( tile.content.uri ) );
 
@@ -364,11 +365,29 @@ export class PotreePlugin {
 
 		} );
 
-		// the last texel is reserved as an always empty entry in case the list overflows
-		list.length = Math.min( list.length, ACTIVE_NODES_TEXTURE_SIZE - 1 );
+		// grow the texture by rows and point the loaded materials at it when the tiles no
+		// longer fit
+		let texture = this._activeNodesTexture;
+		if ( list.length > NODES_TEXTURE_WIDTH * texture.image.height ) {
 
-		// encode each tile's active flag and its link into its parent's mask and child offset
-		const texture = this._activeNodesTexture;
+			let height = texture.image.height;
+			while ( list.length > NODES_TEXTURE_WIDTH * height ) height *= 2;
+
+			texture.dispose();
+			texture = new DataTexture( new Uint8Array( NODES_TEXTURE_WIDTH * height * 4 ), NODES_TEXTURE_WIDTH, height );
+			texture.minFilter = NearestFilter;
+			texture.magFilter = NearestFilter;
+			this._activeNodesTexture = texture;
+
+			tiles.forEachLoadedModel( scene => {
+
+				scene.material.uniforms.uActiveNodes.value = texture;
+
+			} );
+
+		}
+
+		// encode each tile's link into its parent's mask and child offset
 		const data = texture.image.data;
 		data.fill( 0 );
 
@@ -377,7 +396,6 @@ export class PotreePlugin {
 
 			const key = keys.get( list[ i ] );
 			indexByKey.set( key, i );
-			data[ i * 4 + 3 ] = activeTiles.has( list[ i ] ) ? 255 : 0;
 
 			const parentIndex = indexByKey.get( key.slice( 0, - 1 ) );
 			if ( parentIndex !== undefined ) {
@@ -400,27 +418,19 @@ export class PotreePlugin {
 
 		texture.needsUpdate = true;
 
-		// Point every loaded tile's material at its texel, or at the reserved empty texel when
-		// the list overflowed so a stale index is never sampled.
-		tiles.forEachLoadedModel( ( scene, tile ) => {
-
-			const index = indexByKey.get( keys.get( tile ) ) ?? ACTIVE_NODES_TEXTURE_SIZE - 1;
-			scene.material.uniforms.uVNStart.value = index;
-
-		} );
-
 	}
 
 	// Push the current point scale, shape, and debug settings onto the loaded materials
 	_updateMaterials() {
 
-		this.tiles.forEachLoadedModel( ( scene, tile ) => {
+		const { spacing } = this.loader.metadata;
+		this.tiles.forEachLoadedModel( scene => {
 
 			const { material } = scene;
-			material.size = tile.geometricError * SPACING_COVERAGE_FACTOR * this._pointScale;
+			material.size = spacing * SPACING_COVERAGE_FACTOR * this._pointScale;
 			material.pointShape = this._pointShape;
 			material.minPointSize = this._minPointSize;
-			material.debugNodeColors = this._debugNodeColors;
+			material.debugColorMode = this._debugColorMode;
 
 		} );
 
