@@ -7,7 +7,7 @@ import {
 	Vector3,
 } from 'three';
 import { PotreeLoader, getChildBounds } from './PotreeLoader.js';
-import { PointCloudMaterial, NODES_TEXTURE_WIDTH } from '../pointcloud/PointCloudMaterial.js';
+import { PointCloudMaterial } from '../pointcloud/PointCloudMaterial.js';
 import { PointCloudEffectsPlugin } from '../pointcloud/PointCloudEffectsPlugin.js';
 
 // Points are drawn larger than the point spacing to cover the gaps between them - potree uses
@@ -50,13 +50,14 @@ function makeBoundingBox( min, max ) {
 }
 
 // The node hierarchy is stored in an integer texture so the shader reads the mask and offset
-// bytes directly rather than converting them back from normalized floats.
-function createNodesTexture( height ) {
+// bytes directly rather than converting them back from normalized floats. Nodes fill it in
+// row major order, and it is square so it stays well clear of the platform size limit.
+function createNodesTexture( size ) {
 
 	const texture = new DataTexture(
-		new Uint8Array( NODES_TEXTURE_WIDTH * height * 4 ),
-		NODES_TEXTURE_WIDTH,
-		height,
+		new Uint8Array( size * size * 4 ),
+		size,
+		size,
 		RGBAIntegerFormat,
 		UnsignedByteType,
 	);
@@ -337,20 +338,18 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 		} );
 
-		// grow the texture by rows when the tiles no longer fit
+		// grow the texture when the tiles no longer fit
 		let texture = this._activeNodesTexture;
-		if ( list.length > NODES_TEXTURE_WIDTH * texture.image.height ) {
-
-			let height = texture.image.height;
-			while ( list.length > NODES_TEXTURE_WIDTH * height ) height *= 2;
+		const size = Math.ceil( Math.sqrt( list.length ) );
+		if ( size > texture.image.width ) {
 
 			texture.dispose();
-			texture = createNodesTexture( height );
+			texture = createNodesTexture( size );
 			this._activeNodesTexture = texture;
 
 			tiles.forEachLoadedModel( scene => {
 
-				scene.material.uniforms.uActiveNodes.value = texture;
+				scene.material.activeNodes = texture;
 
 			} );
 

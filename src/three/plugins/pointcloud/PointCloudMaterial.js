@@ -1,11 +1,5 @@
 import { PointsMaterial, Vector2, Vector3 } from 'three';
 
-// Width of the hierarchy texture. Texels wrap into rows so it grows in height, not width.
-export const NODES_TEXTURE_WIDTH = 2048;
-
-// Resolves points lying exactly on an octant plane the same way in every node's frame
-const OCTANT_PLANE_BIAS = 0.00005;
-
 /**
  * PointsMaterial that draws points at a world space size with optional shapes and eye dome
  * lighting. `size` is the world space point spacing.
@@ -196,23 +190,25 @@ export class PointCloudMaterial extends PointsMaterial {
 						// "getLOD" in potree's pointcloud.vs.
 						vec3 getActiveDepth( vec3 posInNode ) {
 
+							int textureWidth = textureSize( uActiveNodes, 0 ).x;
 							vec3 offset = vec3( 0.0 );
 							int nodeIndex = 0;
-							int depth = 0;
 							uint nodePath = 0u;
 							float lodOffset = 0.0;
-							for ( int i = 0; i < 20; i ++ ) {
+							int depth = 0;
+							for ( ; depth < 20; depth ++ ) {
 
-								uvec4 value = texelFetch( uActiveNodes, ivec2( nodeIndex % ${ NODES_TEXTURE_WIDTH }, nodeIndex / ${ NODES_TEXTURE_WIDTH } ), 0 );
+								uvec4 value = texelFetch( uActiveNodes, ivec2( nodeIndex % textureWidth, nodeIndex / textureWidth ), 0 );
 
 								// octant of the current node containing the point
-								float nodeSize = uNodeSize / pow( 2.0, float( i ) );
-								vec3 index3d = floor( ( posInNode - offset ) / nodeSize + 0.5 + ${ OCTANT_PLANE_BIAS } );
-								int index = int( 4.0 * index3d.x + 2.0 * index3d.y + index3d.z );
+								float nodeSize = uNodeSize / pow( 2.0, float( depth ) );
+								vec3 index3d = floor( ( posInNode - offset ) / nodeSize + 0.5 );
+								int octant = int( 4.0 * index3d.x + 2.0 * index3d.y + index3d.z );
+								uint octantMask = 1u << uint( octant );
 
 								// stop when the octant holds no active child
-								uint mask = value.r;
-								if ( ( ( mask >> uint( index ) ) & 1u ) == 0u ) {
+								uint childMask = value.r;
+								if ( ( childMask & octantMask ) == 0u ) {
 
 									lodOffset = float( value.a ) / 10.0 - 10.0;
 									break;
@@ -220,12 +216,11 @@ export class PointCloudMaterial extends PointsMaterial {
 								}
 
 								// child texel: the first child offset plus the active siblings below it
-								nodeIndex += int( value.g * 256u + value.b + numberOfOnes( mask, index ) );
-								depth ++;
+								nodeIndex += int( value.g * 256u + value.b + numberOfOnes( childMask, octant ) );
 								offset += nodeSize * 0.5 * index3d;
 
 								// offset by one so trailing zeroes still change the id
-								nodePath = nodePath * 8u + uint( index ) + 1u;
+								nodePath = nodePath * 8u + uint( octant ) + 1u;
 
 							}
 
