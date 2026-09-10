@@ -1,29 +1,24 @@
 import { PointsMaterial, Vector2, Vector3 } from 'three';
 
-/**
- * Width of the active node hierarchy texture. Texels wrap into rows so the texture grows in
- * height rather than hitting the platform width limit.
- */
+// Width of the hierarchy texture. Texels wrap into rows so it grows in height, not width.
 export const NODES_TEXTURE_WIDTH = 2048;
 
-// Nudges octant selection so points lying exactly on an octant plane resolve the same way in
-// every node's frame
+// Resolves points lying exactly on an octant plane the same way in every node's frame
 const OCTANT_PLANE_BIAS = 0.00005;
 
 /**
  * PointsMaterial that sizes each point by the deepest active node containing it, found by walking
- * the active node hierarchy texture in the vertex shader. `size` is the root level point spacing,
- * halved per active level below the root.
+ * the hierarchy texture in the vertex shader. `size` is the root level point spacing, halved per
+ * active level below the root.
  *
- * Assign after construction: `uActiveNodes` (hierarchy texture, root texel first), `uNodeSize`
- * (world size of the root cube) and `uNodeMinOffset` (mesh local to root min offset).
+ * Assign after construction: `uActiveNodes`, `uNodeSize` and `uNodeMinOffset`.
  *
  * All the properties below can be adjusted after construction.
  * @param {Object} [params] PointsMaterial parameters plus the properties below.
  * @param {('square'|'round'|'sphere')} [params.pointShape='round'] Sprite shape. Spheres write bulged depth so overlapping points intersect, at a fill rate cost.
  * @param {number} [params.minPointSize=2] Smallest projected point size in pixels.
- * @param {boolean} [params.edl=false] Whether to apply eye dome lighting shading.
- * @param {number} [params.edlRadius=1.4] Pixel radius of the eye dome lighting neighbour ring.
+ * @param {number} [params.edlStrength=0] Eye dome lighting falloff rate. Zero compiles the effect out.
+ * @param {number} [params.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in pixels.
  * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
  */
 export class PotreePointsMaterial extends PointsMaterial {
@@ -190,8 +185,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 								vec3 index3d = floor( ( posInNode - offset ) / nodeSize + 0.5 + ${ OCTANT_PLANE_BIAS } );
 								int index = int( 4.0 * index3d.x + 2.0 * index3d.y + index3d.z );
 
-								// stop when the octant holds no active child, taking the lod offset of
-								// the node the walk ends on
+								// stop when the octant holds no active child
 								uint mask = value.r;
 								if ( ( ( mask >> uint( index ) ) & 1u ) == 0u ) {
 
@@ -200,14 +194,12 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 								}
 
-								// advance to the child's texel: the parent's first child offset plus
-								// the number of active siblings in lower octants
+								// child texel: the first child offset plus the active siblings below it
 								nodeIndex += int( value.g * 256u + value.b + numberOfOnes( mask, index ) );
 								depth ++;
 								offset += nodeSize * 0.5 * index3d;
 
-								// append the octant to the path, offset by one so that trailing
-								// zeroes still change the id
+								// offset by one so trailing zeroes still change the id
 								nodePath = nodePath * 8u + uint( index ) + 1u;
 
 							}
@@ -221,14 +213,12 @@ export class PotreePointsMaterial extends PointsMaterial {
 				.replace(
 					'#include <logdepthbuf_vertex>',
 					/* glsl */`
-						// size the point by the deepest active node it falls in, shifted by that
-						// node's density based lod offset
+						// size by the deepest active node, shifted by its density lod offset
 						vec3 activeResult = getActiveDepth( position + uNodeMinOffset );
 						float worldSize = size / pow( 2.0, activeResult.x + activeResult.z );
 
-						// three's "scale" uniform omits the 1 / tan( fov / 2 ) term, so its point
-						// attenuation is not true world scale. The projection's y scale restores it
-						// and matches potree's "projFactor".
+						// three's "scale" omits the 1 / tan( fov / 2 ) term, so its attenuation is
+						// not world scale. The projection y scale restores it, as potree does.
 						float projFactor = scale * projectionMatrix[ 1 ][ 1 ] / - mvPosition.z;
 						gl_PointSize = worldSize * projFactor;
 						gl_PointSize = max( gl_PointSize, uMinPointSize );
@@ -267,9 +257,8 @@ export class PotreePointsMaterial extends PointsMaterial {
 						uniform float uEdlRadius;
 						uniform bool uEdlDepthPass;
 
-						// Eye dome lighting, adapted from potree's "edl.fs". Darkens a point by
-						// how far it sits behind a ring of neighbours in the pre-pass target, so
-						// silhouettes and creases pick up shading.
+						// Darken by how far this point sits behind a ring of neighbours in the
+						// pre-pass target. Adapted from potree's "edl.fs".
 						float edlShade( float logDepth ) {
 
 							vec2 uv = gl_FragCoord.xy / uEdlResolution;
@@ -321,8 +310,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 					#endif
 
-					// Color each point by the node the point itself came from, rather than the one
-					// it is sized by, which shows how the tiles overlap in a given area.
+					// color by the tile the point came from, showing how tiles overlap
 					#ifdef DEBUG_TILE_COLORS
 
 						diffuseColor.rgb = idToColor( uTileId + 1.0 );
@@ -345,17 +333,8 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 					#ifdef EDL_ENABLED
 
-						// the pre-pass target is a single red channel holding the log depth for the
-						// shading pass to sample
-						if ( uEdlDepthPass ) {
-
-							gl_FragColor.r = vLogDepth;
-							return;
-
-						}
-
-						// shading runs after the color space conversion so the falloff lands on the
-						// encoded color, the way potree's post process applies it
+						// shade after the color space conversion so the falloff lands on the
+						// encoded color, as potree's post process does
 						gl_FragColor.rgb *= edlShade( vLogDepth );
 
 					#endif
@@ -381,9 +360,8 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 					#ifdef SPHERE_POINTS
 
-						// Intersect the view ray through this fragment with the point's sphere and write
-						// the intersection depth so overlapping points meet as solid spheres fixed in
-						// space, rather than as flat discs.
+						// intersect the view ray with the point's sphere and write that depth so
+						// overlapping points meet as solid spheres rather than flat discs
 						vec3 rayDir = normalize( vViewPosition + vec3( pointOffset * vRadius, 0.0 ) );
 						float rayDot = dot( vViewPosition, rayDir );
 						float disc = rayDot * rayDot - dot( vViewPosition, vViewPosition ) + vRadius * vRadius;
@@ -391,6 +369,18 @@ export class PotreePointsMaterial extends PointsMaterial {
 
 						vec4 clipPos = projectionMatrix * vec4( rayDir * ( rayDot - sqrt( disc ) ), 1.0 );
 						gl_FragDepth = ( clipPos.z / clipPos.w ) * 0.5 + 0.5;
+
+					#endif
+
+					#ifdef EDL_ENABLED
+
+						// the pre-pass only needs the log depth, so return before the color work
+						if ( uEdlDepthPass ) {
+
+							gl_FragColor = vec4( vLogDepth, 0.0, 0.0, 1.0 );
+							return;
+
+						}
 
 					#endif
 					`
