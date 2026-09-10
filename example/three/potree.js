@@ -2,6 +2,7 @@ import {
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
+	OrthographicCamera,
 	Box3,
 	Raycaster,
 	Vector2,
@@ -20,11 +21,12 @@ const DATASETS = {
 	'vol total': `${ POTREE_POINTCLOUDS }vol_total/cloud.js`,
 };
 
-let camera, controls, scene, renderer, tiles, potreePlugin;
+let camera, perspectiveCamera, orthographicCamera, controls, scene, renderer, tiles, potreePlugin;
 
 const _mouse = new Vector2();
 
 const params = {
+	orthographic: false,
 	enable: true,
 	errorTarget: 1,
 	pointScale: 1,
@@ -54,7 +56,9 @@ function init() {
 	scene = new Scene();
 
 	// camera
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	perspectiveCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	orthographicCamera = new OrthographicCamera();
+	camera = perspectiveCamera;
 	camera.position.set( 4, 2, 8 );
 	camera.lookAt( 0, 0, 0 );
 
@@ -114,6 +118,9 @@ function init() {
 	// gui
 	const gui = new GUI();
 	gui.add( params, 'dataset', Object.keys( DATASETS ) ).onChange( initTiles );
+
+	const cameraFolder = gui.addFolder( 'camera' );
+	cameraFolder.add( params, 'orthographic' ).onChange( setOrthographic );
 
 	const tilesFolder = gui.addFolder( 'tiles' );
 	tilesFolder.add( params, 'enable' );
@@ -206,10 +213,17 @@ function initTiles() {
 
 		const radius = box.getSize( center ).length() * 0.5;
 		camera.position.set( 0.6, 0.4, 1 ).normalize().multiplyScalar( radius * 2.5 );
-		camera.near = radius / 100;
-		camera.far = radius * 100;
-		camera.updateProjectionMatrix();
 		camera.lookAt( 0, 0, 0 );
+
+		perspectiveCamera.near = radius / 100;
+		perspectiveCamera.far = radius * 100;
+
+		// the orthographic frustum spans the bounds, and the controls zoom it from there
+		orthographicCamera.top = radius;
+		orthographicCamera.bottom = - radius;
+		orthographicCamera.near = - radius * 100;
+		orthographicCamera.far = radius * 100;
+		onWindowResize();
 
 		controls.minDistance = radius / 50;
 		controls.maxDistance = radius * 20;
@@ -222,10 +236,32 @@ function initTiles() {
 
 }
 
+function setOrthographic( value ) {
+
+	const previousCamera = camera;
+	camera = value ? orthographicCamera : perspectiveCamera;
+	camera.position.copy( previousCamera.position );
+	camera.quaternion.copy( previousCamera.quaternion );
+
+	tiles.deleteCamera( previousCamera );
+	tiles.setCamera( camera );
+	controls.setCamera( camera );
+	onWindowResize();
+
+}
+
 function onWindowResize() {
 
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
+	const aspect = window.innerWidth / window.innerHeight;
+
+	perspectiveCamera.aspect = aspect;
+	perspectiveCamera.updateProjectionMatrix();
+
+	// the vertical extent is set from the tile set bounds, so only the width tracks the aspect
+	orthographicCamera.left = - orthographicCamera.top * aspect;
+	orthographicCamera.right = orthographicCamera.top * aspect;
+	orthographicCamera.updateProjectionMatrix();
+
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
 }

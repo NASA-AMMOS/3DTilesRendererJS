@@ -19,7 +19,7 @@ const OCTANT_PLANE_BIAS = 0.00005;
  * @param {('square'|'round'|'sphere')} [params.pointShape='round'] Sprite shape. Spheres write bulged depth so overlapping points intersect, at a fill rate cost.
  * @param {number} [params.minPointSize=2] Smallest projected point size in pixels.
  * @param {number} [params.edlStrength=0] Eye dome lighting falloff rate. Zero compiles the effect out.
- * @param {number} [params.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in pixels.
+ * @param {number} [params.edlRadius=1.4] Radius of the eye dome lighting neighbor ring in pixels.
  * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
  * @private
  */
@@ -251,7 +251,14 @@ export class PointCloudMaterial extends PointsMaterial {
 
 						// three's "scale" omits the 1 / tan( fov / 2 ) term, so its attenuation is
 						// not world scale. The projection y scale restores it, as potree does.
-						float projFactor = scale * projectionMatrix[ 1 ][ 1 ] / - mvPosition.z;
+						// Orthographic projections have no distance falloff at all.
+						float projFactor = scale * projectionMatrix[ 1 ][ 1 ];
+						if ( isPerspectiveMatrix( projectionMatrix ) ) {
+
+							projFactor /= - mvPosition.z;
+
+						}
+
 						gl_PointSize = worldSize * projFactor;
 						gl_PointSize = max( gl_PointSize, uMinPointSize );
 
@@ -289,7 +296,7 @@ export class PointCloudMaterial extends PointsMaterial {
 						uniform float uEdlRadius;
 						uniform bool uEdlDepthPass;
 
-						// Darken by how far this point sits behind a ring of neighbours in the
+						// Darken by how far this point sits behind a ring of neighbors in the
 						// pre-pass target. Adapted from potree's "edl.fs".
 						float edlShade( float logDepth ) {
 
@@ -301,12 +308,12 @@ export class PointCloudMaterial extends PointsMaterial {
 
 								float angle = 6.2831853 * float( i ) / 8.0;
 								vec2 offset = uvRadius * vec2( cos( angle ), sin( angle ) );
-								float neighbourDepth = texture2D( uEdlTexture, uv + offset ).r;
+								float neighborDepth = texture2D( uEdlTexture, uv + offset ).r;
 
 								// zero means nothing was drawn there, so it contributes nothing
-								if ( neighbourDepth != 0.0 ) {
+								if ( neighborDepth != 0.0 ) {
 
-									sum += max( 0.0, logDepth - neighbourDepth );
+									sum += max( 0.0, logDepth - neighborDepth );
 
 								}
 
@@ -391,15 +398,23 @@ export class PointCloudMaterial extends PointsMaterial {
 
 					#ifdef SPHERE_POINTS
 
-						// intersect the view ray with the point's sphere and write that depth so
-						// overlapping points meet as solid spheres rather than flat discs
-						vec3 rayDir = normalize( vViewPosition + vec3( pointOffset * vRadius, 0.0 ) );
-						float rayDot = dot( vViewPosition, rayDir );
-						float disc = rayDot * rayDot - dot( vViewPosition, vViewPosition ) + vRadius * vRadius;
+						// Intersect the view ray with the point's sphere and write that depth so
+						// overlapping points meet as solid spheres rather than flat discs. The
+						// fragment sits on the sprite plane, at the point's depth, so perspective
+						// rays run from the eye through it and orthographic rays run from it.
+						bool isPerspective = isPerspectiveMatrix( projectionMatrix );
+						vec3 spritePosition = vViewPosition + vec3( pointOffset * vRadius, 0.0 );
+						vec3 rayOrigin = isPerspective ? vec3( 0.0 ) : spritePosition;
+						vec3 rayDirection = isPerspective ? normalize( spritePosition ) : vec3( 0.0, 0.0, - 1.0 );
+
+						vec3 centerOffset = rayOrigin - vViewPosition;
+						float halfB = dot( centerOffset, rayDirection );
+						float disc = halfB * halfB - dot( centerOffset, centerOffset ) + vRadius * vRadius;
 						if ( disc < 0.0 ) discard;
 
-						vec4 clipPos = projectionMatrix * vec4( rayDir * ( rayDot - sqrt( disc ) ), 1.0 );
-						gl_FragDepth = ( clipPos.z / clipPos.w ) * 0.5 + 0.5;
+						vec3 hitPosition = rayOrigin + rayDirection * ( - halfB - sqrt( disc ) );
+						vec4 clipPosition = projectionMatrix * vec4( hitPosition, 1.0 );
+						gl_FragDepth = ( clipPosition.z / clipPosition.w ) * 0.5 + 0.5;
 
 					#endif
 

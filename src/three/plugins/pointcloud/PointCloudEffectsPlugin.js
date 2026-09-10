@@ -13,39 +13,50 @@ import {
 
 // TODO:
 // - Run the edl depth pre-pass at a lower resolution. Three sizes points from the canvas, not the
-//   bound render target, so the sprites need scaling to match.
+// bound render target, so the sprites need scaling to match.
 // - Render color and depth in one pass and composite with a full screen quad, the way potree does,
-//   to rasterize the points once instead of twice.
+// to rasterize the points once instead of twice.
 
 const _vec2 = /* @__PURE__ */ new Vector2();
 const _color = /* @__PURE__ */ new Color();
 
 // Draws nothing. Its "onBeforeRender" is the only place the active renderer and camera are both
 // known, and the render order runs it before the points.
-function createRenderHook( onBeforeRender ) {
+class RenderHook extends Mesh {
 
-	const geometry = new BufferGeometry();
-	geometry.setDrawRange( 0, 0 );
+	constructor( onBeforeRender ) {
 
-	const mesh = new Mesh( geometry, new MeshBasicMaterial( { colorWrite: false, depthWrite: false } ) );
-	mesh.frustumCulled = false;
-	mesh.renderOrder = - Infinity;
-	mesh.onBeforeRender = onBeforeRender;
-	return mesh;
+		const geometry = new BufferGeometry();
+		geometry.setDrawRange( 0, 0 );
+
+		super( geometry, new MeshBasicMaterial( { colorWrite: false, depthWrite: false } ) );
+
+		this.frustumCulled = false;
+		this.renderOrder = - Infinity;
+		this.onBeforeRender = onBeforeRender;
+
+	}
+
+	dispose() {
+
+		this.geometry.dispose();
+		this.material.dispose();
+
+	}
 
 }
 
 /**
  * Plugin that applies point cloud display settings and eye dome lighting to any loaded tile
  * content drawn with a PointCloudMaterial. Eye dome lighting renders the points to a depth
- * target first so each point can compare itself against its neighbours as it rasterizes.
+ * target first so each point can compare itself against its neighbors as it rasterizes.
  *
  * All the options below can be adjusted after construction.
  * @param {Object} [options]
  * @param {('square'|'round'|'sphere')} [options.pointShape='round'] Shape of the point sprites.
  * @param {number} [options.minPointSize=2] Smallest point size in pixels.
  * @param {number} [options.edlStrength=0] Eye dome lighting falloff rate. Zero disables the effect and skips its depth pre-pass.
- * @param {number} [options.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in css pixels, scaled by the renderer pixel ratio so the effect looks the same on every display.
+ * @param {number} [options.edlRadius=1.4] Radius of the eye dome lighting neighbor ring in css pixels, scaled by the renderer pixel ratio so the effect looks the same on every display.
  * @param {('none'|'node'|'depth'|'tile')} [options.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
  */
 export class PointCloudEffectsPlugin {
@@ -160,7 +171,7 @@ export class PointCloudEffectsPlugin {
 		} );
 		this._edlGroup = new Group();
 		this._edlGroup.matrixWorldAutoUpdate = false;
-		this._edlHook = createRenderHook( ( renderer, scene, camera ) => this._renderDepthPass( renderer, camera ) );
+		this._edlHook = new RenderHook( ( renderer, scene, camera ) => this._renderDepthPass( renderer, camera ) );
 
 	}
 
@@ -174,8 +185,7 @@ export class PointCloudEffectsPlugin {
 	dispose() {
 
 		this._edlHook.removeFromParent();
-		this._edlHook.geometry.dispose();
-		this._edlHook.material.dispose();
+		this._edlHook.dispose();
 		this._edlTarget.dispose();
 
 		this.tiles = null;
@@ -197,7 +207,7 @@ export class PointCloudEffectsPlugin {
 	}
 
 	// Renders the visible points into the depth target so the main pass can read each point's
-	// neighbourhood.
+	// neighborhood.
 	_renderDepthPass( renderer, camera ) {
 
 		if ( this._edlStrength <= 0 ) {
