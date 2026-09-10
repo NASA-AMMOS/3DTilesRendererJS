@@ -17,6 +17,8 @@ import { PointCloudMaterial } from './PointCloudMaterial.js';
 // bound render target, so the sprites need scaling to match.
 // - Render color and depth in one pass and composite with a full screen quad, the way potree does,
 // to rasterize the points once instead of twice.
+// - The "sphere" projection points can be clipped at the edges due to an incorrectly projected
+// sprite scale that doesn't fully capture the sphere bounds.
 
 const _vec2 = /* @__PURE__ */ new Vector2();
 const _color = /* @__PURE__ */ new Color();
