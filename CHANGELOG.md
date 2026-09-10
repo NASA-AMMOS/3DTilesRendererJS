@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
+- PotreePlugin: Add plugin to examples for loading Potree point cloud datasets, with adaptive point sizing and eye dome lighting.
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
 - GlobeControls: Adjust the globe controls to use stable orientation during rotation.
 - TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.

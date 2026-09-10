@@ -3,6 +3,7 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Sphere,
+	Box3,
 	Raycaster,
 	Vector2,
 } from 'three';
@@ -22,7 +23,7 @@ const DATASETS = {
 	'vol total': `${ POTREE_POINTCLOUDS }vol_total/cloud.js`,
 };
 
-let camera, controls, scene, renderer, tiles;
+let camera, controls, scene, renderer, tiles, potreePlugin;
 
 // With node geometric error set to the potree point spacing, the error target is the point
 // spacing projected on screen in pixels, so small values are needed for a comparable density.
@@ -31,8 +32,8 @@ const params = {
 	enable: true,
 	errorTarget: 1,
 	pointScale: 1,
-	pointShape: 'round',
-	edl: false,
+	pointShape: 'sphere',
+	edl: true,
 	edlStrength: 0.4,
 	edlRadius: 1.4,
 	debugColorMode: 'none',
@@ -67,7 +68,7 @@ function init() {
 	controls.minDistance = 0.25;
 	controls.maxDistance = 50;
 	controls.cameraRadius = 0;
-	controls.useFallbackPlane = false;
+	controls.useFallbackPlane = true;
 	controls.raycaster.params.Points.threshold = 0.05;
 
 	initTiles();
@@ -128,27 +129,27 @@ function init() {
 	const pointsFolder = gui.addFolder( 'points' );
 	pointsFolder.add( params, 'pointScale', 0.25, 4 ).name( 'point scale' ).onChange( v => {
 
-		tiles.getPluginByName( 'POTREE_PLUGIN' ).pointScale = v;
+		potreePlugin.pointScale = v;
 
 	} );
 	pointsFolder.add( params, 'pointShape', [ 'square', 'round', 'sphere' ] ).name( 'point shape' ).onChange( v => {
 
-		tiles.getPluginByName( 'POTREE_PLUGIN' ).pointShape = v;
+		potreePlugin.pointShape = v;
 
 	} );
 	pointsFolder.add( params, 'edl' ).name( 'edl' ).onChange( v => {
 
-		tiles.getPluginByName( 'POTREE_PLUGIN' ).edlStrength = v ? params.edlStrength : 0;
+		potreePlugin.edlStrength = v ? params.edlStrength : 0;
 
 	} );
 	pointsFolder.add( params, 'edlStrength', 0.05, 2 ).name( 'edl strength' ).onChange( v => {
 
-		if ( params.edl ) tiles.getPluginByName( 'POTREE_PLUGIN' ).edlStrength = v;
+		if ( params.edl ) potreePlugin.edlStrength = v;
 
 	} );
 	pointsFolder.add( params, 'edlRadius', 1, 4, 0.01 ).name( 'edl radius' ).onChange( v => {
 
-		tiles.getPluginByName( 'POTREE_PLUGIN' ).edlRadius = v;
+		potreePlugin.edlRadius = v;
 
 	} );
 
@@ -160,7 +161,7 @@ function init() {
 	} );
 	debugFolder.add( params, 'debugColorMode', [ 'none', 'node', 'depth', 'tile' ] ).name( 'color mode' ).onChange( v => {
 
-		tiles.getPluginByName( 'POTREE_PLUGIN' ).debugColorMode = v;
+		potreePlugin.debugColorMode = v;
 
 	} );
 
@@ -179,13 +180,14 @@ function initTiles() {
 
 	// tiles
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new PotreePlugin( {
+	potreePlugin = new PotreePlugin( {
 		url: DATASETS[ params.dataset ],
 		pointScale: params.pointScale,
 		pointShape: params.pointShape,
 		edlStrength: params.edl ? params.edlStrength : 0,
 		edlRadius: params.edlRadius,
-	} ) );
+	} );
+	tiles.registerPlugin( potreePlugin );
 	tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: params.displayBoxBounds } ) );
 	tiles.errorTarget = params.errorTarget;
 	tiles.setCamera( camera );
@@ -213,6 +215,14 @@ function initTiles() {
 		controls.minDistance = radius / 50;
 		controls.maxDistance = radius * 20;
 		controls.raycaster.params.Points.threshold = radius / 200;
+
+		// sit the fallback plane on the base of the cloud so zooming off the points still has a
+		// surface to scale the step against
+		const box = new Box3();
+		tiles.group.updateMatrixWorld();
+		tiles.getBoundingBox( box );
+		box.applyMatrix4( tiles.group.matrixWorld );
+		controls.fallbackPlane.constant = - box.min.y;
 
 	} );
 

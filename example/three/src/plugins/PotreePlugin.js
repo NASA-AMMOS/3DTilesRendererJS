@@ -1,5 +1,4 @@
 import {
-	BufferAttribute,
 	BufferGeometry,
 	Color,
 	DataTexture,
@@ -11,8 +10,6 @@ import {
 	Points,
 	RedFormat,
 	RGBAIntegerFormat,
-	ShaderMaterial,
-	Sphere,
 	UnsignedByteType,
 	Vector2,
 	Vector3,
@@ -21,13 +18,18 @@ import {
 import { PotreeLoader, getChildBounds } from './PotreeLoader.js';
 import { PotreePointsMaterial, NODES_TEXTURE_WIDTH } from './PotreePointsMaterial.js';
 
+// TODO:
+// - Run the edl depth pre-pass at a lower resolution. Three sizes points from the canvas, not the
+//   bound render target, so the sprites need scaling to match.
+// - Render color and depth in one pass and composite with a full screen quad, the way potree does,
+//   to rasterize the points once instead of twice.
+
 // Points are drawn larger than the point spacing to cover the gaps between them - potree uses
 // the same factor
 const SPACING_COVERAGE_FACTOR = 1.7;
 
 const _vec2 = /* @__PURE__ */ new Vector2();
 const _color = /* @__PURE__ */ new Color();
-const _sphere = /* @__PURE__ */ new Sphere();
 
 // Node key from a tile content uri, e.g. ".../r012.potree" -> "r012"
 function keyFromUri( uri ) {
@@ -98,65 +100,6 @@ function createRenderHook( onBeforeRender ) {
 
 }
 
-// Draws the eye dome lighting depth target over the frame so the log depth the pre-pass wrote
-// can be inspected directly. A clip space triangle drawn after everything else.
-function createDepthDebugMesh() {
-
-	const geometry = new BufferGeometry();
-	geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( [ - 1, - 1, 0, 3, - 1, 0, - 1, 3, 0 ] ), 3 ) );
-
-	const material = new ShaderMaterial( {
-		uniforms: {
-			uEdlTexture: { value: null },
-			uDepthRange: { value: new Vector2( 0, 1 ) },
-		},
-		depthTest: false,
-		depthWrite: false,
-		vertexShader: /* glsl */`
-			varying vec2 vUv;
-
-			void main() {
-
-				vUv = position.xy * 0.5 + 0.5;
-				gl_Position = vec4( position.xy, 0.0, 1.0 );
-
-			}
-		`,
-		fragmentShader: /* glsl */`
-			uniform sampler2D uEdlTexture;
-			uniform vec2 uDepthRange;
-
-			varying vec2 vUv;
-
-			void main() {
-
-				float logDepth = texture2D( uEdlTexture, vUv ).r;
-
-				// zero means the pre-pass drew nothing here
-				if ( logDepth == 0.0 ) {
-
-					gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-					return;
-
-				}
-
-				// undo the log so the buffer reads as a normal near-is-bright depth image
-				float depth = exp2( logDepth );
-				float value = ( depth - uDepthRange.x ) / ( uDepthRange.y - uDepthRange.x );
-				gl_FragColor = vec4( vec3( 1.0 - clamp( value, 0.0, 1.0 ) ), 1.0 );
-
-			}
-		`,
-	} );
-
-	const mesh = new Mesh( geometry, material );
-	mesh.frustumCulled = false;
-	mesh.renderOrder = Infinity;
-	mesh.visible = false;
-	return mesh;
-
-}
-
 // Extract [min, max] arrays from a 3D Tiles box array
 function boxToMinMax( box ) {
 
@@ -184,7 +127,6 @@ function boxToMinMax( box ) {
  * @param {number} [options.minPointSize=2] Smallest point size in pixels.
  * @param {number} [options.edlStrength=0] Eye dome lighting falloff rate. Zero disables the effect and skips its depth pre-pass.
  * @param {number} [options.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in css pixels, scaled by the renderer pixel ratio so the effect looks the same on every display.
- * @param {boolean} [options.debugDepth=false] Draw the eye dome lighting depth target over the frame.
  * @param {('none'|'node'|'depth'|'tile')} [options.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
  */
 export class PotreePlugin {
@@ -252,7 +194,6 @@ export class PotreePlugin {
 
 			this._edlStrength = value;
 			this._updateMaterials();
-			this._updateDepthDebug();
 
 		}
 
@@ -268,23 +209,6 @@ export class PotreePlugin {
 	set edlRadius( value ) {
 
 		this._edlRadius = value;
-
-	}
-
-	get debugDepth() {
-
-		return this._debugDepth;
-
-	}
-
-	set debugDepth( value ) {
-
-		if ( value !== this._debugDepth ) {
-
-			this._debugDepth = value;
-			this._updateDepthDebug();
-
-		}
 
 	}
 
@@ -314,7 +238,6 @@ export class PotreePlugin {
 			minPointSize = 2,
 			edlStrength = 0,
 			edlRadius = 1.4,
-			debugDepth = false,
 			debugColorMode = 'none',
 		} = options;
 
@@ -344,9 +267,6 @@ export class PotreePlugin {
 		this._edlGroup = new Group();
 		this._edlGroup.matrixWorldAutoUpdate = false;
 		this._edlHook = createRenderHook( ( renderer, scene, camera ) => this._renderDepthPass( renderer, camera ) );
-
-		this._debugDepth = debugDepth;
-		this._depthDebugMesh = createDepthDebugMesh();
 
 		// The active node hierarchy shared by every material: per texel the active-children
 		// octant mask (r) and the offset to the first child texel (g, b). Rebuilt after any
@@ -382,9 +302,7 @@ export class PotreePlugin {
 		this.tiles = tiles;
 		this.loader = loader;
 		tiles.group.add( this._edlHook );
-		tiles.group.add( this._depthDebugMesh );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
-		this._updateDepthDebug();
 
 	}
 
@@ -397,10 +315,6 @@ export class PotreePlugin {
 		this._edlHook.geometry.dispose();
 		this._edlHook.material.dispose();
 		this._edlTarget.dispose();
-
-		this._depthDebugMesh.removeFromParent();
-		this._depthDebugMesh.geometry.dispose();
-		this._depthDebugMesh.material.dispose();
 
 		this.tiles = null;
 		this.loader = null;
@@ -498,7 +412,6 @@ export class PotreePlugin {
 		this._expandChildren( tile, key );
 		this._activeSetDirty = true;
 
-		// points.visible = tile.internal.depth === 2;
 		return points;
 
 	}
@@ -706,27 +619,6 @@ export class PotreePlugin {
 		} );
 
 		children.length = 0;
-
-		// map the log depth across the span the tile set actually occupies so the debug view
-		// keeps its contrast as the camera moves
-		if ( this._debugDepth && this.tiles.getBoundingSphere( _sphere ) ) {
-
-			const distance = camera.position.distanceTo( _sphere.center );
-			const uniforms = this._depthDebugMesh.material.uniforms;
-			uniforms.uEdlTexture.value = target.texture;
-			uniforms.uDepthRange.value.set(
-				Math.max( camera.near, distance - _sphere.radius ),
-				Math.max( camera.near * 2, distance + _sphere.radius ),
-			);
-
-		}
-
-	}
-
-	// The debug view reads the pre-pass target, so it is only meaningful while that pass runs
-	_updateDepthDebug() {
-
-		this._depthDebugMesh.visible = this._debugDepth && this._edlStrength > 0;
 
 	}
 
