@@ -252,7 +252,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 		const { spacing, boundingBox } = this.loader.metadata;
 		const material = new PointCloudMaterial( {
 			vertexColors: Boolean( geometry.attributes.color ),
-			size: spacing * SPACING_COVERAGE_FACTOR * this._pointScale,
+			size: spacing * SPACING_COVERAGE_FACTOR * this.pointScale,
 		} );
 		material.activeNodes = this._activeNodesTexture;
 		material.uniforms.uTileId.value = idFromKey( key );
@@ -411,7 +411,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 		this.tiles.forEachLoadedModel( scene => {
 
-			scene.material.size = metadata.spacing * SPACING_COVERAGE_FACTOR * this._pointScale;
+			scene.material.size = metadata.spacing * SPACING_COVERAGE_FACTOR * this.pointScale;
 
 		} );
 

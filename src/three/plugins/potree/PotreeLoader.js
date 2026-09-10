@@ -23,6 +23,44 @@ function v1HierarchyPath( key, stepSize ) {
 
 }
 
+// v1 attribute layouts keyed by cloud.js name, mapped to their v2 name equivalents
+const V1_ATTRIBUTES = {
+	'POSITION_CARTESIAN': { name: 'position', size: 12, type: 'int32' },
+	'COLOR_PACKED': { name: 'rgba', size: 4, type: 'uint8' },
+	'RGB': { name: 'rgb', size: 3, type: 'uint8' },
+	'RGBA': { name: 'rgba', size: 4, type: 'uint8' },
+	'INTENSITY': { name: 'intensity', size: 2, type: 'uint16' },
+	'INTENSITY_GRADIENT': { name: 'intensity gradient', size: 2, type: 'uint16' },
+	'CLASSIFICATION': { name: 'classification', size: 1, type: 'uint8' },
+	'NORMAL_FLOATS': { name: 'normal floats', size: 12, type: 'float32' },
+	'NORMAL_SPHEREMAPPED': { name: 'normal spheremapped', size: 2, type: 'uint8' },
+	'NORMAL_OCT16': { name: 'normal oct16', size: 2, type: 'uint8' },
+	'GPS_TIME': { name: 'gps-time', size: 8, type: 'float64' },
+	'RETURN_NUMBER': { name: 'return number', size: 1, type: 'uint8' },
+	'NUMBER_OF_RETURNS': { name: 'number of returns', size: 1, type: 'uint8' },
+	'SOURCE_ID': { name: 'point source id', size: 2, type: 'uint16' },
+	'RGB565': { name: 'rgb565', size: 2, type: 'uint16' },
+};
+
+// Normalize cloud.js (v1) into the metadata.json (v2) format
+function normalizeV1( json ) {
+
+	const { scale } = json;
+	const bb = json.boundingBox;
+
+	return {
+		spacing: json.spacing,
+		hierarchyStepSize: json.hierarchyStepSize,
+		scale: [ scale, scale, scale ],
+		boundingBox: {
+			min: [ bb.lx, bb.ly, bb.lz ],
+			max: [ bb.ux, bb.uy, bb.uz ],
+		},
+		attributes: json.pointAttributes.map( name => V1_ATTRIBUTES[ name ] ),
+	};
+
+}
+
 // Parse a v1 .hrc hierarchy chunk into the given map: BFS-ordered entries of
 // childMask(uint8) + numPoints(uint32)
 function v1ParseHierarchy( buffer, rootKey, hierarchy ) {
@@ -191,7 +229,7 @@ export class PotreeLoader {
 		 */
 		this.hierarchy = null;
 
-		this._dataUrl = null;
+		this._dataDirUrl = null;
 		this._octreeUrl = null;
 		this._loadedChunks = null;
 		this._inlineHierarchy = false;
@@ -230,7 +268,7 @@ export class PotreeLoader {
 
 		const json = await res.json();
 		this.version = version;
-		this.metadata = version === 2 ? json : this._normalizeV1( json );
+		this.metadata = version === 2 ? json : normalizeV1( json );
 		this.hierarchy = new Map();
 
 		if ( version === 2 ) {
@@ -244,7 +282,7 @@ export class PotreeLoader {
 
 		} else {
 
-			this._dataUrl = new URL( json.octreeDir + '/', baseUrl ).href;
+			this._dataDirUrl = new URL( json.octreeDir + '/', baseUrl ).href;
 
 			// Potree 1.4 embeds the whole hierarchy in cloud.js and stores the node files flat
 			// in the octree directory, while later versions chunk it into ".hrc" files rooted
@@ -256,7 +294,7 @@ export class PotreeLoader {
 
 			} else {
 
-				const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataUrl ).href, this.fetchOptions );
+				const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataDirUrl ).href, this.fetchOptions );
 				const hierBuf = await hierRes.arrayBuffer();
 				v1ParseHierarchy( hierBuf, 'r', this.hierarchy );
 				this._loadedChunks = new Set( [ 'r' ] );
@@ -301,7 +339,7 @@ export class PotreeLoader {
 		} else if ( this._inlineHierarchy ) {
 
 			// 1.4 node files sit flat in the octree directory
-			const res = await this.fetchData( `${ this._dataUrl }${ key }.bin`, fetchOptions );
+			const res = await this.fetchData( `${ this._dataDirUrl }${ key }.bin`, fetchOptions );
 			return res.arrayBuffer();
 
 		} else {
@@ -314,13 +352,13 @@ export class PotreeLoader {
 			if ( level % hierarchyStepSize === 0 && ! this._loadedChunks.has( key ) ) {
 
 				this._loadedChunks.add( key );
-				const hierRes = await this.fetchData( `${ this._dataUrl }${ path }/${ key }.hrc`, fetchOptions );
+				const hierRes = await this.fetchData( `${ this._dataDirUrl }${ path }/${ key }.hrc`, fetchOptions );
 				const hierBuf = await hierRes.arrayBuffer();
 				v1ParseHierarchy( hierBuf, key, this.hierarchy );
 
 			}
 
-			const res = await this.fetchData( `${ this._dataUrl }${ path }/${ key }.bin`, fetchOptions );
+			const res = await this.fetchData( `${ this._dataDirUrl }${ path }/${ key }.bin`, fetchOptions );
 			return res.arrayBuffer();
 
 		}
@@ -435,45 +473,6 @@ export class PotreeLoader {
 		}
 
 		return { geometry, center };
-
-	}
-
-	// Normalize cloud.js (v1) into the metadata.json (v2) format
-	_normalizeV1( json ) {
-
-		// v1 attribute layouts keyed by cloud.js name, mapped to their v2 name equivalents
-		const V1_ATTRIBUTES = {
-			'POSITION_CARTESIAN': { name: 'position', size: 12, type: 'int32' },
-			'COLOR_PACKED': { name: 'rgba', size: 4, type: 'uint8' },
-			'RGB': { name: 'rgb', size: 3, type: 'uint8' },
-			'RGBA': { name: 'rgba', size: 4, type: 'uint8' },
-			'INTENSITY': { name: 'intensity', size: 2, type: 'uint16' },
-			'INTENSITY_GRADIENT': { name: 'intensity gradient', size: 2, type: 'uint16' },
-			'CLASSIFICATION': { name: 'classification', size: 1, type: 'uint8' },
-			'NORMAL_FLOATS': { name: 'normal floats', size: 12, type: 'float32' },
-			'NORMAL_SPHEREMAPPED': { name: 'normal spheremapped', size: 2, type: 'uint8' },
-			'NORMAL_OCT16': { name: 'normal oct16', size: 2, type: 'uint8' },
-			'GPS_TIME': { name: 'gps-time', size: 8, type: 'float64' },
-			'RETURN_NUMBER': { name: 'return number', size: 1, type: 'uint8' },
-			'NUMBER_OF_RETURNS': { name: 'number of returns', size: 1, type: 'uint8' },
-			'SOURCE_ID': { name: 'point source id', size: 2, type: 'uint16' },
-			'RGB565': { name: 'rgb565', size: 2, type: 'uint16' },
-		};
-
-		const { scale } = json;
-		const bb = json.boundingBox;
-		const attributes = json.pointAttributes.map( name => V1_ATTRIBUTES[ name ] );
-
-		return {
-			spacing: json.spacing,
-			hierarchyStepSize: json.hierarchyStepSize,
-			scale: [ scale, scale, scale ],
-			boundingBox: {
-				min: [ bb.lx, bb.ly, bb.lz ],
-				max: [ bb.ux, bb.uy, bb.uz ],
-			},
-			attributes,
-		};
 
 	}
 

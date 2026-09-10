@@ -233,7 +233,7 @@ export class PointCloudEffectsPlugin {
 	// neighborhood.
 	_renderDepthPass( renderer, camera ) {
 
-		if ( this._edlStrength <= 0 ) {
+		if ( this.edlStrength <= 0 ) {
 
 			return;
 
@@ -286,7 +286,7 @@ export class PointCloudEffectsPlugin {
 			const { uniforms } = scene.material;
 			uniforms.uEdlTexture.value = target.texture;
 			uniforms.uEdlResolution.value.set( target.width, target.height );
-			uniforms.uEdlRadius.value = this._edlRadius * renderer.getPixelRatio();
+			uniforms.uEdlRadius.value = this.edlRadius * renderer.getPixelRatio();
 			uniforms.uEdlDepthPass.value = false;
 
 		} );
@@ -297,10 +297,10 @@ export class PointCloudEffectsPlugin {
 
 	_applyToMaterial( material ) {
 
-		material.pointShape = this._pointShape;
-		material.minPointSize = this._minPointSize;
-		material.debugColorMode = this._debugColorMode;
-		material.edlStrength = this._edlStrength;
+		material.pointShape = this.pointShape;
+		material.minPointSize = this.minPointSize;
+		material.debugColorMode = this.debugColorMode;
+		material.edlStrength = this.edlStrength;
 
 	}
 
