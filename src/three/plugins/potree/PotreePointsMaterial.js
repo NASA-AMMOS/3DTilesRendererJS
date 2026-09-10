@@ -20,6 +20,7 @@ const OCTANT_PLANE_BIAS = 0.00005;
  * @param {number} [params.edlStrength=0] Eye dome lighting falloff rate. Zero compiles the effect out.
  * @param {number} [params.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in pixels.
  * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
+ * @private
  */
 export class PotreePointsMaterial extends PointsMaterial {
 

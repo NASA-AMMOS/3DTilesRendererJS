@@ -1670,6 +1670,51 @@ measureChar( char: string ): number
 Advance width of `char` in the label's size units, cached per character.
 
 
+## PotreePlugin
+
+Plugin that adds support for Potree point cloud datasets (v1.x and v2.0).
+
+Builds a synthetic additive-refinement tileset and streams point cloud nodes on demand. Each
+point is sized by the deepest active node at its position, resolved in the vertex shader
+against a texture encoding the active node hierarchy.
+
+All the options below can be adjusted after construction.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Url of the dataset metadata file, `cloud.js` for v1 or
+		// `metadata.json` for v2. Falls back to `tiles.rootURL`.
+		url = null: string | null,
+
+		// Multiplier on the point size.
+		pointScale = 1: number,
+
+		// Shape of the point sprites.
+		pointShape = 'round': 'square' | 'round' | 'sphere',
+
+		// Smallest point size in pixels.
+		minPointSize = 2: number,
+
+		// Eye dome lighting falloff rate. Zero disables the effect and
+		// skips its depth pre-pass.
+		edlStrength = 0: number,
+
+		// Radius of the eye dome lighting neighbour ring in css
+		// pixels, scaled by the renderer pixel ratio so the effect
+		// looks the same on every display.
+		edlRadius = 1.4: number,
+
+		// Color points by the node they are sized by, that node's
+		// depth, or the tile they came from.
+		debugColorMode = 'none': 'none' | 'node' | 'depth' | 'tile',
+	}
+)
+```
+
 ## QuantizedMeshPlugin
 
 Plugin that adds support for the Cesium quantized-mesh terrain format. Fetches the

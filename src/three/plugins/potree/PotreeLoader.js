@@ -131,7 +131,8 @@ function v2ParseHierarchy( buffer, rootKey, chunkStart, chunkSize, hierarchy ) {
  * @param {number[]} parentMin
  * @param {number[]} parentMax
  * @param {number} octant
- * @returns {[number[], number[]]}
+ * @returns {Array<Array<number>>} The child min and max bounds.
+ * @private
  */
 export function getChildBounds( parentMin, parentMax, octant ) {
 
@@ -157,6 +158,7 @@ export function getChildBounds( parentMin, parentMax, octant ) {
  * Loader for Potree point cloud datasets (v1.x and v2.0). Loads the dataset metadata and node
  * hierarchy and parses raw node point buffers into buffer geometry. The version is determined
  * by the metadata filename: `cloud.js` for v1 and `metadata.json` for v2.
+ * @private
  */
 export class PotreeLoader {
 

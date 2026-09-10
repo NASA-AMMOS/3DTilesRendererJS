@@ -112,8 +112,7 @@ function boxToMinMax( box ) {
 }
 
 /**
- * Plugin that adds support for Potree point cloud datasets (v1.x and v2.0) via
- * {@link PotreeLoader}.
+ * Plugin that adds support for Potree point cloud datasets (v1.x and v2.0).
  *
  * Builds a synthetic additive-refinement tileset and streams point cloud nodes on demand. Each
  * point is sized by the deepest active node at its position, resolved in the vertex shader
