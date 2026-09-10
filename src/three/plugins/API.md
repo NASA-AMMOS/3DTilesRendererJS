@@ -1706,44 +1706,6 @@ constructor(
 )
 ```
 
-## PointCloudMaterial
-
-PointsMaterial that draws points at a world space size with optional shapes and eye dome
-lighting. `size` is the world space point spacing.
-
-Octree data sets can additionally size each point by the deepest active node containing it,
-found by walking a hierarchy texture in the vertex shader, which halves the spacing per level
-below the root. Enable it by assigning `uActiveNodes`, `uNodeSize` and `uNodeMinOffset`.
-
-All the properties below can be adjusted after construction.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		// Sprite shape. Spheres write bulged depth so overlapping
-		// points intersect, at a fill rate cost.
-		pointShape = 'round': 'square' | 'round' | 'sphere',
-
-		// Smallest projected point size in pixels.
-		minPointSize = 2: number,
-
-		// Eye dome lighting falloff rate. Zero compiles the effect
-		// out.
-		edlStrength = 0: number,
-
-		// Radius of the eye dome lighting neighbour ring in pixels.
-		edlRadius = 1.4: number,
-
-		// Color points by the node they are sized by, that node's
-		// depth, or the tile they came from.
-		debugColorMode = 'none': 'none' | 'node' | 'depth' | 'tile',
-	}
-)
-```
-
 ## PotreePlugin
 
 Plugin that adds support for Potree point cloud datasets (v1.x and v2.0).
