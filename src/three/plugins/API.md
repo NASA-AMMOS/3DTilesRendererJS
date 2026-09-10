@@ -1670,6 +1670,74 @@ measureChar( char: string ): number
 Advance width of `char` in the label's size units, cached per character.
 
 
+## PointCloudEffectsPlugin
+
+Plugin that applies display settings and eye dome lighting to loaded point content. Eye dome
+lighting renders the points to a depth target first so each point can compare itself against
+its neighbors as it rasterizes, shading silhouettes and creases.
+
+All the options below can be adjusted after construction.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Shape of the point sprites.
+		pointShape = 'round': 'square' | 'round' | 'sphere',
+
+		// Smallest point size in pixels.
+		minPointSize = 2: number,
+
+		// Eye dome lighting falloff rate. Zero disables the effect and
+		// skips its depth pre-pass.
+		edlStrength = 0: number,
+
+		// Radius of the eye dome lighting neighbor ring in css pixels,
+		// scaled by the renderer pixel ratio so the effect looks the
+		// same on every display.
+		edlRadius = 1.4: number,
+
+		// Color points by the node they are sized by, that node's
+		// depth, or the tile they came from.
+		debugColorMode = 'none': 'none' | 'node' | 'depth' | 'tile',
+	}
+)
+```
+
+## PotreePlugin
+
+Plugin that adds support for Potree point cloud datasets (v1.x and v2.0).
+
+Builds a synthetic additive-refinement tileset and streams point cloud nodes on demand. Each
+point is sized by the deepest active node at its position, resolved in the vertex shader
+against a texture encoding the active node hierarchy.
+
+Extends PointCloudEffectsPlugin, so the point shape, size clamping, eye dome lighting and
+debug color options are available here too.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Url of the dataset metadata file, `cloud.js` for v1 or
+		// `metadata.json` for v2. Falls back to `tiles.rootURL`.
+		url = null: string | null,
+
+		// Multiplier on the point size. Can be adjusted after
+		// construction.
+		pointScale = 1: number,
+
+		// Whether to set the renderer error target to a value suited
+		// to point spacing based geometric error.
+		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
 ## QuantizedMeshPlugin
 
 Plugin that adds support for the Cesium quantized-mesh terrain format. Fetches the
