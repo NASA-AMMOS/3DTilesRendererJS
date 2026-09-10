@@ -2,10 +2,10 @@ import {
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
-	Sphere,
 	Box3,
 	Raycaster,
 	Vector2,
+	Vector3,
 } from 'three';
 import { TilesRenderer, EnvironmentControls } from '3d-tiles-renderer';
 import { DebugTilesPlugin, PotreePlugin } from '3d-tiles-renderer/plugins';
@@ -22,6 +22,8 @@ const DATASETS = {
 
 let camera, controls, scene, renderer, tiles, potreePlugin;
 
+const _mouse = new Vector2();
+
 const params = {
 	enable: true,
 	errorTarget: 1,
@@ -36,7 +38,6 @@ const params = {
 };
 
 init();
-render();
 
 function init() {
 
@@ -45,6 +46,8 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x111111 );
+	renderer.setAnimationLoop( render );
+
 	document.body.appendChild( renderer.domElement );
 
 	// scene
@@ -83,14 +86,14 @@ function init() {
 		}
 
 		const raycaster = new Raycaster();
-		raycaster.params.Points.threshold = 0.1;
-		raycaster.setFromCamera( new Vector2(
+		raycaster.params.Points.threshold = 0.2;
+		_mouse.set(
 			( e.clientX / window.innerWidth ) * 2 - 1,
 			- ( e.clientY / window.innerHeight ) * 2 + 1,
-		), camera );
+		);
+		raycaster.setFromCamera( _mouse, camera );
 
-		// three.js raycasting ignores the "visible" flag so filter hidden points out manually
-		const hit = raycaster.intersectObject( tiles.group, true ).find( h => h.object.visible );
+		const hit = raycaster.intersectObject( tiles.group, true )[ 0 ];
 		if ( hit ) {
 
 			tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -187,18 +190,21 @@ function initTiles() {
 	tiles.setCamera( camera );
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
-	window.TILES = tiles;
 
 	// the data sets range from a few meters to hundreds, so scale everything to the bounds
 	tiles.addEventListener( 'load-root-tileset', () => {
 
-		const sphere = new Sphere();
-		tiles.getBoundingSphere( sphere );
+		const box = new Box3();
+		const center = new Vector3();
 		tiles.group.updateMatrixWorld();
-		sphere.applyMatrix4( tiles.group.matrixWorld );
-		tiles.group.position.sub( sphere.center );
+		tiles.getBoundingBox( box );
+		box.applyMatrix4( tiles.group.matrixWorld );
 
-		const { radius } = sphere;
+		box.getCenter( center );
+		tiles.group.position.sub( center );
+		box.translate( center.negate() );
+
+		const radius = box.getSize( center ).length() * 0.5;
 		camera.position.set( 0.6, 0.4, 1 ).normalize().multiplyScalar( radius * 2.5 );
 		camera.near = radius / 100;
 		camera.far = radius * 100;
@@ -210,10 +216,6 @@ function initTiles() {
 		controls.raycaster.params.Points.threshold = radius / 200;
 
 		// the controls scale their zoom step against whatever is under the cursor
-		const box = new Box3();
-		tiles.group.updateMatrixWorld();
-		tiles.getBoundingBox( box );
-		box.applyMatrix4( tiles.group.matrixWorld );
 		controls.fallbackPlane.constant = - box.min.y;
 
 	} );
@@ -229,8 +231,6 @@ function onWindowResize() {
 }
 
 function render() {
-
-	requestAnimationFrame( render );
 
 	controls.update();
 
