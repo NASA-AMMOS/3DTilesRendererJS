@@ -66,6 +66,7 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 | [WMS](https://nasa-ammos.github.io/3DTilesRendererJS/three/wmsTiles.html) | WMS map tiles |
 | [Quantized Mesh](https://nasa-ammos.github.io/3DTilesRendererJS/three/quantMeshOverlays.html) | Quantized mesh with overlays |
 | [Load Region](https://nasa-ammos.github.io/3DTilesRendererJS/three/loadRegion.html) | Loading tiles in region volumes |
+| [Polygon Clipping](https://nasa-ammos.github.io/3DTilesRendererJS/three/polygonClipping.html) | Clip tiles with planar polygon masks |
 | [GeoJSON](https://nasa-ammos.github.io/3DTilesRendererJS/three/geojson.html) | GeoJSON overlays |
 | [Vector Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/three/pmtiles.html) | Mapbox Vector Tiles and Protomap Tiles overlays |
 

@@ -1669,6 +1669,25 @@ measureChar( char: string ): number
 
 Advance width of `char` in the label's size units, cached per character.
 
+## PolygonClippingPlugin
+
+Plugin that clips loaded 3D Tiles models with one or more planar polygons. Polygon
+coordinates are rasterized into a signed-distance texture and projected through
+`frame`, which maps polygon-local XY coordinates into world space. Polygons are
+combined as a union and rings after the first ring in each polygon act as holes.
+
+The clipping volume is unbounded along the local Z axis of `frame`. Built-in three.js
+materials and shadow materials are supported. Custom `ShaderMaterial` instances and
+`BatchedTilesPlugin` are not supported.
+
+
+### .texture
+
+```js
+texture: DataTexture | null
+```
+
+The generated signed-distance texture, or `null` if there are no polygons.
 
 ## PointCloudEffectsPlugin
 
@@ -1684,6 +1703,67 @@ All the options below can be adjusted after construction.
 ```js
 constructor(
 	{
+		// Polygon coordinates to use for clipping.
+		polygons = []: Array<PolygonClippingPolygon>,
+
+		// Transform from polygon-local coordinates to world
+		// coordinates.
+		frame?: Matrix4,
+
+		// If true, points outside every polygon are clipped.
+		// Otherwise, points inside any polygon are clipped.
+		inverse = false: boolean,
+
+		// Maximum width or height of the generated signed-distance
+		// texture.
+		resolution = 512: number,
+
+		// Distance to expand the clipping region in polygon-local
+		// units.
+		padding = 0: number,
+
+		// Whether clipping is enabled.
+		enabled = true: boolean,
+	}
+)
+```
+
+### .setPolygons
+
+```js
+setPolygons( polygons: Array<PolygonClippingPolygon> )
+```
+
+Replaces the clipping polygons and regenerates the signed-distance texture.
+
+
+### .setFrame
+
+```js
+setFrame( frame: Matrix4 )
+```
+
+Sets the transform from polygon-local coordinates to world coordinates.
+
+
+### .update
+
+```js
+update()
+```
+
+Updates the world-to-texture transform from the current `frame`.
+
+
+### .isPointClipped
+
+```js
+isPointClipped( point: Vector3 ): boolean
+```
+
+Returns whether a world-space point is discarded by the current clipping field.
+Use this to filter raycast results. Raycasting does not evaluate fragment shader discard.
+
 		// Shape of the point sprites.
 		pointShape = 'round': 'square' | 'round' | 'sphere',
 
@@ -2257,6 +2337,21 @@ Bounding box `bounds` arrays are in `[ minLon, minLat, maxLon, maxLat ]` order i
 ```js
 constructor( manager: LoadingManager )
 ```
+
+## PolygonClippingPoint
+
+A two-dimensional point in polygon-local coordinates.
+
+
+## PolygonClippingRing
+
+A closed polygon ring. The final point does not need to repeat the first point.
+
+
+## PolygonClippingPolygon
+
+A polygon represented by an outer ring followed by zero or more hole rings.
+
 
 ## FeatureInfo
 
