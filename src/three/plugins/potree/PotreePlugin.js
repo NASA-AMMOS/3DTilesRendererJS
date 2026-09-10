@@ -91,6 +91,7 @@ function boxToMinMax( box ) {
  * @param {Object} [options] PointCloudEffectsPlugin options plus the ones below.
  * @param {string|null} [options.url=null] Url of the dataset metadata file, `cloud.js` for v1 or `metadata.json` for v2. Falls back to `tiles.rootURL`.
  * @param {number} [options.pointScale=1] Multiplier on the point size. Can be adjusted after construction.
+ * @param {boolean} [options.useRecommendedSettings=true] Whether to set the renderer error target to a value suited to point spacing based geometric error.
  */
 export class PotreePlugin extends PointCloudEffectsPlugin {
 
@@ -118,6 +119,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 		const {
 			url = null,
 			pointScale = 1,
+			useRecommendedSettings = true,
 		} = options;
 
 		this.name = 'POTREE_PLUGIN';
@@ -125,6 +127,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 		this.url = url;
 		this.loader = null;
+		this.useRecommendedSettings = useRecommendedSettings;
 
 		this._pointScale = pointScale;
 
@@ -147,10 +150,17 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 	}
 
-	// Plugin lifecycle
 	init( tiles ) {
 
 		super.init( tiles );
+
+		// node geometric error is the potree point spacing, so the error target is that spacing
+		// projected on screen in pixels
+		if ( this.useRecommendedSettings ) {
+
+			tiles.errorTarget = 1;
+
+		}
 
 		// route the loader requests through the other plugins
 		const loader = new PotreeLoader();
@@ -182,12 +192,10 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 	}
 
-	// Tileset loading
 	async loadRootTileset() {
 
 		const { tiles, url, loader } = this;
 
-		// resolve the metadata file url
 		let metaUrl = new URL( url ?? tiles.rootURL, location.href ).href;
 		tiles.invokeAllPlugins( plugin => {
 
@@ -195,7 +203,6 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 		} );
 
-		// load the metadata and root hierarchy, then build the synthetic tileset
 		await loader.load( metaUrl );
 
 		const { spacing, boundingBox } = loader.metadata;
@@ -217,7 +224,6 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 	}
 
-	// Tile content hooks
 	fetchData( uri, options ) {
 
 		if ( ! /\.potree$/.test( uri ) ) {
@@ -238,8 +244,6 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 		}
 
-		// size the points in world units to the root level spacing, which the vertex shader
-		// halves per active level below the root at each point's position
 		const key = keyFromUri( uri );
 		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
 		const { geometry, center } = this.loader.parsePointData( buffer, key, tileMin, tileMax );
@@ -280,8 +284,6 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 	}
 
-	// Tile expansion
-
 	// Attach child tiles for the node's loaded hierarchy children once its content is parsed
 	_expandChildren( tile, key ) {
 
@@ -312,17 +314,13 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 	}
 
-	// Point sizing
-
-	// Encode the active tile hierarchy into the nodes texture, sorted by level then key so
-	// every tile's children are consecutive and in octant order as the shader's walk expects.
-	// The set is a connected tree since with additive refinement a tile is only active when its
-	// ancestors are.
+	// Encode the active tiles into the nodes texture, sorted by level then key so a tile's
+	// children are consecutive and in octant order, as the shader's walk expects. Additive
+	// refinement keeps the set a connected tree.
 	_updateActiveNodesTexture() {
 
 		const { tiles } = this;
 
-		// collect the active tiles sorted by level then key
 		const keys = new Map();
 		tiles.activeTiles.forEach( tile => {
 
@@ -339,8 +337,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 		} );
 
-		// grow the texture by rows and point the loaded materials at it when the tiles no
-		// longer fit
+		// grow the texture by rows when the tiles no longer fit
 		let texture = this._activeNodesTexture;
 		if ( list.length > NODES_TEXTURE_WIDTH * texture.image.height ) {
 
@@ -359,7 +356,6 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 		}
 
-		// encode each tile's link into its parent's mask and child offset
 		const data = texture.image.data;
 		data.fill( 0 );
 
@@ -369,9 +365,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 			const key = keys.get( list[ i ] );
 			indexByKey.set( key, i );
 
-			// byte 3: potree's lod offset, which shifts the point size by the node's measured
-			// density. 100 is its "no offset" encoding, which is all we have to report since we
-			// do not measure density.
+			// byte 3: potree's density lod offset, 100 being its "no offset" encoding
 			data[ i * 4 + 3 ] = 100;
 
 			if ( i === 0 ) {
@@ -383,10 +377,8 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 			const parentKey = key.slice( 0, - 1 );
 			const parentIndex = indexByKey.get( parentKey );
 
-			// byte 0: child occupancy bit mask
-			// byte 1 & 2: split
-
-			// siblings are consecutive so the first one encountered sets the child offset
+			// bytes 1 and 2 are the offset to the first child, and siblings are consecutive so
+			// the first one encountered sets it
 			if ( data[ parentIndex * 4 ] === 0 ) {
 
 				const offset = i - parentIndex;
@@ -395,7 +387,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 			}
 
-			// the key's last digit is the tile's octant within its parent
+			// byte 0 is the child occupancy mask, and the key's last digit is the tile's octant
 			const octant = parseInt( key.charAt( key.length - 1 ) );
 			data[ parentIndex * 4 ] |= 1 << octant;
 

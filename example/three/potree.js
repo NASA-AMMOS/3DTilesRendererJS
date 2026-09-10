@@ -11,8 +11,6 @@ import { TilesRenderer, EnvironmentControls } from '3d-tiles-renderer';
 import { DebugTilesPlugin, PotreePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-// Public Potree datasets hosted in the potree repository, which is CORS-enabled. The data sets
-// on potree.org serve no CORS headers so they cannot be loaded here.
 const POTREE_POINTCLOUDS = 'https://raw.githubusercontent.com/potree/potree/refs/heads/develop/pointclouds/';
 const DATASETS = {
 	'lion': `${ POTREE_POINTCLOUDS }lion_takanawa/cloud.js`,
@@ -24,9 +22,6 @@ const DATASETS = {
 
 let camera, controls, scene, renderer, tiles, potreePlugin;
 
-// With node geometric error set to the potree point spacing, the error target is the point
-// spacing projected on screen in pixels, so small values are needed for a comparable density.
-// A target of 1 refines at close to the same rate as potree's default node pixel size.
 const params = {
 	enable: true,
 	errorTarget: 1,
@@ -55,13 +50,12 @@ function init() {
 	// scene
 	scene = new Scene();
 
-	// camera — near/far span needs to cover the point cloud; will be adjusted once loaded
+	// camera
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
 	camera.position.set( 4, 2, 8 );
 	camera.lookAt( 0, 0, 0 );
 
-	// controls raycast the point cloud so rotation pivots around the point under the cursor.
-	// The default raycast threshold spans a meter, far too coarse for a small point cloud.
+	// controls
 	controls = new EnvironmentControls( scene, camera, renderer.domElement );
 	controls.enableDamping = true;
 	controls.minDistance = 0.25;
@@ -72,7 +66,7 @@ function init() {
 
 	initTiles();
 
-	// on click log the tile the picked point belongs to and expose it as window.TILE
+	// on click log the tile the picked point belongs to
 	const downPointer = new Vector2();
 	renderer.domElement.addEventListener( 'pointerdown', e => {
 
@@ -195,8 +189,7 @@ function initTiles() {
 	scene.add( tiles.group );
 	window.TILES = tiles;
 
-	// center the cloud at the origin and frame it once the bounds are known. The data sets
-	// range from a few meters to hundreds, so the camera and controls are scaled to fit.
+	// the data sets range from a few meters to hundreds, so scale everything to the bounds
 	tiles.addEventListener( 'load-root-tileset', () => {
 
 		const sphere = new Sphere();
@@ -216,8 +209,7 @@ function initTiles() {
 		controls.maxDistance = radius * 20;
 		controls.raycaster.params.Points.threshold = radius / 200;
 
-		// sit the fallback plane on the base of the cloud so zooming off the points still has a
-		// surface to scale the step against
+		// the controls scale their zoom step against whatever is under the cursor
 		const box = new Box3();
 		tiles.group.updateMatrixWorld();
 		tiles.getBoundingBox( box );

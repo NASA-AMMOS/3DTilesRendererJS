@@ -20,9 +20,8 @@ import {
 const _vec2 = /* @__PURE__ */ new Vector2();
 const _color = /* @__PURE__ */ new Color();
 
-// Draws nothing, but is rendered so that its "onBeforeRender" fires with the renderer and camera
-// currently drawing. That is the only place both are known, and it runs before the points because
-// of the render order.
+// Draws nothing. Its "onBeforeRender" is the only place the active renderer and camera are both
+// known, and the render order runs it before the points.
 function createRenderHook( onBeforeRender ) {
 
 	const geometry = new BufferGeometry();
@@ -183,7 +182,6 @@ export class PointCloudEffectsPlugin {
 
 	}
 
-	// apply the settings as soon as content is available so the first frame is correct
 	processTileModel( scene ) {
 
 		scene.traverse( child => {
@@ -199,8 +197,7 @@ export class PointCloudEffectsPlugin {
 	}
 
 	// Renders the visible points into the depth target so the main pass can read each point's
-	// neighbourhood. Called from the hook mesh, which is the only place the active renderer and
-	// camera are known.
+	// neighbourhood.
 	_renderDepthPass( renderer, camera ) {
 
 		if ( this._edlStrength <= 0 ) {
@@ -217,8 +214,8 @@ export class PointCloudEffectsPlugin {
 
 		}
 
-		// Gather what the main pass draws without reparenting it. The world matrices are already up
-		// to date from the render in progress, so the group must not recompute them.
+		// the world matrices are already up to date from the render in progress, so the group must
+		// not recompute them
 		const children = this._edlGroup.children;
 		children.length = 0;
 		this.tiles.group.traverseVisible( child => {
@@ -231,8 +228,8 @@ export class PointCloudEffectsPlugin {
 
 			children.push( child );
 
-			// The target cannot stay bound as a texture while it is being drawn into or the draw
-			// is dropped as a feedback loop, so it is unbound for the duration of the pass.
+			// the target cannot stay bound as a texture while it is drawn into or the draw is
+			// dropped as a feedback loop
 			const { uniforms } = child.material;
 			uniforms.uEdlTexture.value = null;
 			uniforms.uEdlDepthPass.value = true;

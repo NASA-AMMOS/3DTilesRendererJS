@@ -1730,6 +1730,10 @@ constructor(
 		// Multiplier on the point size. Can be adjusted after
 		// construction.
 		pointScale = 1: number,
+
+		// Whether to set the renderer error target to a value suited
+		// to point spacing based geometric error.
+		useRecommendedSettings = true: boolean,
 	}
 )
 ```

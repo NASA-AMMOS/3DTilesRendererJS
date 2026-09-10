@@ -190,10 +190,9 @@ export class PointCloudMaterial extends PointsMaterial {
 
 						}
 
-						// Walks the hierarchy texture through the octants containing the point,
-						// returning the deepest active depth (x), an id for that node (y) and its
-						// lod offset (z). The id comes from the octant path rather than the texel
-						// index so it stays stable as the texture is re-encoded. Adapted from
+						// Walks the hierarchy texture, returning the deepest active depth (x), an id
+						// for that node (y) and its lod offset (z). The id comes from the octant
+						// path so it stays stable as the texture is re-encoded. Adapted from
 						// "getLOD" in potree's pointcloud.vs.
 						vec3 getActiveDepth( vec3 posInNode ) {
 
@@ -241,7 +240,6 @@ export class PointCloudMaterial extends PointsMaterial {
 				.replace(
 					'#include <logdepthbuf_vertex>',
 					/* glsl */`
-						// size by the deepest active node, shifted by its density lod offset
 						vec3 activeResult = vec3( 0.0 );
 						#ifdef LOD_SIZING
 
@@ -337,21 +335,20 @@ export class PointCloudMaterial extends PointsMaterial {
 					/* glsl */`
 					#include <color_fragment>
 
-					// color each point by a hash of the node it is sized by
 					#ifdef DEBUG_NODE_COLORS
 
 						diffuseColor.rgb = idToColor( vNodeId + 1.0 );
 
 					#endif
 
-					// color by the tile the point came from, showing how tiles overlap
+					// the tile the point came from, rather than the node it is sized by
 					#ifdef DEBUG_TILE_COLORS
 
 						diffuseColor.rgb = idToColor( uTileId + 1.0 );
 
 					#endif
 
-					// color each point by the depth of the node it is sized by, one hue per level
+					// one hue per level
 					#ifdef DEBUG_DEPTH_COLORS
 
 						float hue = vDepth / 8.0;
@@ -424,7 +421,6 @@ export class PointCloudMaterial extends PointsMaterial {
 
 	}
 
-	// Rebuild the shader feature defines for the current shape, debug and edl settings
 	_updateDefines() {
 
 		const defines = {};
