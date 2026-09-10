@@ -1672,9 +1672,9 @@ Advance width of `char` in the label's size units, cached per character.
 
 ## PointCloudEffectsPlugin
 
-Plugin that applies point cloud display settings and eye dome lighting to any loaded tile
-content drawn with a PointCloudMaterial. Eye dome lighting renders the points to a depth
-target first so each point can compare itself against its neighbours as it rasterizes.
+Plugin that applies display settings and eye dome lighting to loaded point content. Eye dome
+lighting renders the points to a depth target first so each point can compare itself against
+its neighbors as it rasterizes, shading silhouettes and creases.
 
 All the options below can be adjusted after construction.
 
@@ -1694,9 +1694,9 @@ constructor(
 		// skips its depth pre-pass.
 		edlStrength = 0: number,
 
-		// Radius of the eye dome lighting neighbour ring in css
-		// pixels, scaled by the renderer pixel ratio so the effect
-		// looks the same on every display.
+		// Radius of the eye dome lighting neighbor ring in css pixels,
+		// scaled by the renderer pixel ratio so the effect looks the
+		// same on every display.
 		edlRadius = 1.4: number,
 
 		// Color points by the node they are sized by, that node's

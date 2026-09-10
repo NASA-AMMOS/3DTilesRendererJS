@@ -10,6 +10,7 @@ import {
 	Vector2,
 	WebGLRenderTarget,
 } from 'three';
+import { PointCloudMaterial } from './PointCloudMaterial.js';
 
 // TODO:
 // - Run the edl depth pre-pass at a lower resolution. Three sizes points from the canvas, not the
@@ -47,9 +48,9 @@ class RenderHook extends Mesh {
 }
 
 /**
- * Plugin that applies point cloud display settings and eye dome lighting to any loaded tile
- * content drawn with a PointCloudMaterial. Eye dome lighting renders the points to a depth
- * target first so each point can compare itself against its neighbors as it rasterizes.
+ * Plugin that applies display settings and eye dome lighting to loaded point content. Eye dome
+ * lighting renders the points to a depth target first so each point can compare itself against
+ * its neighbors as it rasterizes, shading silhouettes and creases.
  *
  * All the options below can be adjusted after construction.
  * @param {Object} [options]
@@ -196,11 +197,31 @@ export class PointCloudEffectsPlugin {
 
 		scene.traverse( child => {
 
-			if ( child.material && child.material.isPointCloudMaterial ) {
+			if ( ! child.isPoints ) {
 
-				this._applyToMaterial( child.material );
+				return;
 
 			}
+
+			// content that does not bring its own point cloud material is converted so the
+			// display settings and eye dome lighting apply to it
+			if ( ! child.material.isPointCloudMaterial ) {
+
+				const previousMaterial = child.material;
+				child.material = new PointCloudMaterial( {
+					color: previousMaterial.color,
+					vertexColors: previousMaterial.vertexColors,
+					size: previousMaterial.size,
+					map: previousMaterial.map,
+					transparent: previousMaterial.transparent,
+					opacity: previousMaterial.opacity,
+				} );
+
+				previousMaterial.dispose();
+
+			}
+
+			this._applyToMaterial( child.material );
 
 		} );
 
@@ -247,8 +268,8 @@ export class PointCloudEffectsPlugin {
 		} );
 
 		const previousTarget = renderer.getRenderTarget();
-		renderer.getClearColor( _color );
 		const previousAlpha = renderer.getClearAlpha();
+		renderer.getClearColor( _color );
 
 		renderer.setRenderTarget( target );
 		renderer.setClearColor( 0x000000, 0 );
