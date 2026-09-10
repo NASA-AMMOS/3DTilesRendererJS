@@ -1670,13 +1670,11 @@ measureChar( char: string ): number
 Advance width of `char` in the label's size units, cached per character.
 
 
-## PotreePlugin
+## PointCloudEffectsPlugin
 
-Plugin that adds support for Potree point cloud datasets (v1.x and v2.0).
-
-Builds a synthetic additive-refinement tileset and streams point cloud nodes on demand. Each
-point is sized by the deepest active node at its position, resolved in the vertex shader
-against a texture encoding the active node hierarchy.
+Plugin that applies point cloud display settings and eye dome lighting to any loaded tile
+content drawn with a PointCloudMaterial. Eye dome lighting renders the points to a depth
+target first so each point can compare itself against its neighbours as it rasterizes.
 
 All the options below can be adjusted after construction.
 
@@ -1686,13 +1684,6 @@ All the options below can be adjusted after construction.
 ```js
 constructor(
 	{
-		// Url of the dataset metadata file, `cloud.js` for v1 or
-		// `metadata.json` for v2. Falls back to `tiles.rootURL`.
-		url = null: string | null,
-
-		// Multiplier on the point size.
-		pointScale = 1: number,
-
 		// Shape of the point sprites.
 		pointShape = 'round': 'square' | 'round' | 'sphere',
 
@@ -1711,6 +1702,72 @@ constructor(
 		// Color points by the node they are sized by, that node's
 		// depth, or the tile they came from.
 		debugColorMode = 'none': 'none' | 'node' | 'depth' | 'tile',
+	}
+)
+```
+
+## PointCloudMaterial
+
+PointsMaterial that draws points at a world space size with optional shapes and eye dome
+lighting. `size` is the world space point spacing.
+
+Octree data sets can additionally size each point by the deepest active node containing it,
+found by walking a hierarchy texture in the vertex shader, which halves the spacing per level
+below the root. Enable it by assigning `uActiveNodes`, `uNodeSize` and `uNodeMinOffset`.
+
+All the properties below can be adjusted after construction.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Sprite shape. Spheres write bulged depth so overlapping
+		// points intersect, at a fill rate cost.
+		pointShape = 'round': 'square' | 'round' | 'sphere',
+
+		// Smallest projected point size in pixels.
+		minPointSize = 2: number,
+
+		// Eye dome lighting falloff rate. Zero compiles the effect
+		// out.
+		edlStrength = 0: number,
+
+		// Radius of the eye dome lighting neighbour ring in pixels.
+		edlRadius = 1.4: number,
+
+		// Color points by the node they are sized by, that node's
+		// depth, or the tile they came from.
+		debugColorMode = 'none': 'none' | 'node' | 'depth' | 'tile',
+	}
+)
+```
+
+## PotreePlugin
+
+Plugin that adds support for Potree point cloud datasets (v1.x and v2.0).
+
+Builds a synthetic additive-refinement tileset and streams point cloud nodes on demand. Each
+point is sized by the deepest active node at its position, resolved in the vertex shader
+against a texture encoding the active node hierarchy.
+
+Extends PointCloudEffectsPlugin, so the point shape, size clamping, eye dome lighting and
+debug color options are available here too.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Url of the dataset metadata file, `cloud.js` for v1 or
+		// `metadata.json` for v2. Falls back to `tiles.rootURL`.
+		url = null: string | null,
+
+		// Multiplier on the point size. Can be adjusted after
+		// construction.
+		pointScale = 1: number,
 	}
 )
 ```

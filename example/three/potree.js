@@ -183,6 +183,7 @@ function initTiles() {
 		url: DATASETS[ params.dataset ],
 		pointScale: params.pointScale,
 		pointShape: params.pointShape,
+		debugColorMode: params.debugColorMode,
 		edlStrength: params.edl ? params.edlStrength : 0,
 		edlRadius: params.edlRadius,
 	} );

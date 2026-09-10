@@ -7,11 +7,12 @@ export const NODES_TEXTURE_WIDTH = 2048;
 const OCTANT_PLANE_BIAS = 0.00005;
 
 /**
- * PointsMaterial that sizes each point by the deepest active node containing it, found by walking
- * the hierarchy texture in the vertex shader. `size` is the root level point spacing, halved per
- * active level below the root.
+ * PointsMaterial that draws points at a world space size with optional shapes and eye dome
+ * lighting. `size` is the world space point spacing.
  *
- * Assign after construction: `uActiveNodes`, `uNodeSize` and `uNodeMinOffset`.
+ * Octree data sets can additionally size each point by the deepest active node containing it,
+ * found by walking a hierarchy texture in the vertex shader, which halves the spacing per level
+ * below the root. Enable it by assigning `uActiveNodes`, `uNodeSize` and `uNodeMinOffset`.
  *
  * All the properties below can be adjusted after construction.
  * @param {Object} [params] PointsMaterial parameters plus the properties below.
@@ -20,9 +21,29 @@ const OCTANT_PLANE_BIAS = 0.00005;
  * @param {number} [params.edlStrength=0] Eye dome lighting falloff rate. Zero compiles the effect out.
  * @param {number} [params.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in pixels.
  * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
- * @private
  */
-export class PotreePointsMaterial extends PointsMaterial {
+export class PointCloudMaterial extends PointsMaterial {
+
+	get isPointCloudMaterial() {
+
+		return true;
+
+	}
+
+	get activeNodes() {
+
+		return this.uniforms.uActiveNodes.value;
+
+	}
+
+	// the lod walk compiles out entirely when no hierarchy texture is assigned
+	set activeNodes( value ) {
+
+		const wasSet = this.uniforms.uActiveNodes.value !== null;
+		this.uniforms.uActiveNodes.value = value;
+		if ( wasSet !== ( value !== null ) ) this._updateDefines();
+
+	}
 
 	get pointShape() {
 
@@ -140,15 +161,18 @@ export class PotreePointsMaterial extends PointsMaterial {
 					/* glsl */`
 						uniform float size;
 						uniform float uMinPointSize;
-						uniform usampler2D uActiveNodes;
-						uniform float uNodeSize;
-						uniform vec3 uNodeMinOffset;
 
 						varying vec3 vViewPosition;
 						varying float vRadius;
 						varying float vNodeId;
 						varying float vDepth;
 						varying float vLogDepth;
+
+						#ifdef LOD_SIZING
+
+						uniform usampler2D uActiveNodes;
+						uniform float uNodeSize;
+						uniform vec3 uNodeMinOffset;
 
 						// number of set bits below the given bit index
 						uint numberOfOnes( uint mask, int index ) {
@@ -209,13 +233,21 @@ export class PotreePointsMaterial extends PointsMaterial {
 							return vec3( float( depth ), float( nodePath % 16777216u ), lodOffset );
 
 						}
+
+						#endif
 					`
 				)
 				.replace(
 					'#include <logdepthbuf_vertex>',
 					/* glsl */`
 						// size by the deepest active node, shifted by its density lod offset
-						vec3 activeResult = getActiveDepth( position + uNodeMinOffset );
+						vec3 activeResult = vec3( 0.0 );
+						#ifdef LOD_SIZING
+
+							activeResult = getActiveDepth( position + uNodeMinOffset );
+
+						#endif
+
 						float worldSize = size / pow( 2.0, activeResult.x + activeResult.z );
 
 						// three's "scale" omits the 1 / tan( fov / 2 ) term, so its attenuation is
@@ -395,6 +427,7 @@ export class PotreePointsMaterial extends PointsMaterial {
 	_updateDefines() {
 
 		const defines = {};
+		if ( this.uniforms.uActiveNodes.value !== null ) defines.LOD_SIZING = '';
 		if ( this.uniforms.uEdlStrength.value > 0 ) defines.EDL_ENABLED = '';
 		if ( this._pointShape === 'round' ) defines.ROUND_POINTS = '';
 		if ( this._pointShape === 'sphere' ) defines.SPHERE_POINTS = '';

@@ -1,35 +1,18 @@
 import {
-	BufferGeometry,
-	Color,
 	DataTexture,
-	FloatType,
-	Group,
-	Mesh,
-	MeshBasicMaterial,
 	NearestFilter,
 	Points,
-	RedFormat,
 	RGBAIntegerFormat,
 	UnsignedByteType,
-	Vector2,
 	Vector3,
-	WebGLRenderTarget,
 } from 'three';
 import { PotreeLoader, getChildBounds } from './PotreeLoader.js';
-import { PotreePointsMaterial, NODES_TEXTURE_WIDTH } from './PotreePointsMaterial.js';
-
-// TODO:
-// - Run the edl depth pre-pass at a lower resolution. Three sizes points from the canvas, not the
-//   bound render target, so the sprites need scaling to match.
-// - Render color and depth in one pass and composite with a full screen quad, the way potree does,
-//   to rasterize the points once instead of twice.
+import { PointCloudMaterial, NODES_TEXTURE_WIDTH } from '../pointcloud/PointCloudMaterial.js';
+import { PointCloudEffectsPlugin } from '../pointcloud/PointCloudEffectsPlugin.js';
 
 // Points are drawn larger than the point spacing to cover the gaps between them - potree uses
 // the same factor
 const SPACING_COVERAGE_FACTOR = 1.7;
-
-const _vec2 = /* @__PURE__ */ new Vector2();
-const _color = /* @__PURE__ */ new Color();
 
 // Node key from a tile content uri, e.g. ".../r012.potree" -> "r012"
 function keyFromUri( uri ) {
@@ -84,22 +67,6 @@ function createNodesTexture( height ) {
 
 }
 
-// Draws nothing, but is rendered so that its "onBeforeRender" fires with the renderer and camera
-// currently drawing. That is the only place both are known, and it runs before the points because
-// of the render order.
-function createRenderHook( onBeforeRender ) {
-
-	const geometry = new BufferGeometry();
-	geometry.setDrawRange( 0, 0 );
-
-	const mesh = new Mesh( geometry, new MeshBasicMaterial( { colorWrite: false, depthWrite: false } ) );
-	mesh.frustumCulled = false;
-	mesh.renderOrder = - Infinity;
-	mesh.onBeforeRender = onBeforeRender;
-	return mesh;
-
-}
-
 // Extract [min, max] arrays from a 3D Tiles box array
 function boxToMinMax( box ) {
 
@@ -118,17 +85,14 @@ function boxToMinMax( box ) {
  * point is sized by the deepest active node at its position, resolved in the vertex shader
  * against a texture encoding the active node hierarchy.
  *
- * All the options below can be adjusted after construction.
- * @param {Object} [options]
+ * Extends PointCloudEffectsPlugin, so the point shape, size clamping, eye dome lighting and
+ * debug color options are available here too.
+ *
+ * @param {Object} [options] PointCloudEffectsPlugin options plus the ones below.
  * @param {string|null} [options.url=null] Url of the dataset metadata file, `cloud.js` for v1 or `metadata.json` for v2. Falls back to `tiles.rootURL`.
- * @param {number} [options.pointScale=1] Multiplier on the point size.
- * @param {('square'|'round'|'sphere')} [options.pointShape='round'] Shape of the point sprites.
- * @param {number} [options.minPointSize=2] Smallest point size in pixels.
- * @param {number} [options.edlStrength=0] Eye dome lighting falloff rate. Zero disables the effect and skips its depth pre-pass.
- * @param {number} [options.edlRadius=1.4] Radius of the eye dome lighting neighbour ring in css pixels, scaled by the renderer pixel ratio so the effect looks the same on every display.
- * @param {('none'|'node'|'depth'|'tile')} [options.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
+ * @param {number} [options.pointScale=1] Multiplier on the point size. Can be adjusted after construction.
  */
-export class PotreePlugin {
+export class PotreePlugin extends PointCloudEffectsPlugin {
 
 	get pointScale() {
 
@@ -147,125 +111,22 @@ export class PotreePlugin {
 
 	}
 
-	get pointShape() {
-
-		return this._pointShape;
-
-	}
-
-	set pointShape( value ) {
-
-		if ( value !== this._pointShape ) {
-
-			this._pointShape = value;
-			this._updateMaterials();
-
-		}
-
-	}
-
-	get minPointSize() {
-
-		return this._minPointSize;
-
-	}
-
-	set minPointSize( value ) {
-
-		if ( value !== this._minPointSize ) {
-
-			this._minPointSize = value;
-			this._updateMaterials();
-
-		}
-
-	}
-
-	get edlStrength() {
-
-		return this._edlStrength;
-
-	}
-
-	set edlStrength( value ) {
-
-		if ( value !== this._edlStrength ) {
-
-			this._edlStrength = value;
-			this._updateMaterials();
-
-		}
-
-	}
-
-	get edlRadius() {
-
-		return this._edlRadius;
-
-	}
-
-	// scaled by the pixel ratio and pushed onto the materials by the depth pass
-	set edlRadius( value ) {
-
-		this._edlRadius = value;
-
-	}
-
-	get debugColorMode() {
-
-		return this._debugColorMode;
-
-	}
-
-	set debugColorMode( value ) {
-
-		if ( value !== this._debugColorMode ) {
-
-			this._debugColorMode = value;
-			this._updateMaterials();
-
-		}
-
-	}
-
 	constructor( options = {} ) {
+
+		super( options );
 
 		const {
 			url = null,
 			pointScale = 1,
-			pointShape = 'round',
-			minPointSize = 2,
-			edlStrength = 0,
-			edlRadius = 1.4,
-			debugColorMode = 'none',
 		} = options;
 
 		this.name = 'POTREE_PLUGIN';
 		this.priority = - 1000;
 
 		this.url = url;
-		this.tiles = null;
 		this.loader = null;
 
 		this._pointScale = pointScale;
-		this._pointShape = pointShape;
-		this._minPointSize = minPointSize;
-		this._debugColorMode = debugColorMode;
-		this._edlStrength = edlStrength;
-		this._edlRadius = edlRadius;
-
-		// Eye dome lighting renders the points to a depth target first so each point can compare
-		// itself against its neighbours while it rasterizes. The target holds only a log depth, so
-		// a single channel is enough, and full float keeps quantization from banding the shading.
-		this._edlTarget = new WebGLRenderTarget( 1, 1, {
-			format: RedFormat,
-			type: FloatType,
-			minFilter: NearestFilter,
-			magFilter: NearestFilter,
-		} );
-		this._edlGroup = new Group();
-		this._edlGroup.matrixWorldAutoUpdate = false;
-		this._edlHook = createRenderHook( ( renderer, scene, camera ) => this._renderDepthPass( renderer, camera ) );
 
 		// The active node hierarchy shared by every material: per texel the active-children
 		// octant mask (r) and the offset to the first child texel (g, b). Rebuilt after any
@@ -289,6 +150,8 @@ export class PotreePlugin {
 	// Plugin lifecycle
 	init( tiles ) {
 
+		super.init( tiles );
+
 		// route the loader requests through the other plugins
 		const loader = new PotreeLoader();
 		loader.fetchOptions = tiles.fetchOptions;
@@ -298,9 +161,7 @@ export class PotreePlugin {
 
 		};
 
-		this.tiles = tiles;
 		this.loader = loader;
-		tiles.group.add( this._edlHook );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 
 	}
@@ -310,12 +171,7 @@ export class PotreePlugin {
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 		this._activeNodesTexture.dispose();
 
-		this._edlHook.removeFromParent();
-		this._edlHook.geometry.dispose();
-		this._edlHook.material.dispose();
-		this._edlTarget.dispose();
-
-		this.tiles = null;
+		super.dispose();
 		this.loader = null;
 
 	}
@@ -389,16 +245,11 @@ export class PotreePlugin {
 		const { geometry, center } = this.loader.parsePointData( buffer, key, tileMin, tileMax );
 
 		const { spacing, boundingBox } = this.loader.metadata;
-		const material = new PotreePointsMaterial( {
+		const material = new PointCloudMaterial( {
 			vertexColors: Boolean( geometry.attributes.color ),
 			size: spacing * SPACING_COVERAGE_FACTOR * this._pointScale,
-			pointShape: this._pointShape,
-			minPointSize: this._minPointSize,
-			debugColorMode: this._debugColorMode,
-			edlStrength: this._edlStrength,
-			edlRadius: this._edlRadius,
 		} );
-		material.uniforms.uActiveNodes.value = this._activeNodesTexture;
+		material.activeNodes = this._activeNodesTexture;
 		material.uniforms.uTileId.value = idFromKey( key );
 		material.uniforms.uNodeSize.value = boundingBox.max[ 0 ] - boundingBox.min[ 0 ];
 		material.uniforms.uNodeMinOffset.value.copy( center ).sub( new Vector3( ...boundingBox.min ) );
@@ -554,85 +405,22 @@ export class PotreePlugin {
 
 	}
 
-	// Renders the loaded points into the depth target so the main pass can read each point's
-	// neighbourhood. Called from the hook mesh, which is the only place the active renderer and
-	// camera are known.
-	_renderDepthPass( renderer, camera ) {
+	// Push the current point scale onto the loaded materials
+	_updateMaterials() {
 
-		if ( this._edlStrength <= 0 ) {
+		super._updateMaterials();
+
+		// the loader has no metadata until the root tile set has loaded
+		const { metadata } = this.loader ?? {};
+		if ( ! metadata ) {
 
 			return;
 
 		}
 
-		const target = this._edlTarget;
-		renderer.getDrawingBufferSize( _vec2 );
-		if ( target.width !== _vec2.x || target.height !== _vec2.y ) {
-
-			target.setSize( _vec2.x, _vec2.y );
-
-		}
-
-		// Gather what the main pass draws without reparenting it. The world matrices are already up
-		// to date from the render in progress, so the group must not recompute them.
-		const children = this._edlGroup.children;
-		children.length = 0;
-		this.tiles.group.traverseVisible( child => {
-
-			if ( ! child.isPoints ) {
-
-				return;
-
-			}
-
-			children.push( child );
-
-			// The target cannot stay bound as a texture while it is being drawn into or the draw
-			// is dropped as a feedback loop, so it is unbound for the duration of the pass.
-			const { uniforms } = child.material;
-			uniforms.uEdlTexture.value = null;
-			uniforms.uEdlDepthPass.value = true;
-
-		} );
-
-		const previousTarget = renderer.getRenderTarget();
-		renderer.getClearColor( _color );
-		const previousAlpha = renderer.getClearAlpha();
-
-		renderer.setRenderTarget( target );
-		renderer.setClearColor( 0x000000, 0 );
-		renderer.clear();
-		renderer.render( this._edlGroup, camera );
-
-		renderer.setRenderTarget( previousTarget );
-		renderer.setClearColor( _color, previousAlpha );
-
-		children.forEach( scene => {
-
-			const { uniforms } = scene.material;
-			uniforms.uEdlTexture.value = target.texture;
-			uniforms.uEdlResolution.value.set( target.width, target.height );
-			uniforms.uEdlRadius.value = this._edlRadius * renderer.getPixelRatio();
-			uniforms.uEdlDepthPass.value = false;
-
-		} );
-
-		children.length = 0;
-
-	}
-
-	// Push the current settings onto the loaded materials
-	_updateMaterials() {
-
-		const { spacing } = this.loader.metadata;
 		this.tiles.forEachLoadedModel( scene => {
 
-			const { material } = scene;
-			material.size = spacing * SPACING_COVERAGE_FACTOR * this._pointScale;
-			material.pointShape = this._pointShape;
-			material.minPointSize = this._minPointSize;
-			material.debugColorMode = this._debugColorMode;
-			material.edlStrength = this._edlStrength;
+			scene.material.size = metadata.spacing * SPACING_COVERAGE_FACTOR * this._pointScale;
 
 		} );
 
