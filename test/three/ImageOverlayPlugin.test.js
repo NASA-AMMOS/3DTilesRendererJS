@@ -9,7 +9,7 @@ function createSplitFixture() {
 
 	const plugin = new ImageOverlayPlugin( { resolution: 256 } );
 	plugin.tiles = {
-		ellipsoid: WGS84_ELLIPSOID,
+		surface: WGS84_ELLIPSOID,
 		processNodeQueue: { remove() {} },
 		lruCache: { remove() {} },
 	};
@@ -74,6 +74,22 @@ describe( 'ImageOverlayPlugin tile splitting', () => {
 		await plugin.expandVirtualChildren( scene, tile );
 
 		expect( tile.children.length ).toBe( 0 );
+		expect( tile.geometricError ).toBe( 0.3 );
+
+	} );
+
+	it( 'splits additive tiles without raising their geometric error', async () => {
+
+		const { plugin, tile, scene } = createSplitFixture();
+		tile.refine = 'ADD';
+		await plugin.expandVirtualChildren( scene, tile );
+
+		expect( tile.children.length ).toBeGreaterThan( 0 );
+		expect( tile.geometricError ).toBe( 0.3 );
+
+		plugin._removeVirtualChildren( tile );
+
+		expect( tile.refine ).toBe( 'ADD' );
 		expect( tile.geometricError ).toBe( 0.3 );
 
 	} );

@@ -670,7 +670,9 @@ export class ImageOverlayPlugin {
 		// and selecting them (children are only traversed while the parent error exceeds the
 		// error target), and restore it when the splits are removed. Each split child inherits
 		// half, and "shouldSplit" stops the recursion at the overlays' max level (#1636).
-		if ( ! ( ORIGINAL_GEOMETRIC_ERROR in tile ) ) {
+		// Additive tiles are excluded: they can have real children, and raising their error
+		// would make traversal load that child geometry far deeper than the tile set intends.
+		if ( tile.refine !== 'ADD' && ! ( ORIGINAL_GEOMETRIC_ERROR in tile ) ) {
 
 			const texelError = _box.setFromObject( clone ).getSize( _vec ).length() / this.resolution;
 			tile[ ORIGINAL_GEOMETRIC_ERROR ] = tile.geometricError;
