@@ -8,8 +8,7 @@ import {
 	Vector2,
 } from 'three';
 import { TilesRenderer, EnvironmentControls } from '3d-tiles-renderer';
-import { DebugTilesPlugin } from '3d-tiles-renderer/plugins';
-import { PotreePlugin } from './src/plugins/PotreePlugin.js';
+import { DebugTilesPlugin, PotreePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 // Public Potree datasets hosted in the potree repository, which is CORS-enabled. The data sets

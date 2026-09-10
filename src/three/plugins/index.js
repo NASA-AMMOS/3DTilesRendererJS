@@ -15,6 +15,9 @@ export * from './DebugTilesPlugin.js';
 export * from './mvt/MVTAnnotationsPlugin.js';
 
 // other formats
+export * from './potree/PotreePlugin.js';
+export * from './potree/PotreePointsMaterial.js';
+export * from './potree/PotreeLoader.js';
 export * from './images/GeneratedSurfacePlugin.js';
 export * from './images/terrain-rgb/TerrainRGBMeshPlugin.js';
 export * from './images/terrain-rgb/TerrariumMeshPlugin.js';
