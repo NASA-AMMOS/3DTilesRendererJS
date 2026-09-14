@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ProjectionScheme: Added support for EPSG:8857, equal earth projection.
 
 ### Fixed
+- ImageOverlayPlugin: Fix overlays added without an explicit order being assigned an order of NaN.
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
 - MVTAnnotationsPlugin: Fix a crash when a tile visibility event is dispatched after the tile has been disposed.
 - MVTGlyphs: Fix "update" throwing when called before the glyphs have been rendered for the first time.
