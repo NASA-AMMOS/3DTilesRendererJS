@@ -7,6 +7,7 @@ import path from 'path';
 export const packageAliases = {
 	'3d-tiles-renderer/core/plugins': path.resolve( './src/core/plugins/index.js' ),
 	'3d-tiles-renderer/three/plugins': path.resolve( './src/three/plugins/index.js' ),
+	'3d-tiles-renderer/babylonjs/plugins': path.resolve( './src/babylonjs/plugins/index.js' ),
 
 	'3d-tiles-renderer/r3f': path.resolve( './src/r3f/index.jsx' ),
 	'3d-tiles-renderer/core': path.resolve( './src/core/renderer/index.js' ),

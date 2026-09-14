@@ -16,7 +16,8 @@ export default ( { mode } ) => {
 		'index.r3f': './src/r3f/index.jsx',
 
 		'index.core-plugins': './src/core/plugins/index.js',
-		'index.three-plugins': './src/three/plugins/index.js'
+		'index.three-plugins': './src/three/plugins/index.js',
+		'index.babylonjs-plugins': './src/babylonjs/plugins/index.js',
 	};
 
 	return {

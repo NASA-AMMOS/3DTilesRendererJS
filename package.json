@@ -49,6 +49,10 @@
       "types": "./src/babylonjs/renderer/index.d.ts",
       "import": "./build/index.babylonjs.js"
     },
+    "./babylonjs/plugins": {
+      "types": "./src/babylonjs/plugins/index.d.ts",
+      "import": "./build/index.babylonjs-plugins.js"
+    },
     "./core/plugins": {
       "types": "./src/core/plugins/index.d.ts",
       "import": "./build/index.core-plugins.js"
@@ -89,8 +93,8 @@
     "@babel/preset-modules": "^0.1.6",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
-    "@babylonjs/core": "^8.47.2",
-    "@babylonjs/loaders": "^8.47.2",
+    "@babylonjs/core": "9.26.1",
+    "@babylonjs/loaders": "9.26.1",
     "@eslint/js": "^9.0.0",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
@@ -100,6 +104,7 @@
     "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^6.0.2",
     "@vitest/eslint-plugin": "^1.5.1",
+    "babylonjs-gltf2interface": "9.26.1",
     "cesium": "^1.132.0",
     "concurrently": "^6.2.1",
     "eslint": "^9.0.0",
@@ -111,6 +116,8 @@
     "jsdoc": "^4.0.5",
     "leva": "^0.10.0",
     "lil-gui": "^0.21.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "three": "^0.185.0",
     "three-mesh-bvh": "^0.9.11",
     "typescript": "^5.6.0",
@@ -119,8 +126,8 @@
     "vitest": "^4.0.15"
   },
   "peerDependencies": {
-    "@babylonjs/core": ">=8.0.0",
-    "@babylonjs/loaders": ">=8.0.0",
+    "@babylonjs/core": ">=9.26.1",
+    "@babylonjs/loaders": ">=9.26.1",
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
