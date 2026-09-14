@@ -816,7 +816,7 @@ export class ImageOverlayPlugin {
 		if ( order === null ) {
 
 			// set the order to the next largest order value
-			order = overlays.reduce( ( v, o ) => Math.max( v, o.order + 1 ), 0 );
+			order = overlays.reduce( ( v, o ) => Math.max( v, overlayInfo.get( o ).order + 1 ), 0 );
 
 		}
 
