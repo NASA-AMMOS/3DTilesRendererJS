@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - ImageOverlayPlugin: Fix overlays added without an explicit order being assigned an order of NaN.
+- GeoJSONOverlay, MVTOverlay: Fix transparent seams along tile edges at high zoom levels caused by canvas transform precision.
 - LRUCache: Fix "unloadUnusedContent" looping forever when fractional byte sizes cause the tracked total to drift above the summed item sizes. Byte sizes are now rounded to integers.
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
 - MVTAnnotationsPlugin: Fix a crash when a tile visibility event is dispatched after the tile has been disposed.
