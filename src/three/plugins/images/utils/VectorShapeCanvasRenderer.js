@@ -87,6 +87,10 @@ export class VectorShapeCanvasRenderer {
 		this._invScale = 1;
 		this._ctx = null;
 
+		// tile-local origin subtracted from every coordinate before it reaches the canvas
+		this._originX = 0;
+		this._originY = 0;
+
 	}
 
 	// Sets up the canvas transform and clip for a tile.
@@ -119,23 +123,27 @@ export class VectorShapeCanvasRenderer {
 		// Tile-local coordinate at the tile's canvas corner.
 		// Fixed-extent tiles (e.g. MVT) start at (0, 0); geographic tiles start at the tile bounds corner.
 		// For Y-up (flipY) the canvas top corresponds to tMaxY, not tMinY.
+		// The origin is subtracted from the coordinates in double precision rather than folded into
+		// the transform, since the canvas stores the transform in float32 and a geographic origin
+		// scaled to pixels is large enough to lose whole pixels.
 		const localOriginX = tileExtent ? 0 : tMinX;
 		const localOriginY = tileExtent ? 0 : ( flipY ? tMaxY : tMinY );
-		const offsetX = tileLeft - localOriginX * scaleX;
-		const offsetY = tileTop - localOriginY * scaleY;
+		const rectY = flipY && ! tileExtent ? - spanY : 0;
 
 		ctx.save();
 
-		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
+		ctx.setTransform( scaleX, 0, 0, scaleY, tileLeft, tileTop );
 
 		ctx.beginPath();
-		ctx.rect( localOriginX, tileExtent ? 0 : tMinY, spanX, spanY );
+		ctx.rect( 0, rectY, spanX, spanY );
 		ctx.clip();
 
-		ctx.clearRect( localOriginX, tileExtent ? 0 : tMinY, spanX, spanY );
+		ctx.clearRect( 0, rectY, spanX, spanY );
 
 		this._ctx = ctx;
 		this._invScale = 1 / scaleX;
+		this._originX = localOriginX;
+		this._originY = localOriginY;
 
 	}
 
@@ -153,7 +161,7 @@ export class VectorShapeCanvasRenderer {
 
 	_renderPoints( geometry, aspectRatio = 1 ) {
 
-		const { _ctx, radius, getX, getY, visible } = this;
+		const { _ctx, radius, getX, getY, visible, _originX, _originY } = this;
 		if ( ! visible ) {
 
 			return;
@@ -164,7 +172,8 @@ export class VectorShapeCanvasRenderer {
 
 			for ( const p of multiPoint ) {
 
-				const x = getX( p ), y = getY( p );
+				const x = getX( p ) - _originX;
+				const y = getY( p ) - _originY;
 				_ctx.beginPath();
 				_ctx.ellipse( x, y, radius / aspectRatio, radius, 0, 0, Math.PI * 2 );
 				_ctx.fill();
@@ -179,7 +188,7 @@ export class VectorShapeCanvasRenderer {
 
 	_renderLines( geometry ) {
 
-		const { _ctx, getX, getY, visible } = this;
+		const { _ctx, getX, getY, visible, _originX, _originY } = this;
 		if ( ! visible ) {
 
 			return;
@@ -199,8 +208,8 @@ export class VectorShapeCanvasRenderer {
 
 			for ( let k = 0; k < ring.length; k ++ ) {
 
-				if ( k === 0 ) _ctx.moveTo( getX( ring[ k ] ), getY( ring[ k ] ) );
-				else _ctx.lineTo( getX( ring[ k ] ), getY( ring[ k ] ) );
+				if ( k === 0 ) _ctx.moveTo( getX( ring[ k ] ) - _originX, getY( ring[ k ] ) - _originY );
+				else _ctx.lineTo( getX( ring[ k ] ) - _originX, getY( ring[ k ] ) - _originY );
 
 			}
 
@@ -212,7 +221,7 @@ export class VectorShapeCanvasRenderer {
 
 	_renderPolygons( geometry ) {
 
-		const { _ctx, getX, getY, visible } = this;
+		const { _ctx, getX, getY, visible, _originX, _originY } = this;
 		if ( ! visible ) {
 
 			return;
@@ -233,8 +242,8 @@ export class VectorShapeCanvasRenderer {
 
 			for ( let k = 0; k < ring.length; k ++ ) {
 
-				if ( k === 0 ) _ctx.moveTo( getX( ring[ k ] ), getY( ring[ k ] ) );
-				else _ctx.lineTo( getX( ring[ k ] ), getY( ring[ k ] ) );
+				if ( k === 0 ) _ctx.moveTo( getX( ring[ k ] ) - _originX, getY( ring[ k ] ) - _originY );
+				else _ctx.lineTo( getX( ring[ k ] ) - _originX, getY( ring[ k ] ) - _originY );
 
 			}
 
