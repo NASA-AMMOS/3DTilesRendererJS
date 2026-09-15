@@ -449,6 +449,7 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 		this.plugins = [];
 		this.queuedTiles = [];
+		this.queuedTileSet = new Set();
 		this.cachedSinceLoadComplete = new Set();
 		this.isLoading = false;
 
@@ -505,6 +506,7 @@ export class TilesRendererBase {
 		 * - `used` — tiles visited during the last traversal
 		 * - `active` — tiles currently set as active
 		 * - `visible` — tiles currently visible
+		 * - `refused` — tiles the last update wanted to load but could not queue because the cache was full
 		 * @type {Object}
 		 */
 		this.stats = {
@@ -521,6 +523,7 @@ export class TilesRendererBase {
 			used: 0,
 			active: 0,
 			visible: 0,
+			refused: 0,
 
 			tilesProcessed: 0,
 		};
@@ -791,7 +794,7 @@ export class TilesRendererBase {
 	update() {
 
 		// load root
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, queuedTiles, queuedTileSet } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -881,6 +884,7 @@ export class TilesRendererBase {
 		stats.used = 0;
 		stats.active = 0;
 		stats.visible = 0;
+		stats.refused = 0;
 		stats.tilesProcessed = 0;
 		this.frameCount ++;
 
@@ -899,15 +903,20 @@ export class TilesRendererBase {
 		// TODO: This will only sort for one tileset. We may want to store this queue on the
 		// LRUCache so multiple tilesets can use it at once
 		// start the downloads of the tiles as needed
-		const queuedTiles = this.queuedTiles;
 		queuedTiles.sort( lruCache.unloadPriorityCallback );
-		for ( let i = 0, l = queuedTiles.length; i < l && ! lruCache.isFull(); i ++ ) {
 
-			this.requestTileContents( queuedTiles[ i ] );
+		let requested = 0;
+		const queueLen = queuedTiles.length;
+		for ( ; requested < queueLen && ! lruCache.isFull(); requested ++ ) {
+
+			this.requestTileContents( queuedTiles[ requested ] );
 
 		}
 
+		// the remaining tiles were refused by a full cache
+		stats.refused += queuedTiles.length - requested;
 		queuedTiles.length = 0;
+		queuedTileSet.clear();
 
 		// start the downloads
 		lruCache.scheduleUnload();
@@ -1359,8 +1368,19 @@ export class TilesRendererBase {
 	// Private Functions
 	queueTileForDownload( tile ) {
 
-		if ( tile.internal.loadingState !== UNLOADED || this.lruCache.isFull() ) {
+		// the traversal can queue the same tile from multiple branches in a frame
+		const { queuedTileSet } = this;
+		if ( tile.internal.loadingState !== UNLOADED || queuedTileSet.has( tile ) ) {
 
+			return;
+
+		}
+
+		queuedTileSet.add( tile );
+
+		if ( this.lruCache.isFull() ) {
+
+			this.stats.refused ++;
 			return;
 
 		}
