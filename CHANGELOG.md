@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - ImageOverlayPlugin: Fix overlays added without an explicit order being assigned an order of NaN.
+- LRUCache: Fix "unloadUnusedContent" looping forever when fractional byte sizes cause the tracked total to drift above the summed item sizes. Byte sizes are now rounded to integers.
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
 - MVTAnnotationsPlugin: Fix a crash when a tile visibility event is dispatched after the tile has been disposed.
 - MVTGlyphs: Fix "update" throwing when called before the glyphs have been rendered for the first time.
