@@ -9,7 +9,6 @@ const PARALLEL_EPSILON = 1e-10;
 // adapts to the surface scale; the ratio matches one meter for a level 16 tile on earth.
 const SETTLE_THRESHOLD_TILE_RATIO = 1.6e-3;
 
-const _raycaster = /* @__PURE__ */ new Raycaster();
 const _hit = /* @__PURE__ */ new Vector3();
 const _hits = [];
 const _spanStart = /* @__PURE__ */ new Vector3();
@@ -106,6 +105,9 @@ export class SettlingManager {
 		// custom settling callback ( ray, lat, lon, target ) => boolean overriding the default raycast.
 		// When null the default raycast against the tile group is used.
 		this.performSettleRaycast = null;
+
+		// raycaster used for the default raycast so plugin objects can be left out of the samples
+		this.raycaster = new Raycaster();
 
 		// Optional object providing "sampleCartographicElevation( lat, lon )" used to settle items by
 		// sampling elevations directly, which is much faster than raycasting. "performSettleRaycast"
@@ -237,22 +239,23 @@ export class SettlingManager {
 		}
 
 		// cast a ray to snap a single cartographic sample onto the surface
-		const { origin, direction } = _raycaster.ray;
+		const { raycaster } = this;
+		const { origin, direction } = raycaster.ray;
 
 		// build the local ray and transform to world space for raycasting
-		this._getSettlingRay( lat, lon, _raycaster );
+		this._getSettlingRay( lat, lon, raycaster );
 		origin.applyMatrix4( tiles.group.matrixWorld );
 		direction.transformDirection( tiles.group.matrixWorld );
 
 		let hit = false;
 		if ( performSettleRaycast !== null ) {
 
-			hit = performSettleRaycast( _raycaster.ray, lat, lon, _hit );
+			hit = performSettleRaycast( raycaster.ray, lat, lon, _hit );
 
 		} else {
 
 			_hits.length = 0;
-			_raycaster.intersectObject( tiles.group, true, _hits );
+			raycaster.intersectObject( tiles.group, true, _hits );
 			if ( _hits.length > 0 ) {
 
 				_hit.copy( _hits[ 0 ].point );
@@ -326,8 +329,8 @@ export class SettlingManager {
 						const anchorPosition = anchorPositions[ anchorPositions.length >> 1 ];
 						const { lat, lon } = anchorPosition;
 
-						this._getSettlingRay( lat, lon, _raycaster );
-						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
+						this._getSettlingRay( lat, lon, this.raycaster );
+						if ( rayIntersectsFrustum( this.raycaster, frustum ) ) {
 
 							intersectingFrustum.add( item );
 							continue;
@@ -338,8 +341,8 @@ export class SettlingManager {
 					} else {
 
 						// check if the point projection ray intersects the frustum
-						this._getSettlingRay( item.lat, item.lon, _raycaster );
-						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
+						this._getSettlingRay( item.lat, item.lon, this.raycaster );
+						if ( rayIntersectsFrustum( this.raycaster, frustum ) ) {
 
 							intersectingFrustum.add( item );
 

@@ -1013,6 +1013,18 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	// building hits carry their annotation in "object.userData.annotation". Settling samples the
+	// tile geometry only.
+	raycast( raycaster, intersects ) {
+
+		if ( raycaster !== this.settlingManager.raycaster ) {
+
+			raycaster.intersectObject( this.buildings.group, true, intersects );
+
+		}
+
+	}
+
 	async processTileModel( scene, tile ) {
 
 		const { tiles, overlay } = this;
