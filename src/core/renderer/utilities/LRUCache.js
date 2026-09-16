@@ -163,6 +163,8 @@ class LRUCache {
 
 		}
 
+		// integer sizes keep the incremental total exactly equal to the sum of the sizes
+		bytes = Math.round( bytes );
 		this.cachedBytes -= bytesMap.get( item ) || 0;
 		bytesMap.set( item, bytes );
 		this.cachedBytes += bytes;
@@ -396,10 +398,13 @@ class LRUCache {
 			let removedBytes = 0;
 
 			// evict up to the max node or bytes size, keeping one more item over the max bytes limit
-			// so the "full" function behaves correctly.
+			// so the "full" function behaves correctly. Both loops stop at the end of the list so an
+			// unreachable byte target can't spin forever.
 			while (
-				this.cachedBytes - removedBytes > maxBytesSize ||
-				itemList.length - removedNodes > maxSize
+				removedNodes < itemList.length && (
+					this.cachedBytes - removedBytes > maxBytesSize ||
+					itemList.length - removedNodes > maxSize
+				)
 			) {
 
 				const item = itemList[ removedNodes ];
@@ -422,8 +427,10 @@ class LRUCache {
 			// evict up to the min node or bytes size, keeping one more item over the min bytes limit
 			// so we're meeting it
 			while (
-				removedBytes < bytesToUnload ||
-				removedNodes < nodesToUnload
+				removedNodes < itemList.length && (
+					removedBytes < bytesToUnload ||
+					removedNodes < nodesToUnload
+				)
 			) {
 
 				const item = itemList[ removedNodes ];

@@ -207,6 +207,52 @@ describe( 'LRUCache', () => {
 
 	} );
 
+	it( 'should round byte sizes so the tracked total matches the summed sizes.', () => {
+
+		const cache = new LRUCache();
+		const items = new Array( 16 ).fill().map( ( _, i ) => ( { i } ) );
+		items.forEach( item => cache.add( item, () => {} ) );
+
+		for ( let round = 0; round < 60; round ++ ) {
+
+			items.forEach( item => cache.setMemoryUsage( item, 1e7 + 0.1 + ( ( round * 104729 + item.i * 1299709 ) % 1000 ) / 3 ) );
+
+		}
+
+		let sum = 0;
+		cache.bytesMap.forEach( bytes => sum += bytes );
+
+		expect( Number.isInteger( cache.cachedBytes ) ).toEqual( true );
+		expect( cache.cachedBytes ).toEqual( sum );
+
+	} );
+
+	it( 'should stop evicting at the end of the list even if the tracked total drifts above the summed sizes.', () => {
+
+		const cache = new LRUCache();
+		cache.minSize = 0;
+		cache.maxSize = Infinity;
+		cache.minBytesSize = 0;
+		cache.maxBytesSize = Infinity;
+		cache.unloadPercent = 1;
+
+		for ( let i = 0; i < 16; i ++ ) {
+
+			const item = {};
+			cache.add( item, () => {} );
+			cache.setMemoryUsage( item, 1e7 );
+
+		}
+
+		// simulate accumulated float error so the byte target can never be met
+		cache.cachedBytes += 1e-6;
+		cache.markAllUnused();
+		cache.unloadUnusedContent();
+
+		expect( cache.itemList ).toHaveLength( 0 );
+
+	} );
+
 	it( 'should not unload "used" items if they are loaded and above the max bytes size threshold.', () => {
 
 		const cache = new LRUCache();
