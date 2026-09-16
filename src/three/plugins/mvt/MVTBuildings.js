@@ -1,6 +1,6 @@
 /** @import { Material } from 'three' */
 /** @import { PolygonAnnotation } from './annotations/PolygonAnnotation.js' */
-import { BatchedMesh, BufferAttribute, BufferGeometry, Color, Group, Matrix4, MeshStandardMaterial, ShapeUtils, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial, ShapeUtils } from 'three';
 import { ColorManager } from './debug/ColorManager.js';
 
 const ColorMode = {
@@ -10,8 +10,6 @@ const ColorMode = {
 	TILE: 3,
 };
 
-const _matrix = /* @__PURE__ */ new Matrix4();
-const _pos = /* @__PURE__ */ new Vector3();
 const _color = /* @__PURE__ */ new Color();
 
 /**
@@ -152,8 +150,9 @@ function extrudeRings( rings, minHeight, height ) {
 }
 
 /**
- * Manages the extruded building meshes for polygon annotations, batched into one mesh per vector
- * tile under `group`.
+ * Manages the extruded building meshes for polygon annotations, one mesh per polygon under
+ * `group`. Each mesh carries its annotation in `userData.annotation` so raycast hits can be
+ * traced back to the feature.
  */
 export class MVTBuildings {
 
@@ -183,11 +182,7 @@ export class MVTBuildings {
 		if ( value !== this._colorMode ) {
 
 			this._colorMode = value;
-			this._tiles.forEach( ( { mesh, instanceIds } ) => {
-
-				instanceIds.forEach( ( instanceId, item ) => this._applyColor( mesh, instanceId, item ) );
-
-			} );
+			this._meshes.forEach( ( mesh, item ) => this._applyColor( mesh, item ) );
 
 		}
 
@@ -197,7 +192,7 @@ export class MVTBuildings {
 	 * @param {Object} [options]
 	 * @param {MVTGetHeightCallback} [options.getHeight] - Height of the extrusion.
 	 * @param {MVTGetHeightCallback} [options.getMinHeight] - Base of the extrusion.
-	 * @param {Material} [options.material] - Material shared by every batch.
+	 * @param {Material} [options.material] - Material shared by every building.
 	 */
 	constructor( options = {} ) {
 
@@ -208,7 +203,7 @@ export class MVTBuildings {
 		} = options;
 
 		/**
-		 * Group holding the batched meshes.
+		 * Group holding the building meshes.
 		 * @type {Group}
 		 */
 		this.group = new Group();
@@ -217,15 +212,18 @@ export class MVTBuildings {
 		this.getMinHeight = getMinHeight;
 
 		/**
-		 * Material shared by every batch.
+		 * Material shared by every building.
 		 * @type {Material}
 		 */
 		this.material = material;
 
 		this._colorMode = ColorMode.NONE;
 
-		// Map<tileKey, { mesh, invMatrix, instanceIds: Map<annotation, instanceId> }>
-		this._tiles = new Map();
+		// Map<annotation, Mesh>
+		this._meshes = new Map();
+
+		// Map<hex, Material> tinted copies of the material used by the debug color modes
+		this._coloredMaterials = new Map();
 
 	}
 
@@ -238,90 +236,79 @@ export class MVTBuildings {
 	 */
 	update( added, removed ) {
 
-		const { _tiles } = this;
+		const { _meshes, group, getHeight, getMinHeight, material } = this;
 
-		_tiles.forEach( ( { mesh, invMatrix, instanceIds } ) => {
+		_meshes.forEach( ( mesh, item ) => {
 
-			instanceIds.forEach( ( instanceId, item ) => {
+			if ( item.needsUpdate ) {
 
-				if ( item.needsUpdate ) {
+				item.needsUpdate = false;
+				mesh.matrix.copy( item.frame );
+				mesh.updateMatrixWorld( true );
 
-					item.needsUpdate = false;
-					mesh.setMatrixAt( instanceId, _matrix.copy( item.frame ).premultiply( invMatrix ) );
-
-				}
-
-			} );
+			}
 
 		} );
 
 		for ( const item of removed ) {
 
-			const entry = _tiles.get( item.tileKey );
-			const instanceId = entry?.instanceIds.get( item );
-			if ( instanceId === undefined ) {
+			const mesh = _meshes.get( item );
+			if ( mesh ) {
 
-				continue;
-
-			}
-
-			entry.mesh.deleteInstance( instanceId );
-			entry.instanceIds.delete( item );
-			if ( entry.instanceIds.size === 0 ) {
-
-				this._deleteTile( item.tileKey );
+				group.remove( mesh );
+				mesh.geometry.dispose();
+				_meshes.delete( item );
 
 			}
 
 		}
 
-		const addedByTile = new Map();
 		for ( const item of added ) {
 
-			if ( ! addedByTile.has( item.tileKey ) ) {
+			const { layer, properties } = item;
+			const geometry = extrudeRings( item.rings, getMinHeight( layer, properties ), getHeight( layer, properties ) );
+			const mesh = new Mesh( geometry, material );
+			mesh.matrixAutoUpdate = false;
+			mesh.matrix.copy( item.frame );
+			mesh.userData.annotation = item;
+			item.needsUpdate = false;
 
-				addedByTile.set( item.tileKey, [] );
+			if ( this._colorMode !== ColorMode.NONE ) {
+
+				this._applyColor( mesh, item );
 
 			}
 
-			addedByTile.get( item.tileKey ).push( item );
+			// the tiles group does not propagate matrix updates to children added after the fact
+			group.add( mesh );
+			mesh.updateMatrixWorld( true );
+			_meshes.set( item, mesh );
 
 		}
-
-		addedByTile.forEach( ( items, tileKey ) => {
-
-			// a batch is sized once, so an existing tile is rebuilt with the new items included
-			const entry = _tiles.get( tileKey );
-			if ( entry ) {
-
-				items.push( ...entry.instanceIds.keys() );
-				this._deleteTile( tileKey );
-
-			}
-
-			this._addTile( tileKey, items );
-
-		} );
 
 	}
 
 	/**
-	 * Disposes every batch and the material.
+	 * Disposes every mesh and the materials.
 	 * @returns {void}
 	 */
 	dispose() {
 
-		for ( const tileKey of [ ...this._tiles.keys() ] ) {
+		this._meshes.forEach( mesh => {
 
-			this._deleteTile( tileKey );
+			this.group.remove( mesh );
+			mesh.geometry.dispose();
 
-		}
+		} );
+		this._meshes.clear();
 
+		this._coloredMaterials.forEach( material => material.dispose() );
+		this._coloredMaterials.clear();
 		this.material.dispose();
 
 	}
 
-	_applyColor( mesh, instanceId, item ) {
+	_applyColor( mesh, item ) {
 
 		switch ( this._colorMode ) {
 
@@ -338,76 +325,22 @@ export class MVTBuildings {
 				break;
 
 			default:
-				_color.set( 0xffffff );
-				break;
+				mesh.material = this.material;
+				return;
 
 		}
 
-		mesh.setColorAt( instanceId, _color );
+		const { _coloredMaterials } = this;
+		const hex = _color.getHex();
+		if ( ! _coloredMaterials.has( hex ) ) {
 
-	}
-
-	_addTile( tileKey, items ) {
-
-		const { getHeight, getMinHeight, material } = this;
-
-		const geometries = [];
-		let vertexCount = 0;
-		let indexCount = 0;
-		for ( const item of items ) {
-
-			const { layer, properties } = item;
-			const geometry = extrudeRings( item.rings, getMinHeight( layer, properties ), getHeight( layer, properties ) );
-			geometries.push( geometry );
-			vertexCount += geometry.attributes.position.count;
-			indexCount += geometry.index.count;
+			const material = this.material.clone();
+			material.color.setHex( hex );
+			_coloredMaterials.set( hex, material );
 
 		}
 
-		// center the batch on the tile so the instance offsets stay small
-		const mesh = new BatchedMesh( items.length, vertexCount, indexCount, material );
-		for ( const item of items ) {
-
-			mesh.position.add( _pos.setFromMatrixPosition( item.frame ) );
-
-		}
-
-		mesh.position.divideScalar( items.length );
-		mesh.updateMatrix();
-		const invMatrix = new Matrix4().copy( mesh.matrix ).invert();
-
-		const instanceIds = new Map();
-		for ( let i = 0, l = items.length; i < l; i ++ ) {
-
-			const item = items[ i ];
-			const geometry = geometries[ i ];
-			const geometryId = mesh.addGeometry( geometry, geometry.attributes.position.count, geometry.index.count );
-			const instanceId = mesh.addInstance( geometryId );
-			mesh.setMatrixAt( instanceId, _matrix.copy( item.frame ).premultiply( invMatrix ) );
-			instanceIds.set( item, instanceId );
-			item.needsUpdate = false;
-
-			if ( this._colorMode !== ColorMode.NONE ) {
-
-				this._applyColor( mesh, instanceId, item );
-
-			}
-
-		}
-
-		// the tiles group does not propagate matrix updates to children added after the fact
-		this.group.add( mesh );
-		mesh.updateMatrixWorld();
-		this._tiles.set( tileKey, { mesh, invMatrix, instanceIds } );
-
-	}
-
-	_deleteTile( tileKey ) {
-
-		const { mesh } = this._tiles.get( tileKey );
-		this.group.remove( mesh );
-		mesh.dispose();
-		this._tiles.delete( tileKey );
+		mesh.material = _coloredMaterials.get( hex );
 
 	}
 
