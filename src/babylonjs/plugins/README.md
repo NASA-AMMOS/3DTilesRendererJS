@@ -3,6 +3,9 @@
 `TilesFadePlugin` adds opaque ordered-dither transitions to ordinary B3DM,
 glTF, and GLB tiles:
 
+This plugin requires compatible `@babylonjs/core` and `@babylonjs/loaders`
+versions 9.26.1 or later.
+
 ```js
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { TilesFadePlugin } from '3d-tiles-renderer/babylonjs/plugins';
@@ -25,4 +28,5 @@ not an unconditional cap.
 Babylon.js uses the 8x8 pattern provided by
 `DitheredTileFadeMaterialPlugin`; the Three.js plugin uses a 4x4 pattern, so
 their transition timing and lifecycle match without requiring identical
-dither pixels.
+dither pixels. Both engine plugins share the same tile fade lifecycle and
+options; their camera and material integration remains engine-specific.
