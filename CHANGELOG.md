@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PotreePlugin: Add plugin for loading Potree point cloud datasets (v1.x and v2.0) with per point level of detail sizing.
 - PointCloudEffectsPlugin: Add plugin for point cloud display options, including point shape, minimum point size, and eye dome lighting.
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
+- MVTAnnotationsPlugin: Add extruded buildings generated from polygon features, clipped to their tiles and settled onto the surface, with debug color modes.
 - GlobeControls: Adjust the globe controls to use stable orientation during rotation.
 - TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.
 - ProjectedSurface: Add a surface definition for tile geometry flattened onto a projected plane.
