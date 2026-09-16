@@ -17,6 +17,7 @@ const _spanEnd = /* @__PURE__ */ new Vector3();
 const _sample = /* @__PURE__ */ new Vector3();
 const _base = /* @__PURE__ */ new Vector3();
 const _up = /* @__PURE__ */ new Vector3();
+const _cartographic = { lat: 0, lon: 0, height: 0 };
 
 // check if the given raycaster intersects the provided frustum shape
 function rayIntersectsFrustum( raycaster, frustum ) {
@@ -111,6 +112,10 @@ export class SettlingManager {
 		// takes precedence, and points that no data covers settle to the ellipsoid surface just as a
 		// missed raycast does.
 		this.elevationSource = null;
+
+		// Optional callback ( lat, lon ) => number | null returning the top of the building at
+		// the point, if any, so point annotations settle onto rooftops instead of the terrain.
+		this.sampleBuildingHeight = null;
 
 		// items awaiting resettling
 		this._queue = new Set();
@@ -504,8 +509,16 @@ export class SettlingManager {
 
 		} else {
 
-			// settle the point onto the surface
+			// settle the point onto the surface, or onto the building covering it if that is higher
+			const { sampleBuildingHeight, tiles } = this;
 			this._settleSample( item.lat, item.lon, item.position, threshold );
+
+			const buildingHeight = sampleBuildingHeight !== null ? sampleBuildingHeight( item.lat, item.lon ) : null;
+			if ( buildingHeight !== null && buildingHeight > tiles.surface.getPositionToCartographic( item.position, _cartographic ).height ) {
+
+				tiles.surface.getCartographicToPosition( item.lat, item.lon, buildingHeight, item.position );
+
+			}
 
 		}
 
