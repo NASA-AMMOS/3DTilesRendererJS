@@ -19,7 +19,8 @@ function getLeafMaterials( mesh ) {
 	const material = mesh.material || mesh.getScene().defaultMaterial;
 	if ( material instanceof MultiMaterial ) {
 
-		return [ ...new Set( material.subMaterials.filter( Boolean ) ) ];
+		const materials = mesh.subMeshes.map( subMesh => material.getSubMaterial( subMesh.materialIndex ) );
+		return [ ...new Set( materials.filter( Boolean ) ) ];
 
 	}
 
@@ -71,6 +72,12 @@ export class FadeMaterialManager {
 
 		const candidates = [];
 		for ( const mesh of getRenderableMeshes( scene ) ) {
+
+			if ( mesh.getTotalVertices() === 0 ) {
+
+				continue;
+
+			}
 
 			const materials = getLeafMaterials( mesh );
 			if ( materials.length === 0 ) {
