@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - MVTAnnotationsPlugin: A vector tile is only replaced once the complete set of tiles below it is displayed, and every level between a tile and a targeted descendant loads as a full sibling set, so displayed vector tiles no longer overlap.
+- MVTAnnotationsPlugin: Vector tiles are parsed and settled before they count as loaded, so annotations and buildings appear in place the frame a tile is displayed.
 - MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
 - Traversal: Skip recomputing the view error for tiles that are only visited to update their frame state, significantly reducing traversal time.
 - MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
