@@ -6,15 +6,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
+- PotreePlugin: Add plugin for loading Potree point cloud datasets (v1.x and v2.0) with per point level of detail sizing.
+- PointCloudEffectsPlugin: Add plugin for point cloud display options, including point shape, minimum point size, and eye dome lighting.
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
 - GlobeControls: Adjust the globe controls to use stable orientation during rotation.
 - TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.
 - ProjectedSurface: Add a surface definition for tile geometry flattened onto a projected plane.
 - GeneratedSurfacePlugin, TerrainRGBMeshPlugin: Add "projection" option to select the displayed surface shape, including displaying planar content in a different projection than it is stored in. Deprecates the "shape" option.
 - ProjectionScheme: Added support for EPSG:8857, equal earth projection.
+- TilesRenderer: Add "stats.refused", the number of tiles the last update could not queue for loading because the cache was full.
 - ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
+- ImageOverlayPlugin: Fix overlays added without an explicit order being assigned an order of NaN.
+- GeoJSONOverlay, MVTOverlay: Fix transparent seams along tile edges at high zoom levels caused by canvas transform precision.
+- LRUCache: Fix "unloadUnusedContent" looping forever when fractional byte sizes cause the tracked total to drift above the summed item sizes. Byte sizes are now rounded to integers.
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
 - MVTAnnotationsPlugin: Fix a crash when a tile visibility event is dispatched after the tile has been disposed.
 - MVTGlyphs: Fix "update" throwing when called before the glyphs have been rendered for the first time.

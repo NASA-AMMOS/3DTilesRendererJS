@@ -110,16 +110,30 @@ function updateThreeStats() {
 
 		loadedGeometryTiles ++;
 
+		// Dedupe per tile by instance, matching "estimateBytesUsed" so these totals add up to the
+		// memory the lru cache is actually tracking.
+		// TODO: the renderer should provide a cleaner way to report the texture and geometry
+		// memory split rather than having this re-walk the scenes and mirror the internal
+		// accounting, which will silently drift if "estimateBytesUsed" changes.
+		const counted = new Set();
 		scene.traverse( c => {
 
 			const { geometry, material } = c;
-			if ( geometry ) {
+			if ( geometry && ! counted.has( geometry ) ) {
 
-				geometryBytes += estimateBytesUsed( c.geometry );
+				counted.add( geometry );
+				geometryBytes += estimateBytesUsed( geometry );
+
+			}
+
+			if ( material ) {
+
 				for ( const key in material ) {
 
 					const value = material[ key ];
-					if ( value && value.isTexture ) {
+					if ( value && value.isTexture && ! counted.has( value ) ) {
+
+						counted.add( value );
 
 						const { format, type, image } = value;
 						const { width, height } = image;
@@ -198,8 +212,6 @@ function updateCesiumStats() {
 	} );
 
 	allLoadedTiles = 0;
-	geometryBytes = 0;
-	textureBytes = 0;
 	traverse( cesiumViewer.root, ( t, d ) => {
 
 		if ( t._content && t._content.ready ) {
@@ -211,16 +223,14 @@ function updateCesiumStats() {
 
 			}
 
-			if ( t._content._model ) {
-
-				geometryBytes += t._content._model.statistics.geometryByteLength;
-				textureBytes += t._content._model.statistics.texturesByteLength;
-
-			}
-
 		}
 
 	} );
+
+	// The tile set statistics reference count textures by id, so unlike summing each model's own
+	// statistics these totals count a shared texture only once.
+	geometryBytes = cesiumViewer.tiles.statistics.geometryByteLength;
+	textureBytes = cesiumViewer.tiles.statistics.texturesByteLength;
 
 	const { loadStart, loadEnd } = cesiumViewer;
 	const loadDelta = loadEnd - loadStart;

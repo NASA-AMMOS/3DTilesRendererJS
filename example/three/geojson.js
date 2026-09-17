@@ -110,6 +110,21 @@ function init() {
 		} ),
 	);
 
+	// adjust materials to be set to use alpha test for cut outs
+	tiles.addEventListener( 'load-model', ( { scene } ) => {
+
+		scene.traverse( c => {
+
+			if ( c.material ) {
+
+				c.material.alphaTest = 0.5;
+
+			}
+
+		} );
+
+	} );
+
 	tiles.setCamera( camera );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.group.updateMatrixWorld();

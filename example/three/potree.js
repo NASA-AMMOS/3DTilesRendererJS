@@ -1,0 +1,284 @@
+import {
+	Scene,
+	WebGLRenderer,
+	PerspectiveCamera,
+	OrthographicCamera,
+	Box3,
+	Raycaster,
+	Vector2,
+	Vector3,
+} from 'three';
+import { TilesRenderer, EnvironmentControls } from '3d-tiles-renderer';
+import { DebugTilesPlugin, PotreePlugin } from '3d-tiles-renderer/plugins';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+const POTREE_POINTCLOUDS = 'https://raw.githubusercontent.com/potree/potree/refs/heads/develop/pointclouds/';
+const DATASETS = {
+	'lion': `${ POTREE_POINTCLOUDS }lion_takanawa/cloud.js`,
+	'lion normals': `${ POTREE_POINTCLOUDS }lion_takanawa_normals/cloud.js`,
+	'heidentor': 'http://5.9.65.151/mschuetz/potree/resources/pointclouds/archpro/heidentor/cloud.js',
+	'retz': 'http://5.9.65.151/mschuetz/potree/resources/pointclouds/riegl/retz/cloud.js',
+	'vol total': `${ POTREE_POINTCLOUDS }vol_total/cloud.js`,
+};
+
+let camera, perspectiveCamera, orthographicCamera, controls, scene, renderer, tiles, potreePlugin;
+
+const _mouse = new Vector2();
+
+const params = {
+	orthographic: false,
+	enable: true,
+	errorTarget: 1,
+	pointScale: 1,
+	pointShape: 'sphere',
+	edl: true,
+	edlStrength: 0.4,
+	edlRadius: 1.4,
+	debugColorMode: 'none',
+	displayBoxBounds: false,
+	dataset: 'lion',
+};
+
+init();
+
+function init() {
+
+	// renderer
+	renderer = new WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setClearColor( 0x111111 );
+	renderer.setAnimationLoop( render );
+
+	document.body.appendChild( renderer.domElement );
+
+	// scene
+	scene = new Scene();
+
+	// camera
+	perspectiveCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	orthographicCamera = new OrthographicCamera();
+	camera = perspectiveCamera;
+	camera.position.set( 4, 2, 8 );
+	camera.lookAt( 0, 0, 0 );
+
+	// controls
+	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.minDistance = 0.25;
+	controls.maxDistance = 50;
+	controls.cameraRadius = 0;
+	controls.useFallbackPlane = true;
+	controls.raycaster.params.Points.threshold = 0.05;
+
+	initTiles();
+
+	// on click log the tile the picked point belongs to
+	const downPointer = new Vector2();
+	renderer.domElement.addEventListener( 'pointerdown', e => {
+
+		downPointer.set( e.clientX, e.clientY );
+
+	} );
+	renderer.domElement.addEventListener( 'pointerup', e => {
+
+		// ignore drags
+		if ( Math.abs( e.clientX - downPointer.x ) > 2 || Math.abs( e.clientY - downPointer.y ) > 2 ) {
+
+			return;
+
+		}
+
+		const raycaster = new Raycaster();
+		raycaster.params.Points.threshold = 0.2;
+		_mouse.set(
+			( e.clientX / window.innerWidth ) * 2 - 1,
+			- ( e.clientY / window.innerHeight ) * 2 + 1,
+		);
+		raycaster.setFromCamera( _mouse, camera );
+
+		const hit = raycaster.intersectObject( tiles.group, true )[ 0 ];
+		if ( hit ) {
+
+			tiles.forEachLoadedModel( ( scene, tile ) => {
+
+				if ( scene === hit.object ) {
+
+					window.TILE = tile;
+					console.log( tile );
+
+				}
+
+			} );
+
+		}
+
+	} );
+
+	// gui
+	const gui = new GUI();
+	gui.add( params, 'dataset', Object.keys( DATASETS ) ).onChange( initTiles );
+
+	const cameraFolder = gui.addFolder( 'camera' );
+	cameraFolder.add( params, 'orthographic' ).onChange( setOrthographic );
+
+	const tilesFolder = gui.addFolder( 'tiles' );
+	tilesFolder.add( params, 'enable' );
+	tilesFolder.add( params, 'errorTarget', 0.5, 16, 0.1 ).name( 'error target' ).onChange( v => {
+
+		tiles.errorTarget = v;
+
+	} );
+	const pointsFolder = gui.addFolder( 'points' );
+	pointsFolder.add( params, 'pointScale', 0.25, 4 ).name( 'point scale' ).onChange( v => {
+
+		potreePlugin.pointScale = v;
+
+	} );
+	pointsFolder.add( params, 'pointShape', [ 'square', 'round', 'sphere' ] ).name( 'point shape' ).onChange( v => {
+
+		potreePlugin.pointShape = v;
+
+	} );
+	pointsFolder.add( params, 'edl' ).name( 'edl' ).onChange( v => {
+
+		potreePlugin.edlStrength = v ? params.edlStrength : 0;
+
+	} );
+	pointsFolder.add( params, 'edlStrength', 0.05, 2 ).name( 'edl strength' ).onChange( v => {
+
+		if ( params.edl ) potreePlugin.edlStrength = v;
+
+	} );
+	pointsFolder.add( params, 'edlRadius', 1, 4, 0.01 ).name( 'edl radius' ).onChange( v => {
+
+		potreePlugin.edlRadius = v;
+
+	} );
+
+	const debugFolder = gui.addFolder( 'debug' );
+	debugFolder.add( params, 'displayBoxBounds' ).name( 'bounding boxes' ).onChange( v => {
+
+		tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = v;
+
+	} );
+	debugFolder.add( params, 'debugColorMode', [ 'none', 'node', 'depth', 'tile' ] ).name( 'color mode' ).onChange( v => {
+
+		potreePlugin.debugColorMode = v;
+
+	} );
+
+	onWindowResize();
+	window.addEventListener( 'resize', onWindowResize );
+
+}
+
+function initTiles() {
+
+	if ( tiles ) {
+
+		tiles.dispose();
+
+	}
+
+	// tiles
+	tiles = new TilesRenderer();
+	potreePlugin = new PotreePlugin( {
+		url: DATASETS[ params.dataset ],
+		pointScale: params.pointScale,
+		pointShape: params.pointShape,
+		debugColorMode: params.debugColorMode,
+		edlStrength: params.edl ? params.edlStrength : 0,
+		edlRadius: params.edlRadius,
+	} );
+	tiles.registerPlugin( potreePlugin );
+	tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: params.displayBoxBounds } ) );
+	tiles.errorTarget = params.errorTarget;
+	tiles.setCamera( camera );
+	tiles.group.rotation.x = - Math.PI / 2;
+	scene.add( tiles.group );
+
+	// the data sets range from a few meters to hundreds, so scale everything to the bounds
+	tiles.addEventListener( 'load-root-tileset', () => {
+
+		const box = new Box3();
+		const center = new Vector3();
+		tiles.group.updateMatrixWorld();
+		tiles.getBoundingBox( box );
+		box.applyMatrix4( tiles.group.matrixWorld );
+
+		box.getCenter( center );
+		tiles.group.position.sub( center );
+		box.translate( center.negate() );
+
+		const radius = box.getSize( center ).length() * 0.5;
+		camera.position.set( 0.6, 0.4, 1 ).normalize().multiplyScalar( radius * 2.5 );
+		camera.lookAt( 0, 0, 0 );
+
+		perspectiveCamera.near = radius / 100;
+		perspectiveCamera.far = radius * 100;
+
+		// the orthographic frustum spans the bounds, and the controls zoom it from there
+		orthographicCamera.top = radius;
+		orthographicCamera.bottom = - radius;
+		orthographicCamera.near = - radius * 100;
+		orthographicCamera.far = radius * 100;
+		onWindowResize();
+
+		controls.minDistance = radius / 50;
+		controls.maxDistance = radius * 20;
+		controls.raycaster.params.Points.threshold = radius / 200;
+
+		// the controls scale their zoom step against whatever is under the cursor
+		controls.fallbackPlane.constant = - box.min.y;
+
+	} );
+
+}
+
+function setOrthographic( value ) {
+
+	const previousCamera = camera;
+	camera = value ? orthographicCamera : perspectiveCamera;
+	camera.position.copy( previousCamera.position );
+	camera.quaternion.copy( previousCamera.quaternion );
+
+	tiles.deleteCamera( previousCamera );
+	tiles.setCamera( camera );
+	controls.setCamera( camera );
+	onWindowResize();
+
+}
+
+function onWindowResize() {
+
+	const aspect = window.innerWidth / window.innerHeight;
+
+	perspectiveCamera.aspect = aspect;
+	perspectiveCamera.updateProjectionMatrix();
+
+	// the vertical extent is set from the tile set bounds, so only the width tracks the aspect
+	orthographicCamera.left = - orthographicCamera.top * aspect;
+	orthographicCamera.right = orthographicCamera.top * aspect;
+	orthographicCamera.updateProjectionMatrix();
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+function render() {
+
+	controls.update();
+
+	// pause updates to freeze the tile set and inspect the current state up close
+	if ( params.enable ) {
+
+		tiles.setCamera( camera );
+		tiles.setResolutionFromRenderer( camera, renderer );
+		tiles.update();
+
+	}
+
+	renderer.render( scene, camera );
+
+}

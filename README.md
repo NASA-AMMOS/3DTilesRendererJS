@@ -60,6 +60,7 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 | [Metadata](https://nasa-ammos.github.io/3DTilesRendererJS/three/metadata.html) | Tile metadata |
 | [Fade Transition](https://nasa-ammos.github.io/3DTilesRendererJS/three/fadingTiles.html) | Tile LoD fade transition |
 | [Deep Zoom](https://nasa-ammos.github.io/3DTilesRendererJS/three/deepZoom.html) | Deep Zoom Image format |
+| [Potree](https://nasa-ammos.github.io/3DTilesRendererJS/three/potree.html) | Potree point cloud format |
 | [TMS / XYZ](https://nasa-ammos.github.io/3DTilesRendererJS/three/mapTiles.html) | TMS, XYZ map tiles |
 | [WMTS](https://nasa-ammos.github.io/3DTilesRendererJS/three/wmtsTiles.html) | WMTS map tiles |
 | [WMS](https://nasa-ammos.github.io/3DTilesRendererJS/three/wmsTiles.html) | WMS map tiles |
