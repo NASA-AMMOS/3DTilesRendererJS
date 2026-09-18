@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.5.3] - 2026.09.18
 ### Added
 - PotreePlugin: Add plugin for loading Potree point cloud datasets (v1.x and v2.0) with per point level of detail sizing.
 - PointCloudEffectsPlugin: Add plugin for point cloud display options, including point shape, minimum point size, and eye dome lighting.
