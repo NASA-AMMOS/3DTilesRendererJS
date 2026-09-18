@@ -469,10 +469,10 @@ export class SettlingManager {
 		} else if ( item instanceof PolygonAnnotation ) {
 
 			// settle the footprint to its lowest exterior vertex so the building doesn't tilt or float
-			const { _items, tiles } = this;
+			const { _items } = this;
 			const { lat, lon } = item.rings[ 0 ];
 			const { frame } = item;
-			tiles.surface.getCartographicToPosition( item.lat, item.lon, 0, _base );
+			_base.setFromMatrixPosition( frame );
 			_up.setFromMatrixColumn( frame, 2 );
 
 			let minHeight = Infinity;
@@ -495,11 +495,9 @@ export class SettlingManager {
 
 			}
 
-			_sample.setFromMatrixPosition( frame );
-			_base.addScaledVector( _up, minHeight );
-			if ( _base.distanceTo( _sample ) > threshold ) {
+			if ( Math.abs( minHeight - item.baseHeight ) > threshold ) {
 
-				frame.setPosition( _base );
+				item.baseHeight = minHeight;
 				item.needsUpdate = true;
 
 			}
