@@ -63,3 +63,20 @@ engine.runRenderLoop( () => {
 } );
 
 ```
+
+## Tile fade transitions
+
+The Babylon.js plugin entry includes an opaque ordered-dither LOD transition:
+
+```js
+import { TilesFadePlugin } from '3d-tiles-renderer/babylonjs/plugins';
+
+tiles.registerPlugin( new TilesFadePlugin( {
+	fadeDuration: 250,
+	fadeRootTiles: false,
+	maximumFadeOutTiles: 50,
+} ) );
+```
+
+See the [Babylon.js plugin guide](../plugins/README.md) for supported materials,
+camera behavior, and current exclusions.
