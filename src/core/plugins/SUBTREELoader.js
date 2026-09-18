@@ -139,10 +139,33 @@ export class SUBTREELoader extends LoaderBase {
 	}
 
 
+	/**
+	 *
+	 * @param {Object} json
+	 * @returns {Subtree}
+	 */
+	parseJson( json ) {
+
+		// A json subtree has no header, so use the only version the binary header allows. It has no
+		// binary chunk either, so every buffer it references is external and the internal one is empty.
+		return {
+			version: 1,
+			subtreeJson: json,
+			subtreeByte: new ArrayBuffer( 0 )
+		};
+
+	}
+
+
+	/**
+	 * Parse a subtree given either as a binary ".subtree" buffer or as an already parsed subtree json.
+	 *
+	 * @param {ArrayBuffer|Object} buffer
+	 */
 	async parse( buffer ) {
 
-		// todo here : handle json
-		const subtree = this.parseBuffer( buffer );
+		const isBinary = buffer instanceof ArrayBuffer || ArrayBuffer.isView( buffer );
+		const subtree = isBinary ? this.parseBuffer( buffer ) : this.parseJson( buffer );
 		const subtreeJson = subtree.subtreeJson;
 
 		// TODO Handle metadata
