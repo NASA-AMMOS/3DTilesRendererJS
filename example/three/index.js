@@ -3,6 +3,7 @@ import {
 	EnvironmentControls,
 } from '3d-tiles-renderer';
 import {
+	AdaptiveErrorTargetPlugin,
 	DebugTilesPlugin,
 	ImplicitTilingPlugin,
 	GLTFExtensionsPlugin,
@@ -55,6 +56,8 @@ const params = {
 	orthographic: false,
 
 	errorTarget: 6,
+	cacheMegabytes: 400,
+	adaptiveErrorTarget: false,
 	maxDepth: 15,
 	loadSiblings: true,
 	loadAncestors: true,
@@ -99,6 +102,9 @@ function reinstantiateTiles() {
 	} ) );
 
 	tiles.fetchOptions.mode = 'cors';
+	tiles.errorTarget = params.errorTarget;
+	tiles.lruCache.maxBytesSize = params.cacheMegabytes * 1e6;
+	updateAdaptiveErrorTargetPlugin();
 	geospatialRotationParent.add( tiles.group );
 
 	// Used with CUSTOM_COLOR
@@ -119,6 +125,24 @@ function reinstantiateTiles() {
 		} );
 
 	};
+
+}
+
+// Register or remove the plugin that raises the error target when the cache is too small to hold
+// everything the traversal asks for. Lower "cacheMegabytes" until "Refused" stops reporting 0 to
+// see it work.
+function updateAdaptiveErrorTargetPlugin() {
+
+	const enabled = Boolean( tiles.getPluginByName( 'ADAPTIVE_ERROR_TARGET_PLUGIN' ) );
+	if ( params.adaptiveErrorTarget && ! enabled ) {
+
+		tiles.registerPlugin( new AdaptiveErrorTargetPlugin( { logging: true } ) );
+
+	} else if ( ! params.adaptiveErrorTarget && enabled ) {
+
+		tiles.unregisterPlugin( 'ADAPTIVE_ERROR_TARGET_PLUGIN' );
+
+	}
 
 }
 
@@ -262,7 +286,18 @@ function init() {
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'displayActiveTiles' );
-	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
+	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 ).onChange( v => {
+
+		// assigned here rather than every frame so AdaptiveErrorTargetPlugin can adjust it
+		tiles.errorTarget = v;
+
+	} );
+	tileOptions.add( params, 'cacheMegabytes' ).min( 1 ).max( 400 ).step( 1 ).onChange( v => {
+
+		tiles.lruCache.maxBytesSize = v * 1e6;
+
+	} );
+	tileOptions.add( params, 'adaptiveErrorTarget' ).onChange( updateAdaptiveErrorTargetPlugin );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 ).step( 1 );
 	tileOptions.add( params, 'loadAncestors' );
 	tileOptions.add( params, 'loadSiblings' );
@@ -452,7 +487,6 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	// update options
-	tiles.errorTarget = params.errorTarget;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 	tiles.loadAncestors = params.loadAncestors;
@@ -655,6 +689,7 @@ function render() {
 
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = `Queued: ${ tiles.stats.queued } Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Refused: ${ tiles.stats.refused } Visible: ${ tiles.visibleTiles.size }`;
+	str += `<br/>Error Target: ${ tiles.errorTarget.toFixed( 2 ) }`;
 
 	if ( params.enableCacheDisplay ) {
 
