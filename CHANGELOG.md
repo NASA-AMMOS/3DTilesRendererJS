@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PotreePlugin: Add plugin for loading Potree point cloud datasets (v1.x and v2.0) with per point level of detail sizing.
 - PointCloudEffectsPlugin: Add plugin for point cloud display options, including point shape, minimum point size, and eye dome lighting.
 - MVTAnnotationsPlugin: Add support for changing "resolution" after initialization.
+- MVTAnnotationsPlugin: Add extruded buildings generated from polygon features, clipped to their tiles and settled onto the surface, with debug color modes.
 - GlobeControls: Adjust the globe controls to use stable orientation during rotation.
 - TilesRenderer: Add "surface" field describing how cartographic values map onto the displayed tile geometry, defaulting to the ellipsoid.
 - ProjectedSurface: Add a surface definition for tile geometry flattened onto a projected plane.
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - BatchedTilesPlugin: Fix bug where tiles were not transformed properly before being added to the batched mesh instance.
 
 ### Changed
+- MVTAnnotationsPlugin: A vector tile is only replaced once the complete set of tiles below it is displayed, and every level between a tile and a targeted descendant loads as a full sibling set, so displayed vector tiles no longer overlap.
 - MVTAnnotationsPlugin: The driver's render group is only mounted under the tiles group if it has not already been parented elsewhere.
 - Traversal: Skip recomputing the view error for tiles that are only visited to update their frame state, significantly reducing traversal time.
 - MVTAnnotationsPlugin: Improve performance when removing the road labels of an unloaded vector tile.
