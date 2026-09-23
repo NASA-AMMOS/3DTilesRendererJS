@@ -45,10 +45,25 @@ export class CMPTLoaderBase extends LoaderBase {
 		let offset = 16;
 		for ( let i = 0; i < tilesLength; i ++ ) {
 
+			if ( offset + 12 > buffer.byteLength ) {
+
+				throw new Error( 'CMPTLoader: Inner tile header extends past the end of the buffer.' );
+
+			}
+
 			const tileView = new DataView( buffer, offset, 12 );
 			const tileMagic = readMagicBytes( tileView );
 			const tileVersion = tileView.getUint32( 4, true );
 			const byteLength = tileView.getUint32( 8, true );
+
+			// An inner tile has to be at least as long as its own 12 byte header, or
+			// the offset below never advances and the loop runs for every one of the
+			// uint32 tiles the header claims.
+			if ( byteLength < 12 || offset + byteLength > buffer.byteLength ) {
+
+				throw new Error( 'CMPTLoader: Inner tile byte length does not fit in the buffer.' );
+
+			}
 
 			const tileBuffer = new Uint8Array( buffer, offset, byteLength );
 			tiles.push( {
