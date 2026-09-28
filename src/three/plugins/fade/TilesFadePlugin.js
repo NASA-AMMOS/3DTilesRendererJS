@@ -1,5 +1,5 @@
 import { Matrix4, Vector3, Quaternion } from 'three';
-import { TilesFadePluginBase } from '../../../core/plugins/fade/TilesFadePluginBase.js';
+import { TilesFadePluginBase } from '3d-tiles-renderer/core/plugins';
 import { FadeMaterialManager } from './FadeMaterialManager.js';
 import { FadeBatchedMesh } from './FadeBatchedMesh.js';
 

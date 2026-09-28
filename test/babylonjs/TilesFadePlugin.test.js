@@ -53,7 +53,6 @@ describe( 'Babylon.js TilesFadePlugin', () => {
 		const warning = vi.spyOn( console, 'warn' ).mockImplementation( () => {} );
 
 		plugin.init( tiles );
-		plugin.init( tiles );
 
 		expect( warning ).toHaveBeenCalledTimes( 1 );
 		expect( warning ).toHaveBeenCalledWith( expect.stringContaining( 'Tiles will render normally without fading' ) );

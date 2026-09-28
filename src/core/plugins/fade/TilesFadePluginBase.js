@@ -1,3 +1,4 @@
+/** @import { Tile } from '3d-tiles-renderer/core' */
 import { FadeManager } from './FadeManager.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
@@ -21,8 +22,22 @@ function tileWasInFrustumLastFrame( tile ) {
 
 }
 
+/**
+ * Base class for plugins that fade tile geometry in and out as tile LODs change. Dispatches
+ * `fade-change`, `fade-start`, and `fade-end` events on the `TilesRenderer`. Subclasses
+ * implement the engine specific hooks below.
+ * @param {Object} [options]
+ * @param {number} [options.fadeDuration=250] Time in milliseconds for a tile to fully fade in or out.
+ * @param {number} [options.maximumFadeOutTiles=50] Maximum simultaneous fade-out tiles. If exceeded, tiles pop instead of fading.
+ * @param {boolean} [options.fadeRootTiles=false] Whether root-level tiles fade in on their first appearance.
+ */
 export class TilesFadePluginBase {
 
+	/**
+	 * Time in milliseconds for a tile to fully fade in or out.
+	 * @type {number}
+	 * @default 250
+	 */
 	get fadeDuration() {
 
 		return this._fadeManager.duration;
@@ -35,6 +50,10 @@ export class TilesFadePluginBase {
 
 	}
 
+	/**
+	 * Number of tiles currently fading.
+	 * @type {number}
+	 */
 	get fadingTiles() {
 
 		return this._fadeManager.fadeCount;
@@ -269,30 +288,60 @@ export class TilesFadePluginBase {
 
 	}
 
+	/**
+	 * Called when a tile model loads so its scene can be prepared for fading.
+	 * @param {Object} scene - The tile's engine scene.
+	 * @param {Tile} tile - The tile the scene belongs to.
+	 * @returns {void}
+	 */
 	prepareTileScene() {
 
 		throw new Error( 'TilesFadePluginBase: prepareTileScene must be implemented.' );
 
 	}
 
+	/**
+	 * Called when a tile model is disposed so any fade state can be released.
+	 * @param {Object} scene - The tile's engine scene.
+	 * @param {Tile} tile - The tile the scene belongs to.
+	 * @returns {void}
+	 */
 	releaseTileScene() {
 
 		throw new Error( 'TilesFadePluginBase: releaseTileScene must be implemented.' );
 
 	}
 
+	/**
+	 * Applies the fade values to a fading tile each update.
+	 * @param {Tile} tile - The tile being faded.
+	 * @param {number} fadeIn - Fade in progress from 0 to 1.
+	 * @param {number} fadeOut - Fade out progress from 0 to 1.
+	 * @returns {void}
+	 */
 	setFadeState() {
 
 		throw new Error( 'TilesFadePluginBase: setFadeState must be implemented.' );
 
 	}
 
+	/**
+	 * Clears the fade values from a tile once its fade completes.
+	 * @param {Tile} tile - The tile that finished fading.
+	 * @param {boolean} visible - Whether the tile is visible after the fade.
+	 * @returns {void}
+	 */
 	resetFadeState() {
 
 		throw new Error( 'TilesFadePluginBase: resetFadeState must be implemented.' );
 
 	}
 
+	/**
+	 * Tracks the camera transforms and returns whether they moved quickly since the last update.
+	 * @param {boolean} checkMovement - Whether to evaluate the camera movement this update.
+	 * @returns {boolean} True if the cameras moved quickly.
+	 */
 	updateCameraState() {
 
 		throw new Error( 'TilesFadePluginBase: updateCameraState must be implemented.' );

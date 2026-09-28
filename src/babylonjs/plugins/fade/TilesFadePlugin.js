@@ -1,5 +1,5 @@
 import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector';
-import { TilesFadePluginBase } from '../../../core/plugins/fade/TilesFadePluginBase.js';
+import { TilesFadePluginBase } from '3d-tiles-renderer/core/plugins';
 import { FadeMaterialManager } from './FadeMaterialManager.js';
 
 const _fromPosition = /* @__PURE__ */ new Vector3();
@@ -61,7 +61,6 @@ export class TilesFadePlugin extends TilesFadePluginBase {
 		this._previousCamera = null;
 		this._previousCameraMatrix = null;
 		this._initialized = false;
-		this._warnedUnsupported = false;
 
 	}
 
@@ -69,13 +68,7 @@ export class TilesFadePlugin extends TilesFadePluginBase {
 
 		if ( ! this._fadeMaterialManager.supported ) {
 
-			if ( ! this._warnedUnsupported ) {
-
-				console.warn( 'TilesFadePlugin: Babylon.js tile fading is unavailable because the required DitheredTileFadeMaterialPlugin API is absent. Tiles will render normally without fading.' );
-				this._warnedUnsupported = true;
-
-			}
-
+			console.warn( 'TilesFadePlugin: Babylon.js tile fading is unavailable because the required DitheredTileFadeMaterialPlugin API is absent. Tiles will render normally without fading.' );
 			return;
 
 		}

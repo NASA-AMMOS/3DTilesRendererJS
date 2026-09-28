@@ -1,9 +1,3 @@
-export class TilesFadePlugin {
+import { TilesFadePluginBase } from '3d-tiles-renderer/core/plugins';
 
-	constructor( options?: {
-		maximumFadeOutTiles?: number,
-		fadeRootTiles?: boolean,
-		fadeDuration?: number,
-	} );
-
-}
+export class TilesFadePlugin extends TilesFadePluginBase {}

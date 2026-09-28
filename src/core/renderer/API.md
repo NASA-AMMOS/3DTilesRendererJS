@@ -935,6 +935,7 @@ Loading and rendering statistics updated each frame. Fields:
 - `used` — tiles visited during the last traversal
 - `active` — tiles currently set as active
 - `visible` — tiles currently visible
+- `refused` — tiles the last update wanted to load but could not queue because the cache was full
 
 
 ### .errorTarget
