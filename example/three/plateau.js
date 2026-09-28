@@ -77,7 +77,11 @@ function addBuildingHighlight( material ) {
 	const highlightBatchId = { value: - 1 };
 	material.userData.highlightBatchId = highlightBatchId;
 
+	// chain the existing callback so the fade plugin's shader changes are kept
+	const previousOnBeforeCompile = material.onBeforeCompile;
 	material.onBeforeCompile = shader => {
+
+		previousOnBeforeCompile( shader );
 
 		shader.uniforms.highlightBatchId = highlightBatchId;
 
@@ -156,7 +160,11 @@ function init() {
 
 	plateauTiles = new TilesRenderer();
 	plateauTiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2602291', autoRefreshToken: true } ) );
-	plateauTiles.registerPlugin( new TilesFadePlugin() );
+	plateauTiles.registerPlugin( new TilesFadePlugin( {
+		// the buildings are the first renderable content under empty parent tiles,
+		// so they count as root tiles and would otherwise pop in
+		fadeRootTiles: true,
+	} ) );
 	plateauTiles.registerPlugin( new GLTFExtensionsPlugin( {
 		dracoLoader: new DRACOLoader(),
 		ktxLoader: new KTX2Loader().detectSupport( renderer ),
