@@ -261,5 +261,93 @@ header automatically. Subclasses should implement geometry construction from the
 parsed result.
 
 
+## TilesFadePluginBase
+
+Base class for plugins that fade tile geometry in and out as tile LODs change. Dispatches
+`fade-change`, `fade-start`, and `fade-end` events on the `TilesRenderer`. Subclasses
+implement the engine specific hooks below.
+
+
+### .fadeDuration
+
+```js
+fadeDuration: number = 250
+```
+
+Time in milliseconds for a tile to fully fade in or out.
+
+
+### .fadingTiles
+
+```js
+fadingTiles: number
+```
+
+Number of tiles currently fading.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		// Time in milliseconds for a tile to fully fade in or out.
+		fadeDuration = 250: number,
+
+		// Maximum simultaneous fade-out tiles. If exceeded, tiles pop
+		// instead of fading.
+		maximumFadeOutTiles = 50: number,
+
+		// Whether root-level tiles fade in on their first appearance.
+		fadeRootTiles = false: boolean,
+	}
+)
+```
+
+### .prepareTileScene
+
+```js
+prepareTileScene( scene: Object, tile: Tile ): void
+```
+
+Called when a tile model loads so its scene can be prepared for fading.
+
+
+### .releaseTileScene
+
+```js
+releaseTileScene( scene: Object, tile: Tile ): void
+```
+
+Called when a tile model is disposed so any fade state can be released.
+
+
+### .setFadeState
+
+```js
+setFadeState( tile: Tile, fadeIn: number, fadeOut: number ): void
+```
+
+Applies the fade values to a fading tile each update.
+
+
+### .resetFadeState
+
+```js
+resetFadeState( tile: Tile, visible: boolean ): void
+```
+
+Clears the fade values from a tile once its fade completes.
+
+
+### .updateCameraState
+
+```js
+updateCameraState( checkMovement: boolean ): boolean
+```
+
+Tracks the camera transforms and returns whether they moved quickly since the last update.
+
+
 ## ParsedBitstream
 
