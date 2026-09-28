@@ -961,9 +961,8 @@ Comparable to Cesium's "dynamicScreenSpaceError" settings.
 
 `error -= errorFalloff * ( 1 - e ^ -( distance * errorFalloffDensity )² )`
 
-> [!WARN]
+> [!WARNING]
 > Experimental and may change.
-
 
 ### .errorFalloffDensity
 
@@ -975,9 +974,8 @@ Distance scale for the "errorFalloff" curve, in inverse meters. Larger values af
 tiles closer to the camera.
 Comparable to Cesium's "dynamicScreenSpaceError" settings.
 
-> [!WARN]
+> [!WARNING]
 > Experimental and may change.
-
 
 ### .displayActiveTiles
 
