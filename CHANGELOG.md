@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesFadePlugin: Add a Babylon.js tile fade plugin, available from "3d-tiles-renderer/babylonjs/plugins".
 - TilesFadePluginBase: Export the shared fade plugin base class from the core plugins so fade plugins can be implemented for other engines.
 
+### Fixed
+- Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
+
 ## [0.5.3] - 2026.09.18
 ### Added
 - PotreePlugin: Add plugin for loading Potree point cloud datasets (v1.x and v2.0) with per point level of detail sizing.
@@ -23,7 +26,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - ImageOverlayPlugin: Fix overlays added without an explicit order being assigned an order of NaN.
-- Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
 - GeoJSONOverlay, MVTOverlay: Fix transparent seams along tile edges at high zoom levels caused by canvas transform precision.
 - LRUCache: Fix "unloadUnusedContent" looping forever when fractional byte sizes cause the tracked total to drift above the summed item sizes. Byte sizes are now rounded to integers.
 - MVTAnnotationsPlugin: Fix line features without a name or id sharing an id, causing them to be merged.
