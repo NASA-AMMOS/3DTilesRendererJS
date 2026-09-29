@@ -61,7 +61,7 @@ import { ProjectionScheme } from '../utils/ProjectionScheme.js';
  * If the URL contains template variables, RESTful mode is used;
  * otherwise KVP query parameters are appended.
  *
- * Note: `contentBoundingBox` is specified in radians `[west, south, east, north]`.
+ * @note `contentBoundingBox` is specified in radians `[west, south, east, north]`.
  *
  * @extends TiledImageSource
  * @ignore
