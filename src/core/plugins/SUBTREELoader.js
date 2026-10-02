@@ -9,6 +9,7 @@ import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
  * 	lengthBits: number,
  * 	bitstream: Uint8Array=
  * } } ParsedBitstream
+ * @private
  * */
 
 function isOctreeSubdivision( tile ) {

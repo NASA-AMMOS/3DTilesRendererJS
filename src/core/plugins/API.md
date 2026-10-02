@@ -348,6 +348,3 @@ updateCameraState( checkMovement: boolean ): boolean
 
 Tracks the camera transforms and returns whether they moved quickly since the last update.
 
-
-## ParsedBitstream
-
