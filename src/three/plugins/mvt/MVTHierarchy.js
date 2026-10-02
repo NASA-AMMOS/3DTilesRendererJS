@@ -40,16 +40,17 @@ class MVTTile {
 		// complete sibling sets, forcing this tile to load and display along with it
 		this.siblingForced = false;
 
-		// the "force" keep-alive state recorded by the last visibility pass, consumed by the next
-		// state pass to keep timers and loads alive while an ancestor target loads
-		this.forced = false;
-
 		// whether any tile below this one is targeted, so every level between forms a full
-		// sibling set and this tile is only replaced once the whole set below displays
+		// sibling set and this tile is only replaced once the whole set below is ready
 		this.descendantTargeted = false;
 
-		// whether the sibling set below this tile fully replaces its content
-		this.coveredByChildren = false;
+		// display state resolved each update: whether this tile is wanted after its show delay,
+		// whether a wanted tile lies below it, whether anything below it is displayed, and whether
+		// it or the replacement set below it is ready to display
+		this.wanted = false;
+		this.descendantWanted = false;
+		this.subtreeVisible = false;
+		this.cutReady = false;
 
 		// ref count of callers that want this tile's content loaded ahead of it being displayed.
 		// Prefetched tiles load and stay resident but never display on their own.
@@ -158,8 +159,11 @@ export class MVTHierarchy extends EventDispatcher {
 		// pass sees this frame's final loading state - including synchronous cache-hit loads
 		updateState( root );
 
-		// third pass: resolve visibility now that every load for the frame has been started
-		updateVisibility( root );
+		// third pass: readiness of each tile, or of the replacement set below it
+		updateReady( root );
+
+		// fourth pass: resolve visibility, only swapping a tile for the set below once it is all ready
+		updateVisibility( root, false, false );
 
 		_toPrune.forEach( tile => this._deleteTile( tile ) );
 		_toPrune.clear();
@@ -187,13 +191,11 @@ export class MVTHierarchy extends EventDispatcher {
 		function updateState( tile ) {
 
 			// whether this tile's content is wanted - targeted directly or pulled in as part of a
-			// displayed sibling set. The keep-alive "forced" state comes from the last visibility
-			// pass, keeping timers and loads alive for visible tiles covering a loading ancestor.
+			// displayed sibling set
 			const targeted = tile.target > 0 || tile.siblingForced;
-			const forcedTarget = tile.visible && tile.forced;
 
 			// increment / decrement timers for determining whether to hide / show content
-			if ( targeted || forcedTarget ) {
+			if ( targeted ) {
 
 				tile.showTimer += dt;
 				tile.showTimer = Math.min( tile.showTimer, TIMER_DURATION );
@@ -214,8 +216,9 @@ export class MVTHierarchy extends EventDispatcher {
 
 					// Release the content lock; reset synchronously so the tile is in a clean
 					// state before any async callbacks can observe it. Prefetched tiles keep
-					// their content so it is ready when the tile is displayed again.
-					if ( tile.loadingState !== UNLOADED && tile.prefetch === 0 ) {
+					// their content so it is ready when the tile is displayed again, and displayed
+					// tiles keep it until they are replaced.
+					if ( tile.loadingState !== UNLOADED && tile.prefetch === 0 && ! tile.visible ) {
 
 						scope.contentCache.release( tile.x, tile.y, tile.level );
 						tile.loadingState = UNLOADED;
@@ -227,11 +230,11 @@ export class MVTHierarchy extends EventDispatcher {
 			}
 
 			// Active after show delay; stays active through the hide delay so visible tiles don't flash
-			const isTargetTile = ( targeted ? tile.showTimer === TIMER_DURATION : tile.showTimer > 0 ) || forcedTarget;
+			const isTargetTile = targeted ? tile.showTimer === TIMER_DURATION : tile.showTimer > 0;
 
 			// A tile held only by prefetch runs no timers, so once the last caller lets go there is
 			// nothing to wind down and the content is released here instead
-			if ( ! targeted && ! forcedTarget && tile.prefetch === 0 && tile.showTimer === 0 && tile.loadingState !== UNLOADED ) {
+			if ( ! targeted && ! tile.visible && tile.prefetch === 0 && tile.showTimer === 0 && tile.loadingState !== UNLOADED ) {
 
 				scope.contentCache.release( tile.x, tile.y, tile.level );
 				tile.loadingState = UNLOADED;
@@ -347,50 +350,81 @@ export class MVTHierarchy extends EventDispatcher {
 
 		}
 
-		function updateVisibility( tile, force = false, siblingsReady = true ) {
+		// A tile with a wanted descendant is replaced by the set below it, so it is ready once all
+		// four children are. Otherwise it is ready once its own load has finished, failed tiles
+		// included so a set can display with missing content.
+		function updateReady( tile ) {
 
 			const targeted = tile.target > 0 || tile.siblingForced;
-			const forcedTarget = tile.visible && force;
 
-			// record the keep-alive state for the next frame's state pass
-			tile.forced = force;
+			// wanted after the show delay, and through the hide delay so content doesn't flash
+			tile.wanted = targeted ? tile.showTimer === TIMER_DURATION : tile.showTimer > 0;
 
-			// Active after show delay; stays active through the hide delay so visible tiles don't flash
-			const isTargetTile = ( targeted ? tile.showTimer === TIMER_DURATION : tile.showTimer > 0 ) || forcedTarget;
+			const { children } = tile;
+			let childrenReady = tile.childCount === 4;
+			let descendantWanted = false;
+			let subtreeVisible = false;
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			let setVisible = false;
-			if ( targeted || forcedTarget ) {
+				const child = children[ i ];
+				if ( child !== null ) {
 
-				// the tile can only display once loaded and, when displaying sibling sets, once the
-				// whole set is ready so the quad swaps in together. Tiles forced to stay visible
-				// bypass the sibling gate so already-displayed content isn't hidden mid-transition.
-				if ( tile.loadingState === LOADED && ( siblingsReady || forcedTarget ) ) {
-
-					setVisible = true;
-					force = false;
-
-				} else if ( isTargetTile ) {
-
-					force = true;
+					childrenReady = updateReady( child ) && childrenReady;
+					descendantWanted = descendantWanted || child.wanted || child.descendantWanted;
+					subtreeVisible = subtreeVisible || child.visible || child.subtreeVisible;
 
 				}
 
 			}
 
-			// the sibling set below is ready to display once every sibling has finished loading -
-			// failed tiles count as ready and display as missing content
+			tile.descendantWanted = descendantWanted;
+			tile.subtreeVisible = subtreeVisible;
+			tile.cutReady = descendantWanted ? childrenReady : tile.loadingState === LOADED || tile.loadingState === FAILED;
+
+			return tile.cutReady;
+
+		}
+
+		// "ancestorDisplayed" is set below a tile standing in for a set that is still loading, so
+		// nothing below it displays until the whole set swaps in. "hold" is set below a wanted
+		// tile that is still loading, so the tiles currently displayed there stay until it can
+		// replace them.
+		function updateVisibility( tile, ancestorDisplayed, hold ) {
+
+			const targeted = tile.target > 0 || tile.siblingForced;
 			const { children } = tile;
-			let childSiblingsReady = true;
-			if ( scope.loadSiblings ) {
+			let setVisible = false;
+			let childAncestorDisplayed = ancestorDisplayed;
+			let childHold = hold;
 
-				for ( let i = 0, l = children.length; i < l; i ++ ) {
+			if ( hold ) {
 
-					const child = children[ i ];
-					if ( child === null || ( child.loadingState !== LOADED && child.loadingState !== FAILED ) ) {
+				setVisible = tile.visible;
 
-						childSiblingsReady = false;
+			} else if ( ancestorDisplayed ) {
 
-					}
+				setVisible = false;
+
+			} else if ( tile.descendantWanted ) {
+
+				if ( ! tile.cutReady ) {
+
+					// cover for the loading set below unless part of it is already displayed
+					setVisible = tile.loadingState === LOADED && ! tile.subtreeVisible;
+					childAncestorDisplayed = setVisible;
+
+				}
+
+			} else if ( tile.wanted ) {
+
+				if ( tile.loadingState === LOADED || tile.loadingState === FAILED ) {
+
+					setVisible = tile.loadingState === LOADED;
+					childAncestorDisplayed = true;
+
+				} else {
+
+					childHold = true;
 
 				}
 
@@ -398,62 +432,14 @@ export class MVTHierarchy extends EventDispatcher {
 
 			// showTimer > 0 keeps tiles with in-flight loads from being pruned mid-hysteresis
 			let tileRequired = tile.visible || targeted || tile.showTimer > 0 || tile.prefetch > 0;
-			let childrenNeedCoverage = false;
-
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 				const child = children[ i ];
 				if ( child !== null ) {
 
-					tileRequired = updateVisibility( child, force, childSiblingsReady ) || tileRequired;
-
-					// failed tiles can never display, so they don't require coverage when sibling
-					// sets are displayed - the quad shows with missing content instead
-					const childTargeted = child.target > 0 || child.siblingForced;
-					const childDisplayed = child.visible || child.coveredByChildren;
-					const childBlocked = scope.loadSiblings && child.loadingState === FAILED;
-					childrenNeedCoverage = childrenNeedCoverage || ( childTargeted && ! childDisplayed && ! childBlocked );
+					tileRequired = updateVisibility( child, childAncestorDisplayed, childHold ) || tileRequired;
 
 				}
-
-			}
-
-			if ( childrenNeedCoverage && tile.loadingState === LOADED ) {
-
-				setVisible = true;
-
-			}
-
-			// this tile is replaced once every child is displayed, directly or through its own
-			// children, so it doesn't display even when targeted. Failed children count as
-			// displayed as long as at least one sibling is.
-			let coveredByChildren = false;
-			if ( scope.loadSiblings && tile.childCount === 4 ) {
-
-				let allDisplayed = true;
-				let anyDisplayed = false;
-				for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-					const child = children[ i ];
-					const childDisplayed = child.visible || child.coveredByChildren;
-					if ( ! childDisplayed && child.loadingState !== FAILED ) {
-
-						allDisplayed = false;
-
-					}
-
-					anyDisplayed = anyDisplayed || childDisplayed;
-
-				}
-
-				coveredByChildren = allDisplayed && anyDisplayed;
-
-			}
-
-			tile.coveredByChildren = coveredByChildren;
-			if ( coveredByChildren ) {
-
-				setVisible = false;
 
 			}
 
