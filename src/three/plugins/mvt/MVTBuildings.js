@@ -414,6 +414,7 @@ export class MVTBuildings {
 	// the mesh sits at the surface frame raised to the base height
 	_placeMesh( mesh, item, baseHeight ) {
 
+		item.placedBaseHeight = baseHeight;
 		_up.setFromMatrixColumn( item.frame, 2 );
 		_pos.setFromMatrixPosition( item.frame ).addScaledVector( _up, baseHeight );
 		mesh.matrix.copy( item.frame ).setPosition( _pos );

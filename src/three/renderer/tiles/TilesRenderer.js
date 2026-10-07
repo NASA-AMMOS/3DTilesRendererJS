@@ -278,8 +278,9 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/**
-	 * Performs a raycast against all loaded tile scenes. Compatible with Three.js raycasting.
-	 * Supports `raycaster.firstHitOnly` for early termination.
+	 * Performs a raycast against all loaded tile scenes and any objects plugins provide through
+	 * their "raycast" hook. Compatible with Three.js raycasting. Supports `raycaster.firstHitOnly`
+	 * for early termination.
 	 * @param {Raycaster} raycaster
 	 * @param {Array} intersects - Array to push intersection results into.
 	 */
@@ -291,13 +292,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		const hits = raycaster.firstHitOnly ? [] : intersects;
 		if ( this.accelerateRaycast ) {
 
-			raycastTraverse( this, this.root, raycaster, intersects );
+			raycastTraverse( this, this.root, raycaster, hits );
 
 		} else {
 
-			const hits = raycaster.firstHitOnly ? [] : intersects;
 			for ( const tile of this.activeTiles ) {
 
 				const { scene } = tile.engineData;
@@ -313,12 +314,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			if ( raycaster.firstHitOnly && hits.length > 0 ) {
+		}
 
-				hits.sort( ( a, b ) => a.distance - b.distance );
-				intersects.push( hits[ 0 ] );
+		// objects plugins render outside of the tile scenes
+		this.invokeAllPlugins( plugin => plugin !== this && plugin.raycast && plugin.raycast( raycaster, hits ) );
 
-			}
+		if ( raycaster.firstHitOnly && hits.length > 0 ) {
+
+			hits.sort( ( a, b ) => a.distance - b.distance );
+			intersects.push( hits[ 0 ] );
 
 		}
 
