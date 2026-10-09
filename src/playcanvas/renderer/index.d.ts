@@ -28,6 +28,26 @@ export class Ellipsoid {
 
 export const WGS84_ELLIPSOID: Ellipsoid;
 
+export class EllipsoidRegion extends Ellipsoid {
+
+	latStart: number;
+	latEnd: number;
+	lonStart: number;
+	lonEnd: number;
+	heightStart: number;
+	heightEnd: number;
+
+	constructor(
+		x?: number, y?: number, z?: number,
+		latStart?: number, latEnd?: number,
+		lonStart?: number, lonEnd?: number,
+		heightStart?: number, heightEnd?: number,
+	);
+
+	getBoundingBox( min: Vec3, max: Vec3, matrix: Matrix ): void;
+
+}
+
 export interface TilesRendererEventMap extends TilesRendererBaseEventMap<Entity> {
 	'add-camera': { camera: CameraComponent };
 	'delete-camera': { camera: CameraComponent };

@@ -8,9 +8,8 @@ Implementation of the TilesRendererBase class for [PlayCanvas](https://playcanva
 
 The current implementation has the below limitations:
 - Only glTF, GLB and B3DM tile content is supported. I3DM, PNTS and CMPT are not.
-- Only `box` and `sphere` bounding volumes are supported, not `region`.
 - Earth-centered tilesets are rendered precisely near one location, the one moved to the origin with the `ReorientationPlugin` (see below). Precision decreases with the distance from it, so flying across the globe would need the location to follow the camera.
-- The only PlayCanvas plugin is `ReorientationPlugin`. The engine-agnostic plugins in `3d-tiles-renderer/core/plugins`, such as `CesiumIonAuthPlugin` and `GoogleCloudAuthPlugin`, work as well.
+- The PlayCanvas plugins are `ReorientationPlugin`, `TilesFadePlugin` and `DebugTilesPlugin` (bounding volumes only, no tile coloring modes). The engine-agnostic plugins in `3d-tiles-renderer/core/plugins`, such as `CesiumIonAuthPlugin` and `GoogleCloudAuthPlugin`, work as well.
 - Raycasting is not supported.
 
 # Use

@@ -41,7 +41,7 @@ const _scale = /* @__PURE__ */ new Vec3();
  * a tileset by a large distance, such as bringing an Earth-centered tileset to the origin, use
  * {@link TilesRenderer#setTilesetTransform} rather than transforming {@link TilesRenderer#group}.
  * @extends TilesRendererBase
- * @warn Only `glTF`, `GLB` and `B3DM` content and `box` and `sphere` bounding volumes are supported.
+ * @warn Only `glTF`, `GLB` and `B3DM` content is supported.
  */
 export class TilesRenderer extends TilesRendererBase {
 
@@ -99,6 +99,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this._upRotationMatrix = createMatrix();
 		this._bytesUsed = new WeakMap();
 		this._warnedBoundingVolume = false;
+		this._warnedResolution = false;
 
 	}
 
@@ -380,9 +381,11 @@ export class TilesRenderer extends TilesRendererBase {
 			const camera = cameras[ i ];
 			const info = cameraInfo[ i ];
 
+			// warn once, as the canvas can stay zero sized for a while, such as in a hidden tab
 			this._getResolution( camera, _resolution );
-			if ( _resolution.x === 0 || _resolution.y === 0 ) {
+			if ( ( _resolution.x === 0 || _resolution.y === 0 ) && ! this._warnedResolution ) {
 
+				this._warnedResolution = true;
 				console.warn( 'TilesRenderer: resolution for camera error calculation is not set.' );
 
 			}
@@ -474,10 +477,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		if ( ! boundingVolume.sphere && ! boundingVolume.obb && ! this._warnedBoundingVolume ) {
+		if ( 'region' in tile.boundingVolume ) {
+
+			boundingVolume.setRegionData( this.ellipsoid, ...tile.boundingVolume.region );
+
+		}
+
+		if ( ! boundingVolume.sphere && ! boundingVolume.obb && ! boundingVolume.region && ! this._warnedBoundingVolume ) {
 
 			this._warnedBoundingVolume = true;
-			console.warn( 'TilesRenderer: Only "box" and "sphere" bounding volumes are supported. Tiles without one are not displayed.' );
+			console.warn( 'TilesRenderer: Tiles without a "box", "sphere" or "region" bounding volume are not displayed.' );
 
 		}
 

@@ -1,6 +1,8 @@
 /** @import { CameraFrustum } from './CameraFrustum.js' */
+/** @import { Ellipsoid } from './Ellipsoid.js' */
 import { Vec3 } from 'playcanvas';
 import { getMaxScale, multiplyMatrices, transformPoint } from './MatrixUtils.js';
+import { EllipsoidRegion } from './EllipsoidRegion.js';
 import { OBB } from './OBB.js';
 
 const _vecX = /* @__PURE__ */ new Vec3();
@@ -8,8 +10,8 @@ const _vecY = /* @__PURE__ */ new Vec3();
 const _vecZ = /* @__PURE__ */ new Vec3();
 
 /**
- * The bounding volume of a tile in the tileset frame. Supports the `sphere` and `box` volume types;
- * `region` is not supported yet.
+ * The bounding volume of a tile in the tileset frame. Supports the `sphere`, `box` and `region`
+ * volume types; a region is tested using an oriented box enclosing it.
  */
 export class TileBoundingVolume {
 
@@ -20,6 +22,15 @@ export class TileBoundingVolume {
 
 		/** @type {OBB|null} */
 		this.obb = null;
+
+		/** @type {EllipsoidRegion|null} */
+		this.region = null;
+
+		/**
+		 * The oriented box enclosing the region, used to test it.
+		 * @type {OBB|null}
+		 */
+		this.regionObb = null;
 
 	}
 
@@ -105,13 +116,39 @@ export class TileBoundingVolume {
 	}
 
 	/**
+	 * Sets the volume from the 3D Tiles `region` data. Regions are not affected by the tile
+	 * transform.
+	 * @param {Ellipsoid} ellipsoid - The ellipsoid the region is on.
+	 * @param {number} west
+	 * @param {number} south
+	 * @param {number} east
+	 * @param {number} north
+	 * @param {number} minHeight
+	 * @param {number} maxHeight
+	 */
+	setRegionData( ellipsoid, west, south, east, north, minHeight, maxHeight ) {
+
+		const { radius } = ellipsoid;
+		const region = new EllipsoidRegion( radius.x, radius.y, radius.z, south, north, west, east, minHeight, maxHeight );
+
+		const obb = new OBB();
+		region.getBoundingBox( obb.min, obb.max, obb.transform );
+		obb.update();
+
+		this.region = region;
+		this.regionObb = obb;
+
+	}
+
+	/**
 	 * Writes a sphere enclosing the volume into `target`.
 	 * @param {{ center: Vec3, radius: number }} target
 	 * @returns {{ center: Vec3, radius: number }}
 	 */
 	getSphere( target ) {
 
-		const { sphere, obb } = this;
+		const { sphere } = this;
+		const obb = this.obb || this.regionObb;
 		if ( sphere ) {
 
 			target.center.copy( sphere.center );
@@ -148,7 +185,8 @@ export class TileBoundingVolume {
 	 */
 	distanceToPoint( point ) {
 
-		const { sphere, obb } = this;
+		const { sphere } = this;
+		const obb = this.obb || this.regionObb;
 
 		let sphereDistance = - Infinity;
 		let obbDistance = - Infinity;
@@ -177,7 +215,8 @@ export class TileBoundingVolume {
 	 */
 	intersectsFrustum( frustum ) {
 
-		const { sphere, obb } = this;
+		const { sphere } = this;
+		const obb = this.obb || this.regionObb;
 
 		if ( sphere && ! frustum.intersectsSphere( sphere.center, sphere.radius ) ) {
 

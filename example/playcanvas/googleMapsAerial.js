@@ -15,7 +15,7 @@ import {
 } from 'playcanvas';
 import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
 import { TilesRenderer } from '3d-tiles-renderer/playcanvas';
-import { ReorientationPlugin } from '3d-tiles-renderer/playcanvas/plugins';
+import { DebugTilesPlugin, ReorientationPlugin, TilesFadePlugin } from '3d-tiles-renderer/playcanvas/plugins';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 import GUI from 'lil-gui';
 
@@ -27,8 +27,10 @@ const DEFAULT_LOCATION = [ 35.6586, 139.7454 ];
 const params = {
 	enabled: true,
 	errorTarget: 16,
+	fade: true,
+	displayBoxBounds: false,
+	displayParentBounds: false,
 	miniStats: false,
-	inspector: false,
 	visibleTiles: 0,
 	memory: '',
 };
@@ -86,6 +88,31 @@ tiles.registerPlugin( reorientationPlugin );
 tiles.setCamera( camera.camera );
 app.root.addChild( tiles.group );
 
+// fade tiles in and out as the level of detail changes, a new plugin is registered each time it
+// is enabled
+let fadePlugin = null;
+function setFade( enabled ) {
+
+	if ( enabled && ! fadePlugin ) {
+
+		fadePlugin = new TilesFadePlugin();
+		tiles.registerPlugin( fadePlugin );
+
+	} else if ( ! enabled && fadePlugin ) {
+
+		tiles.unregisterPlugin( fadePlugin );
+		fadePlugin = null;
+
+	}
+
+}
+
+setFade( params.fade );
+
+// draw the bounding volumes of the visible tiles
+const debugPlugin = new DebugTilesPlugin();
+tiles.registerPlugin( debugPlugin );
+
 // set the location from the "#lat,lon" hash in degrees, with an optional height in meters for
 // places well above sea level, as the camera orbits the location at the given height
 function initFromHash() {
@@ -117,6 +144,8 @@ const cartographic = {};
 app.on( 'update', () => {
 
 	tiles.errorTarget = params.errorTarget;
+	debugPlugin.displayBoxBounds = params.displayBoxBounds;
+	debugPlugin.displayParentBounds = params.displayParentBounds;
 	if ( params.enabled ) {
 
 		tiles.update();
@@ -164,38 +193,13 @@ function setMiniStats( enabled ) {
 
 }
 
-// scene inspector, loaded on first use so the demo does not download it otherwise
-let inspector = null;
-async function setInspector() {
-
-	if ( params.inspector && ! inspector ) {
-
-		// dock on the right below the controls, as MiniStats sits in the bottom left corner
-		const { Inspector } = await import( '@playcanvas/inspector' );
-		inspector ??= new Inspector( app, {
-			dock: 'right',
-			top: gui.domElement.getBoundingClientRect().bottom + 8,
-			visible: false,
-
-			// keep the checkbox in sync when the panel is closed with its own button or toggle key
-			onVisibleChange: visible => params.inspector = visible,
-		} );
-
-	}
-
-	if ( inspector ) {
-
-		inspector.visible = params.inspector;
-
-	}
-
-}
-
 // gui
 const gui = new GUI();
 gui.add( params, 'enabled' );
 gui.add( params, 'errorTarget', 1, 64 );
+gui.add( params, 'fade' ).onChange( setFade );
+gui.add( params, 'displayBoxBounds' );
+gui.add( params, 'displayParentBounds' );
 gui.add( params, 'miniStats' ).onChange( setMiniStats );
-gui.add( params, 'inspector' ).onChange( setInspector ).listen();
 gui.add( params, 'visibleTiles' ).listen().disable();
 gui.add( params, 'memory' ).listen().disable();

@@ -1,6 +1,7 @@
 import { Mat4, Quat, Vec3 } from 'playcanvas';
 import { OBJECT_FRAME, WGS84_ELLIPSOID } from '../../src/playcanvas/renderer/math/Ellipsoid.js';
 import { composeMatrix, createMatrix, invertMatrix, transformPoint } from '../../src/playcanvas/renderer/math/MatrixUtils.js';
+import { TileBoundingVolume } from '../../src/playcanvas/renderer/math/TileBoundingVolume.js';
 import { WGS84_HEIGHT, WGS84_RADIUS } from '../../src/core/renderer/constants.js';
 
 const DEG2RAD = Math.PI / 180;
@@ -64,6 +65,64 @@ describe( 'PlayCanvas Ellipsoid', () => {
 		transformPoint( toOrigin, point.x, point.y, point.z, point );
 		expect( point.x ).toBeLessThan( - 50 );
 		expect( Math.abs( point.z ) ).toBeLessThan( 1e-3 );
+
+	} );
+
+} );
+
+describe( 'PlayCanvas region bounding volume', () => {
+
+	// the region corners, edge midpoints and center at both heights
+	function forEachRegionPoint( west, south, east, north, minHeight, maxHeight, callback ) {
+
+		const point = new Vec3();
+		for ( const lat of [ south, ( south + north ) / 2, north ] ) {
+
+			for ( const lon of [ west, ( west + east ) / 2, east ] ) {
+
+				for ( const height of [ minHeight, maxHeight ] ) {
+
+					callback( WGS84_ELLIPSOID.getCartographicToPosition( lat, lon, height, point ) );
+
+				}
+
+			}
+
+		}
+
+	}
+
+	it( 'should enclose small and large regions.', () => {
+
+		const regions = [
+			[ LON - 1e-3, LAT - 1e-3, LON + 1e-3, LAT + 1e-3, - 50, 500 ],
+			[ - 0.5, - 0.3, 0.5, 0.4, 0, 1000 ],
+			[ - 2, 0.1, 2, 0.8, 0, 0 ],
+		];
+
+		for ( const region of regions ) {
+
+			const volume = new TileBoundingVolume();
+			volume.setRegionData( WGS84_ELLIPSOID, ...region );
+			forEachRegionPoint( ...region, point => {
+
+				expect( volume.distanceToPoint( point ) ).toBeLessThan( 1e-6 );
+
+			} );
+
+		}
+
+	} );
+
+	it( 'should report the distance to a point outside the region.', () => {
+
+		const volume = new TileBoundingVolume();
+		volume.setRegionData( WGS84_ELLIPSOID, LON - 1e-3, LAT - 1e-3, LON + 1e-3, LAT + 1e-3, 0, 100 );
+
+		// 1000 meters straight up from the center of the region, 900 above its top
+		const point = WGS84_ELLIPSOID.getCartographicToPosition( LAT, LON, 1000, new Vec3() );
+		expect( volume.distanceToPoint( point ) ).toBeGreaterThan( 850 );
+		expect( volume.distanceToPoint( point ) ).toBeLessThan( 950 );
 
 	} );
 

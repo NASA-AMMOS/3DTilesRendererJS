@@ -105,7 +105,6 @@
     "@babylonjs/core": "^9.26.1",
     "@babylonjs/loaders": "^9.26.1",
     "@eslint/js": "^9.0.0",
-    "@playcanvas/inspector": "^0.2.0",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
     "@types/node": "^24.3.0",
