@@ -27,7 +27,9 @@ const DEFAULT_LOCATION = [ 35.6586, 139.7454 ];
 const params = {
 	enabled: true,
 	errorTarget: 16,
-	fade: true,
+	useFade: true,
+	fadeDuration: 0.25,
+	fadingTiles: '0 tiles',
 	displayBoxBounds: false,
 	displayParentBounds: false,
 	miniStats: false,
@@ -88,26 +90,9 @@ tiles.registerPlugin( reorientationPlugin );
 tiles.setCamera( camera.camera );
 app.root.addChild( tiles.group );
 
-// fade tiles in and out as the level of detail changes, a new plugin is registered each time it
-// is enabled
-let fadePlugin = null;
-function setFade( enabled ) {
-
-	if ( enabled && ! fadePlugin ) {
-
-		fadePlugin = new TilesFadePlugin();
-		tiles.registerPlugin( fadePlugin );
-
-	} else if ( ! enabled && fadePlugin ) {
-
-		tiles.unregisterPlugin( fadePlugin );
-		fadePlugin = null;
-
-	}
-
-}
-
-setFade( params.fade );
+// fade tiles in and out as the level of detail changes
+const fadePlugin = new TilesFadePlugin();
+tiles.registerPlugin( fadePlugin );
 
 // draw the bounding volumes of the visible tiles
 const debugPlugin = new DebugTilesPlugin();
@@ -144,6 +129,7 @@ const cartographic = {};
 app.on( 'update', () => {
 
 	tiles.errorTarget = params.errorTarget;
+	fadePlugin.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	debugPlugin.displayBoxBounds = params.displayBoxBounds;
 	debugPlugin.displayParentBounds = params.displayParentBounds;
 	if ( params.enabled ) {
@@ -153,6 +139,7 @@ app.on( 'update', () => {
 	}
 
 	params.visibleTiles = tiles.visibleTiles.size;
+	params.fadingTiles = `${ fadePlugin.fadingTiles } tiles`;
 	params.memory = `${ ( tiles.lruCache.cachedBytes / 1e6 ).toFixed( 1 ) } MB`;
 
 	// the camera location and the data attributions, which Google requires to be displayed - the
@@ -197,9 +184,13 @@ function setMiniStats( enabled ) {
 const gui = new GUI();
 gui.add( params, 'enabled' );
 gui.add( params, 'errorTarget', 1, 64 );
-gui.add( params, 'fade' ).onChange( setFade );
 gui.add( params, 'displayBoxBounds' );
 gui.add( params, 'displayParentBounds' );
 gui.add( params, 'miniStats' ).onChange( setMiniStats );
 gui.add( params, 'visibleTiles' ).listen().disable();
 gui.add( params, 'memory' ).listen().disable();
+
+const fadeFolder = gui.addFolder( 'fade' );
+fadeFolder.add( params, 'useFade' );
+fadeFolder.add( params, 'fadeDuration', 0, 5 );
+fadeFolder.add( params, 'fadingTiles' ).listen().disable();
