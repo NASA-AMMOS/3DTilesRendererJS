@@ -33,11 +33,12 @@ npm install 3d-tiles-renderer --save
 | --- | --- |
 | `3d-tiles-renderer/three/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
 | `3d-tiles-renderer/babylonjs/plugins` | [Plugin Guide](./src/babylonjs/plugins/README.md) |
+| `3d-tiles-renderer/playcanvas/plugins` | [Plugin Guide](./src/playcanvas/plugins/README.md) |
 | `3d-tiles-renderer/core/plugins` | [API Reference](./src/core/plugins/API.md) |
 
 # Examples
 
-The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html), and a PlayCanvas demo for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/playcanvas/index.html).
+The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html), and PlayCanvas demos for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/playcanvas/index.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/playcanvas/googleMapsAerial.html).
 
 See the [Three.js usage guide](./USAGE.md), [Babylon.js usage guide](./src/babylonjs/renderer/README.md) or [PlayCanvas usage guide](./src/playcanvas/renderer/README.md) for setup details with each engine.
 

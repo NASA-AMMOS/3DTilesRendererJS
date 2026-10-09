@@ -4,7 +4,9 @@ import { LoaderUtils, TilesRendererBase } from '3d-tiles-renderer/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { disposeModel, GLTFLoader } from '../loaders/GLTFLoader.js';
 import { CameraFrustum } from '../math/CameraFrustum.js';
+import { Ellipsoid, WGS84_ELLIPSOID } from '../math/Ellipsoid.js';
 import {
+	composeMatrix,
 	copyMatrix,
 	createMatrix,
 	decomposeMatrix,
@@ -22,8 +24,9 @@ const _groupInverse = /* @__PURE__ */ createMatrix();
 const _cameraMatrix = /* @__PURE__ */ createMatrix();
 const _viewMatrix = /* @__PURE__ */ createMatrix();
 const _clipMatrix = /* @__PURE__ */ createMatrix();
-const _modelMatrix = /* @__PURE__ */ createMatrix();
+const _contentMatrix = /* @__PURE__ */ createMatrix();
 const _localMatrix = /* @__PURE__ */ createMatrix();
+const _placedMatrix = /* @__PURE__ */ createMatrix();
 const _resolution = /* @__PURE__ */ new Vec2();
 const _position = /* @__PURE__ */ new Vec3();
 const _rotation = /* @__PURE__ */ new Quat();
@@ -34,7 +37,9 @@ const _scale = /* @__PURE__ */ new Vec3();
  * the PlayCanvas entity hierarchy. Tile content is loaded through the engine's glTF parser.
  *
  * Tile transforms and bounding volumes are kept in 64-bit numbers, and only the final per-tile
- * transform is written into the entity hierarchy, because PlayCanvas matrices are 32-bit.
+ * transform is written into the entity hierarchy, because PlayCanvas matrices are 32-bit. To move
+ * a tileset by a large distance, such as bringing an Earth-centered tileset to the origin, use
+ * {@link TilesRenderer#setTilesetTransform} rather than transforming {@link TilesRenderer#group}.
  * @extends TilesRendererBase
  * @warn Only `glTF`, `GLB` and `B3DM` content and `box` and `sphere` bounding volumes are supported.
  */
@@ -81,8 +86,16 @@ export class TilesRenderer extends TilesRendererBase {
 		 */
 		this.renderOptions = null;
 
+		/**
+		 * The ellipsoid the tileset is on, used for geographic placement. Set from the
+		 * `3DTILES_ellipsoid` extension of the tileset, and WGS84 otherwise.
+		 * @type {Ellipsoid}
+		 */
+		this.ellipsoid = new Ellipsoid().copy( WGS84_ELLIPSOID );
+
 		this._cameraInfo = [];
 		this._listeners = new Map();
+		this._tilesetTransform = createMatrix();
 		this._upRotationMatrix = createMatrix();
 		this._bytesUsed = new WeakMap();
 		this._warnedBoundingVolume = false;
@@ -241,6 +254,52 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Sets a transform applied to the whole tileset before it is placed under
+	 * {@link TilesRenderer#group}. It is applied in 64-bit precision, so unlike a transform on the
+	 * group it can move an Earth-centered tileset, whose coordinates are millions of meters from
+	 * the origin, close to the origin without losing precision. Loaded tiles are moved
+	 * immediately.
+	 * @param {Array<number>|TypedArray} matrix - A column-major 4x4 matrix.
+	 */
+	setTilesetTransform( matrix ) {
+
+		copyMatrix( matrix, this._tilesetTransform );
+		this.forEachLoadedModel( ( scene, tile ) => this._placeModel( tile ) );
+		this.dispatchEvent( { type: 'needs-update' } );
+
+	}
+
+	/**
+	 * Writes the transform set with {@link TilesRenderer#setTilesetTransform} into `target`.
+	 * @param {Array<number>|TypedArray} target
+	 * @returns {Array<number>|TypedArray}
+	 */
+	getTilesetTransform( target ) {
+
+		return copyMatrix( this._tilesetTransform, target );
+
+	}
+
+	/**
+	 * Calls the callback for every tile with loaded content.
+	 * @param {Function} callback - Called with the tile's entity and the tile.
+	 */
+	forEachLoadedModel( callback ) {
+
+		this.traverse( tile => {
+
+			const scene = tile.engineData && tile.engineData.scene;
+			if ( scene ) {
+
+				callback( scene, tile );
+
+			}
+
+		}, null, false );
+
+	}
+
 	/* Overriden */
 	loadRootTileset( ...args ) {
 
@@ -248,7 +307,7 @@ export class TilesRenderer extends TilesRendererBase {
 			.then( root => {
 
 				// cache the gltf tileset rotation matrix
-				const { asset } = root;
+				const { asset, extensions = {} } = root;
 				const upAxis = asset && asset.gltfUpAxis || 'y';
 				switch ( upAxis.toLowerCase() ) {
 
@@ -259,6 +318,24 @@ export class TilesRenderer extends TilesRendererBase {
 					case 'y':
 						makeRotationX( Math.PI / 2, this._upRotationMatrix );
 						break;
+
+				}
+
+				// update the ellipsoid based on the extension
+				if ( '3DTILES_ellipsoid' in extensions ) {
+
+					const ext = extensions[ '3DTILES_ellipsoid' ];
+					const { ellipsoid } = this;
+					ellipsoid.name = ext.body;
+					if ( ext.radii ) {
+
+						ellipsoid.radius.set( ...ext.radii );
+
+					} else {
+
+						ellipsoid.radius.set( 1, 1, 1 );
+
+					}
 
 				}
 
@@ -292,8 +369,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// the camera data is stored in the tileset (group) frame
+		// the camera data is stored in the tileset frame, the frame of the tile transforms and
+		// bounding volumes: world = group * tileset transform * tileset frame
 		copyMatrix( group.getWorldTransform().data, _groupMatrix );
+		multiplyMatrices( _groupMatrix, this._tilesetTransform, _groupMatrix );
 		invertMatrix( _groupMatrix, _groupInverse );
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
@@ -406,7 +485,8 @@ export class TilesRenderer extends TilesRendererBase {
 		// Base class initializes: scene, metadata, boundingVolume
 		tile.engineData.transform = transform;
 		tile.engineData.boundingVolume = boundingVolume;
-		tile.engineData.asset = null;
+		tile.engineData.container = null;
+		tile.engineData.placements = null;
 
 	}
 
@@ -470,23 +550,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// place the model in the tileset frame in 64-bit:
-		// tile transform * RTC_CENTER * the model's own root transform * up axis correction
+		// place the model in the tileset frame in 64-bit, in the same order as three.js:
+		// tile transform * RTC_CENTER * up axis correction * the model's root nodes
 		const scene = result.scene;
-		copyMatrix( engineData.transform, _modelMatrix );
+		copyMatrix( engineData.transform, _contentMatrix );
 		if ( result.rtcCenter ) {
 
 			const [ x, y, z ] = result.rtcCenter;
-			multiplyMatrices( _modelMatrix, makeTranslation( x, y, z, _localMatrix ), _modelMatrix );
+			multiplyMatrices( _contentMatrix, makeTranslation( x, y, z, _localMatrix ), _contentMatrix );
 
 		}
 
-		multiplyMatrices( _modelMatrix, copyMatrix( scene.getLocalTransform().data, _localMatrix ), _modelMatrix );
-		multiplyMatrices( _modelMatrix, this._upRotationMatrix, _modelMatrix );
-		decomposeMatrix( _modelMatrix, _position, _rotation, _scale );
-		scene.setLocalPosition( _position );
-		scene.setLocalRotation( _rotation );
-		scene.setLocalScale( _scale );
+		multiplyMatrices( _contentMatrix, this._upRotationMatrix, _contentMatrix );
+		engineData.placements = getModelPlacements( scene, result.gltf, _contentMatrix );
+		this._placeModel( tile );
 
 		// wait for extra processing by plugins if needed
 		await this.invokeAllPlugins( plugin => {
@@ -498,9 +575,9 @@ export class TilesRenderer extends TilesRendererBase {
 		// the base class drops tiles that were unloaded while parsing, so release them here
 		if ( abortSignal.aborted ) {
 
-			if ( result.asset ) {
+			if ( result.container ) {
 
-				disposeModel( scene, result.asset, this.app.assets );
+				disposeModel( scene, result.container, this.app.assets );
 
 			} else {
 
@@ -513,7 +590,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		engineData.scene = scene;
-		engineData.asset = result.asset || null;
+		engineData.container = result.container || null;
 		engineData.metadata = result;
 
 	}
@@ -525,9 +602,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const engineData = tile.engineData;
 		if ( engineData.scene ) {
 
-			if ( engineData.asset ) {
+			if ( engineData.container ) {
 
-				disposeModel( engineData.scene, engineData.asset, this.app.assets );
+				disposeModel( engineData.scene, engineData.container, this.app.assets );
 
 			} else {
 
@@ -536,8 +613,9 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 
 			engineData.scene = null;
-			engineData.asset = null;
+			engineData.container = null;
 			engineData.metadata = null;
+			engineData.placements = null;
 			this._bytesUsed.delete( tile );
 
 		}
@@ -568,10 +646,10 @@ export class TilesRenderer extends TilesRendererBase {
 	calculateBytesUsed( tile, scene ) {
 
 		const bytesUsed = this._bytesUsed;
-		const asset = tile.engineData.asset;
-		if ( ! bytesUsed.has( tile ) && scene && asset ) {
+		const container = tile.engineData.container;
+		if ( ! bytesUsed.has( tile ) && scene && container ) {
 
-			bytesUsed.set( tile, estimateBytesUsed( asset ) );
+			bytesUsed.set( tile, estimateBytesUsed( container ) );
 
 		}
 
@@ -655,6 +733,23 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	// writes the tile's model placements, combined with the tileset transform, into its entities
+	_placeModel( tile ) {
+
+		const placements = tile.engineData.placements;
+		for ( let i = 0, l = placements.length; i < l; i ++ ) {
+
+			const { entity, matrix } = placements[ i ];
+			multiplyMatrices( this._tilesetTransform, matrix, _placedMatrix );
+			decomposeMatrix( _placedMatrix, _position, _rotation, _scale );
+			entity.setLocalPosition( _position );
+			entity.setLocalRotation( _rotation );
+			entity.setLocalScale( _scale );
+
+		}
+
+	}
+
 	_getResolution( camera, target ) {
 
 		const rect = camera.rect;
@@ -676,10 +771,73 @@ export class TilesRenderer extends TilesRendererBase {
 
 }
 
-// the GPU memory of the meshes and textures created for a model, counting shared buffers once
-function estimateBytesUsed( asset ) {
+// Returns the entities that place a loaded model in the tileset frame, each paired with its 64-bit
+// matrix: the content matrix times the transform of the glTF node it was instantiated from. The
+// node transforms are read from the glTF JSON, as the parser stores them in 32-bit, which cannot
+// hold Earth-centered offsets. This mirrors how the PlayCanvas glTF parser builds the hierarchy: a
+// single scene with a single node is instantiated as that node, otherwise every scene becomes an
+// identity wrapper of its nodes, under an identity root when there are several scenes.
+function getModelPlacements( scene, gltf, contentMatrix ) {
 
-	const resource = asset.resource;
+	const placements = [];
+	const addPlacement = ( entity, localMatrix ) => {
+
+		if ( entity ) {
+
+			placements.push( { entity, matrix: multiplyMatrices( contentMatrix, localMatrix, createMatrix() ) } );
+
+		}
+
+	};
+
+	const scenes = gltf && gltf.scenes;
+	if ( ! scenes ) {
+
+		// content created by plugins is placed by the root entity's own transform
+		addPlacement( scene, copyMatrix( scene.getLocalTransform().data, _localMatrix ) );
+
+	} else if ( scenes.length === 1 && scenes[ 0 ].nodes && scenes[ 0 ].nodes.length === 1 ) {
+
+		addPlacement( scene, getNodeMatrix( gltf.nodes[ scenes[ 0 ].nodes[ 0 ] ], _localMatrix ) );
+
+	} else {
+
+		// scenes without nodes don't get a wrapper
+		const gltfScenes = scenes.filter( gltfScene => gltfScene.nodes );
+		const wrappers = gltfScenes.length === 1 ? [ scene ] : scene.children;
+		gltfScenes.forEach( ( gltfScene, i ) => {
+
+			gltfScene.nodes.forEach( ( nodeIndex, j ) => {
+
+				addPlacement( wrappers[ i ] && wrappers[ i ].children[ j ], getNodeMatrix( gltf.nodes[ nodeIndex ], _localMatrix ) );
+
+			} );
+
+		} );
+
+	}
+
+	return placements;
+
+}
+
+// the local transform of a glTF node as a 64-bit matrix
+function getNodeMatrix( gltfNode, target ) {
+
+	if ( gltfNode.matrix ) {
+
+		return copyMatrix( gltfNode.matrix, target );
+
+	}
+
+	return composeMatrix( gltfNode.translation, gltfNode.rotation, gltfNode.scale, target );
+
+}
+
+// the GPU memory of the meshes and textures created for a model, counting shared buffers once
+function estimateBytesUsed( container ) {
+
+	const resource = container.resource;
 	if ( ! resource ) {
 
 		return 0;

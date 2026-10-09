@@ -39,8 +39,8 @@ export class B3DMLoader extends B3DMLoaderBase {
 	/**
 	 * @param {ArrayBuffer} buffer - The raw B3DM file data.
 	 * @param {string} url - The URL of the content, used to resolve relative resources.
-	 * @returns {Promise<Object>} The parsed B3DM tables, the loaded model, and the `RTC_CENTER`
-	 * offset if the feature table has one.
+	 * @returns {Promise<Object>} The loaded model as returned by {@link GLTFLoader#parse}, plus the
+	 * B3DM batch and feature tables, and the `RTC_CENTER` offset if the feature table has one.
 	 */
 	async parse( buffer, url ) {
 
@@ -53,11 +53,13 @@ export class B3DMLoader extends B3DMLoaderBase {
 		gltfLoader.renderOptions = this.renderOptions;
 
 		// the GLB is a view into the B3DM buffer, the engine expects a buffer of its own
+		const { batchTable, featureTable } = b3dm;
 		const result = await gltfLoader.parse( b3dm.glbBytes.slice().buffer, url );
 		return {
-			...b3dm,
 			...result,
-			rtcCenter: b3dm.featureTable.getData( 'RTC_CENTER', 1, 'FLOAT', 'VEC3' ),
+			batchTable,
+			featureTable,
+			rtcCenter: featureTable.getData( 'RTC_CENTER', 1, 'FLOAT', 'VEC3' ),
 		};
 
 	}

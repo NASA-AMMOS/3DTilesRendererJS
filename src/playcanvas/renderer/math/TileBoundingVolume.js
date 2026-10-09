@@ -105,6 +105,43 @@ export class TileBoundingVolume {
 	}
 
 	/**
+	 * Writes a sphere enclosing the volume into `target`.
+	 * @param {{ center: Vec3, radius: number }} target
+	 * @returns {{ center: Vec3, radius: number }}
+	 */
+	getSphere( target ) {
+
+		const { sphere, obb } = this;
+		if ( sphere ) {
+
+			target.center.copy( sphere.center );
+			target.radius = sphere.radius;
+
+		} else if ( obb ) {
+
+			// the box is centered on the origin of its frame
+			const { center } = target;
+			const { points } = obb;
+			transformPoint( obb.transform, 0, 0, 0, center );
+			target.radius = 0;
+			for ( let i = 0; i < 24; i += 3 ) {
+
+				target.radius = Math.max( target.radius, Math.hypot( points[ i ] - center.x, points[ i + 1 ] - center.y, points[ i + 2 ] - center.z ) );
+
+			}
+
+		} else {
+
+			target.center.set( 0, 0, 0 );
+			target.radius = 0;
+
+		}
+
+		return target;
+
+	}
+
+	/**
 	 * Returns the distance from the volume to the point, or 0 when the point is inside.
 	 * @param {Vec3} point
 	 * @returns {number}

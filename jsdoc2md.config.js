@@ -25,6 +25,11 @@ export default [
 		source: './src/playcanvas/renderer',
 	},
 	{
+		output: './src/playcanvas/plugins/API.md',
+		title: '3d-tiles-renderer/playcanvas/plugins',
+		source: './src/playcanvas/plugins',
+	},
+	{
 		output: './src/core/plugins/API.md',
 		title: '3d-tiles-renderer/core/plugins',
 		source: './src/core/plugins',

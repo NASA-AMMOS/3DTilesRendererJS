@@ -42,7 +42,9 @@ export class GLTFLoader extends LoaderBase {
 	/**
 	 * @param {ArrayBuffer} buffer - The raw GLTF or GLB file data.
 	 * @param {string} url - The URL of the content, used to resolve relative resources.
-	 * @returns {Promise<{ scene: Entity, asset: Asset, gltf: Object }>}
+	 * @returns {Promise<{ scene: Entity, container: Asset, gltf: Object, asset: Object }>} The
+	 * entity created for the content, the `container` asset it was loaded from, the glTF JSON, and
+	 * its `asset` property, which holds the copyright of the content.
 	 */
 	async parse( buffer, url ) {
 
@@ -78,10 +80,12 @@ export class GLTFLoader extends LoaderBase {
 		}
 
 		const resource = asset.resource;
+		const gltf = resource.data.gltf;
 		return {
 			scene: resource.instantiateRenderEntity( renderOptions ?? undefined ),
-			asset,
-			gltf: resource.data.gltf,
+			container: asset,
+			gltf,
+			asset: gltf.asset || {},
 		};
 
 	}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Google Maps Aerial - PlayCanvas 3D Tiles</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        /* the logos and credits sit in the top left corner, below the info text, clear of MiniStats in
+        the bottom left and the inspector on the right - the attribution wraps rather than truncates,
+        and is shadowed, as it has to stay readable over the imagery */
+        #footer {
+            top: 60px;
+            bottom: auto;
+            width: auto;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        #logos {
+            order: -1;
+            margin-top: 0;
+        }
+
+        #credits {
+            max-width: 50vw;
+            padding-right: 5px;
+            white-space: pre-wrap;
+            opacity: 0.9;
+            text-shadow: 0 0 3px black, 0 0 1px black;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="info">
+        <div>
+            Example using <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">Googles Photorealistic 3D Tiles</a> & <a href="https://ion.cesium.com/">Cesium Ion</a>
+            <br/>
+            Cesium Ion API token required. Set the location with <code>#lat,lon</code> or <code>#lat,lon,height</code>, add <code>?webgpu</code> to use WebGPU.
+        </div>
+    </div>
+
+    <div id="footer">
+        <div id="credits"></div>
+        <div id="logos">
+            <img src="../logos/google.png" />
+            <img src="../logos/cesiumion.png" />
+        </div>
+    </div>
+
+    <canvas id="renderCanvas"></canvas>
+    <script type="module" src="./googleMapsAerial.js"></script>
+</body>
+
+</html>

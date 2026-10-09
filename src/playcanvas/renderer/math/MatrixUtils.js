@@ -225,6 +225,63 @@ export function makeRotationY( angle, out ) {
 }
 
 /**
+ * Sets the matrix to a rotation around the Z axis.
+ * @param {number} angle - Angle in radians.
+ * @param {Float64Array} out
+ * @returns {Float64Array}
+ */
+export function makeRotationZ( angle, out ) {
+
+	const c = Math.cos( angle );
+	const s = Math.sin( angle );
+	setIdentity( out );
+	out[ 0 ] = c;
+	out[ 1 ] = s;
+	out[ 4 ] = - s;
+	out[ 5 ] = c;
+	return out;
+
+}
+
+/**
+ * Sets the matrix from a translation, a rotation quaternion and a scale, `out = T * R * S`. Any of
+ * them may be omitted.
+ * @param {Array<number>} [t] - Translation as `x, y, z`.
+ * @param {Array<number>} [q] - Rotation quaternion as `x, y, z, w`.
+ * @param {Array<number>} [s] - Scale as `x, y, z`.
+ * @param {Float64Array} out
+ * @returns {Float64Array}
+ */
+export function composeMatrix( t, q, s, out ) {
+
+	const [ x, y, z, w ] = q || [ 0, 0, 0, 1 ];
+	const [ sx, sy, sz ] = s || [ 1, 1, 1 ];
+	const x2 = x + x, y2 = y + y, z2 = z + z;
+	const xx = x * x2, xy = x * y2, xz = x * z2;
+	const yy = y * y2, yz = y * z2, zz = z * z2;
+	const wx = w * x2, wy = w * y2, wz = w * z2;
+
+	out[ 0 ] = ( 1 - ( yy + zz ) ) * sx;
+	out[ 1 ] = ( xy + wz ) * sx;
+	out[ 2 ] = ( xz - wy ) * sx;
+	out[ 3 ] = 0;
+	out[ 4 ] = ( xy - wz ) * sy;
+	out[ 5 ] = ( 1 - ( xx + zz ) ) * sy;
+	out[ 6 ] = ( yz + wx ) * sy;
+	out[ 7 ] = 0;
+	out[ 8 ] = ( xz + wy ) * sz;
+	out[ 9 ] = ( yz - wx ) * sz;
+	out[ 10 ] = ( 1 - ( xx + yy ) ) * sz;
+	out[ 11 ] = 0;
+	out[ 12 ] = t ? t[ 0 ] : 0;
+	out[ 13 ] = t ? t[ 1 ] : 0;
+	out[ 14 ] = t ? t[ 2 ] : 0;
+	out[ 15 ] = 1;
+	return out;
+
+}
+
+/**
  * Sets the matrix to a translation.
  * @param {number} x
  * @param {number} y
