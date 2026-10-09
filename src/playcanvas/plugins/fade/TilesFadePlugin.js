@@ -177,7 +177,7 @@ export class TilesFadePlugin extends TilesFadePluginBase {
 		}
 
 		this._scenes.delete( scene );
-		setFading( record, false );
+		applyFade( record, false );
 		for ( const material of record.materials ) {
 
 			this._materialOwners.delete( material );
@@ -196,13 +196,7 @@ export class TilesFadePlugin extends TilesFadePluginBase {
 		const record = this._scenes.get( tile.engineData.scene );
 		if ( record ) {
 
-			setFading( record, true );
-			for ( const material of record.materials ) {
-
-				material.setParameter( 'tilesFadeIn', fadeIn );
-				material.setParameter( 'tilesFadeOut', fadeOut );
-
-			}
+			applyFade( record, true, fadeIn, fadeOut );
 
 		}
 
@@ -216,7 +210,7 @@ export class TilesFadePlugin extends TilesFadePluginBase {
 		const record = this._scenes.get( tile.engineData.scene );
 		if ( record ) {
 
-			setFading( record, false );
+			applyFade( record, false );
 
 		}
 
@@ -272,13 +266,15 @@ export class TilesFadePlugin extends TilesFadePluginBase {
 
 }
 
-// Adds the fade code to the materials of a tile while it fades, and removes it once the fade
-// completes, so tiles that are not fading render without the discard. The shader cache is keyed
-// by the chunk contents, so this is two cached variants per material type, and switching between
-// them after the first compile is a cache lookup.
-function setFading( record, fading ) {
+// Applies the fade state of a tile to its materials, with one Material#update per material for all
+// the changes. While the tile fades, the fade code and the fade values are added to its materials,
+// and once the fade completes they are removed, so tiles that are not fading render without the
+// discard. The shader cache is keyed by the chunk contents, so this is two cached variants per
+// material type, and switching between them after the first compile is a cache lookup.
+function applyFade( record, fading, fadeIn = 1, fadeOut = 0 ) {
 
-	if ( record.fading === fading ) {
+	const chunksChanged = record.fading !== fading;
+	if ( ! fading && ! chunksChanged ) {
 
 		return;
 
@@ -287,23 +283,34 @@ function setFading( record, fading ) {
 	record.fading = fading;
 	for ( const material of record.materials ) {
 
-		const glsl = material.getShaderChunks( SHADERLANGUAGE_GLSL );
-		const wgsl = material.getShaderChunks( SHADERLANGUAGE_WGSL );
+		if ( chunksChanged ) {
+
+			const glsl = material.getShaderChunks( SHADERLANGUAGE_GLSL );
+			const wgsl = material.getShaderChunks( SHADERLANGUAGE_WGSL );
+			if ( fading ) {
+
+				glsl.set( 'litUserDeclarationPS', DECLARATIONS_GLSL );
+				glsl.set( 'litUserMainStartPS', MAIN_START_GLSL );
+				wgsl.set( 'litUserDeclarationPS', DECLARATIONS_WGSL );
+				wgsl.set( 'litUserMainStartPS', MAIN_START_WGSL );
+
+			} else {
+
+				glsl.delete( 'litUserDeclarationPS' );
+				glsl.delete( 'litUserMainStartPS' );
+				wgsl.delete( 'litUserDeclarationPS' );
+				wgsl.delete( 'litUserMainStartPS' );
+				material.deleteParameter( 'tilesFadeIn' );
+				material.deleteParameter( 'tilesFadeOut' );
+
+			}
+
+		}
+
 		if ( fading ) {
 
-			glsl.set( 'litUserDeclarationPS', DECLARATIONS_GLSL );
-			glsl.set( 'litUserMainStartPS', MAIN_START_GLSL );
-			wgsl.set( 'litUserDeclarationPS', DECLARATIONS_WGSL );
-			wgsl.set( 'litUserMainStartPS', MAIN_START_WGSL );
-
-		} else {
-
-			glsl.delete( 'litUserDeclarationPS' );
-			glsl.delete( 'litUserMainStartPS' );
-			wgsl.delete( 'litUserDeclarationPS' );
-			wgsl.delete( 'litUserMainStartPS' );
-			material.deleteParameter( 'tilesFadeIn' );
-			material.deleteParameter( 'tilesFadeOut' );
+			material.setParameter( 'tilesFadeIn', fadeIn );
+			material.setParameter( 'tilesFadeOut', fadeOut );
 
 		}
 
