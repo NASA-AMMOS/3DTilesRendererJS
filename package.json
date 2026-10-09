@@ -10,6 +10,7 @@
     "gltf",
     "threejs",
     "babylonjs",
+    "playcanvas",
     "r3f",
     "rendering",
     "geometry",
@@ -52,6 +53,14 @@
     "./babylonjs/plugins": {
       "types": "./src/babylonjs/plugins/index.d.ts",
       "import": "./build/index.babylonjs-plugins.js"
+    },
+    "./playcanvas": {
+      "types": "./src/playcanvas/renderer/index.d.ts",
+      "import": "./build/index.playcanvas.js"
+    },
+    "./playcanvas/plugins": {
+      "types": "./src/playcanvas/plugins/index.d.ts",
+      "import": "./build/index.playcanvas-plugins.js"
     },
     "./core/plugins": {
       "types": "./src/core/plugins/index.d.ts",
@@ -115,6 +124,7 @@
     "jsdoc": "^4.0.5",
     "leva": "^0.10.0",
     "lil-gui": "^0.21.0",
+    "playcanvas": "^2.23.2",
     "three": "^0.185.0",
     "three-mesh-bvh": "^0.9.11",
     "typescript": "^5.6.0",
@@ -126,6 +136,7 @@
     "@babylonjs/core": ">=8.0.0",
     "@babylonjs/loaders": ">=8.0.0",
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
+    "playcanvas": ">=2.23.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
     "three": ">=0.167.0"
@@ -138,6 +149,9 @@
       "optional": true
     },
     "@babylonjs/loaders": {
+      "optional": true
+    },
+    "playcanvas": {
       "optional": true
     },
     "react": {

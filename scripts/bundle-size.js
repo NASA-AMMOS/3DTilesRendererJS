@@ -18,6 +18,7 @@ const EXTERNAL = [
 	'@react-three/fiber',
 	'@babylonjs/core',
 	'@babylonjs/loaders',
+	'playcanvas',
 ];
 
 // each case is bundled from these exports, mirroring how a consumer would import the library
@@ -40,6 +41,17 @@ const CASES = [
 	{
 		name: 'Babylon.js',
 		exports: [ 'export { TilesRenderer } from "3d-tiles-renderer/babylonjs";' ],
+	},
+	{
+		name: 'PlayCanvas',
+		exports: [ 'export { TilesRenderer } from "3d-tiles-renderer/playcanvas";' ],
+	},
+	{
+		name: 'PlayCanvas + fade',
+		exports: [
+			'export { TilesRenderer } from "3d-tiles-renderer/playcanvas";',
+			'export { TilesFadePlugin } from "3d-tiles-renderer/playcanvas/plugins";',
+		],
 	},
 ];
 

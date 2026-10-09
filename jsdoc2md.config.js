@@ -20,6 +20,16 @@ export default [
 		source: './src/babylonjs/renderer',
 	},
 	{
+		output: './src/playcanvas/renderer/API.md',
+		title: '3d-tiles-renderer/playcanvas',
+		source: './src/playcanvas/renderer',
+	},
+	{
+		output: './src/playcanvas/plugins/API.md',
+		title: '3d-tiles-renderer/playcanvas/plugins',
+		source: './src/playcanvas/plugins',
+	},
+	{
 		output: './src/core/plugins/API.md',
 		title: '3d-tiles-renderer/core/plugins',
 		source: './src/core/plugins',

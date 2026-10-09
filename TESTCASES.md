@@ -166,6 +166,8 @@ Verify the hit marker is on the point under the mouse and that the normal lines 
 1. Open the kitchen sink example.
 1. Enable display box bounds option.
 1. Move the camera around and zoom in and out.
+1. Repeat with `playcanvas/index.html`, also enabling `displayParentBounds` to show the bounds of
+   the ancestors of the visible tiles.
 
 #### expected
 
@@ -342,33 +344,33 @@ Verify correct depth is returned when clicking the tiles.
 
 ## Verify tile fade transitions
 
-Run the shared steps below separately for Three.js and Babylon.js. The Babylon.js
-example requires Babylon.js 9.26.1 or later, which includes
+Run the shared steps below separately for Three.js, Babylon.js and PlayCanvas. The
+Babylon.js example requires Babylon.js 9.26.1 or later, which includes
 `DitheredTileFadeMaterialPlugin`.
 
 #### steps
 
 1. Run `npm start`.
-1. Open `three/fadingTiles.html` or `babylonjs/fadingTiles.html` and wait for
-   the terrain to load.
+1. Open `three/fadingTiles.html`, `babylonjs/fadingTiles.html` or
+   `playcanvas/index.html` and wait for the terrain to load.
 1. Disable `useFade` and zoom in and out to observe immediate LOD changes.
 1. Enable `useFade`, set `fadeDuration` to 2 seconds, and zoom in to trigger
    a slow dither transition.
 1. Reverse the zoom direction before the transition completes.
 1. Stop moving and confirm the fading counter returns to zero
-   (`fadingGroundTiles` in Three.js; `fadingTiles` in Babylon.js).
+   (`fadingGroundTiles` in Three.js; `fadingTiles` in Babylon.js and PlayCanvas).
 1. Trigger another transition and disable `useFade` while it is in progress.
-1. Repeat with the other renderer.
+1. Repeat with the other renderers.
 
 #### expected
 
-With fading enabled, both renderers retain the outgoing LOD during the opaque
+With fading enabled, all renderers retain the outgoing LOD during the opaque
 dither transition, handle reversal without disappearing tiles, and settle with
 only the selected LOD visible. Disabling fading completes any pending transition
 on the next update, and the fading counter returns to zero.
 
-Three.js uses a 4x4 pattern and Babylon.js uses an 8x8 pattern, so their lifecycle
-should match without requiring identical stipple pixels.
+Three.js and PlayCanvas use a 4x4 pattern and Babylon.js uses an 8x8 pattern, so their
+lifecycle should match without requiring identical stipple pixels.
 
 #### Babylon.js variants and scope
 
@@ -383,3 +385,33 @@ B3DM/glTF/GLB meshes using opaque Standard/PBR materials, including
 MultiMaterial leaves and shared/frozen materials. Babylon batching,
 hardware/thin instances, multi-camera traversal, and standalone
 shadow/depth/picking/outline/custom passes are deferred.
+
+#### PlayCanvas variants and scope
+
+Repeat the shared steps with `playcanvas/index.html?webgpu` to use WebGPU, and with
+`playcanvas/googleMapsAerial.html` (requires a Cesium Ion token) for Earth-centered content.
+
+The PlayCanvas scope is any number of cameras and materials using the lit shader, such as the
+`StandardMaterial` the glTF parser creates. The fade is added to the materials of a tile only while
+the tile fades, so once the fading counter returns to zero no tile material should carry the
+`litUserMainStartPS` shader chunk. Tiles whose materials are shared with other tiles, including the
+default material of the glTF parser, are shown without fading.
+
+## Verify Earth-centered tilesets render precisely in PlayCanvas
+
+#### steps
+
+1. Add a Cesium Ion token to `.env` as `VITE_ION_KEY`, and run `npm start`.
+1. Open `playcanvas/googleMapsAerial.html` and wait for Tokyo Tower to load.
+1. Zoom in to the closest distance and orbit the camera slowly.
+1. Change the URL hash to `#40.7484,-73.9857` and wait for the Empire State Building to load.
+1. Change the URL hash to `#35.3606,138.7274,3000` for Mt Fuji, with the orbit height above the
+   mountain.
+1. Repeat with `playcanvas/googleMapsAerial.html?webgpu`.
+
+#### expected
+
+Verify the geometry does not jitter or crack at the closest distance, and that changing the hash
+moves the view without reloading the page. Verify the camera latitude and longitude, and the data
+attributions, are displayed in the top left corner and match the location, and that no errors are
+logged.
