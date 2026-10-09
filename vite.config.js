@@ -13,6 +13,7 @@ export const packageAliases = {
 	'3d-tiles-renderer/core': path.resolve( './src/core/renderer/index.js' ),
 	'3d-tiles-renderer/three': path.resolve( './src/three/renderer/index.js' ),
 	'3d-tiles-renderer/babylonjs': path.resolve( './src/babylonjs/renderer/index.js' ),
+	'3d-tiles-renderer/playcanvas': path.resolve( './src/playcanvas/renderer/index.js' ),
 
 	'3d-tiles-renderer/plugins': path.resolve( './src/plugins.js' ),
 	'3d-tiles-renderer': path.resolve( './src/index.js' ),
@@ -39,6 +40,7 @@ export default ( { mode } ) => {
 					...fs.readdirSync( './example/three/' ).map( name => 'three/' + name ),
 					...fs.readdirSync( './example/r3f/' ).map( name => 'r3f/' + name ),
 					...fs.readdirSync( './example/babylonjs/' ).map( name => 'babylonjs/' + name ),
+					...fs.readdirSync( './example/playcanvas/' ).map( name => 'playcanvas/' + name ),
 				]
 					.filter( p => /\.html$/.test( p ) )
 					.map( p => `./example/${ p }` ),
