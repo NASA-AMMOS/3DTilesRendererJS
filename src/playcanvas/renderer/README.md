@@ -40,7 +40,28 @@ app.on( 'update', () => {
 } );
 ```
 
-Tile content is created as entities with render components under `tiles.group`. Use `tiles.renderOptions` to pass options such as `castShadows` or `layers` to the render components, and `tiles.assetOptions` to pass glTF parser callbacks to the `container` assets the content is loaded with. Compressed content needs the engine decoders to be configured, using `dracoInitialize` for Draco and `basisInitialize` for KTX2.
+Tile content is created as entities with render components under `tiles.group`. Use `tiles.renderOptions` to pass options such as `castShadows` or `layers` to the render components, and `tiles.assetOptions` to pass glTF parser callbacks to the `container` assets the content is loaded with.
+
+## Compressed content
+
+Tiles with Draco compressed meshes (`KHR_draco_mesh_compression`) or KTX2 textures (`KHR_texture_basisu`) need the engine decoders to be configured before they load, otherwise those tiles fail to load. The decoders are not part of the `playcanvas` npm package; they are available in the engine repository under [`examples/assets/wasm`](https://github.com/playcanvas/engine/tree/main/examples/assets/wasm).
+
+```js
+import { basisInitialize, dracoInitialize } from 'playcanvas';
+
+dracoInitialize( {
+	jsUrl: 'wasm/draco/draco.wasm.js',
+	wasmUrl: 'wasm/draco/draco.wasm.wasm',
+} );
+
+basisInitialize( {
+	glueUrl: 'wasm/basis/basis.wasm.js',
+	wasmUrl: 'wasm/basis/basis.wasm.wasm',
+	fallbackUrl: 'wasm/basis/basis.js',
+} );
+```
+
+WebP textures (`EXT_texture_webp`) are decoded by the browser and need no setup.
 
 ## Earth-centered tilesets
 
