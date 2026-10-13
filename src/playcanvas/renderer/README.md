@@ -14,11 +14,29 @@ The current implementation has the below limitations:
 # Use
 
 ```js
-import { Application, Entity } from 'playcanvas';
+import {
+	AppBase,
+	AppOptions,
+	CameraComponentSystem,
+	ContainerHandler,
+	createGraphicsDevice,
+	Entity,
+	RenderComponentSystem,
+	TextureHandler,
+} from 'playcanvas';
 import { TilesRenderer } from '3d-tiles-renderer/playcanvas';
 
 const canvas = document.getElementById( 'renderCanvas' );
-const app = new Application( canvas );
+const device = await createGraphicsDevice( canvas );
+
+// the application with the component systems and resource handlers the tiles need
+const createOptions = new AppOptions();
+createOptions.graphicsDevice = device;
+createOptions.componentSystems = [ RenderComponentSystem, CameraComponentSystem ];
+createOptions.resourceHandlers = [ TextureHandler, ContainerHandler ];
+
+const app = new AppBase( canvas );
+app.init( createOptions );
 app.start();
 
 // camera
@@ -39,7 +57,7 @@ app.on( 'update', () => {
 } );
 ```
 
-Tile content is created as entities with render components under `tiles.group`. Use `tiles.renderOptions` to pass options such as `castShadows` or `layers` to the render components, and `tiles.assetOptions` to pass glTF parser callbacks to the `container` assets the content is loaded with.
+Tile content is loaded as `container` assets with their textures, and created as entities with render components under `tiles.group`, so an `AppBase` application needs the `RenderComponentSystem`, and the `ContainerHandler` and `TextureHandler` resource handlers. `Application` includes all of them. Use `tiles.renderOptions` to pass options such as `castShadows` or `layers` to the render components, and `tiles.assetOptions` to pass glTF parser callbacks to the `container` assets the content is loaded with.
 
 ## Compressed content
 

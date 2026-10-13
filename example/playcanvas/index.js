@@ -1,13 +1,19 @@
 import {
-	Application,
+	AppBase,
+	AppOptions,
+	CameraComponentSystem,
 	Color,
+	ContainerHandler,
 	createGraphicsDevice,
 	DEVICETYPE_WEBGL2,
 	DEVICETYPE_WEBGPU,
 	Entity,
 	FILLMODE_FILL_WINDOW,
 	MiniStats,
+	RenderComponentSystem,
 	RESOLUTION_AUTO,
+	ScriptComponentSystem,
+	TextureHandler,
 	Vec3,
 } from 'playcanvas';
 import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
@@ -32,7 +38,15 @@ const device = await createGraphicsDevice( canvas, {
 } );
 device.maxPixelRatio = window.devicePixelRatio;
 
-const app = new Application( canvas, { graphicsDevice: device } );
+// only the component systems and resource handlers the demo uses: tiles are loaded as container
+// assets with their textures, and created as render components
+const createOptions = new AppOptions();
+createOptions.graphicsDevice = device;
+createOptions.componentSystems = [ RenderComponentSystem, CameraComponentSystem, ScriptComponentSystem ];
+createOptions.resourceHandlers = [ TextureHandler, ContainerHandler ];
+
+const app = new AppBase( canvas );
+app.init( createOptions );
 app.setCanvasFillMode( FILLMODE_FILL_WINDOW );
 app.setCanvasResolution( RESOLUTION_AUTO );
 app.start();
