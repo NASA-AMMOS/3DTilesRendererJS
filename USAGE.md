@@ -39,6 +39,48 @@ function renderLoop() {
 }
 ```
 
+## Streaming Large Meshes with Memory Budgets
+
+`TilesRenderer` selects and requests tile content based on the camera view and screen-space
+error. Zooming in requests finer tiles where needed, rather than loading every mesh at full
+detail. The source must already be a hierarchical tileset with bounding volumes, geometric
+errors, and separately loadable content. Loading a single large GLB or HDF5 file does not
+automatically partition it or generate levels of detail.
+
+Use the basic setup above with a tileset containing multiple detail levels, then configure
+the downloaded-content cache and optionally unload hidden GPU resources:
+
+```js
+import { UnloadTilesPlugin } from '3d-tiles-renderer/three/plugins';
+
+// Lower error targets request finer detail. Choose a target that fits the application.
+tilesRenderer.errorTarget = 16;
+
+// Example downloaded-content budgets in bytes (256 MiB and 384 MiB).
+tilesRenderer.lruCache.minBytesSize = 256 * 1024 * 1024;
+tilesRenderer.lruCache.maxBytesSize = 384 * 1024 * 1024;
+
+// Release hidden geometry, materials, and textures from the GPU after a short delay.
+// Set delay to 0 to schedule unloading as soon as a tile becomes hidden.
+tilesRenderer.registerPlugin( new UnloadTilesPlugin( {
+	delay: 250,
+	bytesTarget: 0,
+} ) );
+```
+
+These are different retention policies: the renderer's LRU cache evicts tile content from
+memory, while `UnloadTilesPlugin` releases its GPU resources and retains the CPU data for
+re-upload without a new download. A nonzero `bytesTarget` lets the plugin retain some hidden
+GPU data; tiles that become visible again are protected from GPU unloading.
+
+Byte counts are estimates and the targets are not hard process-memory limits. The downloaded
+cache stops admitting new tiles when its maximum is reached, so refinement may stop if the
+current view needs more content than fits. The GPU target cannot evict visible tiles. Adjust
+`errorTarget` and the cache limits together for the dataset and device. Continue updating the camera matrices and calling
+`tilesRenderer.update()` as in the basic setup, and update the camera resolution when the
+renderer is resized. Releasing detail after it is no longer needed avoids unloading and
+re-uploading the same visible mesh on every frame.
+
 ## Custom Material
 
 Setting up a 3D Tileset using a custom material.
