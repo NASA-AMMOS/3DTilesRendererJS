@@ -67,9 +67,9 @@
     }
   },
   "scripts": {
-    "start": "vite --config ./vite.config.js",
-    "build-examples": "vite build --config ./vite.config.js",
-    "build-lib": "vite build --config ./vite.lib-config.js",
+    "start": "node init && vite --config ./vite.config.js",
+    "build-examples": "node init && vite build --config ./vite.config.js",
+    "build-lib": "node init && vite build --config ./vite.lib-config.js",
     "lint": "eslint . && tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json --noEmit && vitest run",
     "prepublishOnly": "npm run build-lib"

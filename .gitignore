@@ -55,14 +55,12 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
 
 # next.js build output
 .next
 
 # IDEs and editors
 /.idea
-.vscode/settings.json
 
 example/local-data
 example/dev-bundle
@@ -70,3 +68,4 @@ example/bundle
 build
 
 pnpm-lock.yaml
+config.bat
