@@ -955,7 +955,7 @@ export class ImageOverlayPlugin {
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
-		const { processedTiles } = this;
+		const { processedTiles, pendingTiles } = this;
 
 		overlay.init().then( () => {
 
@@ -967,8 +967,13 @@ export class ImageOverlayPlugin {
 		const promises = [];
 		processedTiles.forEach( async tile => {
 
-			const scene = tile.engineData.scene;
+			const scene = tile.engineData?.scene || pendingTiles.get( tile );
 			this._initTileOverlayInfo( tile, overlay );
+			if ( ! scene ) {
+
+				return;
+
+			}
 
 			const promise = this._initTileSceneOverlayInfo( scene, tile, overlay );
 			promises.push( promise );
@@ -1075,10 +1080,21 @@ export class ImageOverlayPlugin {
 
 		}
 
+		if ( ! scene ) {
+
+			return;
+
+		}
+
 		const { tiles, overlayInfo, tileControllers } = this;
 		const { surface } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
+		if ( ! tileController ) {
+
+			return;
+
+		}
 
 		// wait for the overlay to be completely loaded so projection and tiling are available
 		if ( ! overlay.isReady ) {
@@ -1290,7 +1306,7 @@ export class ImageOverlayPlugin {
 
 	_updateLayers( tile ) {
 
-		const { overlayInfo, overlays, tileControllers, meshParams } = this;
+		const { overlayInfo, overlays, tileControllers, meshParams, pendingTiles } = this;
 		const tileController = tileControllers.get( tile );
 
 		// by this point all targets should be present and we can force the memory to update
@@ -1307,7 +1323,7 @@ export class ImageOverlayPlugin {
 		// the materials to have no layers
 		if ( overlays.length === 0 ) {
 
-			const scene = tile.engineData && tile.engineData.scene;
+			const scene = tile.engineData?.scene || pendingTiles.get( tile );
 			if ( scene ) {
 
 				scene.traverse( c => {
@@ -1315,8 +1331,8 @@ export class ImageOverlayPlugin {
 					if ( c.material && meshParams.has( c ) ) {
 
 						const params = meshParams.get( c );
-						params.layerMaps.length = 0;
-						params.layerInfo.length = 0;
+						params.layerMaps.value.length = 0;
+						params.layerInfo.value.length = 0;
 
 						c.material.defines.LAYER_COUNT = 0;
 						c.material.needsUpdate = true;
@@ -1331,15 +1347,62 @@ export class ImageOverlayPlugin {
 
 		}
 
+		const scene = tile.engineData?.scene || pendingTiles.get( tile );
+		if ( ! scene ) {
+
+			return;
+
+		}
+
+		// Initialize all layer slots first. A tile can be in flight while a new overlay is
+		// added, so some overlays may not have produced mesh UVs yet.
+		scene.traverse( c => {
+
+			if ( c.material && meshParams.has( c ) ) {
+
+				const { layerMaps, layerInfo } = meshParams.get( c );
+				const { material } = c;
+				layerMaps.value.length = overlays.length;
+				layerInfo.value.length = overlays.length;
+				for ( let i = 0; i < overlays.length; i ++ ) {
+
+					const overlay = overlays[ i ];
+					layerMaps.value[ i ] = null;
+					layerInfo.value[ i ] = overlay;
+					material.defines[ `LAYER_${ i }_EXISTS` ] = 0;
+					material.defines[ `LAYER_${ i }_ALPHA_INVERT` ] = Number( overlay.alphaInvert );
+					material.defines[ `LAYER_${ i }_ALPHA_MASK` ] = Number( overlay.alphaMask );
+
+				}
+
+				material.defines.LAYER_COUNT = overlays.length;
+				material.needsUpdate = true;
+
+			}
+
+		} );
+
 		// update the uvs and texture overlays for each mesh
 		overlays.forEach( ( overlay, i ) => {
 
 			const { tileInfo } = overlayInfo.get( overlay );
-			const { meshInfo, target } = tileInfo.get( tile );
+			const info = tileInfo.get( tile );
+			if ( ! info ) {
+
+				return;
+
+			}
+
+			const { meshInfo, target } = info;
 			meshInfo.forEach( ( { attribute }, mesh ) => {
 
 				const { geometry, material } = mesh;
 				const params = meshParams.get( mesh );
+				if ( ! params ) {
+
+					return;
+
+				}
 
 				// assign the new uvs
 				const key = `layer_uv_${ i }`;
@@ -1350,10 +1413,6 @@ export class ImageOverlayPlugin {
 
 				}
 
-				// set the uniform array lengths
-				params.layerMaps.length = overlays.length;
-				params.layerInfo.length = overlays.length;
-
 				// assign the uniforms
 				params.layerMaps.value[ i ] = target !== null ? target : null;
 				params.layerInfo.value[ i ] = overlay;
@@ -1362,8 +1421,6 @@ export class ImageOverlayPlugin {
 				material.defines[ `LAYER_${ i }_EXISTS` ] = Number( target !== null );
 				material.defines[ `LAYER_${ i }_ALPHA_INVERT` ] = Number( overlay.alphaInvert );
 				material.defines[ `LAYER_${ i }_ALPHA_MASK` ] = Number( overlay.alphaMask );
-
-				material.defines.LAYER_COUNT = overlays.length;
 				material.needsUpdate = true;
 
 			} );

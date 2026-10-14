@@ -1,4 +1,4 @@
-import { Group, Matrix4, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+import { BufferAttribute, Group, Matrix4, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
 import { ImageOverlayPlugin } from '../../src/plugins.js';
 import { WGS84_ELLIPSOID } from '../../src/three/renderer/math/GeoConstants.js';
 
@@ -106,6 +106,107 @@ describe( 'ImageOverlayPlugin tile splitting', () => {
 		expect( tile.internal.virtualChildCount ).toBe( 0 );
 		expect( tile.refine ).toBe( 'REPLACE' );
 		expect( tile.geometricError ).toBe( 0.3 );
+
+	} );
+
+} );
+
+describe( 'ImageOverlayPlugin overlay lifecycle', () => {
+
+	it( 'skips scene initialization when a tile has no controller yet', async () => {
+
+		const plugin = new ImageOverlayPlugin();
+		const overlay = { isReady: true };
+		const tile = {};
+		const scene = new Group();
+
+		plugin.tiles = { surface: WGS84_ELLIPSOID };
+		plugin.overlayInfo.set( overlay, {
+			controller: new AbortController(),
+			tileInfo: new Map(),
+		} );
+
+		await expect( plugin._initTileSceneOverlayInfo( scene, tile, overlay ) ).resolves.toBeUndefined();
+
+	} );
+
+	it( 'uses a pending tile scene when adding an overlay during processing', async () => {
+
+		const plugin = new ImageOverlayPlugin();
+		const scene = new Group();
+		const tile = { engineData: { scene: null } };
+		let initializedScene = null;
+
+		plugin.tiles = { dispatchEvent() {} };
+		plugin.processedTiles.add( tile );
+		plugin.pendingTiles.set( tile, scene );
+		plugin.tileControllers.set( tile, new AbortController() );
+		plugin._initTileOverlayInfo = () => {};
+
+		plugin._initTileSceneOverlayInfo = value => {
+
+			initializedScene = value;
+			return Promise.resolve();
+
+		};
+
+		plugin._updateLayers = () => {};
+
+		plugin.addOverlay( {
+			frame: null,
+			init: () => Promise.resolve(),
+			setResolution() {},
+		} );
+
+		expect( initializedScene ).toBe( scene );
+		await Promise.resolve();
+
+	} );
+
+	it( 'keeps every mesh layer uniform slot defined while overlays are added and removed', () => {
+
+		const plugin = new ImageOverlayPlugin();
+		const scene = new Group();
+		const mesh = new Mesh( new PlaneGeometry( 1, 1 ), new MeshBasicMaterial() );
+		const tile = { engineData: { scene: null } };
+		const firstOverlay = { alphaInvert: false, alphaMask: false };
+		const secondOverlay = { alphaInvert: true, alphaMask: false };
+		const firstTarget = {};
+		const attribute = new BufferAttribute( new Float32Array( 12 ), 3 );
+
+		scene.add( mesh );
+		plugin.tiles = { recalculateBytesUsed() {} };
+		plugin.pendingTiles.set( tile, scene );
+		plugin.tileControllers.set( tile, new AbortController() );
+		plugin._wrapMaterials( scene );
+		plugin.overlays.push( firstOverlay, secondOverlay );
+		plugin.overlayInfo.set( firstOverlay, {
+			tileInfo: new Map( [[ tile, {
+				meshInfo: new Map( [[ mesh, { attribute } ]] ),
+				target: firstTarget,
+			} ]] ),
+		} );
+		plugin.overlayInfo.set( secondOverlay, {
+			tileInfo: new Map( [[ tile, {
+				meshInfo: new Map(),
+				target: null,
+			} ]] ),
+		} );
+
+		plugin._updateLayers( tile );
+
+		const params = plugin.meshParams.get( mesh );
+		expect( params.layerMaps.value ).toEqual( [ firstTarget, null ] );
+		expect( params.layerInfo.value ).toEqual( [ firstOverlay, secondOverlay ] );
+		expect( mesh.material.defines.LAYER_COUNT ).toBe( 2 );
+		expect( mesh.material.defines.LAYER_1_EXISTS ).toBe( 0 );
+
+		plugin.overlays.length = 0;
+		plugin._updateLayers( tile );
+
+		expect( params.layerMaps.value ).toHaveLength( 0 );
+		expect( params.layerInfo.value ).toHaveLength( 0 );
+		expect( mesh.material.defines.LAYER_COUNT ).toBe( 0 );
 
 	} );
 
