@@ -9,7 +9,6 @@ const PARALLEL_EPSILON = 1e-10;
 // adapts to the surface scale; the ratio matches one meter for a level 16 tile on earth.
 const SETTLE_THRESHOLD_TILE_RATIO = 1.6e-3;
 
-const _raycaster = /* @__PURE__ */ new Raycaster();
 const _hit = /* @__PURE__ */ new Vector3();
 const _hits = [];
 const _spanStart = /* @__PURE__ */ new Vector3();
@@ -17,6 +16,7 @@ const _spanEnd = /* @__PURE__ */ new Vector3();
 const _sample = /* @__PURE__ */ new Vector3();
 const _base = /* @__PURE__ */ new Vector3();
 const _up = /* @__PURE__ */ new Vector3();
+const _cartographic = { lat: 0, lon: 0, height: 0 };
 
 // check if the given raycaster intersects the provided frustum shape
 function rayIntersectsFrustum( raycaster, frustum ) {
@@ -106,11 +106,18 @@ export class SettlingManager {
 		// When null the default raycast against the tile group is used.
 		this.performSettleRaycast = null;
 
+		// raycaster used for the default raycast so plugin objects can be left out of the samples
+		this.raycaster = new Raycaster();
+
 		// Optional object providing "sampleCartographicElevation( lat, lon )" used to settle items by
 		// sampling elevations directly, which is much faster than raycasting. "performSettleRaycast"
 		// takes precedence, and points that no data covers settle to the ellipsoid surface just as a
 		// missed raycast does.
 		this.elevationSource = null;
+
+		// Optional callback ( lat, lon ) => number | null returning the top of the building at
+		// the point, if any, so point annotations settle onto rooftops instead of the terrain.
+		this.sampleBuildingHeight = null;
 
 		// items awaiting resettling
 		this._queue = new Set();
@@ -232,22 +239,23 @@ export class SettlingManager {
 		}
 
 		// cast a ray to snap a single cartographic sample onto the surface
-		const { origin, direction } = _raycaster.ray;
+		const { raycaster } = this;
+		const { origin, direction } = raycaster.ray;
 
 		// build the local ray and transform to world space for raycasting
-		this._getSettlingRay( lat, lon, _raycaster );
+		this._getSettlingRay( lat, lon, raycaster );
 		origin.applyMatrix4( tiles.group.matrixWorld );
 		direction.transformDirection( tiles.group.matrixWorld );
 
 		let hit = false;
 		if ( performSettleRaycast !== null ) {
 
-			hit = performSettleRaycast( _raycaster.ray, lat, lon, _hit );
+			hit = performSettleRaycast( raycaster.ray, lat, lon, _hit );
 
 		} else {
 
 			_hits.length = 0;
-			_raycaster.intersectObject( tiles.group, true, _hits );
+			raycaster.intersectObject( tiles.group, true, _hits );
 			if ( _hits.length > 0 ) {
 
 				_hit.copy( _hits[ 0 ].point );
@@ -321,8 +329,8 @@ export class SettlingManager {
 						const anchorPosition = anchorPositions[ anchorPositions.length >> 1 ];
 						const { lat, lon } = anchorPosition;
 
-						this._getSettlingRay( lat, lon, _raycaster );
-						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
+						this._getSettlingRay( lat, lon, this.raycaster );
+						if ( rayIntersectsFrustum( this.raycaster, frustum ) ) {
 
 							intersectingFrustum.add( item );
 							continue;
@@ -333,8 +341,8 @@ export class SettlingManager {
 					} else {
 
 						// check if the point projection ray intersects the frustum
-						this._getSettlingRay( item.lat, item.lon, _raycaster );
-						if ( rayIntersectsFrustum( _raycaster, frustum ) ) {
+						this._getSettlingRay( item.lat, item.lon, this.raycaster );
+						if ( rayIntersectsFrustum( this.raycaster, frustum ) ) {
 
 							intersectingFrustum.add( item );
 
@@ -504,8 +512,16 @@ export class SettlingManager {
 
 		} else {
 
-			// settle the point onto the surface
+			// settle the point onto the surface, or onto the building covering it if that is higher
+			const { sampleBuildingHeight, tiles } = this;
 			this._settleSample( item.lat, item.lon, item.position, threshold );
+
+			const buildingHeight = sampleBuildingHeight !== null ? sampleBuildingHeight( item.lat, item.lon ) : null;
+			if ( buildingHeight !== null && buildingHeight > tiles.surface.getPositionToCartographic( item.position, _cartographic ).height ) {
+
+				tiles.surface.getCartographicToPosition( item.lat, item.lon, buildingHeight, item.position );
+
+			}
 
 		}
 
