@@ -97,13 +97,13 @@ function toHoursMinutesSecondsString( value, pos = 'E', neg = 'W' ) {
 	const direction = value < 0 ? neg : pos;
 	value = Math.abs( value );
 
-	const hours = ~ ~ value;
+	// truncate to whole seconds once, allowing for floating point error from the
+	// radian to degree conversion so that eg 86 degrees is not shown as 85° 59' 59"
+	const totalSeconds = Math.floor( value * 3600 + 1e-6 );
 
-	const minDec = ( value - hours ) * 60;
-	const minutes = ~ ~ minDec;
-
-	const secDec = ( minDec - minutes ) * 60;
-	const seconds = ~ ~ secDec;
+	const hours = Math.floor( totalSeconds / 3600 );
+	const minutes = Math.floor( ( totalSeconds % 3600 ) / 60 );
+	const seconds = totalSeconds % 60;
 
 	return `${ hours }° ${ minutes }' ${ seconds }" ${ direction }`;
 
