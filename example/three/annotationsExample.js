@@ -22,6 +22,8 @@ import { ExampleAnnotationsDriver } from './src/ExampleAnnotationsDriver.js';
 import { LoadRegionPlugin } from '3d-tiles-renderer/plugins';
 import { CameraCartographicRegion } from './src/plugins/CameraCartographicRegion.js';
 import {
+	AmbientLight,
+	DirectionalLight,
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
@@ -48,6 +50,7 @@ const params = {
 
 	occupancyGrid: false,
 	pathVisualization: 'OFF',
+	buildingVisualization: 'NONE',
 	tileHierarchy: false,
 
 };
@@ -113,8 +116,8 @@ function initTiles() {
 	// Note: The source coop link can be very slow to load so it's recommended to load the data locally
 	// or host it on a faster server.
 	const overlay = new PMTilesOverlay( {
-		// url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
-		url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
+		url: new URL( '../local-data/v4.pmtiles', import.meta.url ).toString(),
+		// url: 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles',
 	} );
 
 	// create the driver for rendering labels, icons
@@ -163,6 +166,7 @@ function initTiles() {
 	annotationsPlugin.debug.occupancy.enabled = params.occupancyGrid;
 	annotationsPlugin.debug.hierarchy.enabled = params.tileHierarchy;
 	applyPathVisualization();
+	applyBuildingVisualization();
 
 }
 
@@ -178,6 +182,12 @@ function init() {
 
 	// camera
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
+
+	// lights for the buildings
+	const dirLight = new DirectionalLight( 0xffffff, 3 );
+	dirLight.position.set( 1, 1, 1 );
+	camera.add( new AmbientLight( 0xffffff, 0.5 ), dirLight, dirLight.target );
+	scene.add( camera );
 
 	// controls
 	controls = new GlobeControls( scene, camera, renderer.domElement, null );
@@ -253,6 +263,7 @@ function init() {
 
 	} );
 	debugFolder.add( params, 'pathVisualization', [ 'OFF', 'NONE', 'ID', 'LEVEL', 'TILE', 'NAME', 'REJECTION' ] ).onChange( applyPathVisualization );
+	debugFolder.add( params, 'buildingVisualization', [ 'NONE', 'ID', 'LEVEL', 'TILE' ] ).onChange( applyBuildingVisualization );
 	debugFolder.add( params, 'tileHierarchy' ).onChange( v => {
 
 		tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.hierarchy.enabled = v;
@@ -267,6 +278,13 @@ function applyPathVisualization() {
 	const paths = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' ).debug.paths;
 	paths.enabled = params.pathVisualization !== 'OFF';
 	paths.colorMode = paths.ColorMode[ params.pathVisualization ] ?? paths.ColorMode.NONE;
+
+}
+
+function applyBuildingVisualization() {
+
+	const { buildings } = tiles.getPluginByName( 'MVT_ANNOTATIONS_PLUGIN' );
+	buildings.colorMode = buildings.ColorMode[ params.buildingVisualization ];
 
 }
 
