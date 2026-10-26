@@ -3,6 +3,10 @@ import { MathUtils, Matrix4, Vector2, Vector3 } from 'three';
 // longitude step used to sample the east direction of the local frame
 const EAST_SAMPLE_DELTA = 1e-6;
 
+// decimal digits of the radian coordinates used to match boundary vertices between the pieces of
+// a polygon in neighboring tiles, about a meter on earth
+const BOUNDARY_KEY_DIGITS = 7;
+
 const _point = [ 0, 0 ];
 const _origin = /* @__PURE__ */ new Vector3();
 const _east = /* @__PURE__ */ new Vector3();
@@ -112,16 +116,23 @@ export class PolygonAnnotation {
 		// the edge starting at each point lies on the tile boundary
 		this.rings = [];
 
-		// exterior ring centroid and the local frame at it in tiles.group space, moved onto the
-		// surface during settling
+		// whether the polygon was cut by the tile boundary, so the rest of it lies in another tile,
+		// and keys for the vertices on the boundary, which the piece in the neighboring tile shares
+		this.onBoundary = false;
+		this.boundaryKeys = [];
+
+		// exterior ring centroid and the local frame at it on the surface in tiles.group space
 		this.lat = 0;
 		this.lon = 0;
 		this.frame = new Matrix4();
 
+		// height of the lowest exterior vertex above the frame, found during settling
+		this.baseHeight = 0;
+
 		this.enabled = true;
 		this.ready = false;
 
-		// set when settling moves the frame so the renderer refreshes its transform
+		// set when settling changes the base height so the renderer refreshes its transform
 		this.needsUpdate = false;
 
 	}
@@ -209,6 +220,22 @@ export function parsePolygonFeature( feature, layerName, level, tileBounds, tili
 			lon.push( _point[ 0 ] );
 			lat.push( _point[ 1 ] );
 			boundary.push( isBoundaryEdge( ring[ i ], ring[ ( i + 1 ) % l ], extent ) );
+
+		}
+
+		// both ends of a boundary edge are shared with the neighboring tile's piece
+		for ( let i = 0, l = ring.length; i < l; i ++ ) {
+
+			if ( boundary[ i ] ) {
+
+				const next = ( i + 1 ) % l;
+				annotation.onBoundary = true;
+				annotation.boundaryKeys.push(
+					`${ lat[ i ].toFixed( BOUNDARY_KEY_DIGITS ) }_${ lon[ i ].toFixed( BOUNDARY_KEY_DIGITS ) }`,
+					`${ lat[ next ].toFixed( BOUNDARY_KEY_DIGITS ) }_${ lon[ next ].toFixed( BOUNDARY_KEY_DIGITS ) }`,
+				);
+
+			}
 
 		}
 
