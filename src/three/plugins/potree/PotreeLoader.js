@@ -270,6 +270,20 @@ export class PotreeLoader {
 
 	}
 
+	// hierarchy and node files are binary, so an error page would otherwise be decoded as points
+	async _fetchBuffer( url, options ) {
+
+		const res = await this.fetchData( url, options );
+		if ( ! res.ok ) {
+
+			throw new Error( `PotreeLoader: Could not fetch "${ url }" with status ${ res.status }` );
+
+		}
+
+		return res.arrayBuffer();
+
+	}
+
 	/**
 	 * Loads the dataset metadata and root hierarchy from the given metadata file url.
 	 * @param {string} url Full url of the `cloud.js` or `metadata.json` file.
@@ -309,8 +323,7 @@ export class PotreeLoader {
 			// the root hierarchy chunk spans the first "firstChunkSize" bytes of hierarchy.bin
 			this._octreeUrl = new URL( 'octree.bin', baseUrl ).href;
 
-			const hierRes = await this.fetchData( new URL( 'hierarchy.bin', baseUrl ).href, this.fetchOptions );
-			const hierBuf = await hierRes.arrayBuffer();
+			const hierBuf = await this._fetchBuffer( new URL( 'hierarchy.bin', baseUrl ).href, this.fetchOptions );
 			v2ParseHierarchy( hierBuf, 'r', 0, json.hierarchy.firstChunkSize, this.hierarchy );
 
 		} else {
@@ -327,8 +340,7 @@ export class PotreeLoader {
 
 			} else {
 
-				const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataDirUrl ).href, this.fetchOptions );
-				const hierBuf = await hierRes.arrayBuffer();
+				const hierBuf = await this._fetchBuffer( new URL( 'r/r.hrc', this._dataDirUrl ).href, this.fetchOptions );
 				v1ParseHierarchy( hierBuf, 'r', this.hierarchy );
 				this._loadedChunks = new Set( [ 'r' ] );
 
@@ -360,20 +372,18 @@ export class PotreeLoader {
 
 			const start = node.byteOffset;
 			const end = node.byteOffset + node.byteSize - 1n;
-			const res = await this.fetchData( this._octreeUrl, {
+			return this._fetchBuffer( this._octreeUrl, {
 				...fetchOptions,
 				headers: {
 					...fetchOptions.headers,
 					Range: `bytes=${ start }-${ end }`,
 				},
 			} );
-			return res.arrayBuffer();
 
 		} else if ( this._inlineHierarchy ) {
 
 			// 1.4 node files sit flat in the octree directory
-			const res = await this.fetchData( `${ this._dataDirUrl }${ key }.bin`, fetchOptions );
-			return res.arrayBuffer();
+			return this._fetchBuffer( `${ this._dataDirUrl }${ key }.bin`, fetchOptions );
 
 		} else {
 
@@ -385,14 +395,12 @@ export class PotreeLoader {
 			if ( level % hierarchyStepSize === 0 && ! this._loadedChunks.has( key ) ) {
 
 				this._loadedChunks.add( key );
-				const hierRes = await this.fetchData( `${ this._dataDirUrl }${ path }/${ key }.hrc`, fetchOptions );
-				const hierBuf = await hierRes.arrayBuffer();
+				const hierBuf = await this._fetchBuffer( `${ this._dataDirUrl }${ path }/${ key }.hrc`, fetchOptions );
 				v1ParseHierarchy( hierBuf, key, this.hierarchy );
 
 			}
 
-			const res = await this.fetchData( `${ this._dataDirUrl }${ path }/${ key }.bin`, fetchOptions );
-			return res.arrayBuffer();
+			return this._fetchBuffer( `${ this._dataDirUrl }${ path }/${ key }.bin`, fetchOptions );
 
 		}
 
