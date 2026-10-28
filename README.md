@@ -5,7 +5,7 @@
 
 ![](./images/header-mars.png)
 
-JavaScript renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/) with support for both **Three.js** and **Babylon.js**. The renderer supports most of the 3D Tiles spec features with a few exceptions. For a list of available data sets and generation tools see the [3d Tiles resources](https://github.com/CesiumGS/3d-tiles/blob/main/RESOURCES.md) list.
+JavaScript renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/) with support for **Three.js**, **Babylon.js** and **PlayCanvas**. The renderer supports most of the 3D Tiles spec features with a few exceptions. For a list of available data sets and generation tools see the [3d Tiles resources](https://github.com/CesiumGS/3d-tiles/blob/main/RESOURCES.md) list.
 
 If a tileset or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
 
@@ -24,6 +24,7 @@ npm install 3d-tiles-renderer --save
 | `3d-tiles-renderer/core` | [API Reference](./src/core/renderer/API.md) |
 | `3d-tiles-renderer/three` | [Usage Guide](./USAGE.md) · [API Reference](./src/three/renderer/API.md) |
 | `3d-tiles-renderer/babylonjs` | [Usage Guide](./src/babylonjs/renderer/README.md) · [API Reference](./src/babylonjs/renderer/API.md) |
+| `3d-tiles-renderer/playcanvas` | [Usage Guide](./src/playcanvas/renderer/README.md) |
 | `3d-tiles-renderer/r3f` | [Usage Guide](./src/r3f/README.md) · [API Reference](./src/r3f/API.md) |
 
 ## Plugins
@@ -36,9 +37,9 @@ npm install 3d-tiles-renderer --save
 
 # Examples
 
-The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html).
+The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html), and a PlayCanvas demo for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/playcanvas/index.html).
 
-See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/babylonjs/renderer/README.md) for setup details with each engine.
+See the [Three.js usage guide](./USAGE.md), [Babylon.js usage guide](./src/babylonjs/renderer/README.md) or [PlayCanvas usage guide](./src/playcanvas/renderer/README.md) for setup details with each engine.
 
 | Example | Description |
 | --- | --- |
