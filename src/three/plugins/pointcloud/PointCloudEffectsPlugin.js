@@ -233,6 +233,7 @@ export class PointCloudEffectsPlugin {
 					color: previousMaterial.color,
 					vertexColors: previousMaterial.vertexColors,
 					size: previousMaterial.size,
+					sizeAttenuation: previousMaterial.sizeAttenuation,
 					map: previousMaterial.map,
 					transparent: previousMaterial.transparent,
 					opacity: previousMaterial.opacity,

@@ -270,16 +270,25 @@ export class PointCloudMaterial extends PointsMaterial {
 
 						}
 
-						gl_PointSize = worldSize * projFactor;
-						gl_PointSize = max( gl_PointSize, uMinPointSize );
+						#ifdef USE_SIZEATTENUATION
 
-						// a world size point seen from very close covers thousands of pixels and a
-						// cloud of them stalls on fill rate, so the projected size can be capped
-						if ( uMaxPointSize > 0.0 ) {
+							gl_PointSize = worldSize * projFactor;
+							gl_PointSize = max( gl_PointSize, uMinPointSize );
 
-							gl_PointSize = min( gl_PointSize, uMaxPointSize );
+							// a world size point seen from very close covers thousands of pixels and a
+							// cloud of them stalls on fill rate, so the projected size can be capped
+							if ( uMaxPointSize > 0.0 ) {
 
-						}
+								gl_PointSize = min( gl_PointSize, uMaxPointSize );
+
+							}
+
+						#else
+
+							// without attenuation "size" is in pixels, as PointsMaterial draws it
+							gl_PointSize = max( size, uMinPointSize );
+
+						#endif
 
 						vViewPosition = mvPosition.xyz;
 						vNodeId = activeResult.y;
