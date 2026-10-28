@@ -261,11 +261,15 @@ function markUsedTiles( tile, renderer ) {
 
 	// skip a child of an additive tile if the parent already meets the error target in the child's
 	// region. This is an optimization included in cesium, though not referenced or implied by the
-	// specification.
+	// specification. It only holds when the parent draws something: a parent whose content is an
+	// external tileset or an implicit subtree renders nothing itself, and its child (the external
+	// root, or the subtree root's content tile) shares its geometric error, so the ratio is 1 and
+	// the whole subtree would be skipped as soon as that error meets the target.
 	const parent = tile.parent;
 	if (
 		parent &&
 		parent.refine === 'ADD' &&
+		! parent.internal.hasUnrenderableContent &&
 		tile.geometricError > 0 &&
 		tile.traversal.error * ( parent.geometricError / tile.geometricError ) <= renderer.errorTarget
 	) {
