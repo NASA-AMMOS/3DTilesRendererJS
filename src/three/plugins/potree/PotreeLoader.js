@@ -42,6 +42,28 @@ const V1_ATTRIBUTES = {
 	'RGB565': { name: 'rgb565', size: 2, type: 'uint16' },
 };
 
+// Potree 1.7 lists the "pointAttributes" of cloud.js by name while 1.8 (PotreeConverter 1.7)
+// writes objects: { name, size, elements, elementSize, type, description }. Both are mapped onto
+// the v2 attribute description. Unknown 1.8 attributes keep their declared size so the point
+// stride stays correct.
+function v1Attributes( list ) {
+
+	return list.map( attr => {
+
+		if ( typeof attr === 'string' ) {
+
+			return V1_ATTRIBUTES[ attr ];
+
+		}
+
+		const known = V1_ATTRIBUTES[ attr.name ];
+		const size = attr.size ?? attr.elements * attr.elementSize;
+		return known ? { ...known, size } : { name: attr.name.toLowerCase(), size, type: attr.type };
+
+	} );
+
+}
+
 // Normalize cloud.js (v1) into the metadata.json (v2) format
 function normalizeV1( json ) {
 
@@ -56,7 +78,7 @@ function normalizeV1( json ) {
 			min: [ bb.lx, bb.ly, bb.lz ],
 			max: [ bb.ux, bb.uy, bb.uz ],
 		},
-		attributes: json.pointAttributes.map( name => V1_ATTRIBUTES[ name ] ),
+		attributes: v1Attributes( json.pointAttributes ),
 	};
 
 }
