@@ -98,6 +98,23 @@ export class PointCloudEffectsPlugin {
 
 	}
 
+	get maxPointSize() {
+
+		return this._maxPointSize;
+
+	}
+
+	set maxPointSize( value ) {
+
+		if ( value !== this._maxPointSize ) {
+
+			this._maxPointSize = value;
+			this._updateMaterials();
+
+		}
+
+	}
+
 	get edlStrength() {
 
 		return this._edlStrength;
@@ -150,6 +167,7 @@ export class PointCloudEffectsPlugin {
 		const {
 			pointShape = 'round',
 			minPointSize = 2,
+			maxPointSize = 0,
 			edlStrength = 0,
 			edlRadius = 1.4,
 			debugColorMode = 'none',
@@ -160,6 +178,7 @@ export class PointCloudEffectsPlugin {
 
 		this._pointShape = pointShape;
 		this._minPointSize = minPointSize;
+		this._maxPointSize = maxPointSize;
 		this._debugColorMode = debugColorMode;
 		this._edlStrength = edlStrength;
 		this._edlRadius = edlRadius;
@@ -299,6 +318,7 @@ export class PointCloudEffectsPlugin {
 
 		material.pointShape = this.pointShape;
 		material.minPointSize = this.minPointSize;
+		material.maxPointSize = this.maxPointSize;
 		material.debugColorMode = this.debugColorMode;
 		material.edlStrength = this.edlStrength;
 

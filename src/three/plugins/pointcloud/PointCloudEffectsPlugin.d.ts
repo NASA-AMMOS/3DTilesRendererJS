@@ -2,6 +2,7 @@ export class PointCloudEffectsPlugin {
 
 	pointShape: 'square' | 'round' | 'sphere';
 	minPointSize: number;
+	maxPointSize: number;
 	edlStrength: number;
 	edlRadius: number;
 	debugColorMode: 'none' | 'node' | 'depth' | 'tile';
@@ -9,6 +10,7 @@ export class PointCloudEffectsPlugin {
 	constructor( options?: {
 		pointShape?: 'square' | 'round' | 'sphere',
 		minPointSize?: number,
+		maxPointSize?: number,
 		edlStrength?: number,
 		edlRadius?: number,
 		debugColorMode?: 'none' | 'node' | 'depth' | 'tile',
