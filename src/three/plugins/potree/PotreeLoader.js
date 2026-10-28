@@ -289,6 +289,17 @@ export class PotreeLoader {
 		}
 
 		const json = await res.json();
+		if ( version === 2 && json.encoding && json.encoding !== 'DEFAULT' ) {
+
+			throw new Error( `PotreeLoader: "${ json.encoding }" encoded point data is not supported` );
+
+		} else if ( version === 1 && ! Array.isArray( json.pointAttributes ) ) {
+
+			// "LAS" / "LAZ" clouds store each node as a LAS / LAZ file rather than a ".bin" buffer
+			throw new Error( `PotreeLoader: "${ json.pointAttributes }" node files are not supported` );
+
+		}
+
 		this.version = version;
 		this.metadata = version === 2 ? json : normalizeV1( json );
 		this.hierarchy = new Map();

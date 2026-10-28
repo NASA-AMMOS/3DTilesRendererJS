@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
 - ImageOverlayPlugin: Fix tile splitting stalling on leaf tiles with a low geometric error, leaving the overlay capped at the terrain resolution.
 - PotreeLoader: Fix Potree 1.8 datasets failing to load, whose cloud.js lists point attributes as objects rather than names.
+- PotreeLoader: Throw a descriptive error for Potree 1.x datasets with LAS / LAZ node files and Potree 2.0 datasets with BROTLI encoding, which were requested as ".bin" and decoded as uncompressed data.
 
 ## [0.5.3] - 2026.09.18
 ### Added
