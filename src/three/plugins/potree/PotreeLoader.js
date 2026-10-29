@@ -42,6 +42,28 @@ const V1_ATTRIBUTES = {
 	'RGB565': { name: 'rgb565', size: 2, type: 'uint16' },
 };
 
+// Potree 1.7 lists the "pointAttributes" of cloud.js by name while 1.8 (PotreeConverter 1.7)
+// writes objects: { name, size, elements, elementSize, type, description }. Both are mapped onto
+// the v2 attribute description. Unknown 1.8 attributes keep their declared size so the point
+// stride stays correct.
+function v1Attributes( list ) {
+
+	return list.map( attr => {
+
+		if ( typeof attr === 'string' ) {
+
+			return V1_ATTRIBUTES[ attr ];
+
+		}
+
+		const known = V1_ATTRIBUTES[ attr.name ];
+		const size = attr.size ?? attr.elements * attr.elementSize;
+		return known ? { ...known, size } : { name: attr.name.toLowerCase(), size, type: attr.type };
+
+	} );
+
+}
+
 // Normalize cloud.js (v1) into the metadata.json (v2) format
 function normalizeV1( json ) {
 
@@ -56,7 +78,7 @@ function normalizeV1( json ) {
 			min: [ bb.lx, bb.ly, bb.lz ],
 			max: [ bb.ux, bb.uy, bb.uz ],
 		},
-		attributes: json.pointAttributes.map( name => V1_ATTRIBUTES[ name ] ),
+		attributes: v1Attributes( json.pointAttributes ),
 	};
 
 }
@@ -248,6 +270,20 @@ export class PotreeLoader {
 
 	}
 
+	// hierarchy and node files are binary, so an error page would otherwise be decoded as points
+	async _fetchBuffer( url, options ) {
+
+		const res = await this.fetchData( url, options );
+		if ( ! res.ok ) {
+
+			throw new Error( `PotreeLoader: Could not fetch "${ url }" with status ${ res.status }` );
+
+		}
+
+		return res.arrayBuffer();
+
+	}
+
 	/**
 	 * Loads the dataset metadata and root hierarchy from the given metadata file url.
 	 * @param {string} url Full url of the `cloud.js` or `metadata.json` file.
@@ -267,6 +303,17 @@ export class PotreeLoader {
 		}
 
 		const json = await res.json();
+		if ( version === 2 && json.encoding && json.encoding !== 'DEFAULT' ) {
+
+			throw new Error( `PotreeLoader: "${ json.encoding }" encoded point data is not supported` );
+
+		} else if ( version === 1 && ! Array.isArray( json.pointAttributes ) ) {
+
+			// "LAS" / "LAZ" clouds store each node as a LAS / LAZ file rather than a ".bin" buffer
+			throw new Error( `PotreeLoader: "${ json.pointAttributes }" node files are not supported` );
+
+		}
+
 		this.version = version;
 		this.metadata = version === 2 ? json : normalizeV1( json );
 		this.hierarchy = new Map();
@@ -276,8 +323,7 @@ export class PotreeLoader {
 			// the root hierarchy chunk spans the first "firstChunkSize" bytes of hierarchy.bin
 			this._octreeUrl = new URL( 'octree.bin', baseUrl ).href;
 
-			const hierRes = await this.fetchData( new URL( 'hierarchy.bin', baseUrl ).href, this.fetchOptions );
-			const hierBuf = await hierRes.arrayBuffer();
+			const hierBuf = await this._fetchBuffer( new URL( 'hierarchy.bin', baseUrl ).href, this.fetchOptions );
 			v2ParseHierarchy( hierBuf, 'r', 0, json.hierarchy.firstChunkSize, this.hierarchy );
 
 		} else {
@@ -294,8 +340,7 @@ export class PotreeLoader {
 
 			} else {
 
-				const hierRes = await this.fetchData( new URL( 'r/r.hrc', this._dataDirUrl ).href, this.fetchOptions );
-				const hierBuf = await hierRes.arrayBuffer();
+				const hierBuf = await this._fetchBuffer( new URL( 'r/r.hrc', this._dataDirUrl ).href, this.fetchOptions );
 				v1ParseHierarchy( hierBuf, 'r', this.hierarchy );
 				this._loadedChunks = new Set( [ 'r' ] );
 
@@ -327,20 +372,18 @@ export class PotreeLoader {
 
 			const start = node.byteOffset;
 			const end = node.byteOffset + node.byteSize - 1n;
-			const res = await this.fetchData( this._octreeUrl, {
+			return this._fetchBuffer( this._octreeUrl, {
 				...fetchOptions,
 				headers: {
 					...fetchOptions.headers,
 					Range: `bytes=${ start }-${ end }`,
 				},
 			} );
-			return res.arrayBuffer();
 
 		} else if ( this._inlineHierarchy ) {
 
 			// 1.4 node files sit flat in the octree directory
-			const res = await this.fetchData( `${ this._dataDirUrl }${ key }.bin`, fetchOptions );
-			return res.arrayBuffer();
+			return this._fetchBuffer( `${ this._dataDirUrl }${ key }.bin`, fetchOptions );
 
 		} else {
 
@@ -352,14 +395,12 @@ export class PotreeLoader {
 			if ( level % hierarchyStepSize === 0 && ! this._loadedChunks.has( key ) ) {
 
 				this._loadedChunks.add( key );
-				const hierRes = await this.fetchData( `${ this._dataDirUrl }${ path }/${ key }.hrc`, fetchOptions );
-				const hierBuf = await hierRes.arrayBuffer();
+				const hierBuf = await this._fetchBuffer( `${ this._dataDirUrl }${ path }/${ key }.hrc`, fetchOptions );
 				v1ParseHierarchy( hierBuf, key, this.hierarchy );
 
 			}
 
-			const res = await this.fetchData( `${ this._dataDirUrl }${ path }/${ key }.bin`, fetchOptions );
-			return res.arrayBuffer();
+			return this._fetchBuffer( `${ this._dataDirUrl }${ path }/${ key }.bin`, fetchOptions );
 
 		}
 

@@ -12,6 +12,7 @@ import { PointsMaterial, Vector2, Vector3 } from 'three';
  * @param {Object} [params] PointsMaterial parameters plus the properties below.
  * @param {('square'|'round'|'sphere')} [params.pointShape='round'] Sprite shape. Spheres write bulged depth so overlapping points intersect, at a fill rate cost.
  * @param {number} [params.minPointSize=2] Smallest projected point size in pixels.
+ * @param {number} [params.maxPointSize=0] Largest projected size in pixels of an attenuated point. Zero disables the cap.
  * @param {number} [params.edlStrength=0] Eye dome lighting falloff rate. Zero compiles the effect out.
  * @param {number} [params.edlRadius=1.4] Radius of the eye dome lighting neighbor ring in pixels.
  * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
@@ -69,6 +70,18 @@ export class PointCloudMaterial extends PointsMaterial {
 
 	}
 
+	get maxPointSize() {
+
+		return this.uniforms.uMaxPointSize.value;
+
+	}
+
+	set maxPointSize( value ) {
+
+		this.uniforms.uMaxPointSize.value = value;
+
+	}
+
 	get edlStrength() {
 
 		return this.uniforms.uEdlStrength.value;
@@ -118,6 +131,7 @@ export class PointCloudMaterial extends PointsMaterial {
 		const {
 			pointShape = 'round',
 			minPointSize = 2,
+			maxPointSize = 0,
 			debugColorMode = 'none',
 			edlStrength = 0,
 			edlRadius = 1.4,
@@ -135,6 +149,7 @@ export class PointCloudMaterial extends PointsMaterial {
 			uNodeSize: { value: 1 },
 			uNodeMinOffset: { value: new Vector3() },
 			uMinPointSize: { value: minPointSize },
+			uMaxPointSize: { value: maxPointSize },
 			uTileId: { value: 0 },
 
 			uEdlTexture: { value: null },
@@ -156,6 +171,7 @@ export class PointCloudMaterial extends PointsMaterial {
 					/* glsl */`
 						uniform float size;
 						uniform float uMinPointSize;
+						uniform float uMaxPointSize;
 
 						varying vec3 vViewPosition;
 						varying float vRadius;
@@ -254,8 +270,25 @@ export class PointCloudMaterial extends PointsMaterial {
 
 						}
 
-						gl_PointSize = worldSize * projFactor;
-						gl_PointSize = max( gl_PointSize, uMinPointSize );
+						#ifdef USE_SIZEATTENUATION
+
+							gl_PointSize = worldSize * projFactor;
+							gl_PointSize = max( gl_PointSize, uMinPointSize );
+
+							// a world size point seen from very close covers thousands of pixels and a
+							// cloud of them stalls on fill rate, so the projected size can be capped
+							if ( uMaxPointSize > 0.0 ) {
+
+								gl_PointSize = min( gl_PointSize, uMaxPointSize );
+
+							}
+
+						#else
+
+							// without attenuation "size" is in pixels, as PointsMaterial draws it
+							gl_PointSize = max( size, uMinPointSize );
+
+						#endif
 
 						vViewPosition = mvPosition.xyz;
 						vNodeId = activeResult.y;

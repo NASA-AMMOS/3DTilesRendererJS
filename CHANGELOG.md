@@ -9,10 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesFadePlugin: Add a Babylon.js tile fade plugin, available from "3d-tiles-renderer/babylonjs/plugins".
 - TilesFadePluginBase: Export the shared fade plugin base class from the core plugins so fade plugins can be implemented for other engines.
 - Support for PlayCanvas integration.
+- PointCloudEffectsPlugin, PointCloudMaterial: Add "maxPointSize", a cap on the projected size of attenuated points in pixels. Zero, the default, leaves them uncapped.
 
 ### Fixed
 - Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
 - ImageOverlayPlugin: Fix tile splitting stalling on leaf tiles with a low geometric error, leaving the overlay capped at the terrain resolution.
+- PotreeLoader: Fix Potree 1.8 datasets failing to load, whose cloud.js lists point attributes as objects rather than names.
+- PotreeLoader: Throw when a hierarchy or node file fails to download instead of decoding the error response as points.
+- PotreeLoader: Throw a descriptive error for Potree 1.x datasets with LAS / LAZ node files and Potree 2.0 datasets with BROTLI encoding, which were requested as ".bin" and decoded as uncompressed data.
+- PointCloudEffectsPlugin, PointCloudMaterial: Honor "sizeAttenuation = false", drawing points at "size" pixels as PointsMaterial does, and preserve the flag from the material being replaced.
 
 ## [0.5.3] - 2026.09.18
 ### Added
