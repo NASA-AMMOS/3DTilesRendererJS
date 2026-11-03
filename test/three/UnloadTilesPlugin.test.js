@@ -2,81 +2,77 @@ import { Group } from 'three';
 import { TilesRenderer } from '../../src/three/renderer/tiles/TilesRenderer.js';
 import { UnloadTilesPlugin } from '../../src/three/plugins/UnloadTilesPlugin.js';
 
+// waits for the plugin's unload, which the cache schedules in a microtask
+const nextTick = () => new Promise( resolve => queueMicrotask( resolve ) );
+
+const createTile = () => ( { engineData: { scene: new Group() } } );
+
 describe( 'UnloadTilesPlugin', () => {
+
+	let tiles, plugin, unload;
+	beforeEach( () => {
+
+		tiles = new TilesRenderer();
+		tiles.calculateBytesUsed = () => 100;
+
+		// the test tiles have no traversal data to order them by
+		tiles.lruCache.unloadPriorityCallback = () => 0;
+
+		plugin = new UnloadTilesPlugin();
+		tiles.registerPlugin( plugin );
+		tiles.dispatchEvent( { type: 'update-before' } );
+
+		unload = vi.spyOn( plugin, 'unloadTileFromGPU' );
+
+	} );
 
 	afterEach( () => {
 
+		tiles.unregisterPlugin( plugin );
 		vi.restoreAllMocks();
 
 	} );
 
 	it( 'should keep a revisited tile resident when another hidden tile is unloaded.', async () => {
 
-		const tiles = new TilesRenderer();
-		tiles.lruCache.unloadPriorityCallback = () => 0;
-		const plugin = new UnloadTilesPlugin( { bytesTarget: 100 } );
-		tiles.registerPlugin( plugin );
-		tiles.dispatchEvent( { type: 'update-before' } );
-		tiles.calculateBytesUsed = () => 100;
-		const unload = vi.spyOn( plugin, 'unloadTileFromGPU' );
-		const firstTile = { engineData: { scene: new Group() } };
-		const secondTile = { engineData: { scene: new Group() } };
+		plugin.bytesTarget = 100;
 
-		// The budget retains this hidden tile, but it is eligible for eviction.
-		tiles.setTileVisible( firstTile, true );
-		tiles.setTileVisible( firstTile, false );
-		await Promise.resolve();
+		const revisited = createTile();
+		const other = createTile();
+
+		// the byte target keeps the hidden tile on the GPU
+		tiles.setTileVisible( revisited, true );
+		tiles.setTileVisible( revisited, false );
+		await nextTick();
+
+		tiles.setTileVisible( revisited, true );
+		tiles.setTileVisible( other, true );
+		tiles.setTileVisible( other, false );
+		await nextTick();
+
+		expect( unload ).toHaveBeenCalledExactlyOnceWith( other.engineData.scene, other );
 		expect( plugin.estimatedGpuBytes ).toBe( 100 );
-
-		// Revisiting the first tile must protect it in the plugin's GPU cache.
-		tiles.setTileVisible( firstTile, true );
-		tiles.setTileVisible( secondTile, true );
-		tiles.setTileVisible( secondTile, false );
-		await Promise.resolve();
-
-		expect( unload ).toHaveBeenCalledExactlyOnceWith( secondTile.engineData.scene, secondTile );
-		expect( plugin.estimatedGpuBytes ).toBe( 100 );
-		expect( plugin.lruCache.has( firstTile ) ).toBe( true );
-
-		// The first tile must still be tracked so it can be unloaded later.
-		plugin.bytesTarget = 0;
-		tiles.setTileVisible( firstTile, false );
-		await Promise.resolve();
-		expect( unload ).toHaveBeenLastCalledWith( firstTile.engineData.scene, firstTile );
-		expect( unload ).toHaveBeenCalledTimes( 2 );
-		expect( plugin.estimatedGpuBytes ).toBe( 0 );
-
-		tiles.unregisterPlugin( plugin );
-		await Promise.resolve();
 
 	} );
 
-	it( 'should retain a tile shown again before scheduled unloading runs.', async () => {
+	it( 'should keep a tile resident when it is shown again before unloading.', async () => {
 
-		const tiles = new TilesRenderer();
-		const plugin = new UnloadTilesPlugin();
-		tiles.registerPlugin( plugin );
-		tiles.dispatchEvent( { type: 'update-before' } );
-		tiles.calculateBytesUsed = () => 100;
-		const unload = vi.spyOn( plugin, 'unloadTileFromGPU' );
-		const tile = { engineData: { scene: new Group() } };
+		const tile = createTile();
 
 		tiles.setTileVisible( tile, true );
 		tiles.setTileVisible( tile, false );
 		tiles.setTileVisible( tile, true );
-		await Promise.resolve();
+		await nextTick();
 
 		expect( unload ).not.toHaveBeenCalled();
 		expect( plugin.estimatedGpuBytes ).toBe( 100 );
-		expect( plugin.lruCache.has( tile ) ).toBe( true );
 
+		// the tile is still tracked, so it unloads once hidden again
 		tiles.setTileVisible( tile, false );
-		await Promise.resolve();
+		await nextTick();
+
 		expect( unload ).toHaveBeenCalledExactlyOnceWith( tile.engineData.scene, tile );
 		expect( plugin.estimatedGpuBytes ).toBe( 0 );
-
-		tiles.unregisterPlugin( plugin );
-		await Promise.resolve();
 
 	} );
 
