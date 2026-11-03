@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
+- Traversal: Fix additive tilesets with external tileset or implicit subtree content rendering nothing once the root meets the error target. The additive parent error skip now only applies when the parent has renderable content, as in CesiumJS.
 - Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
 - ImageOverlayPlugin: Fix tile splitting stalling on leaf tiles with a low geometric error, leaving the overlay capped at the terrain resolution.
 - PotreeLoader: Fix Potree 1.8 datasets failing to load, whose cloud.js lists point attributes as objects rather than names.
