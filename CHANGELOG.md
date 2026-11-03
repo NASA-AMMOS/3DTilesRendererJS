@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.5.4] - 2026.11.03
 ### Added
 - TilesFadePlugin: Add a Babylon.js tile fade plugin, available from "3d-tiles-renderer/babylonjs/plugins".
 - TilesFadePluginBase: Export the shared fade plugin base class from the core plugins so fade plugins can be implemented for other engines.
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PointCloudEffectsPlugin, PointCloudMaterial: Honor "sizeAttenuation = false", drawing points at "size" pixels as PointsMaterial does, and preserve the flag from the material being replaced.
 - BatchTable: Fix "getDataFromId" returning a single number for VEC2, VEC3, and VEC4 binary properties.
 - SUBTREELoader: Fix subtree parsing slowing quadratically with bitstream size.
-- UnloadTilesPlugin: Fix tiles shown again after being hidden being dropped from the GPU memory estimate and never unloading when hidden later.
+- UnloadTilesPlugin: Fix tiles that are hidden and shown again being dropped from the GPU memory estimate and never unloading.
 
 ## [0.5.3] - 2026.09.18
 ### Added
