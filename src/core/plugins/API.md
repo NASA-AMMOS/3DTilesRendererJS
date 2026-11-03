@@ -247,7 +247,7 @@ constructor(
 ## ImplicitTilingPlugin
 
 Plugin that adds support for 3D Tiles 1.1 implicit tiling. Intercepts tiles that carry
-an `implicitTiling` field and expands them by loading and parsing `.subtree` files,
+an `implicitTiling` field and expands them by loading and parsing their subtree files,
 generating child tiles according to the implicit subdivision scheme.
 
 

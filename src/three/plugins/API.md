@@ -1690,6 +1690,10 @@ constructor(
 		// Smallest point size in pixels.
 		minPointSize = 2: number,
 
+		// Largest projected size in pixels of an attenuated point.
+		// Zero disables the cap.
+		maxPointSize = 50: number,
+
 		// Eye dome lighting falloff rate. Zero disables the effect and
 		// skips its depth pre-pass.
 		edlStrength = 0: number,
