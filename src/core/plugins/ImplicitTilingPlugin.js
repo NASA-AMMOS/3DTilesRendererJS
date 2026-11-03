@@ -1,8 +1,8 @@
-import { SUBTREELoader } from './SUBTREELoader.js';
+import { SUBTREELoader, SUBTREE_TILE } from './SUBTREELoader.js';
 
 /**
  * Plugin that adds support for 3D Tiles 1.1 implicit tiling. Intercepts tiles that carry
- * an `implicitTiling` field and expands them by loading and parsing `.subtree` files,
+ * an `implicitTiling` field and expands them by loading and parsing their subtree files,
  * generating child tiles according to the implicit subdivision scheme.
  */
 export class ImplicitTilingPlugin {
@@ -40,7 +40,7 @@ export class ImplicitTilingPlugin {
 				level: 0,
 			};
 
-		} else if ( /.subtree$/i.test( tile.content?.uri ) ) {
+		} else if ( tile[ SUBTREE_TILE ] ) {
 
 			// Handling content uri pointing to a subtree file
 			tile.internal.hasUnrenderableContent = true;
@@ -50,9 +50,10 @@ export class ImplicitTilingPlugin {
 
 	}
 
-	parseTile( buffer, tile, extension ) {
+	parseTile( buffer, tile ) {
 
-		if ( /^subtree$/i.test( extension ) ) {
+		// the implicit root and the child subtree tiles load subtree files, binary or json
+		if ( tile.implicitTiling || tile[ SUBTREE_TILE ] ) {
 
 			const loader = new SUBTREELoader( tile );
 			loader.workingPath = tile.internal.basePath;
@@ -83,7 +84,7 @@ export class ImplicitTilingPlugin {
 
 	disposeTile( tile ) {
 
-		if ( /.subtree$/i.test( tile.content?.uri ) ) {
+		if ( tile[ SUBTREE_TILE ] ) {
 
 			// TODO: ideally the plugin doesn't need to know about children being processed
 			tile.children.forEach( child => {

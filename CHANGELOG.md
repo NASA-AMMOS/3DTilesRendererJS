@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesFadePluginBase: Export the shared fade plugin base class from the core plugins so fade plugins can be implemented for other engines.
 - Support for PlayCanvas integration.
 - PointCloudEffectsPlugin, PointCloudMaterial: Add "maxPointSize", a cap on the projected size of attenuated points in pixels, defaulting to 50 like Potree. Zero leaves them uncapped.
+- ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
 - Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
