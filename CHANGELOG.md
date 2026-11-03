@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
 - ImageOverlayPlugin: Fix tile splitting stalling on leaf tiles with a low geometric error, leaving the overlay capped at the terrain resolution.
+- UnloadTilesPlugin: Fix tiles shown again after being hidden being dropped from the GPU memory estimate and never unloading when hidden later.
 
 ## [0.5.3] - 2026.09.18
 ### Added
