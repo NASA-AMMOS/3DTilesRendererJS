@@ -13,6 +13,7 @@ export default ( { mode } ) => {
 		'index.core': './src/core/renderer/index.js',
 		'index.three': './src/three/renderer/index.js',
 		'index.babylonjs': './src/babylonjs/renderer/index.js',
+		'index.playcanvas': './src/playcanvas/renderer/index.js',
 		'index.r3f': './src/r3f/index.jsx',
 
 		'index.core-plugins': './src/core/plugins/index.js',

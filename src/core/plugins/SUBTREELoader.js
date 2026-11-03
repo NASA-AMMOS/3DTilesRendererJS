@@ -4,6 +4,9 @@
  */
 import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
 
+// marks the tiles whose content is a child subtree file
+export const SUBTREE_TILE = Symbol( 'SUBTREE_TILE' );
+
 /** @typedef { {
  * 	constant: boolean=,
  * 	lengthBits: number,
@@ -140,10 +143,33 @@ export class SUBTREELoader extends LoaderBase {
 	}
 
 
+	/**
+	 *
+	 * @param {Object} json
+	 * @returns {Subtree}
+	 */
+	parseJson( json ) {
+
+		// A json subtree has no header, so use the only version the binary header allows. It has no
+		// binary chunk either, so every buffer it references is external and the internal one is empty.
+		return {
+			version: 1,
+			subtreeJson: json,
+			subtreeByte: new ArrayBuffer( 0 )
+		};
+
+	}
+
+
+	/**
+	 * Parse a subtree given either as a binary ".subtree" buffer or as an already parsed subtree json.
+	 *
+	 * @param {ArrayBuffer|Object} buffer
+	 */
 	async parse( buffer ) {
 
-		// todo here : handle json
-		const subtree = this.parseBuffer( buffer );
+		const isBinary = buffer instanceof ArrayBuffer || ArrayBuffer.isView( buffer );
+		const subtree = isBinary ? this.parseBuffer( buffer ) : this.parseJson( buffer );
 		const subtreeJson = subtree.subtreeJson;
 
 		// TODO Handle metadata
@@ -583,6 +609,7 @@ export class SUBTREELoader extends LoaderBase {
 			);
 			// Assign subtree uri as content.
 			subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.implicitTiling.subtrees.uri ) };
+			subtreeTile[ SUBTREE_TILE ] = true;
 			leafTile.children.push( subtreeTile );
 
 		}
@@ -711,7 +738,7 @@ export class SUBTREELoader extends LoaderBase {
 		// byteIndex is floor(index / 8)
 		const byteIndex = index >> 3;
 		const bitIndex = index % 8;
-		return ( ( new Uint8Array( object.bitstream )[ byteIndex ] >> bitIndex ) & 1 ) === 1;
+		return ( ( object.bitstream[ byteIndex ] >> bitIndex ) & 1 ) === 1;
 
 	}
 

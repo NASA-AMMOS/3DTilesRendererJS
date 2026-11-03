@@ -166,6 +166,10 @@ export function EastNorthUpFrame( props ) {
  * @param {Object} props
  * @param {Function} props.plugin - The plugin class to instantiate.
  * @param {Object|Array} [props.args] - Constructor arguments: an object (single arg) or array (spread as multiple args).
+ * The plugin is re-instantiated whenever the values of `args` change (a shallow comparison), so an inline function or
+ * object inside `args` recreates the plugin on every render, dropping whatever it had loaded. Memoize such values with
+ * `useMemo` or `useCallback`, and prefer setting properties that can change at runtime as props rather than constructor
+ * arguments.
  * @param {ReactNode} [props.children] - Children rendered once the plugin is registered.
  */
 // component for registering a plugin

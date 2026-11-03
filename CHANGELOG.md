@@ -8,10 +8,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - TilesFadePlugin: Add a Babylon.js tile fade plugin, available from "3d-tiles-renderer/babylonjs/plugins".
 - TilesFadePluginBase: Export the shared fade plugin base class from the core plugins so fade plugins can be implemented for other engines.
+- Support for PlayCanvas integration.
+- PointCloudEffectsPlugin, PointCloudMaterial: Add "maxPointSize", a cap on the projected size of attenuated points in pixels, defaulting to 50 like Potree. Zero leaves them uncapped.
+- ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
+- Traversal: Fix additive tilesets with external tileset or implicit subtree content rendering nothing once the root meets the error target. The additive parent error skip now only applies when the parent has renderable content, as in CesiumJS.
 - Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
 - ImageOverlayPlugin: Fix tile splitting stalling on leaf tiles with a low geometric error, leaving the overlay capped at the terrain resolution.
+- PotreeLoader: Fix Potree 1.8 datasets failing to load, whose cloud.js lists point attributes as objects rather than names.
+- PotreeLoader: Throw when a hierarchy or node file fails to download instead of decoding the error response as points.
+- PotreeLoader: Throw a descriptive error for Potree 1.x datasets with LAS / LAZ node files and Potree 2.0 datasets with BROTLI encoding, which were requested as ".bin" and decoded as uncompressed data.
+- PointCloudEffectsPlugin, PointCloudMaterial: Honor "sizeAttenuation = false", drawing points at "size" pixels as PointsMaterial does, and preserve the flag from the material being replaced.
+- BatchTable: Fix "getDataFromId" returning a single number for VEC2, VEC3, and VEC4 binary properties.
+- SUBTREELoader: Fix subtree parsing slowing quadratically with bitstream size.
 - UnloadTilesPlugin: Fix tiles shown again after being hidden being dropped from the GPU memory estimate and never unloading when hidden later.
 
 ## [0.5.3] - 2026.09.18
