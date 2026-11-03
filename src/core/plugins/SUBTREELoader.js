@@ -4,6 +4,9 @@
  */
 import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
 
+// marks the tiles whose content is a child subtree file
+export const SUBTREE_TILE = Symbol( 'SUBTREE_TILE' );
+
 /** @typedef { {
  * 	constant: boolean=,
  * 	lengthBits: number,
@@ -606,6 +609,7 @@ export class SUBTREELoader extends LoaderBase {
 			);
 			// Assign subtree uri as content.
 			subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.implicitTiling.subtrees.uri ) };
+			subtreeTile[ SUBTREE_TILE ] = true;
 			leafTile.children.push( subtreeTile );
 
 		}

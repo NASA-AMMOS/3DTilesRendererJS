@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesFadePluginBase: Export the shared fade plugin base class from the core plugins so fade plugins can be implemented for other engines.
 - Support for PlayCanvas integration.
 - PointCloudEffectsPlugin, PointCloudMaterial: Add "maxPointSize", a cap on the projected size of attenuated points in pixels, defaulting to 50 like Potree. Zero leaves them uncapped.
+- ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
 - Traversal: Mark empty "ADD" tiles as active and report empty tiles as visible on the same terms as renderable ones, fixing TilesFadePlugin never fading tiles below empty parents.
@@ -30,7 +31,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GeneratedSurfacePlugin, TerrainRGBMeshPlugin: Add "projection" option to select the displayed surface shape, including displaying planar content in a different projection than it is stored in. Deprecates the "shape" option.
 - ProjectionScheme: Added support for EPSG:8857, equal earth projection.
 - TilesRenderer: Add "stats.refused", the number of tiles the last update could not queue for loading because the cache was full.
-- ImplicitTilingPlugin: Add support for subtree files in the json format.
 
 ### Fixed
 - ImageOverlayPlugin: Fix overlays added without an explicit order being assigned an order of NaN.
