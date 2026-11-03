@@ -711,7 +711,7 @@ export class SUBTREELoader extends LoaderBase {
 		// byteIndex is floor(index / 8)
 		const byteIndex = index >> 3;
 		const bitIndex = index % 8;
-		return ( ( new Uint8Array( object.bitstream )[ byteIndex ] >> bitIndex ) & 1 ) === 1;
+		return ( ( object.bitstream[ byteIndex ] >> bitIndex ) & 1 ) === 1;
 
 	}
 
