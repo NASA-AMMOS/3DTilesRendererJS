@@ -1,0 +1,49 @@
+# 3d-tiles-renderer
+
+> A JavaScript renderer for the OGC 3D Tiles format with support for three.js, Babylon.js, PlayCanvas and React Three Fiber, plus plugins for Google Photorealistic Tiles, Cesium Ion, map tiles, quantized mesh, Potree and image overlays. npm package `3d-tiles-renderer`. Apache-2.0 licensed.
+
+## Instructions for Large Language Models
+
+- three.js classes import from `3d-tiles-renderer` and three.js plugins from `3d-tiles-renderer/plugins`. Babylon.js and PlayCanvas renderers import from `3d-tiles-renderer/babylonjs` and `3d-tiles-renderer/playcanvas`, Babylon.js plugins from `3d-tiles-renderer/babylonjs/plugins`, and engine independent plugins from `3d-tiles-renderer/core/plugins`.
+- With three.js, add `tiles.group` to the scene, call `setCamera` and `setResolutionFromRenderer` for each camera, and call `tiles.update()` every frame after `camera.updateMatrixWorld()`.
+- Features are opt in through `tiles.registerPlugin()`. Google tiles need `GoogleCloudAuthPlugin`, Cesium Ion needs `CesiumIonAuthPlugin`, 3D Tiles 1.1 implicit tilesets need `ImplicitTilingPlugin`, and Draco, KTX2 or meshopt content needs `GLTFExtensionsPlugin` with the matching loaders.
+- Use the `load-model` and `dispose-model` events to modify and clean up tile content, such as replacing materials.
+- Geospatial tilesets are in Earth centered coordinates with Z up. Rotate `tiles.group` by `-Math.PI / 2` around X for a Y up scene, or use `ReorientationPlugin` to center a location at the origin. `tiles.ellipsoid` positions are in the local frame of `tiles.group`, and latitude and longitude are in radians.
+- Use `GlobeControls` or `EnvironmentControls` for camera navigation, and call `controls.setEllipsoid( tiles.ellipsoid, tiles.group )` for globe datasets.
+- `errorTarget`, 16 pixels by default, sets the level of detail. The `lruCache` size limits are hard caps, and no new tiles load once they are reached.
+
+## Basic use
+
+```js
+import { TilesRenderer } from '3d-tiles-renderer';
+import { GLTFExtensionsPlugin } from '3d-tiles-renderer/plugins';
+
+const tiles = new TilesRenderer( './path/to/tileset.json' );
+tiles.registerPlugin( new GLTFExtensionsPlugin( { dracoLoader } ) );
+tiles.setCamera( camera );
+tiles.setResolutionFromRenderer( camera, renderer );
+scene.add( tiles.group );
+
+function animate() {
+
+	requestAnimationFrame( animate );
+	camera.updateMatrixWorld();
+	tiles.update();
+	renderer.render( scene, camera );
+
+}
+
+animate();
+```
+
+## Docs
+
+- [README](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/README.md): packages, examples and gotchas
+- [Three.js usage guide](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/USAGE.md): setup, custom materials, shared caches, Draco and Cesium Ion
+- [Three.js API](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/three/renderer/API.md): TilesRenderer, controls and math classes
+- [Three.js plugins API](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/three/plugins/API.md): every three.js plugin and its options
+- [Core API](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/core/renderer/API.md) and [core plugins API](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/core/plugins/API.md): the engine independent renderer and plugins
+- [Babylon.js guide](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/babylonjs/renderer/README.md) and [API](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/babylonjs/renderer/API.md)
+- [PlayCanvas guide](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/playcanvas/renderer/README.md) and [API](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/playcanvas/renderer/API.md)
+- [React Three Fiber guide](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/r3f/README.md) and [API](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/r3f/API.md)
+- [Examples](https://github.com/NASA-AMMOS/3DTilesRendererJS/tree/master/example): Google tiles, Cesium Ion, map tiles, overlays, fading and more

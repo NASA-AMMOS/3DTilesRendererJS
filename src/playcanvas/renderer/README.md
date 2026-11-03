@@ -2,6 +2,8 @@
 
 Implementation of the TilesRendererBase class for [PlayCanvas](https://playcanvas.com/). Tile content is loaded with the PlayCanvas glTF parser, so the glTF extensions supported by the engine are available, and it renders with both WebGL2 and WebGPU.
 
+See the [API reference](./API.md) for full class and method documentation.
+
 [Dingo Gap Mars dataset](https://nasa-ammos.github.io/3DTilesRendererJS/playcanvas/index.html)
 
 The current implementation has the below limitations:
