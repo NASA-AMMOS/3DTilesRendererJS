@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PotreeLoader: Throw when a hierarchy or node file fails to download instead of decoding the error response as points.
 - PotreeLoader: Throw a descriptive error for Potree 1.x datasets with LAS / LAZ node files and Potree 2.0 datasets with BROTLI encoding, which were requested as ".bin" and decoded as uncompressed data.
 - PointCloudEffectsPlugin, PointCloudMaterial: Honor "sizeAttenuation = false", drawing points at "size" pixels as PointsMaterial does, and preserve the flag from the material being replaced.
+- BatchTable: Fix "getDataFromId" returning a single number for VEC2, VEC3, and VEC4 binary properties.
+- SUBTREELoader: Fix subtree parsing slowing quadratically with bitstream size.
 
 ## [0.5.3] - 2026.09.18
 ### Added
