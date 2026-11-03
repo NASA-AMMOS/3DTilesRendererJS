@@ -12,6 +12,7 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 		useRecommendedSettings?: boolean,
 		pointShape?: 'square' | 'round' | 'sphere',
 		minPointSize?: number,
+		maxPointSize?: number,
 		edlStrength?: number,
 		edlRadius?: number,
 		debugColorMode?: 'none' | 'node' | 'depth' | 'tile',

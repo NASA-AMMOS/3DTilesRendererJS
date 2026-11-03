@@ -554,8 +554,7 @@ export class TilesRendererBase {
 		 *
 		 * `error -= errorFalloff * ( 1 - e ^ -( distance * errorFalloffDensity )² )`
 		 *
-		 * > [!WARN]
-		 * > Experimental and may change.
+		 * @warn Experimental and may change.
 		 * @type {number}
 		 * @default 0
 		 */
@@ -566,8 +565,7 @@ export class TilesRendererBase {
 		 * tiles closer to the camera.
 		 * Comparable to Cesium's "dynamicScreenSpaceError" settings.
 		 *
-		 * > [!WARN]
-		 * > Experimental and may change.
+		 * @warn Experimental and may change.
 		 * @type {number}
 		 * @default 2e-4
 		 */

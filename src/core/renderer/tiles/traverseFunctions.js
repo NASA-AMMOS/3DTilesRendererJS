@@ -504,8 +504,8 @@ function toggleTiles( tile, renderer ) {
 
 		}
 
-		// ADD tiles are part of the display frontier alongside their children
-		if ( tile.internal.hasRenderableContent && tile.refine === 'ADD' ) {
+		// ADD tiles are displayed alongside their children
+		if ( tile.refine === 'ADD' ) {
 
 			tile.traversal.active = true;
 
@@ -615,9 +615,8 @@ function toggleTiles( tile, renderer ) {
 
 		} else if ( ! tile.internal.hasRenderableContent ) {
 
-			// For non-renderable tiles, notify plugins when the tile becomes or stops being a traversal leaf so we
-			// can display "empty" tiles in plugins like the DebugTilesPlugin.
-			setVisible = tile.traversal.isLeaf;
+			// notify plugins when an empty tile is displayed so they can visualize it
+			setVisible = tile.traversal.active && tile.traversal.inFrustum;
 			if ( tile.traversal.wasSetVisible !== setVisible ) {
 
 				renderer.invokeOnePlugin( plugin => plugin.setEmptyTileVisible && plugin.setEmptyTileVisible( tile, setVisible ) );

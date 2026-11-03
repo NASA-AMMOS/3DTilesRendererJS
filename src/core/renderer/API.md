@@ -935,6 +935,7 @@ Loading and rendering statistics updated each frame. Fields:
 - `used` — tiles visited during the last traversal
 - `active` — tiles currently set as active
 - `visible` — tiles currently visible
+- `refused` — tiles the last update wanted to load but could not queue because the cache was full
 
 
 ### .errorTarget
@@ -960,9 +961,8 @@ Comparable to Cesium's "dynamicScreenSpaceError" settings.
 
 `error -= errorFalloff * ( 1 - e ^ -( distance * errorFalloffDensity )² )`
 
-> [!WARN]
+> [!WARNING]
 > Experimental and may change.
-
 
 ### .errorFalloffDensity
 
@@ -974,9 +974,8 @@ Distance scale for the "errorFalloff" curve, in inverse meters. Larger values af
 tiles closer to the camera.
 Comparable to Cesium's "dynamicScreenSpaceError" settings.
 
-> [!WARN]
+> [!WARNING]
 > Experimental and may change.
-
 
 ### .displayActiveTiles
 

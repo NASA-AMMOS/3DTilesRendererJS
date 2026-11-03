@@ -2,6 +2,7 @@ import { TerrainRGBMeshPlugin } from './TerrainRGBMeshPlugin.js';
 
 /**
  * {@link TerrainRGBMeshPlugin} for the Terrarium encoding.
+ * @extends TerrainRGBMeshPlugin
  */
 export class TerrariumMeshPlugin extends TerrainRGBMeshPlugin {
 

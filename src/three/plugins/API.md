@@ -1953,7 +1953,6 @@ subview of the texture, so elevation scale and seam updates only require texture
 > correctly after changing the height scale since they are not rebuilt when the tile bounding
 > volumes update.
 
-
 ### .constructor
 
 ```js
@@ -2009,6 +2008,8 @@ texture covering it. The height scale is applied so the result matches the displ
 
 
 ## TerrariumMeshPlugin
+
+_extends [`TerrainRGBMeshPlugin`](#terrainrgbmeshplugin)_
 
 [TerrainRGBMeshPlugin](TerrainRGBMeshPlugin) for the Terrarium encoding.
 

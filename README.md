@@ -5,7 +5,7 @@
 
 ![](./images/header-mars.png)
 
-JavaScript renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/) with support for both **Three.js** and **Babylon.js**. The renderer supports most of the 3D Tiles spec features with a few exceptions. For a list of available data sets and generation tools see the [3d Tiles resources](https://github.com/CesiumGS/3d-tiles/blob/main/RESOURCES.md) list.
+JavaScript renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/) with support for **Three.js**, **Babylon.js** and **PlayCanvas**. The renderer supports most of the 3D Tiles spec features with a few exceptions. For a list of available data sets and generation tools see the [3d Tiles resources](https://github.com/CesiumGS/3d-tiles/blob/main/RESOURCES.md) list.
 
 If a tileset or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
 
@@ -24,6 +24,7 @@ npm install 3d-tiles-renderer --save
 | `3d-tiles-renderer/core` | [API Reference](./src/core/renderer/API.md) |
 | `3d-tiles-renderer/three` | [Usage Guide](./USAGE.md) · [API Reference](./src/three/renderer/API.md) |
 | `3d-tiles-renderer/babylonjs` | [Usage Guide](./src/babylonjs/renderer/README.md) · [API Reference](./src/babylonjs/renderer/API.md) |
+| `3d-tiles-renderer/playcanvas` | [Usage Guide](./src/playcanvas/renderer/README.md) |
 | `3d-tiles-renderer/r3f` | [Usage Guide](./src/r3f/README.md) · [API Reference](./src/r3f/API.md) |
 
 ## Plugins
@@ -31,13 +32,14 @@ npm install 3d-tiles-renderer --save
 | Package | Reference |
 | --- | --- |
 | `3d-tiles-renderer/three/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
+| `3d-tiles-renderer/babylonjs/plugins` | [Plugin Guide](./src/babylonjs/plugins/README.md) |
 | `3d-tiles-renderer/core/plugins` | [API Reference](./src/core/plugins/API.md) |
 
 # Examples
 
-The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html).
+The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html), and a PlayCanvas demo for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/playcanvas/index.html).
 
-See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/babylonjs/renderer/README.md) for setup details with each engine.
+See the [Three.js usage guide](./USAGE.md), [Babylon.js usage guide](./src/babylonjs/renderer/README.md) or [PlayCanvas usage guide](./src/playcanvas/renderer/README.md) for setup details with each engine.
 
 | Example | Description |
 | --- | --- |
@@ -76,7 +78,7 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 Here is a reference to existing 3DTilesRendererJS integrations:
 
 - [three-geospatial](https://github.com/takram-design-engineering/three-geospatial): Clouds and atmosphere rendering via a three.js geospatial rendering modules, alongside 3DTilesRendererJS.
-- [3D Tiles in MapLibre Guide](https://maplibre.org/maplibre-gl-js/docs/examples/add-3d-tiles-using-threejs/): Official example showing how to render 3D tiles using a synced Three.js layer.
+- [3D Tiles in MapLibre Guide](https://maplibre.org/maplibre-gl-js/docs/examples/add-3d-tiles-3d-objects-and-models-using-threejs/): Official example showing how to render 3D tiles using a synced Three.js layer.
 - [Giro3D](https://gitlab.com/giro3d/giro3d): Framework for visualizing and interacting with heterogenous geospatial data in the browser, 2D, 2.5D and 3D data.
 - [iTowns](https://github.com/iTowns/itowns/): Framework designed for the efficient visualization, navigation, and interaction with 2D and 3D geospatial data on the web.
 - [threepipe Plugin](https://threepipe.org/package/plugin-3d-tiles-renderer.html): Plugin for the threepipe rendering framework integrating 3DTilesRendererJS.

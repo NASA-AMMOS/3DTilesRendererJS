@@ -105,15 +105,11 @@ function sampleGrid( grid, tu, tv ) {
  * shared by multiple layers of sub tiles that displace a smooth surface mesh on the GPU with a
  * subview of the texture, so elevation scale and seam updates only require texture changes.
  *
- * > [!NOTE]
- * > Enabling frustum culling on the tile meshes is not supported since the geometry bounds do not
- * > include the gpu displacement. Culling is handled by the tile traversal.
- *
- * > [!NOTE]
- * > Debug bounding volume visualizations, such as those from DebugTilesPlugin, may not display
- * > correctly after changing the height scale since they are not rebuilt when the tile bounding
- * > volumes update.
- *
+ * @note Enabling frustum culling on the tile meshes is not supported since the geometry bounds do not
+ * include the gpu displacement. Culling is handled by the tile traversal.
+ * @note Debug bounding volume visualizations, such as those from DebugTilesPlugin, may not display
+ * correctly after changing the height scale since they are not rebuilt when the tile bounding
+ * volumes update.
  * @param {Object} [options]
  * @param {string} options.url XYZ url template, e.g. `.../{z}/{x}/{y}.png`.
  * @param {number} [options.tileDimension=256] Source tile pixel size.

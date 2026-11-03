@@ -339,3 +339,47 @@ Verify that the total geometries in the render stats display is still "220".
 #### expected
 
 Verify correct depth is returned when clicking the tiles.
+
+## Verify tile fade transitions
+
+Run the shared steps below separately for Three.js and Babylon.js. The Babylon.js
+example requires Babylon.js 9.26.1 or later, which includes
+`DitheredTileFadeMaterialPlugin`.
+
+#### steps
+
+1. Run `npm start`.
+1. Open `three/fadingTiles.html` or `babylonjs/fadingTiles.html` and wait for
+   the terrain to load.
+1. Disable `useFade` and zoom in and out to observe immediate LOD changes.
+1. Enable `useFade`, set `fadeDuration` to 2 seconds, and zoom in to trigger
+   a slow dither transition.
+1. Reverse the zoom direction before the transition completes.
+1. Stop moving and confirm the fading counter returns to zero
+   (`fadingGroundTiles` in Three.js; `fadingTiles` in Babylon.js).
+1. Trigger another transition and disable `useFade` while it is in progress.
+1. Repeat with the other renderer.
+
+#### expected
+
+With fading enabled, both renderers retain the outgoing LOD during the opaque
+dither transition, handle reversal without disappearing tiles, and settle with
+only the selected LOD visible. Disabling fading completes any pending transition
+on the next update, and the fading counter returns to zero.
+
+Three.js uses a 4x4 pattern and Babylon.js uses an 8x8 pattern, so their lifecycle
+should match without requiring identical stipple pixels.
+
+#### Babylon.js variants and scope
+
+Repeat the shared steps with `babylonjs/fadingTiles.html?url=/data/tileset.json`
+for bundled B3DM content, and with
+`babylonjs/fadingTiles.html?webgpu&url=/data/tileset.json` to require WebGPU.
+WebGPU must identify itself as the active backend or report an explicit block;
+it must never silently fall back to WebGL.
+
+The Babylon.js scope is one active camera and ordinary non-instanced
+B3DM/glTF/GLB meshes using opaque Standard/PBR materials, including
+MultiMaterial leaves and shared/frozen materials. Babylon batching,
+hardware/thin instances, multi-camera traversal, and standalone
+shadow/depth/picking/outline/custom passes are deferred.

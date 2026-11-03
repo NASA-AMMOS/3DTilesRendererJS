@@ -62,7 +62,21 @@ export class BatchTable extends FeatureTable {
 
 		for ( const key of this.getKeys() ) {
 
-			target[ key ] = super.getData( key, this.count )[ id ];
+			// binary properties are flat typed arrays with "count * componentCount" values, so vector
+			// types (VEC2, VEC3, VEC4) are read with a stride and returned as an array of components,
+			// matching how the same values are returned when stored as JSON arrays in the header
+			const data = super.getData( key, this.count );
+			const componentCount = ArrayBuffer.isView( data ) ? data.length / this.count : 1;
+			if ( componentCount === 1 ) {
+
+				target[ key ] = data[ id ];
+
+			} else {
+
+				const start = id * componentCount;
+				target[ key ] = Array.from( data.subarray( start, start + componentCount ) );
+
+			}
 
 		}
 

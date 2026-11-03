@@ -58,6 +58,7 @@ class RenderHook extends Mesh {
  * @param {Object} [options]
  * @param {('square'|'round'|'sphere')} [options.pointShape='round'] Shape of the point sprites.
  * @param {number} [options.minPointSize=2] Smallest point size in pixels.
+ * @param {number} [options.maxPointSize=50] Largest projected size in pixels of an attenuated point. Zero disables the cap.
  * @param {number} [options.edlStrength=0] Eye dome lighting falloff rate. Zero disables the effect and skips its depth pre-pass.
  * @param {number} [options.edlRadius=1.4] Radius of the eye dome lighting neighbor ring in css pixels, scaled by the renderer pixel ratio so the effect looks the same on every display.
  * @param {('none'|'node'|'depth'|'tile')} [options.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
@@ -92,6 +93,23 @@ export class PointCloudEffectsPlugin {
 		if ( value !== this._minPointSize ) {
 
 			this._minPointSize = value;
+			this._updateMaterials();
+
+		}
+
+	}
+
+	get maxPointSize() {
+
+		return this._maxPointSize;
+
+	}
+
+	set maxPointSize( value ) {
+
+		if ( value !== this._maxPointSize ) {
+
+			this._maxPointSize = value;
 			this._updateMaterials();
 
 		}
@@ -150,6 +168,7 @@ export class PointCloudEffectsPlugin {
 		const {
 			pointShape = 'round',
 			minPointSize = 2,
+			maxPointSize = 50,
 			edlStrength = 0,
 			edlRadius = 1.4,
 			debugColorMode = 'none',
@@ -160,6 +179,7 @@ export class PointCloudEffectsPlugin {
 
 		this._pointShape = pointShape;
 		this._minPointSize = minPointSize;
+		this._maxPointSize = maxPointSize;
 		this._debugColorMode = debugColorMode;
 		this._edlStrength = edlStrength;
 		this._edlRadius = edlRadius;
@@ -214,6 +234,7 @@ export class PointCloudEffectsPlugin {
 					color: previousMaterial.color,
 					vertexColors: previousMaterial.vertexColors,
 					size: previousMaterial.size,
+					sizeAttenuation: previousMaterial.sizeAttenuation,
 					map: previousMaterial.map,
 					transparent: previousMaterial.transparent,
 					opacity: previousMaterial.opacity,
@@ -299,6 +320,7 @@ export class PointCloudEffectsPlugin {
 
 		material.pointShape = this.pointShape;
 		material.minPointSize = this.minPointSize;
+		material.maxPointSize = this.maxPointSize;
 		material.debugColorMode = this.debugColorMode;
 		material.edlStrength = this.edlStrength;
 

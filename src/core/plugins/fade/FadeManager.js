@@ -1,6 +1,5 @@
-import { MathUtils } from 'three';
+const clamp = ( value, min, max ) => Math.max( min, Math.min( max, value ) );
 
-const { clamp } = MathUtils;
 export class FadeManager {
 
 	constructor() {
@@ -179,15 +178,14 @@ export class FadeManager {
 	// Tick the fade timer for each actively fading object
 	update() {
 
-		// clamp delta in case duration is really small or 0
-		const time = window.performance.now();
+		const time = globalThis.performance.now();
 		if ( this._lastTick === - 1 ) {
 
 			this._lastTick = time;
 
 		}
 
-		const delta = clamp( ( time - this._lastTick ) / this.duration, 0, 1 );
+		const delta = this.duration === 0 ? 1 : clamp( ( time - this._lastTick ) / this.duration, 0, 1 );
 		this._lastTick = time;
 
 		const fadeState = this._fadeState;
@@ -214,12 +212,12 @@ export class FadeManager {
 			state.fadeOut = fadeOut;
 
 			// Check if the fade in and fade out animations are complete
-			const fadeOutComplete = fadeOut === 1 || fadeOut === 0;
-			const fadeInComplete = fadeIn === 1 || fadeIn === 0;
+			const fadeOutComplete = fadeOut === fadeOutTarget;
+			const fadeInComplete = fadeIn === fadeInTarget;
 
 			// If they are or the fade out animation is further along than the
 			// fade in animation then mark the fade as completed for this tile
-			if ( ( fadeOutComplete && fadeInComplete ) || fadeOut >= fadeIn ) {
+			if ( ( fadeOutComplete && fadeInComplete ) || ( fadeOutTarget === 1 && fadeOut >= fadeIn ) ) {
 
 				this.completeFade( object );
 
