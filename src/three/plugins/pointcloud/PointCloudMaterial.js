@@ -12,7 +12,7 @@ import { PointsMaterial, Vector2, Vector3 } from 'three';
  * @param {Object} [params] PointsMaterial parameters plus the properties below.
  * @param {('square'|'round'|'sphere')} [params.pointShape='round'] Sprite shape. Spheres write bulged depth so overlapping points intersect, at a fill rate cost.
  * @param {number} [params.minPointSize=2] Smallest projected point size in pixels.
- * @param {number} [params.maxPointSize=0] Largest projected size in pixels of an attenuated point. Zero disables the cap.
+ * @param {number} [params.maxPointSize=50] Largest projected size in pixels of an attenuated point. Zero disables the cap.
  * @param {number} [params.edlStrength=0] Eye dome lighting falloff rate. Zero compiles the effect out.
  * @param {number} [params.edlRadius=1.4] Radius of the eye dome lighting neighbor ring in pixels.
  * @param {('none'|'node'|'depth'|'tile')} [params.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
@@ -131,7 +131,7 @@ export class PointCloudMaterial extends PointsMaterial {
 		const {
 			pointShape = 'round',
 			minPointSize = 2,
-			maxPointSize = 0,
+			maxPointSize = 50,
 			debugColorMode = 'none',
 			edlStrength = 0,
 			edlRadius = 1.4,

@@ -58,6 +58,7 @@ class RenderHook extends Mesh {
  * @param {Object} [options]
  * @param {('square'|'round'|'sphere')} [options.pointShape='round'] Shape of the point sprites.
  * @param {number} [options.minPointSize=2] Smallest point size in pixels.
+ * @param {number} [options.maxPointSize=50] Largest projected size in pixels of an attenuated point. Zero disables the cap.
  * @param {number} [options.edlStrength=0] Eye dome lighting falloff rate. Zero disables the effect and skips its depth pre-pass.
  * @param {number} [options.edlRadius=1.4] Radius of the eye dome lighting neighbor ring in css pixels, scaled by the renderer pixel ratio so the effect looks the same on every display.
  * @param {('none'|'node'|'depth'|'tile')} [options.debugColorMode='none'] Color points by the node they are sized by, that node's depth, or the tile they came from.
@@ -167,7 +168,7 @@ export class PointCloudEffectsPlugin {
 		const {
 			pointShape = 'round',
 			minPointSize = 2,
-			maxPointSize = 0,
+			maxPointSize = 50,
 			edlStrength = 0,
 			edlRadius = 1.4,
 			debugColorMode = 'none',
