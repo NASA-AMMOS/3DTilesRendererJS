@@ -116,6 +116,9 @@ export class UnloadTilesPlugin {
 				// memory usage to ensure the lru cache will always remove the item to reduce memory pressure
 				lruCache.add( tile, unloadCallback );
 				lruCache.setMemoryUsage( tile, tiles.calculateBytesUsed( tile, scene ) || 1 );
+				// A hidden tile retained by the byte budget may already be in the cache.
+				// Protect it again when visible because "add" does not update existing items.
+				lruCache.markUsed( tile );
 				tiles.markTileUsed( tile );
 				deferCallbacks.cancel( tile );
 

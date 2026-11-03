@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PointCloudEffectsPlugin, PointCloudMaterial: Honor "sizeAttenuation = false", drawing points at "size" pixels as PointsMaterial does, and preserve the flag from the material being replaced.
 - BatchTable: Fix "getDataFromId" returning a single number for VEC2, VEC3, and VEC4 binary properties.
 - SUBTREELoader: Fix subtree parsing slowing quadratically with bitstream size.
+- UnloadTilesPlugin: Fix tiles shown again after being hidden being dropped from the GPU memory estimate and never unloading when hidden later.
 
 ## [0.5.3] - 2026.09.18
 ### Added
