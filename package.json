@@ -58,6 +58,10 @@
       "types": "./src/playcanvas/renderer/index.d.ts",
       "import": "./build/index.playcanvas.js"
     },
+    "./playcanvas/plugins": {
+      "types": "./src/playcanvas/plugins/index.d.ts",
+      "import": "./build/index.playcanvas-plugins.js"
+    },
     "./core/plugins": {
       "types": "./src/core/plugins/index.d.ts",
       "import": "./build/index.core-plugins.js"

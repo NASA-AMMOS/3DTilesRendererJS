@@ -8,6 +8,7 @@
     "files": [
         "src/index.d.ts",
         "src/plugins.d.ts",
-        "src/playcanvas/renderer/index.d.ts"
+        "src/playcanvas/renderer/index.d.ts",
+        "src/playcanvas/plugins/index.d.ts"
     ]
 }

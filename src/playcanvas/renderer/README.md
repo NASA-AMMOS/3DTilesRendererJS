@@ -10,7 +10,7 @@ The current implementation has the below limitations:
 - Only glTF, GLB and B3DM tile content is supported. I3DM, PNTS and CMPT are not.
 - Only `box` and `sphere` bounding volumes are supported. Tiles with only a `region` volume are not displayed.
 - PlayCanvas transforms are 32-bit, so Earth-centered tilesets, such as Google Photorealistic Tiles, are not rendered precisely.
-- There are no PlayCanvas-specific plugins yet. The engine-agnostic plugins in `3d-tiles-renderer/core/plugins` can be used.
+- The only PlayCanvas-specific plugin is `TilesFadePlugin`, see the [plugin guide](../plugins/README.md). The engine-agnostic plugins in `3d-tiles-renderer/core/plugins` can be used.
 - Raycasting is not supported.
 
 # Use
