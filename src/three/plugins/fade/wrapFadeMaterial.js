@@ -1,4 +1,7 @@
 // Adjusts the provided material to support fading in and out using a bayer pattern. Providing a "previous"
+
+import { Discard, Fn, If, output, screenCoordinate, uniform } from 'three/tsl';
+
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
 const FADE_PARAMS = Symbol( 'FADE_PARAMS' );
 export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
@@ -17,6 +20,22 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 	};
 
 	material[ FADE_PARAMS ] = params;
+
+	if ( material.isNodeMaterial ) {
+
+		modifyNodeMaterial( material, params );
+
+	} else {
+
+		modifyMaterial( material, params, previousOnBeforeCompile );
+
+	}
+
+	return params;
+
+}
+
+function modifyMaterial( material, params, previousOnBeforeCompile ) {
 
 	material.defines = {
 		...( material.defines || {} ),
@@ -138,6 +157,82 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 	};
 
-	return params;
+}
+
+// adapted from https://www.shadertoy.com/view/Mlt3z8
+const bayerDither2x2 = Fn( ( [ v ] ) => {
+
+	return v.y.mul( 3 ).add( v.x.mul( 2 ) ).mod( 4 );
+
+} ).setLayout( {
+	name: 'bayerDither2x2',
+	type: 'float',
+	inputs: [ { name: 'v', type: 'vec2' } ]
+} );
+
+const bayerDither4x4 = Fn( ( [ v ] ) => {
+
+	const P1 = v.mod( 2 );
+	const P2 = v.mod( 4 ).mul( 0.5 ).floor();
+	return bayerDither2x2( P1 ).mul( 4 ).add( bayerDither2x2( P2 ) );
+
+} ).setLayout( {
+	name: 'bayerDither4x4',
+	type: 'float',
+	inputs: [ { name: 'v', type: 'vec2' } ]
+} );
+
+// Define shared uniforms for fadeIn/fadeOut so that "outputNode" can be cached.
+const fadeIn = uniform( 0 ).onObjectUpdate( ( { material } ) => material.params.fadeIn.value );
+const fadeOut = uniform( 0 ).onObjectUpdate( ( { material } ) => material.params.fadeOut.value );
+
+const outputNode = Fn( () => {
+
+	const bayerValue = bayerDither4x4( screenCoordinate.xy.mod( 4 ).floor() );
+	const bayerBins = 16;
+	const dither = bayerValue.add( 0.5 ).div( bayerBins );
+
+	If( dither.greaterThanEqual( fadeIn ), () => {
+
+		Discard();
+
+	} );
+
+	If( dither.lessThan( fadeOut ), () => {
+
+		Discard();
+
+	} );
+
+	return output;
+
+} )();
+
+function modifyNodeMaterial( material, params ) {
+
+	material.params = params;
+
+	let FEATURE_FADE = 0;
+
+	material.defines = {
+
+		get FEATURE_FADE() {
+
+			return FEATURE_FADE;
+
+		},
+
+		set FEATURE_FADE( value ) {
+
+			if ( value != FEATURE_FADE ) {
+
+				FEATURE_FADE = value;
+				material.outputNode = value ? outputNode : null;
+
+			}
+
+		}
+
+	};
 
 }
