@@ -2,7 +2,7 @@
 
 Framework-agnostic plugins for the 3D Tiles renderer. These plugins work with any renderer built on top of the core package, including Three.js and Babylon.js.
 
-See the [API reference](./API.md) for full set of classes and method documentation.
+See the [API reference](./API.md) for full class and method documentation.
 
 # Community Plugins & Integrations
 
