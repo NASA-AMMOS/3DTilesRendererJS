@@ -1,5 +1,6 @@
 import { Frustum, Matrix4, Raycaster, Vector3 } from 'three';
 import { LineAnnotation } from './annotations/LineAnnotation.js';
+import { PolygonAnnotation } from './annotations/PolygonAnnotation.js';
 
 const PARALLEL_EPSILON = 1e-10;
 
@@ -13,6 +14,9 @@ const _hit = /* @__PURE__ */ new Vector3();
 const _hits = [];
 const _spanStart = /* @__PURE__ */ new Vector3();
 const _spanEnd = /* @__PURE__ */ new Vector3();
+const _sample = /* @__PURE__ */ new Vector3();
+const _base = /* @__PURE__ */ new Vector3();
+const _up = /* @__PURE__ */ new Vector3();
 
 // check if the given raycaster intersects the provided frustum shape
 function rayIntersectsFrustum( raycaster, frustum ) {
@@ -461,6 +465,44 @@ export class SettlingManager {
 			// draped positions changed — force the screen transform to recompute even if the
 			// camera is static, so the anchor can place without waiting for camera motion
 			item.needsUpdate = true;
+
+		} else if ( item instanceof PolygonAnnotation ) {
+
+			// settle the footprint to its lowest exterior vertex so the building doesn't tilt or float
+			const { _items, tiles } = this;
+			const { lat, lon } = item.rings[ 0 ];
+			const { frame } = item;
+			tiles.surface.getCartographicToPosition( item.lat, item.lon, 0, _base );
+			_up.setFromMatrixColumn( frame, 2 );
+
+			let minHeight = Infinity;
+			for ( let i = 0, l = lat.length; i < l; i ++ ) {
+
+				this._settleSample( lat[ i ], lon[ i ], _sample.set( 0, 0, 0 ), 0 );
+				minHeight = Math.min( minHeight, _up.dot( _sample.sub( _base ) ) );
+
+				if ( this._deadlineExpired() ) {
+
+					yield;
+
+					if ( ! _items.has( item ) ) {
+
+						return;
+
+					}
+
+				}
+
+			}
+
+			_sample.setFromMatrixPosition( frame );
+			_base.addScaledVector( _up, minHeight );
+			if ( _base.distanceTo( _sample ) > threshold ) {
+
+				frame.setPosition( _base );
+				item.needsUpdate = true;
+
+			}
 
 		} else {
 
