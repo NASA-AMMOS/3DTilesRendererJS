@@ -46,7 +46,8 @@ const params = {
 	displayPaths: true,
 	horizonCutoff: 0.1,
 	errorFalloff: 0,
-	terrainRGB: false,
+	loadAncestors: true,
+	terrainRGB: true,
 
 	occupancyGrid: false,
 	pathVisualization: 'OFF',
@@ -81,6 +82,7 @@ function initTiles() {
 
 	// instantiate the tiles renderer
 	tiles = new TilesRenderer();
+	tiles.loadAncestors = params.loadAncestors;
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	if ( params.terrainRGB ) {
 
@@ -251,6 +253,12 @@ function init() {
 	gui.add( params, 'errorFalloff', 0, 50 ).onChange( v => {
 
 		tiles.errorFalloff = v;
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
+	gui.add( params, 'loadAncestors' ).onChange( v => {
+
+		tiles.loadAncestors = v;
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
