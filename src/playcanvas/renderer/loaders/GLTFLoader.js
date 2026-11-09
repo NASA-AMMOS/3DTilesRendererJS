@@ -4,6 +4,15 @@ import { LoaderBase } from '3d-tiles-renderer/core';
 
 let _loadId = 0;
 
+// the tiles renderer quietly drops a tile whose load fails with an AbortError
+function createAbortError() {
+
+	const error = new Error( 'GLTFLoader: The application was destroyed.' );
+	error.name = 'AbortError';
+	return error;
+
+}
+
 /**
  * PlayCanvas loader for GLTF and GLB tile content. The already downloaded buffer is passed to the
  * engine as the contents of a `container` asset, so the engine's glTF parser and extensions are
@@ -51,6 +60,14 @@ export class GLTFLoader extends LoaderBase {
 		const { app, assetOptions, renderOptions } = this;
 		const registry = app.assets;
 
+		// nothing cancels the download, so the content can arrive after the application was
+		// destroyed, which releases the asset registry
+		if ( ! registry ) {
+
+			throw createAbortError();
+
+		}
+
 		// The resource loader caches and de-duplicates requests by URL, and the registry indexes
 		// assets by URL, so every load gets a unique one. A fragment keeps relative resources
 		// resolving against the tile URL. Relative URLs are made absolute so a registry prefix is
@@ -74,8 +91,17 @@ export class GLTFLoader extends LoaderBase {
 
 		} catch ( error ) {
 
-			disposeModel( null, asset, registry );
+			disposeModel( null, asset, app.assets );
 			throw error;
+
+		}
+
+		// the application can be destroyed while the content is parsed, in which case there is no
+		// resource to instantiate
+		if ( ! app.assets || ! asset.resource ) {
+
+			disposeModel( null, asset, app.assets );
+			throw createAbortError();
 
 		}
 
@@ -96,7 +122,8 @@ export class GLTFLoader extends LoaderBase {
  * Releases the entity and every engine resource created for a loaded model.
  * @param {Entity|null} scene - The entity created for the model.
  * @param {Asset} asset - The `container` asset the model was loaded from.
- * @param {AssetRegistry} registry - The registry the asset was added to.
+ * @param {AssetRegistry|null} registry - The registry the asset was added to, or null once the
+ * application was destroyed.
  */
 export function disposeModel( scene, asset, registry ) {
 
@@ -109,6 +136,10 @@ export function disposeModel( scene, asset, registry ) {
 	}
 
 	asset.unload();
-	registry.remove( asset );
+	if ( registry ) {
+
+		registry.remove( asset );
+
+	}
 
 }

@@ -370,7 +370,7 @@ Disposes the renderer, releasing all loaded tile content and the root entity.
 disposeModel(
 	scene: Entity | null,
 	asset: Asset,
-	registry: AssetRegistry
+	registry: AssetRegistry | null
 ): void
 ```
 
