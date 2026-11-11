@@ -15,6 +15,8 @@ export class MVTAnnotationsDriver {
 	getAnnotationRank( annotation: object ): number;
 	measureChar( char: string ): number;
 	getText( properties: Record<string, unknown> ): string;
+	getBuildingHeight( layer: string, properties: Record<string, unknown> ): number;
+	getBuildingMinHeight( layer: string, properties: Record<string, unknown> ): number;
 	isAnnotationEnabled( layer: string, properties: Record<string, unknown>, type: number ): boolean;
 	onPointsUpdate( added: object[], removed: object[] ): void;
 	onLabelsUpdate( added: object[], removed: object[] ): void;

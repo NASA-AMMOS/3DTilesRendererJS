@@ -147,9 +147,13 @@ export class ExampleAnnotationsDriver extends MVTAnnotationsDriver {
 
 			return properties.kind in KIND_TO_ICON;
 
-		} else {
+		} else if ( type === 2 ) {
 
 			return 'name' in properties;
+
+		} else {
+
+			return layer === 'buildings';
 
 		}
 
