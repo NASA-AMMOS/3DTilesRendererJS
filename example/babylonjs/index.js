@@ -4,6 +4,7 @@ import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color4 } from '@babylonjs/core/Maths/math.color';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
+import { TilesFadePlugin } from '3d-tiles-renderer/babylonjs/plugins';
 import GUI from 'lil-gui';
 
 const TILESET_URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
@@ -43,6 +44,7 @@ camera.maxZ = 1000;
 
 // instantiate tiles renderer and orient the group so it's Z+ down
 const tiles = new TilesRenderer( TILESET_URL, scene );
+tiles.registerPlugin( new TilesFadePlugin() );
 tiles.group.rotation.x = Math.PI / 2;
 
 // render
