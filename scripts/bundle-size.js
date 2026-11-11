@@ -46,6 +46,13 @@ const CASES = [
 		name: 'PlayCanvas',
 		exports: [ 'export { TilesRenderer } from "3d-tiles-renderer/playcanvas";' ],
 	},
+	{
+		name: 'PlayCanvas + fade',
+		exports: [
+			'export { TilesRenderer } from "3d-tiles-renderer/playcanvas";',
+			'export { TilesFadePlugin } from "3d-tiles-renderer/playcanvas/plugins";',
+		],
+	},
 ];
 
 const ENTRY_ID = 'virtual:bundle-size-entry';

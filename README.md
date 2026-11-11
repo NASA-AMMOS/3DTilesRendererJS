@@ -33,6 +33,7 @@ npm install 3d-tiles-renderer --save
 | --- | --- |
 | `3d-tiles-renderer/three/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
 | `3d-tiles-renderer/babylonjs/plugins` | [Plugin Guide](./src/babylonjs/plugins/README.md) |
+| `3d-tiles-renderer/playcanvas/plugins` | [Plugin Guide](./src/playcanvas/plugins/README.md) |
 | `3d-tiles-renderer/core/plugins` | [Plugin Guide](./src/core/plugins/README.md) [API Reference](./src/core/plugins/API.md) |
 
 # Examples
