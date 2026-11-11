@@ -342,33 +342,33 @@ Verify correct depth is returned when clicking the tiles.
 
 ## Verify tile fade transitions
 
-Run the shared steps below separately for Three.js, Babylon.js and PlayCanvas.
-The Babylon.js example requires Babylon.js 9.26.1 or later, which includes
+Run the shared steps below separately for Three.js and Babylon.js. The Babylon.js
+example requires Babylon.js 9.26.1 or later, which includes
 `DitheredTileFadeMaterialPlugin`.
 
 #### steps
 
 1. Run `npm start`.
-1. Open `three/fadingTiles.html`, `babylonjs/fadingTiles.html` or
-   `playcanvas/fadingTiles.html` and wait for the terrain to load.
+1. Open `three/fadingTiles.html` or `babylonjs/fadingTiles.html` and wait for
+   the terrain to load.
 1. Disable `useFade` and zoom in and out to observe immediate LOD changes.
 1. Enable `useFade`, set `fadeDuration` to 2 seconds, and zoom in to trigger
    a slow dither transition.
 1. Reverse the zoom direction before the transition completes.
 1. Stop moving and confirm the fading counter returns to zero
-   (`fadingGroundTiles` in Three.js; `fadingTiles` in Babylon.js and PlayCanvas).
+   (`fadingGroundTiles` in Three.js; `fadingTiles` in Babylon.js).
 1. Trigger another transition and disable `useFade` while it is in progress.
-1. Repeat with the other renderers.
+1. Repeat with the other renderer.
 
 #### expected
 
-With fading enabled, all renderers retain the outgoing LOD during the opaque
+With fading enabled, both renderers retain the outgoing LOD during the opaque
 dither transition, handle reversal without disappearing tiles, and settle with
 only the selected LOD visible. Disabling fading completes any pending transition
 on the next update, and the fading counter returns to zero.
 
-Three.js and PlayCanvas use a 4x4 pattern and Babylon.js uses an 8x8 pattern, so
-their lifecycle should match without requiring identical stipple pixels.
+Three.js uses a 4x4 pattern and Babylon.js uses an 8x8 pattern, so their lifecycle
+should match without requiring identical stipple pixels.
 
 #### Babylon.js variants and scope
 
@@ -383,16 +383,3 @@ B3DM/glTF/GLB meshes using opaque Standard/PBR materials, including
 MultiMaterial leaves and shared/frozen materials. Babylon batching,
 hardware/thin instances, multi-camera traversal, and standalone
 shadow/depth/picking/outline/custom passes are deferred.
-
-#### PlayCanvas variants and scope
-
-Repeat the shared steps with `playcanvas/fadingTiles.html?url=/data/tileset.json`
-for bundled B3DM content, and with `playcanvas/fadingTiles.html?webgpu` for
-WebGPU. The info line shows the active backend.
-
-The PlayCanvas scope is B3DM/glTF/GLB tiles whose materials use the lit shader,
-such as the glTF parser's `StandardMaterial`. Tiles using only the engine's
-default glTF material, or materials shared between tiles, are shown without
-fading. Shader code an application adds to a tile material in the
-`litUserDeclarationPS` or `litUserMainStartPS` chunks must keep working during
-and after a fade.

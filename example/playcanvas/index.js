@@ -18,6 +18,7 @@ import {
 } from 'playcanvas';
 import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
 import { TilesRenderer } from '3d-tiles-renderer/playcanvas';
+import { TilesFadePlugin } from '3d-tiles-renderer/playcanvas/plugins';
 import GUI from 'lil-gui';
 
 const TILESET_URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
@@ -74,6 +75,7 @@ cameraControls.focusPoint = new Vec3( 0, 0, 0 );
 // instantiate the tiles renderer and orient the group so it's Z+ down
 const tiles = new TilesRenderer( TILESET_URL, app );
 tiles.fetchOptions.mode = 'cors';
+tiles.registerPlugin( new TilesFadePlugin() );
 tiles.setCamera( camera.camera );
 tiles.group.setLocalEulerAngles( 90, 0, 0 );
 app.root.addChild( tiles.group );
