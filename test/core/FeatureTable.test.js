@@ -194,6 +194,7 @@ describe( 'FeatureTable', () => {
 			headerJson += ' ';
 
 		}
+
 		const headerBytes = new TextEncoder().encode( headerJson );
 		const bytes = new Uint8Array( headerBytes.byteLength + 8 );
 		bytes.set( headerBytes, 0 );
