@@ -88,4 +88,109 @@ describe( 'BatchTable', () => {
 
 	} );
 
+	it( 'should return JSON array and binary SCALAR properties for the given id.', () => {
+
+		const binaryBody = new ArrayBuffer( 12 );
+		new Float32Array( binaryBody, 0, 3 ).set( [ 1.5, 2.5, 3.5 ] );
+
+		const batchTable = createBatchTable( 3, {
+			name: [ 'first', 'second', 'third' ],
+			height: { byteOffset: 0, componentType: 'FLOAT', type: 'SCALAR' },
+		}, binaryBody );
+
+		expect( batchTable.getDataFromId( 0 ) ).toEqual( { name: 'first', height: 1.5 } );
+		expect( batchTable.getDataFromId( 1 ) ).toEqual( { name: 'second', height: 2.5 } );
+		expect( batchTable.getDataFromId( 2 ) ).toEqual( { name: 'third', height: 3.5 } );
+
+	} );
+
+	it( 'should merge the result into the provided target object.', () => {
+
+		const batchTable = createBatchTable( 2, {
+			name: [ 'first', 'second' ],
+		}, new ArrayBuffer( 8 ) );
+
+		const target = {};
+		batchTable.getDataFromId( 0, target );
+		expect( target ).toEqual( { name: 'first' } );
+
+		batchTable.getDataFromId( 1, target );
+		expect( target ).toEqual( { name: 'second' } );
+
+	} );
+
+	it( 'should throw when the feature id is out of bounds.', () => {
+
+		const batchTable = createBatchTable( 2, {}, new ArrayBuffer( 8 ) );
+
+		expect( () => batchTable.getDataFromId( - 1 ) )
+			.toThrow( 'BatchTable: id value "-1" out of bounds for "2" features number.' );
+		expect( () => batchTable.getDataFromId( 2 ) )
+			.toThrow( 'BatchTable: id value "2" out of bounds for "2" features number.' );
+
+	} );
+
+	it( 'should return the full property array for the given key.', () => {
+
+		const binaryBody = new ArrayBuffer( 12 );
+		new Float32Array( binaryBody, 0, 3 ).set( [ 1.5, 2.5, 3.5 ] );
+
+		const batchTable = createBatchTable( 3, {
+			height: { byteOffset: 0, componentType: 'FLOAT', type: 'SCALAR' },
+		}, binaryBody );
+
+		expect( batchTable.getPropertyArray( 'height' ) ).toEqual( new Float32Array( [ 1.5, 2.5, 3.5 ] ) );
+		expect( batchTable.getPropertyArray( 'missing' ) ).toBe( null );
+
+	} );
+
+	it( 'should parse the batch table hierarchy extension and merge inherited properties.', () => {
+
+		const binaryBody = new ArrayBuffer( 8 );
+		new Uint16Array( binaryBody, 0, 3 ).set( [ 10, 20, 5 ] );
+
+		const batchTable = createBatchTable( 3, {
+			extensions: {
+				'3DTILES_batch_table_hierarchy': {
+					classes: [
+						{
+							name: 'Building',
+							length: 2,
+							instances: {
+								height: { byteOffset: 0, componentType: 'UNSIGNED_SHORT' },
+							},
+						},
+						{
+							name: 'Room',
+							length: 1,
+							instances: {
+								floor: { byteOffset: 4, componentType: 'UNSIGNED_SHORT' },
+							},
+						},
+					],
+					classIds: [ 0, 0, 1 ],
+					parentCounts: [ 0, 1, 1 ],
+					parentIds: [ 0, 1 ],
+					instancesLength: 3,
+				},
+			},
+		}, binaryBody );
+
+		expect( Object.keys( batchTable.extensions ) ).toEqual( [ '3DTILES_batch_table_hierarchy' ] );
+
+		expect( batchTable.getDataFromId( 0 ) ).toEqual( {
+			'3DTILES_batch_table_hierarchy': { Building: { height: 10 } },
+		} );
+
+		expect( batchTable.getDataFromId( 1 ) ).toEqual( {
+			'3DTILES_batch_table_hierarchy': { Building: { height: 20 } },
+		} );
+
+		// the room inherits the height of the building it belongs to
+		expect( batchTable.getDataFromId( 2 ) ).toEqual( {
+			'3DTILES_batch_table_hierarchy': { Building: { height: 20 }, Room: { floor: 5 } },
+		} );
+
+	} );
+
 } );
