@@ -126,8 +126,10 @@ export class PolygonAnnotation {
 		this.lon = 0;
 		this.frame = new Matrix4();
 
-		// height of the lowest exterior vertex above the frame, found during settling
+		// height of the lowest exterior vertex above the frame, found during settling, and the
+		// height the renderer placed the polygon at once shared with the pieces it joins
 		this.baseHeight = 0;
+		this.placedBaseHeight = 0;
 
 		this.enabled = true;
 		this.ready = false;
@@ -136,6 +138,46 @@ export class PolygonAnnotation {
 		this.needsUpdate = false;
 
 	}
+
+	// whether the cartographic point lies inside the exterior ring and outside the holes
+	containsPoint( lat, lon ) {
+
+		const { rings } = this;
+		for ( let i = 0, l = rings.length; i < l; i ++ ) {
+
+			if ( ringContains( rings[ i ], lat, lon ) !== ( i === 0 ) ) {
+
+				return false;
+
+			}
+
+		}
+
+		return true;
+
+	}
+
+}
+
+// even odd test of a point against a ring's cartographic coordinates
+function ringContains( ring, lat, lon ) {
+
+	const { lat: lats, lon: lons } = ring;
+	let inside = false;
+	for ( let i = 0, l = lats.length, j = l - 1; i < l; j = i ++ ) {
+
+		if (
+			( lats[ i ] > lat ) !== ( lats[ j ] > lat ) &&
+			lon < ( lons[ j ] - lons[ i ] ) * ( lat - lats[ i ] ) / ( lats[ j ] - lats[ i ] ) + lons[ i ]
+		) {
+
+			inside = ! inside;
+
+		}
+
+	}
+
+	return inside;
 
 }
 
