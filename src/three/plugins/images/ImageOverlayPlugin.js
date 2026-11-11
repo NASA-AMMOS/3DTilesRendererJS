@@ -955,7 +955,7 @@ export class ImageOverlayPlugin {
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
-		const { processedTiles } = this;
+		const { processedTiles, pendingTiles } = this;
 
 		overlay.init().then( () => {
 
@@ -967,8 +967,15 @@ export class ImageOverlayPlugin {
 		const promises = [];
 		processedTiles.forEach( async tile => {
 
-			const scene = tile.engineData.scene;
+			// a tile that is still processing only has its scene in "pendingTiles", and a tile that is
+			// still downloading has no scene yet and gets every overlay once it is processed
+			const scene = tile.engineData.scene || pendingTiles.get( tile );
 			this._initTileOverlayInfo( tile, overlay );
+			if ( ! scene ) {
+
+				return;
+
+			}
 
 			const promise = this._initTileSceneOverlayInfo( scene, tile, overlay );
 			promises.push( promise );
@@ -1315,8 +1322,8 @@ export class ImageOverlayPlugin {
 					if ( c.material && meshParams.has( c ) ) {
 
 						const params = meshParams.get( c );
-						params.layerMaps.length = 0;
-						params.layerInfo.length = 0;
+						params.layerMaps.value.length = 0;
+						params.layerInfo.value.length = 0;
 
 						c.material.defines.LAYER_COUNT = 0;
 						c.material.needsUpdate = true;
@@ -1330,6 +1337,27 @@ export class ImageOverlayPlugin {
 			return;
 
 		}
+
+		// give every mesh an empty slot for each overlay so the uniform arrays are complete, even for
+		// overlays that have not been initialized for this tile yet
+		overlays.forEach( overlay => {
+
+			const { tileInfo } = overlayInfo.get( overlay );
+			tileInfo.get( tile ).meshInfo.forEach( ( info, mesh ) => {
+
+				const params = meshParams.get( mesh );
+				params.layerMaps.value.length = overlays.length;
+				params.layerInfo.value.length = overlays.length;
+				overlays.forEach( ( o, i ) => {
+
+					params.layerMaps.value[ i ] = null;
+					params.layerInfo.value[ i ] = o;
+
+				} );
+
+			} );
+
+		} );
 
 		// update the uvs and texture overlays for each mesh
 		overlays.forEach( ( overlay, i ) => {
@@ -1349,10 +1377,6 @@ export class ImageOverlayPlugin {
 					geometry.dispose();
 
 				}
-
-				// set the uniform array lengths
-				params.layerMaps.length = overlays.length;
-				params.layerInfo.length = overlays.length;
 
 				// assign the uniforms
 				params.layerMaps.value[ i ] = target !== null ? target : null;
