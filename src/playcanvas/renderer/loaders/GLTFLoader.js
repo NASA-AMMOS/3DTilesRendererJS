@@ -4,12 +4,15 @@ import { LoaderBase } from '3d-tiles-renderer/core';
 
 let _loadId = 0;
 
-// the tiles renderer quietly drops a tile whose load fails with an AbortError
-function createAbortError() {
+// Error thrown when a tile load is aborted because the application was destroyed. The tiles
+// renderer quietly drops a tile whose load fails with an AbortError.
+class ApplicationDestroyedError extends DOMException {
 
-	const error = new Error( 'GLTFLoader: The application was destroyed.' );
-	error.name = 'AbortError';
-	return error;
+	constructor() {
+
+		super( 'GLTFLoader: The application was destroyed', 'AbortError' );
+
+	}
 
 }
 
@@ -64,7 +67,7 @@ export class GLTFLoader extends LoaderBase {
 		// destroyed, which releases the asset registry
 		if ( ! registry ) {
 
-			throw createAbortError();
+			throw new ApplicationDestroyedError();
 
 		}
 
@@ -101,7 +104,7 @@ export class GLTFLoader extends LoaderBase {
 		if ( ! app.assets || ! asset.resource ) {
 
 			disposeModel( null, asset, app.assets );
-			throw createAbortError();
+			throw new ApplicationDestroyedError();
 
 		}
 
