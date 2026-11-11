@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - TilesFadePlugin: Add a PlayCanvas tile fade plugin, available from "3d-tiles-renderer/playcanvas/plugins".
 
+### Fixed
+- PlayCanvas TilesRenderer: Fix errors logged for tiles that finish loading after the application is destroyed.
+
 ## [0.5.4] - 2026.11.03
 ### Added
 - TilesFadePlugin: Add a Babylon.js tile fade plugin, available from "3d-tiles-renderer/babylonjs/plugins".
