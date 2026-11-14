@@ -1,4 +1,4 @@
-import { PointsMaterial, Vector2, Vector3 } from 'three';
+import { Matrix4, PointsMaterial, Vector2 } from 'three';
 
 /**
  * PointsMaterial that draws points at a world space size with optional shapes and eye dome
@@ -6,7 +6,8 @@ import { PointsMaterial, Vector2, Vector3 } from 'three';
  *
  * Octree data sets can additionally size each point by the deepest active node containing it,
  * found by walking a hierarchy texture in the vertex shader, which halves the spacing per level
- * below the root. Enable it by assigning `uActiveNodes`, `uNodeSize` and `uNodeMinOffset`.
+ * below the root. Enable it by assigning `uActiveNodes`, `uNodeSize` and `uNodeTransform`, the
+ * matrix from the object's frame to the root node's, with the node's min corner at the origin.
  *
  * All the properties below can be adjusted after construction.
  * @param {Object} [params] PointsMaterial parameters plus the properties below.
@@ -147,7 +148,7 @@ export class PointCloudMaterial extends PointsMaterial {
 		this.uniforms = {
 			uActiveNodes: { value: null },
 			uNodeSize: { value: 1 },
-			uNodeMinOffset: { value: new Vector3() },
+			uNodeTransform: { value: new Matrix4() },
 			uMinPointSize: { value: minPointSize },
 			uMaxPointSize: { value: maxPointSize },
 			uTileId: { value: 0 },
@@ -183,7 +184,7 @@ export class PointCloudMaterial extends PointsMaterial {
 
 						uniform usampler2D uActiveNodes;
 						uniform float uNodeSize;
-						uniform vec3 uNodeMinOffset;
+						uniform mat4 uNodeTransform;
 
 						// number of set bits below the given bit index
 						uint numberOfOnes( uint mask, int index ) {
@@ -254,7 +255,7 @@ export class PointCloudMaterial extends PointsMaterial {
 						vec3 activeResult = vec3( 0.0 );
 						#ifdef LOD_SIZING
 
-							activeResult = getActiveDepth( position + uNodeMinOffset );
+							activeResult = getActiveDepth( ( uNodeTransform * vec4( position, 1.0 ) ).xyz );
 
 						#endif
 

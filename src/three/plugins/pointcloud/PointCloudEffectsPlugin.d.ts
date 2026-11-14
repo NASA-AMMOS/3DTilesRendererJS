@@ -6,6 +6,8 @@ export class PointCloudEffectsPlugin {
 	edlStrength: number;
 	edlRadius: number;
 	debugColorMode: 'none' | 'node' | 'depth' | 'tile';
+	adaptivePointSize: boolean;
+	pointScale: number;
 
 	constructor( options?: {
 		pointShape?: 'square' | 'round' | 'sphere',
@@ -14,6 +16,8 @@ export class PointCloudEffectsPlugin {
 		edlStrength?: number,
 		edlRadius?: number,
 		debugColorMode?: 'none' | 'node' | 'depth' | 'tile',
+		adaptivePointSize?: boolean,
+		pointScale?: number,
 	} );
 
 }
