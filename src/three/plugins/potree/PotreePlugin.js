@@ -1,38 +1,13 @@
-import {
-	DataTexture,
-	NearestFilter,
-	Points,
-	RGBAIntegerFormat,
-	UnsignedByteType,
-	Vector3,
-} from 'three';
+import { Points } from 'three';
 import { PotreeLoader, getChildBounds } from './PotreeLoader.js';
 import { PointCloudMaterial } from '../pointcloud/PointCloudMaterial.js';
 import { PointCloudEffectsPlugin } from '../pointcloud/PointCloudEffectsPlugin.js';
-
-// Points are drawn larger than the point spacing to cover the gaps between them - potree uses
-// the same factor
-const SPACING_COVERAGE_FACTOR = 1.7;
+import { SPACING_COVERAGE_FACTOR, idFromOctantPath } from '../pointcloud/ActiveNodesTexture.js';
 
 // Node key from a tile content uri, e.g. ".../r012.potree" -> "r012"
 function keyFromUri( uri ) {
 
 	return uri.split( '/' ).pop().replace( /\.potree$/, '' );
-
-}
-
-// Id built from the key's octant path, matching the one the shader accumulates while walking so
-// the "node" and "tile" debug colors can be compared directly.
-function idFromKey( key ) {
-
-	let id = 0;
-	for ( let i = 1, l = key.length; i < l; i ++ ) {
-
-		id = ( id * 8 + parseInt( key[ i ] ) + 1 ) % 16777216;
-
-	}
-
-	return id;
 
 }
 
@@ -46,25 +21,6 @@ function makeBoundingBox( min, max ) {
 	const hy = ( max[ 1 ] - min[ 1 ] ) / 2;
 	const hz = ( max[ 2 ] - min[ 2 ] ) / 2;
 	return [ cx, cy, cz, hx, 0, 0, 0, hy, 0, 0, 0, hz ];
-
-}
-
-// The node hierarchy is stored in an integer texture so the shader reads the mask and offset
-// bytes directly rather than converting them back from normalized floats. Nodes fill it in
-// row major order, and it is square so it stays well clear of the platform size limit.
-function createNodesTexture( size ) {
-
-	const texture = new DataTexture(
-		new Uint8Array( size * size * 4 ),
-		size,
-		size,
-		RGBAIntegerFormat,
-		UnsignedByteType,
-	);
-	texture.internalFormat = 'RGBA8UI';
-	texture.minFilter = NearestFilter;
-	texture.magFilter = NearestFilter;
-	return texture;
 
 }
 
@@ -96,30 +52,12 @@ function boxToMinMax( box ) {
  */
 export class PotreePlugin extends PointCloudEffectsPlugin {
 
-	get pointScale() {
-
-		return this._pointScale;
-
-	}
-
-	set pointScale( value ) {
-
-		if ( value !== this._pointScale ) {
-
-			this._pointScale = value;
-			this._updateMaterials();
-
-		}
-
-	}
-
 	constructor( options = {} ) {
 
 		super( options );
 
 		const {
 			url = null,
-			pointScale = 1,
 			useRecommendedSettings = true,
 		} = options;
 
@@ -129,25 +67,6 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 		this.url = url;
 		this.loader = null;
 		this.useRecommendedSettings = useRecommendedSettings;
-
-		this._pointScale = pointScale;
-
-		// The active node hierarchy shared by every material: per texel the active-children
-		// octant mask (r) and the offset to the first child texel (g, b). Rebuilt after any
-		// frame that changes the active tile set.
-		this._activeNodesTexture = createNodesTexture( 1 );
-
-		this._activeSetDirty = false;
-		this._onUpdateAfter = () => {
-
-			if ( this._activeSetDirty ) {
-
-				this._activeSetDirty = false;
-				this._updateActiveNodesTexture();
-
-			}
-
-		};
 
 	}
 
@@ -173,23 +92,13 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 		};
 
 		this.loader = loader;
-		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 
 	}
 
 	dispose() {
 
-		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
-		this._activeNodesTexture.dispose();
-
 		super.dispose();
 		this.loader = null;
-
-	}
-
-	setTileActive() {
-
-		this._activeSetDirty = true;
 
 	}
 
@@ -254,10 +163,14 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 			vertexColors: Boolean( geometry.attributes.color ),
 			size: spacing * SPACING_COVERAGE_FACTOR * this.pointScale,
 		} );
-		material.activeNodes = this._activeNodesTexture;
-		material.uniforms.uTileId.value = idFromKey( key );
+		material.activeNodes = this._getActiveNodes( this ).texture;
+		material.uniforms.uTileId.value = idFromOctantPath( key.slice( 1 ) );
 		material.uniforms.uNodeSize.value = boundingBox.max[ 0 ] - boundingBox.min[ 0 ];
-		material.uniforms.uNodeMinOffset.value.copy( center ).sub( new Vector3( ...boundingBox.min ) );
+		material.uniforms.uNodeTransform.value.makeTranslation(
+			center.x - boundingBox.min[ 0 ],
+			center.y - boundingBox.min[ 1 ],
+			center.z - boundingBox.min[ 2 ],
+		);
 
 		// offset the points by the node center so vertex positions stay near the origin
 		const points = new Points( geometry, material );
@@ -265,13 +178,14 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 		points.updateMatrix();
 
 		this._expandChildren( tile, key );
-		this._activeSetDirty = true;
 
 		return points;
 
 	}
 
 	disposeTile( tile ) {
+
+		super.disposeTile( tile );
 
 		const { processNodeQueue } = this.tiles;
 		for ( let i = 0, l = tile.children.length; i < l; i ++ ) {
@@ -281,7 +195,6 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 		}
 
 		tile.children.length = 0;
-		this._activeSetDirty = true;
 
 	}
 
@@ -315,84 +228,10 @@ export class PotreePlugin extends PointCloudEffectsPlugin {
 
 	}
 
-	// Encode the active tiles into the nodes texture, sorted by level then key so a tile's
-	// children are consecutive and in octant order, as the shader's walk expects. Additive
-	// refinement keeps the set a connected tree.
-	_updateActiveNodesTexture() {
+	// Every potree tile is a node of the one octree, keyed by its content uri
+	_getOctreeNode( tile ) {
 
-		const { tiles } = this;
-
-		const keys = new Map();
-		tiles.activeTiles.forEach( tile => {
-
-			keys.set( tile, keyFromUri( tile.content.uri ) );
-
-		} );
-
-		const list = [ ...keys.keys() ].sort( ( a, b ) => {
-
-			const ka = keys.get( a );
-			const kb = keys.get( b );
-			if ( ka.length !== kb.length ) return ka.length - kb.length;
-			return ka < kb ? - 1 : 1;
-
-		} );
-
-		// grow the texture when the tiles no longer fit
-		let texture = this._activeNodesTexture;
-		const size = Math.ceil( Math.sqrt( list.length ) );
-		if ( size > texture.image.width ) {
-
-			texture.dispose();
-			texture = createNodesTexture( size );
-			this._activeNodesTexture = texture;
-
-			tiles.forEachLoadedModel( scene => {
-
-				scene.material.activeNodes = texture;
-
-			} );
-
-		}
-
-		const data = texture.image.data;
-		data.fill( 0 );
-
-		const indexByKey = new Map();
-		for ( let i = 0, l = list.length; i < l; i ++ ) {
-
-			const key = keys.get( list[ i ] );
-			indexByKey.set( key, i );
-
-			// byte 3: potree's density lod offset, 100 being its "no offset" encoding
-			data[ i * 4 + 3 ] = 100;
-
-			if ( i === 0 ) {
-
-				continue;
-
-			}
-
-			const parentKey = key.slice( 0, - 1 );
-			const parentIndex = indexByKey.get( parentKey );
-
-			// bytes 1 and 2 are the offset to the first child, and siblings are consecutive so
-			// the first one encountered sets it
-			if ( data[ parentIndex * 4 ] === 0 ) {
-
-				const offset = i - parentIndex;
-				data[ parentIndex * 4 + 1 ] = offset >> 8;
-				data[ parentIndex * 4 + 2 ] = offset & 0xff;
-
-			}
-
-			// byte 0 is the child occupancy mask, and the key's last digit is the tile's octant
-			const octant = parseInt( key.charAt( key.length - 1 ) );
-			data[ parentIndex * 4 ] |= 1 << octant;
-
-		}
-
-		texture.needsUpdate = true;
+		return tile.content ? { root: this, path: keyFromUri( tile.content.uri ).slice( 1 ) } : null;
 
 	}
 
