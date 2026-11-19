@@ -398,13 +398,13 @@ export class MVTAnnotationsPlugin {
 	 */
 	get maxParseTimeMs() {
 
-		return this.toggleTileQueue.maxUpdateTimeMs;
+		return this.processTileQueue.maxUpdateTimeMs;
 
 	}
 
 	set maxParseTimeMs( v ) {
 
-		this.toggleTileQueue.maxUpdateTimeMs = v;
+		this.processTileQueue.maxUpdateTimeMs = v;
 
 	}
 
@@ -544,7 +544,12 @@ export class MVTAnnotationsPlugin {
 		this.tileLoadState = new Map();
 		this.vectorTileInfo = new Map();
 
-		this.toggleTileQueue = new DeadlineTaskQueue();
+		// Parsed content per loaded vector tile, keyed like the hierarchy tiles. A tile only reports
+		// loaded to the hierarchy once its annotations are parsed and settled so tiles swap in ready
+		// to display.
+		this._tileContent = new Map();
+		this._pendingSettle = new Set();
+		this.processTileQueue = new DeadlineTaskQueue();
 
 		this.buildings = new MVTBuildings( {
 			getHeight: ( layer, properties ) => this.driver.getBuildingHeight( layer, properties ),
@@ -587,10 +592,9 @@ export class MVTAnnotationsPlugin {
 			debug,
 			hierarchy,
 			settlingManager,
-			contentCache,
 			pointManager,
 			anchorManager,
-			toggleTileQueue,
+			processTileQueue,
 		} = this;
 
 		// init debug
@@ -603,7 +607,11 @@ export class MVTAnnotationsPlugin {
 		settlingManager.occupancy = occupancy;
 		settlingManager.tiles = tiles;
 
-		hierarchy.contentCache = contentCache;
+		// the hierarchy loads through the plugin so processing counts toward a tile being loaded
+		hierarchy.contentCache = {
+			lock: ( x, y, level ) => this._lockVectorTile( x, y, level ),
+			release: ( x, y, level ) => this._releaseVectorTile( x, y, level ),
+		};
 
 		// ensure the overlay is initialized
 		overlay.init();
@@ -689,7 +697,7 @@ export class MVTAnnotationsPlugin {
 
 			// update all sub managers
 			hierarchy.update();
-			toggleTileQueue.update();
+			processTileQueue.update();
 
 			// point annotations
 			pointManager.update();
@@ -736,6 +744,19 @@ export class MVTAnnotationsPlugin {
 				tiles.plugins.find( plugin => plugin.sampleCartographicElevation ) || null;
 			settlingManager.update();
 
+			// report the tiles whose annotations have all settled as loaded
+			this._pendingSettle.forEach( info => {
+
+				if ( info.settleItems.every( item => item.ready ) ) {
+
+					this._pendingSettle.delete( info );
+					info.resolve( info );
+					tiles.dispatchEvent( { type: 'needs-update' } );
+
+				}
+
+			} );
+
 			// occupancy
 			occupancy.camera = camera;
 			occupancy.update();
@@ -770,7 +791,7 @@ export class MVTAnnotationsPlugin {
 
 			// if there's more work required the fire that we need to run during a subsequent frame and
 			// try to run during an idle callback, queueing at most one at a time.
-			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork || toggleTileQueue.hasPendingWork ) {
+			if ( occupancy.hasPendingWork || settlingManager.hasPendingWork || processTileQueue.hasPendingWork || this._pendingSettle.size > 0 ) {
 
 				tiles.dispatchEvent( { type: 'needs-update' } );
 				if ( this.useIdleCallback && this._idleCallbackHandle === - 1 ) {
@@ -783,7 +804,7 @@ export class MVTAnnotationsPlugin {
 						// be done.
 						occupancy.needsUpdate = occupancy.needsUpdate || settlingManager.hasPendingWork;
 
-						toggleTileQueue.update( deadline.timeRemaining() * 0.9 );
+						processTileQueue.update( deadline.timeRemaining() * 0.9 );
 						settlingManager.update( deadline.timeRemaining() * 0.9 );
 						occupancy.update( deadline.timeRemaining() * 0.9 );
 
@@ -801,20 +822,20 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		// queue the tile so the parsing is amortized rather than landing in the frame that toggled it
+		// the content is parsed and settled before the hierarchy displays it, so toggling only
+		// registers or unregisters the annotations
 		this._onVectorTileToggle = ( { x, y, level, visible } ) => {
 
 			tiles.dispatchEvent( { type: 'needs-update' } );
 
-			// "vectorTileInfo" holds the applied state
 			const key = `${ x }_${ y }_${ level }`;
-			if ( visible === this.vectorTileInfo.has( key ) ) {
+			if ( visible ) {
 
-				toggleTileQueue.delete( key );
+				this._showVectorTile( key );
 
 			} else {
 
-				toggleTileQueue.add( key, { x, y, level, visible } );
+				this._hideVectorTile( key );
 
 			}
 
@@ -831,142 +852,80 @@ export class MVTAnnotationsPlugin {
 
 		};
 
-		toggleTileQueue.callback = function* ( { x, y, level, visible }, isDeadlineComplete ) {
+		// parse a loaded tile's features over multiple frames, then settle the lines and polygons
+		// before the tile is reported loaded
+		processTileQueue.callback = function* ( { x, y, level, vectorTile, info }, isDeadlineComplete ) {
 
-			const {
-				contentCache,
-				driver,
-				vectorTileInfo,
-				settlingManager,
-				anchorManager,
-				pointManager,
-				_filterAnnotation,
-				_measureChar,
-			} = this;
-
+			const { settlingManager, _filterAnnotation } = this;
+			const { tiling } = overlay;
 			const key = `${ x }_${ y }_${ level }`;
-			if ( visible ) {
 
-				const { tiling } = overlay;
-				const vectorTile = contentCache.get( x, y, level );
+			// parse the annotations one feature at a time so each is only decoded once
+			const annotations = [];
+			const tileBounds = tiling.getTileBounds( x, y, level, true, false );
+			const range = tiling.getTileBounds( x, y, level, false, false );
+			for ( const layerName in vectorTile.layers ) {
 
-				if ( ! vectorTile ) {
+				const layer = vectorTile.layers[ layerName ];
+				for ( let i = 0; i < layer.length; i ++ ) {
 
-					vectorTileInfo.set( key, { annotations: [] } );
-					return;
+					// pause between features once the time budget is spent
+					if ( isDeadlineComplete() ) {
 
-				}
-
-				// parse the annotations one feature at a time so each is only decoded once
-				const annotations = [];
-				const tileBounds = tiling.getTileBounds( x, y, level, true, false );
-				const range = tiling.getTileBounds( x, y, level, false, false );
-				for ( const layerName in vectorTile.layers ) {
-
-					const layer = vectorTile.layers[ layerName ];
-					for ( let i = 0; i < layer.length; i ++ ) {
-
-						// pause between features once the time budget is spent
-						if ( isDeadlineComplete() ) {
-
-							yield;
-
-						}
-
-						const feature = layer.feature( i );
-						const { type } = feature;
-						if ( ! _filterAnnotation( layerName, feature.properties, type ) ) {
-
-							continue;
-
-						}
-
-						if ( type === 1 ) {
-
-							parsePointFeature( feature, layerName, level, tileBounds, tiling, annotations );
-
-						} else if ( type === 2 ) {
-
-							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, annotations );
-
-						} else if ( type === 3 ) {
-
-							parsePolygonFeature( feature, layerName, level, tileBounds, tiling, tiles.surface, annotations );
-
-						}
+						yield;
 
 					}
 
-				}
+					const feature = layer.feature( i );
+					const { type } = feature;
+					if ( ! _filterAnnotation( layerName, feature.properties, type ) ) {
 
-				// registration runs uninterrupted so a cancellation can't strand partially
-				// registered annotations
-				const lines = [];
-				for ( const ann of annotations ) {
-
-					if ( ann instanceof PolygonAnnotation ) {
-
-						ann.tileKey = key;
-						settlingManager.register( ann );
-						this._polygonsAdded.push( ann );
 						continue;
 
 					}
 
-					ann.horizonCutoff = this._horizonCutoff;
+					if ( type === 1 ) {
 
-					if ( ann instanceof LineAnnotation ) {
+						parsePointFeature( feature, layerName, level, tileBounds, tiling, annotations );
 
-						lines.push( ann );
-						settlingManager.register( ann );
-						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
-						ann.text = driver.getText( ann.properties );
-						ann.updateCharacterWidthCache( _measureChar );
+					} else if ( type === 2 ) {
 
-					} else {
+						parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, annotations );
 
-						pointManager.add( ann );
-						ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 1 );
+					} else if ( type === 3 ) {
+
+						parsePolygonFeature( feature, layerName, level, tileBounds, tiling, tiles.surface, annotations );
 
 					}
 
 				}
 
-				// add the anchors
-				anchorManager.addLines( lines );
+			}
 
-				// this MUST happen last with no yields after - the toggle queue cancellation logic
-				// reads this key to tell whether the tile has been fully applied.
-				vectorTileInfo.set( key, { annotations } );
+			// lines and polygons settle while the tile is held loaded, points settle per canonical
+			// instance once displayed
+			const settleItems = [];
+			for ( const ann of annotations ) {
+
+				ann.tileKey = key;
+				if ( ann instanceof LineAnnotation || ann instanceof PolygonAnnotation ) {
+
+					settleItems.push( ann );
+					settlingManager.register( ann );
+
+				}
+
+			}
+
+			info.annotations = annotations;
+			info.settleItems = settleItems;
+			if ( settleItems.length === 0 ) {
+
+				info.resolve( info );
 
 			} else {
 
-				const { annotations } = vectorTileInfo.get( key );
-				vectorTileInfo.delete( key );
-
-				const lines = [];
-				for ( const item of annotations ) {
-
-					if ( item instanceof LineAnnotation ) {
-
-						lines.push( item );
-						settlingManager.unregister( item );
-
-					} else if ( item instanceof PolygonAnnotation ) {
-
-						settlingManager.unregister( item );
-						this._polygonsRemoved.push( item );
-
-					} else {
-
-						pointManager.delete( item );
-
-					}
-
-				}
-
-				// remove the anchors
-				anchorManager.deleteLines( lines );
+				this._pendingSettle.add( info );
 
 			}
 
@@ -996,7 +955,7 @@ export class MVTAnnotationsPlugin {
 
 	dispose() {
 
-		const { debug, tiles, hierarchy, driver, settlingManager, toggleTileQueue, tileLoadState } = this;
+		const { debug, tiles, hierarchy, driver, settlingManager, processTileQueue, tileLoadState } = this;
 		debug.occupancy.dispose();
 		debug.paths.dispose();
 
@@ -1025,7 +984,9 @@ export class MVTAnnotationsPlugin {
 
 		} );
 
-		toggleTileQueue.clear();
+		processTileQueue.clear();
+		this._tileContent.clear();
+		this._pendingSettle.clear();
 
 		// cancel any pending idle callback so it can't run against the disposed plugin
 		if ( this._idleCallbackHandle !== - 1 ) {
@@ -1093,6 +1054,156 @@ export class MVTAnnotationsPlugin {
 	}
 
 	//
+
+	// Lock the vector tile content and process it, resolving once the annotations are parsed and
+	// settled so the hierarchy only displays tiles that are ready.
+	_lockVectorTile( x, y, level ) {
+
+		const { contentCache, _tileContent, processTileQueue } = this;
+		const key = `${ x }_${ y }_${ level }`;
+		const info = { annotations: null, settleItems: [], resolve: null, promise: null };
+		info.promise = new Promise( resolve => info.resolve = resolve );
+		_tileContent.set( key, info );
+
+		const process = vectorTile => {
+
+			// released before the content arrived
+			if ( _tileContent.get( key ) !== info ) {
+
+				return null;
+
+			}
+
+			if ( vectorTile ) {
+
+				processTileQueue.add( key, { x, y, level, vectorTile, info } );
+
+			} else {
+
+				info.annotations = [];
+				info.resolve( info );
+
+			}
+
+			return info.promise;
+
+		};
+
+		const result = contentCache.lock( x, y, level );
+		if ( result instanceof Promise ) {
+
+			return result.then( process );
+
+		} else if ( result === null ) {
+
+			_tileContent.delete( key );
+			return null;
+
+		} else {
+
+			return process( result );
+
+		}
+
+	}
+
+	_releaseVectorTile( x, y, level ) {
+
+		const { contentCache, _tileContent, _pendingSettle, processTileQueue, settlingManager } = this;
+		const key = `${ x }_${ y }_${ level }`;
+		const info = _tileContent.get( key );
+		if ( info ) {
+
+			_tileContent.delete( key );
+			_pendingSettle.delete( info );
+			processTileQueue.delete( key );
+			info.settleItems.forEach( item => settlingManager.unregister( item ) );
+
+		}
+
+		contentCache.release( x, y, level );
+
+	}
+
+	// register the processed annotations of a displayed vector tile
+	_showVectorTile( key ) {
+
+		const { driver, vectorTileInfo, anchorManager, pointManager, _tileContent, _measureChar } = this;
+		const info = _tileContent.get( key );
+		if ( ! info || ! info.annotations || vectorTileInfo.has( key ) ) {
+
+			return;
+
+		}
+
+		const { annotations } = info;
+		const lines = [];
+		for ( const ann of annotations ) {
+
+			if ( ann instanceof PolygonAnnotation ) {
+
+				this._polygonsAdded.push( ann );
+				continue;
+
+			}
+
+			ann.horizonCutoff = this._horizonCutoff;
+
+			if ( ann instanceof LineAnnotation ) {
+
+				lines.push( ann );
+				ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 2 );
+				ann.text = driver.getText( ann.properties );
+				ann.updateCharacterWidthCache( _measureChar );
+
+			} else {
+
+				pointManager.add( ann );
+				ann.enabled = driver.isAnnotationEnabled( ann.layer, ann.properties, 1 );
+
+			}
+
+		}
+
+		anchorManager.addLines( lines );
+		vectorTileInfo.set( key, { annotations } );
+
+	}
+
+	_hideVectorTile( key ) {
+
+		const { vectorTileInfo, anchorManager, pointManager } = this;
+		if ( ! vectorTileInfo.has( key ) ) {
+
+			return;
+
+		}
+
+		const { annotations } = vectorTileInfo.get( key );
+		vectorTileInfo.delete( key );
+
+		const lines = [];
+		for ( const item of annotations ) {
+
+			if ( item instanceof LineAnnotation ) {
+
+				lines.push( item );
+
+			} else if ( item instanceof PolygonAnnotation ) {
+
+				this._polygonsRemoved.push( item );
+
+			} else {
+
+				pointManager.delete( item );
+
+			}
+
+		}
+
+		anchorManager.deleteLines( lines );
+
+	}
 
 	// Derive the tile's range from its region bounding volume so the vector tiles start loading
 	// when the tile content download starts, before any geometry is available.

@@ -1,6 +1,6 @@
 /** @import { Material } from 'three' */
 /** @import { PolygonAnnotation } from './annotations/PolygonAnnotation.js' */
-import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial, ShapeUtils } from 'three';
+import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial, ShapeUtils, Vector3 } from 'three';
 import { ColorManager } from './debug/ColorManager.js';
 
 const ColorMode = {
@@ -10,6 +10,8 @@ const ColorMode = {
 	TILE: 3,
 };
 
+const _pos = /* @__PURE__ */ new Vector3();
+const _up = /* @__PURE__ */ new Vector3();
 const _color = /* @__PURE__ */ new Color();
 
 /**
@@ -225,6 +227,11 @@ export class MVTBuildings {
 		// Map<hex, Material> tinted copies of the material used by the debug color modes
 		this._coloredMaterials = new Map();
 
+		// Map<id, Set<annotation>> of the pieces of a building cut by tile boundaries, which share
+		// the lowest base height among them so they meet at the boundary. Polygons that lie
+		// entirely within a tile are placed on their own.
+		this._itemsById = new Map();
+
 	}
 
 	/**
@@ -236,15 +243,23 @@ export class MVTBuildings {
 	 */
 	update( added, removed ) {
 
-		const { _meshes, group, getHeight, getMinHeight, material } = this;
+		const { _meshes, _itemsById, group, getHeight, getMinHeight, material } = this;
+		const changedIds = new Set();
 
 		_meshes.forEach( ( mesh, item ) => {
 
 			if ( item.needsUpdate ) {
 
 				item.needsUpdate = false;
-				mesh.matrix.copy( item.frame );
-				mesh.updateMatrixWorld( true );
+				if ( item.onBoundary ) {
+
+					changedIds.add( item.id );
+
+				} else {
+
+					this._placeMesh( mesh, item, item.baseHeight );
+
+				}
 
 			}
 
@@ -261,6 +276,20 @@ export class MVTBuildings {
 
 			}
 
+			if ( item.onBoundary ) {
+
+				const pieces = _itemsById.get( item.id );
+				pieces.delete( item );
+				if ( pieces.size === 0 ) {
+
+					_itemsById.delete( item.id );
+
+				}
+
+				changedIds.add( item.id );
+
+			}
+
 		}
 
 		for ( const item of added ) {
@@ -269,7 +298,6 @@ export class MVTBuildings {
 			const geometry = extrudeRings( item.rings, getMinHeight( layer, properties ), getHeight( layer, properties ) );
 			const mesh = new Mesh( geometry, material );
 			mesh.matrixAutoUpdate = false;
-			mesh.matrix.copy( item.frame );
 			mesh.userData.annotation = item;
 			item.needsUpdate = false;
 
@@ -279,12 +307,26 @@ export class MVTBuildings {
 
 			}
 
-			// the tiles group does not propagate matrix updates to children added after the fact
 			group.add( mesh );
-			mesh.updateMatrixWorld( true );
+			this._placeMesh( mesh, item, item.baseHeight );
 			_meshes.set( item, mesh );
 
+			if ( item.onBoundary ) {
+
+				if ( ! _itemsById.has( item.id ) ) {
+
+					_itemsById.set( item.id, new Set() );
+
+				}
+
+				_itemsById.get( item.id ).add( item );
+				changedIds.add( item.id );
+
+			}
+
 		}
+
+		changedIds.forEach( id => this._updatePieces( id ) );
 
 	}
 
@@ -305,6 +347,77 @@ export class MVTBuildings {
 		this._coloredMaterials.forEach( material => material.dispose() );
 		this._coloredMaterials.clear();
 		this.material.dispose();
+		this._itemsById.clear();
+
+	}
+
+	// Place the pieces of a building that meet at a tile boundary at the lowest base height among
+	// them. Pieces are linked through shared boundary vertices so the separate parts of a
+	// multipolygon are placed independently.
+	_updatePieces( id ) {
+
+		const pieces = this._itemsById.get( id );
+		if ( ! pieces ) {
+
+			return;
+
+		}
+
+		// union the pieces sharing a boundary vertex
+		const groups = [];
+		const groupByKey = new Map();
+		pieces.forEach( item => {
+
+			let group = null;
+			for ( const key of item.boundaryKeys ) {
+
+				const other = groupByKey.get( key );
+				if ( other && other !== group ) {
+
+					if ( group === null ) {
+
+						group = other;
+
+					} else {
+
+						other.forEach( member => group.add( member ) );
+						groups[ groups.indexOf( other ) ] = group;
+
+					}
+
+				}
+
+			}
+
+			if ( group === null ) {
+
+				group = new Set();
+				groups.push( group );
+
+			}
+
+			group.add( item );
+			item.boundaryKeys.forEach( key => groupByKey.set( key, group ) );
+
+		} );
+
+		for ( const group of new Set( groups ) ) {
+
+			let baseHeight = Infinity;
+			group.forEach( item => baseHeight = Math.min( baseHeight, item.baseHeight ) );
+			group.forEach( item => this._placeMesh( this._meshes.get( item ), item, baseHeight ) );
+
+		}
+
+	}
+
+	// the mesh sits at the surface frame raised to the base height
+	_placeMesh( mesh, item, baseHeight ) {
+
+		_up.setFromMatrixColumn( item.frame, 2 );
+		_pos.setFromMatrixPosition( item.frame ).addScaledVector( _up, baseHeight );
+		mesh.matrix.copy( item.frame ).setPosition( _pos );
+		mesh.updateMatrixWorld( true );
 
 	}
 
