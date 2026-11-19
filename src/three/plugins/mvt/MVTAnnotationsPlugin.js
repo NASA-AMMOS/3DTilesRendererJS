@@ -606,6 +606,7 @@ export class MVTAnnotationsPlugin {
 
 		settlingManager.occupancy = occupancy;
 		settlingManager.tiles = tiles;
+		settlingManager.sampleBuildingHeight = ( lat, lon ) => this._getBuildingHeight( lat, lon );
 
 		// the hierarchy loads through the plugin so processing counts toward a tile being loaded
 		hierarchy.contentCache = {
@@ -831,7 +832,7 @@ export class MVTAnnotationsPlugin {
 			const key = `${ x }_${ y }_${ level }`;
 			if ( visible ) {
 
-				this._showVectorTile( key );
+				this._showVectorTile( key, x, y, level );
 
 			} else {
 
@@ -1012,6 +1013,18 @@ export class MVTAnnotationsPlugin {
 
 	}
 
+	// building hits carry their annotation in "object.userData.annotation". Settling samples the
+	// tile geometry only.
+	raycast( raycaster, intersects ) {
+
+		if ( raycaster !== this.settlingManager.raycaster ) {
+
+			raycaster.intersectObject( this.buildings.group, true, intersects );
+
+		}
+
+	}
+
 	async processTileModel( scene, tile ) {
 
 		const { tiles, overlay } = this;
@@ -1126,9 +1139,9 @@ export class MVTAnnotationsPlugin {
 	}
 
 	// register the processed annotations of a displayed vector tile
-	_showVectorTile( key ) {
+	_showVectorTile( key, x, y, level ) {
 
-		const { driver, vectorTileInfo, anchorManager, pointManager, _tileContent, _measureChar } = this;
+		const { driver, vectorTileInfo, anchorManager, pointManager, settlingManager, _tileContent, _measureChar } = this;
 		const info = _tileContent.get( key );
 		if ( ! info || ! info.annotations || vectorTileInfo.has( key ) ) {
 
@@ -1138,10 +1151,12 @@ export class MVTAnnotationsPlugin {
 
 		const { annotations } = info;
 		const lines = [];
+		const polygons = [];
 		for ( const ann of annotations ) {
 
 			if ( ann instanceof PolygonAnnotation ) {
 
+				polygons.push( ann );
 				this._polygonsAdded.push( ann );
 				continue;
 
@@ -1166,20 +1181,29 @@ export class MVTAnnotationsPlugin {
 		}
 
 		anchorManager.addLines( lines );
-		vectorTileInfo.set( key, { annotations } );
+
+		const bounds = this.overlay.tiling.getTileBounds( x, y, level, false, false );
+		vectorTileInfo.set( key, { annotations, polygons, bounds } );
+
+		// points settle onto the buildings, so they resettle when the buildings change
+		if ( polygons.length > 0 ) {
+
+			pointManager.points.forEach( point => settlingManager.register( point ) );
+
+		}
 
 	}
 
 	_hideVectorTile( key ) {
 
-		const { vectorTileInfo, anchorManager, pointManager } = this;
+		const { vectorTileInfo, anchorManager, pointManager, settlingManager } = this;
 		if ( ! vectorTileInfo.has( key ) ) {
 
 			return;
 
 		}
 
-		const { annotations } = vectorTileInfo.get( key );
+		const { annotations, polygons } = vectorTileInfo.get( key );
 		vectorTileInfo.delete( key );
 
 		const lines = [];
@@ -1202,6 +1226,43 @@ export class MVTAnnotationsPlugin {
 		}
 
 		anchorManager.deleteLines( lines );
+
+		if ( polygons.length > 0 ) {
+
+			pointManager.points.forEach( point => settlingManager.register( point ) );
+
+		}
+
+	}
+
+	// top of the highest displayed building covering the point, or null if none
+	_getBuildingHeight( lat, lon ) {
+
+		const { driver, vectorTileInfo } = this;
+		let result = null;
+		vectorTileInfo.forEach( ( { polygons, bounds } ) => {
+
+			const [ minLon, minLat, maxLon, maxLat ] = bounds;
+			if ( polygons.length === 0 || lon < minLon || lon > maxLon || lat < minLat || lat > maxLat ) {
+
+				return;
+
+			}
+
+			for ( const polygon of polygons ) {
+
+				if ( polygon.containsPoint( lat, lon ) ) {
+
+					const top = polygon.placedBaseHeight + driver.getBuildingHeight( polygon.layer, polygon.properties );
+					result = result === null ? top : Math.max( result, top );
+
+				}
+
+			}
+
+		} );
+
+		return result;
 
 	}
 
