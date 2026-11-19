@@ -9,6 +9,8 @@ import { LineAnnotationOverlay } from './debug/LineAnnotationOverlay.js';
 import { LineAnnotation, parseLineFeature } from './annotations/LineAnnotation.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from '../images/overlays/utils.js';
 import { parsePointFeature } from './annotations/PointAnnotation.js';
+import { PolygonAnnotation, parsePolygonFeature } from './annotations/PolygonAnnotation.js';
+import { MVTBuildings } from './MVTBuildings.js';
 import { HierarchyOverlay } from './debug/HierarchyOverlay.js';
 import { PointAnnotationManager } from './annotations/PointAnnotationManager.js';
 import { TextAnchorAnnotation } from './annotations/TextAnchorAnnotation.js';
@@ -124,12 +126,36 @@ export class MVTAnnotationsDriver {
 	 * Whether an MVT feature should be included as an annotation.
 	 * @param {string} layer - The MVT layer name the feature belongs to.
 	 * @param {Object} properties - The feature's property map.
-	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line.
+	 * @param {number} type - The MVT geometry type: `1` = point, `2` = line, `3` = polygon.
 	 * @returns {boolean} True to include the feature as an annotation.
 	 */
 	filterAnnotation( layer, properties, type ) {
 
 		return false;
+
+	}
+
+	/**
+	 * Height in meters a polygon feature is extruded to.
+	 * @param {string} layer - The MVT layer name the feature belongs to.
+	 * @param {Object} properties - The feature's property map.
+	 * @returns {number} The extrusion height.
+	 */
+	getBuildingHeight( layer, properties ) {
+
+		return properties.height ?? 10;
+
+	}
+
+	/**
+	 * Height in meters a polygon feature is extruded from.
+	 * @param {string} layer - The MVT layer name the feature belongs to.
+	 * @param {Object} properties - The feature's property map.
+	 * @returns {number} The extrusion base height.
+	 */
+	getBuildingMinHeight( layer, properties ) {
+
+		return properties.min_height ?? 0;
 
 	}
 
@@ -271,10 +297,10 @@ export class DefaultMVTAnnotationsDriver extends MVTAnnotationsDriver {
 
 	}
 
-	// include every feature
+	// include every point and line feature
 	filterAnnotation( layer, properties, type ) {
 
-		return true;
+		return type !== 3;
 
 	}
 
@@ -520,6 +546,15 @@ export class MVTAnnotationsPlugin {
 
 		this.toggleTileQueue = new DeadlineTaskQueue();
 
+		this.buildings = new MVTBuildings( {
+			getHeight: ( layer, properties ) => this.driver.getBuildingHeight( layer, properties ),
+			getMinHeight: ( layer, properties ) => this.driver.getBuildingMinHeight( layer, properties ),
+		} );
+
+		// polygon visibility changes accumulated from the tile toggles and applied once per frame
+		this._polygonsAdded = [];
+		this._polygonsRemoved = [];
+
 		// debug overlays
 		this.debug = {
 			occupancy: new OccupancyGridOverlay( this.occupancy ),
@@ -542,6 +577,9 @@ export class MVTAnnotationsPlugin {
 			this.driver.group.updateMatrixWorld();
 
 		}
+
+		tiles.group.add( this.buildings.group );
+		this.buildings.group.updateMatrixWorld();
 
 		const {
 			overlay,
@@ -716,6 +754,9 @@ export class MVTAnnotationsPlugin {
 			const removed = splitAnnotations( occupancy.removed );
 			this.driver.onPointsUpdate( added.points, removed.points );
 			this.driver.onLabelsUpdate( added.labels, removed.labels );
+			this.buildings.update( this._polygonsAdded, this._polygonsRemoved );
+			this._polygonsAdded.length = 0;
+			this._polygonsRemoved.length = 0;
 
 			if ( occupancy.added.size > 0 || occupancy.removed.size > 0 ) {
 
@@ -834,12 +875,6 @@ export class MVTAnnotationsPlugin {
 
 						const feature = layer.feature( i );
 						const { type } = feature;
-						if ( type !== 1 && type !== 2 ) {
-
-							continue;
-
-						}
-
 						if ( ! _filterAnnotation( layerName, feature.properties, type ) ) {
 
 							continue;
@@ -850,9 +885,13 @@ export class MVTAnnotationsPlugin {
 
 							parsePointFeature( feature, layerName, level, tileBounds, tiling, annotations );
 
-						} else {
+						} else if ( type === 2 ) {
 
 							parseLineFeature( feature, layerName, level, tileBounds, range, tiling, tiles.ellipsoid, annotations );
+
+						} else if ( type === 3 ) {
+
+							parsePolygonFeature( feature, layerName, level, tileBounds, tiling, tiles.surface, annotations );
 
 						}
 
@@ -864,6 +903,15 @@ export class MVTAnnotationsPlugin {
 				// registered annotations
 				const lines = [];
 				for ( const ann of annotations ) {
+
+					if ( ann instanceof PolygonAnnotation ) {
+
+						ann.tileKey = key;
+						settlingManager.register( ann );
+						this._polygonsAdded.push( ann );
+						continue;
+
+					}
 
 					ann.horizonCutoff = this._horizonCutoff;
 
@@ -903,6 +951,11 @@ export class MVTAnnotationsPlugin {
 
 						lines.push( item );
 						settlingManager.unregister( item );
+
+					} else if ( item instanceof PolygonAnnotation ) {
+
+						settlingManager.unregister( item );
+						this._polygonsRemoved.push( item );
 
 					} else {
 
@@ -950,6 +1003,9 @@ export class MVTAnnotationsPlugin {
 		// unmount and dispose the driver's render group
 		driver.group.removeFromParent();
 		driver.dispose();
+
+		this.buildings.group.removeFromParent();
+		this.buildings.dispose();
 
 		hierarchy.removeEventListener( 'toggle', this._onVectorTileToggle );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
