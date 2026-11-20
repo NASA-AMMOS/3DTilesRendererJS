@@ -14,7 +14,7 @@ const f = /* @__PURE__ */ new Vector2();
  */
 export function decodeOctNormal( x, y, target = new Vector3() ) {
 
-	f.set( x, y ).divideScalar( 256 ).multiplyScalar( 2 ).subScalar( 1 );
+	f.set( x, y ).divideScalar( 255 ).multiplyScalar( 2 ).subScalar( 1 );
 
 	target.set( f.x, f.y, 1 - Math.abs( f.x ) - Math.abs( f.y ) );
 
