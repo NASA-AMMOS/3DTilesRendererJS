@@ -172,6 +172,13 @@ export class GeoJSONImageSource extends RegionImageSource {
 			const bounds = this._getFeatureBounds( feature );
 			featureBounds.set( feature, bounds );
 
+			// features without a geometry have no bounds
+			if ( bounds === null ) {
+
+				continue;
+
+			}
+
 			// expand full content bounds
 			const [ fMinLon, fMinLat, fMaxLon, fMaxLat ] = bounds;
 			minLon = Math.min( minLon, fMinLon );
@@ -324,7 +331,9 @@ export class GeoJSONImageSource extends RegionImageSource {
 	// draw feature on canvas ( assumes intersects already )
 	_drawFeatureOnCanvas( feature, tileBoundsDeg, height ) {
 
-		const { geometry = null, properties = {} } = feature;
+		// "properties" can be null, which a destructuring default does not cover
+		const { geometry = null } = feature;
+		const properties = feature.properties || {};
 		if ( ! geometry ) {
 
 			return;
