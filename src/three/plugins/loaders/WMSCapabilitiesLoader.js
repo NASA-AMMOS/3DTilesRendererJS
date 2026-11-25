@@ -29,8 +29,8 @@ function correctTupleUnits( tuple, crs ) {
 	if ( isWebMercator( crs ) ) {
 
 		mercatorProjection.fromNormalizedToCartographic(
-			0.5 + tuple[ 0 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ),
-			0.5 + tuple[ 1 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ),
+			0.5 + tuple[ 0 ] / EQUATOR_CIRCUMFERENCE,
+			0.5 + tuple[ 1 ] / EQUATOR_CIRCUMFERENCE,
 			tuple,
 		);
 
@@ -47,11 +47,12 @@ function correctTupleUnits( tuple, crs ) {
 // swap order when CRS is EPSG:4326 (WMS 1.3 axis order)
 function correctTupleOrder( tuple, crs, version ) {
 
-	// Before WMS 1.3.0 the latitude, longitude order for EPSG:4326 was declared to be in reverse and has
-	// been fixed in later versions. Correct the tuple order for consistency if loading a file from a prior version.
+	// Before WMS 1.3.0 EPSG:4326 values were listed in longitude, latitude order. Since WMS 1.3.0 they follow
+	// the axis order of the CRS definition, which is latitude, longitude for EPSG:4326. Correct the tuple order
+	// to longitude, latitude for consistency if loading a file from version 1.3.0 or later.
 	// See https://gis.stackexchange.com/questions/23347/getmap-wms-1-1-1-vs-1-3-0
 	const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
-	const shouldFixTupleOrder = major === 1 && minor < 3 || major < 1;
+	const shouldFixTupleOrder = major === 1 && minor >= 3 || major > 1;
 	if ( isEPSG4326( crs ) && shouldFixTupleOrder ) {
 
 		[ tuple[ 0 ], tuple[ 1 ] ] = [ tuple[ 1 ], tuple[ 0 ] ];
@@ -124,10 +125,10 @@ function parseEXGeographicBoundingBox( el ) {
 
 function parseLatLonBoundingBox( el ) {
 
-	const west = parseFloat( el.getAttribute( 'minx' ).textContent );
-	const east = parseFloat( el.getAttribute( 'maxx' ).textContent );
-	const south = parseFloat( el.getAttribute( 'miny' ).textContent );
-	const north = parseFloat( el.getAttribute( 'maxy' ).textContent );
+	const west = parseFloat( el.getAttribute( 'minx' ) );
+	const east = parseFloat( el.getAttribute( 'maxx' ) );
+	const south = parseFloat( el.getAttribute( 'miny' ) );
+	const north = parseFloat( el.getAttribute( 'maxy' ) );
 
 	const lowerCorner = [ west, south ];
 	const upperCorner = [ east, north ];
