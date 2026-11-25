@@ -71,11 +71,12 @@ export class TilesGroup extends Group {
 				this.matrixWorldInverse.copy( tempMat ).invert();
 
 				// update children
-				// the children will not have to change unless the parent group has updated
+				// the children will not have to change unless the parent group has updated. Tile scenes
+				// have "matrixAutoUpdate" disabled so the update must be forced.
 				const children = this.children;
 				for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-					children[ i ].updateMatrixWorld();
+					children[ i ].updateMatrixWorld( true );
 
 				}
 

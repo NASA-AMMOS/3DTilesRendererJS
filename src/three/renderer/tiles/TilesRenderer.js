@@ -752,11 +752,13 @@ export class TilesRenderer extends TilesRendererBase {
 					// any transformations applied to it can be assumed to be applied after load
 					// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 					// rotation fix which is why "multiply" happens here.
+					// "matrixAutoUpdate" is disabled so the exact product is kept, as with the tile transform below.
 					const { scene } = result;
 					scene.updateMatrix();
 					scene.matrix
 						.multiply( upRotationMatrix )
 						.decompose( scene.position, scene.quaternion, scene.scale );
+					scene.matrixAutoUpdate = false;
 
 					return result;
 
@@ -797,10 +799,22 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// ensure the matrix is up to date in case the scene has a transform applied
-		scene.updateMatrix();
+		// ensure the matrix is up to date in case the scene has a transform applied. A scene with
+		// "matrixAutoUpdate" disabled already holds its exact matrix.
+		if ( scene.matrixAutoUpdate ) {
+
+			scene.updateMatrix();
+
+		}
+
+		// The tile transform can include shear (for example an equal-area map projection), which
+		// position, quaternion, and scale cannot represent. Keep the exact matrix and disable
+		// "matrixAutoUpdate" so it is not rebuilt from the decomposed values, which are kept for
+		// code that reads them. See #1795.
 		scene.matrix.premultiply( tileTransform );
 		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+		scene.matrixAutoUpdate = false;
+		scene.matrixWorldNeedsUpdate = true;
 
 		// wait for extra processing by plugins if needed
 		await this.invokeAllPlugins( plugin => {
