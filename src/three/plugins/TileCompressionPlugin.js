@@ -1,6 +1,8 @@
-import { Vector3, LinearFilter, BufferAttribute, MathUtils } from 'three';
+import { Vector3, LinearFilter, BufferAttribute, MathUtils, Matrix4 } from 'three';
 
 const _vec = /* @__PURE__ */ new Vector3();
+const _scale = /* @__PURE__ */ new Vector3();
+const _matrix = /* @__PURE__ */ new Matrix4();
 function compressAttribute( attribute, arrayType ) {
 
 	if ( attribute.isInterleavedBufferAttribute || attribute.array instanceof arrayType ) {
@@ -83,23 +85,34 @@ function compressPositionAttribute( mesh, arrayType = Int16Array ) {
 
 	}
 
-	// shift the mesh to the center of the bounds
-	boundingBox
-		.getCenter( _vec )
-		.multiply( mesh.scale )
-		.applyQuaternion( mesh.quaternion );
-	mesh.position.add( _vec );
+	// shift the mesh to the center of the bounds and adjust the scale to accommodate the new
+	// geometry data range. The adjustment is applied to the local matrix because a tile scene
+	// root keeps its exact matrix with "matrixAutoUpdate" disabled, and that matrix can include
+	// shear that position, quaternion, and scale cannot represent.
+	_scale.set(
+		0.5 * ( max.x - min.x ) / maxValue,
+		0.5 * ( max.y - min.y ) / maxValue,
+		0.5 * ( max.z - min.z ) / maxValue,
+	);
+	_matrix
+		.makeTranslation( boundingBox.getCenter( _vec ) )
+		.scale( _scale );
 
-	// adjust the scale to accommodate the new geometry data range
-	mesh.scale.x *= 0.5 * ( max.x - min.x ) / maxValue;
-	mesh.scale.y *= 0.5 * ( max.y - min.y ) / maxValue;
-	mesh.scale.z *= 0.5 * ( max.z - min.z ) / maxValue;
+	if ( mesh.matrixAutoUpdate ) {
+
+		mesh.updateMatrix();
+
+	}
+
+	mesh.matrix
+		.multiply( _matrix )
+		.decompose( mesh.position, mesh.quaternion, mesh.scale );
 
 	attributes.position = newAttribute;
 	mesh.geometry.boundingBox = null;
 	mesh.geometry.boundingSphere = null;
 
-	mesh.updateMatrixWorld();
+	mesh.updateMatrixWorld( true );
 
 }
 

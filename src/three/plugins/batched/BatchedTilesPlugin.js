@@ -345,7 +345,8 @@ export class BatchedTilesPlugin {
 		const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
 		if ( hasCorrectAttributes && canAddMeshes ) {
 
-			scene.updateMatrixWorld();
+			// tile scenes have "matrixAutoUpdate" disabled so force the update
+			scene.updateMatrixWorld( true );
 
 			const instanceIds = [];
 			this._tileToInstanceId.set( tile, instanceIds );

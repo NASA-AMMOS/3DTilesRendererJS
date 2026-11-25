@@ -1023,7 +1023,8 @@ export class MVTAnnotationsPlugin {
 		}
 
 		// TODO: why are we passing range vs region here?
-		scene.updateMatrixWorld();
+		// tile scenes have "matrixAutoUpdate" disabled so force the update
+		scene.updateMatrixWorld( true );
 		const meshes = collectMeshes( scene );
 		const { range } = getMeshesCartographicRange( meshes, tiles.surface, _matrix, overlay.projection );
 

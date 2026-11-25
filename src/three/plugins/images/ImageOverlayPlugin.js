@@ -500,8 +500,9 @@ export class ImageOverlayPlugin {
 		// under the current overlays used.
 		splitTiles.forEach( tile => {
 
+			// tile scenes have "matrixAutoUpdate" disabled so force the update to drop the copied world matrix
 			const clone = tile.engineData.scene.clone();
-			clone.updateMatrixWorld();
+			clone.updateMatrixWorld( true );
 
 			if ( fullDispose || tile[ SPLIT_HASH ] !== this._getSplitVectors( clone, tile ).hash ) {
 
@@ -637,8 +638,9 @@ export class ImageOverlayPlugin {
 		}
 
 		// create a copy of the content to transform and split
+		// tile scenes have "matrixAutoUpdate" disabled so force the update to drop the copied world matrix
 		const clone = scene.clone();
-		clone.updateMatrixWorld();
+		clone.updateMatrixWorld( true );
 
 		// get the directions to split on & if there are no directions to split on then exit early
 		const { directions, hash } = this._getSplitVectors( clone, tile, _center );
@@ -1096,8 +1098,9 @@ export class ImageOverlayPlugin {
 		}
 
 		// find all meshes to project on and ensure matrices are up to date
+		// tile scenes have "matrixAutoUpdate" disabled so force the update
 		const meshes = [];
-		scene.updateMatrixWorld();
+		scene.updateMatrixWorld( true );
 		scene.traverse( c => {
 
 			if ( c.isMesh ) {
