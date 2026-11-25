@@ -14,7 +14,7 @@ See the [API reference](./API.md) for full class and method documentation.
 The current implementation has the below limitations:
 - Only supports scenes in right-handed mode (`scene.useRightHandedSystem = true`).
 - BoundingBox + Frustum checks are using axis-aligned bounding boxes (rather than Oriented Bounding Boxes), causing false positives.
-- Does not yet support the 3DTile boundingRegion.
+- `region` bounding volumes are bounded by an oriented box, as in the three.js renderer, on the WGS84 ellipsoid. The `3DTILES_ellipsoid` extension is not supported.
 - Limited caching of tiles.
 - I3DM and PNTS are not supported.
 
