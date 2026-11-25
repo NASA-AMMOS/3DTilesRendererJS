@@ -1,5 +1,6 @@
 /** @import { Scene } from '@babylonjs/core/scene' */
-import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
+import { TilesRendererBase, LoaderUtils, WGS84_HEIGHT, WGS84_RADIUS } from '3d-tiles-renderer/core';
+import { regionToBox } from '../../../core/renderer/utilities/RegionUtils.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Frustum } from '@babylonjs/core/Maths/math.frustum';
@@ -13,6 +14,10 @@ import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 const _worldToTiles = /* @__PURE__ */ Matrix.Identity();
 const _cameraPositionInTiles = /* @__PURE__ */ new Vector3();
 const _frustumPlanes = /* @__PURE__ */ new Array( 6 ).fill( null ).map( () => new Plane( 0, 0, 0, 0 ) );
+const _identity = /* @__PURE__ */ Matrix.Identity();
+
+// the radii of the WGS84 ellipsoid, which region bounding volumes are on
+const WGS84_RADII = [ WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT ];
 
 /**
  * Babylon.js implementation of the 3D Tiles renderer. Manages tile loading, caching, traversal,
@@ -149,6 +154,13 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( 'box' in tile.boundingVolume ) {
 
 			boundingVolume.setObbData( tile.boundingVolume.box, transform );
+
+		} else if ( 'region' in tile.boundingVolume ) {
+
+			// a region is converted to the box enclosing it, used like the three.js renderer uses
+			// the box of a region, only for tiles without a box. A region is in the frame of the
+			// tileset, unaffected by tile transforms
+			boundingVolume.setObbData( regionToBox( tile.boundingVolume.region, WGS84_RADII ), _identity );
 
 		}
 

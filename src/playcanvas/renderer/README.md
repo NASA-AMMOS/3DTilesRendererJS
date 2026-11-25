@@ -8,7 +8,7 @@ See the [API reference](./API.md) for full class and method documentation.
 
 The current implementation has the below limitations:
 - Only glTF, GLB and B3DM tile content is supported. I3DM, PNTS and CMPT are not.
-- Only `box` and `sphere` bounding volumes are supported. Tiles with only a `region` volume are not displayed.
+- `region` bounding volumes are bounded by an oriented box, as in the three.js renderer, on the WGS84 ellipsoid. The `3DTILES_ellipsoid` extension is not supported.
 - PlayCanvas transforms are 32-bit, so Earth-centered tilesets, such as Google Photorealistic Tiles, are not rendered precisely.
 - Raycasting is not supported.
 

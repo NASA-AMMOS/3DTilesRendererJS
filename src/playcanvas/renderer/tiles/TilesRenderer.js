@@ -1,6 +1,7 @@
 /** @import { AppBase, CameraComponent } from 'playcanvas' */
 import { Entity, Frustum, Mat4, Plane, Quat, Vec2, Vec3, Vec4 } from 'playcanvas';
-import { LoaderUtils, TilesRendererBase } from '3d-tiles-renderer/core';
+import { LoaderUtils, TilesRendererBase, WGS84_HEIGHT, WGS84_RADIUS } from '3d-tiles-renderer/core';
+import { regionToBox } from '../../../core/renderer/utilities/RegionUtils.js';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { disposeModel, GLTFLoader } from '../loaders/GLTFLoader.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
@@ -12,6 +13,9 @@ const _clipMatrix = /* @__PURE__ */ new Mat4();
 const _clipInverse = /* @__PURE__ */ new Mat4();
 const _contentMatrix = /* @__PURE__ */ new Mat4();
 const _rtcMatrix = /* @__PURE__ */ new Mat4();
+
+// the radii of the WGS84 ellipsoid, which region bounding volumes are on
+const WGS84_RADII = [ WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT ];
 const _corner = /* @__PURE__ */ new Vec4();
 const _resolution = /* @__PURE__ */ new Vec2();
 const _position = /* @__PURE__ */ new Vec3();
@@ -427,12 +431,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 			boundingVolume.setObbData( tile.boundingVolume.box, transform );
 
+		} else if ( 'region' in tile.boundingVolume ) {
+
+			// a region is converted to the box enclosing it, used like the three.js renderer uses
+			// the box of a region, only for tiles without a box. A region is in the frame of the
+			// tileset, unaffected by tile transforms
+			boundingVolume.setObbData( regionToBox( tile.boundingVolume.region, WGS84_RADII ), Mat4.IDENTITY );
+
 		}
 
 		if ( ! boundingVolume.sphere && ! boundingVolume.obb && ! this._warnedBoundingVolume ) {
 
 			this._warnedBoundingVolume = true;
-			console.warn( 'TilesRenderer: Tiles without a "box" or "sphere" bounding volume are not displayed.' );
+			console.warn( 'TilesRenderer: Tiles without a "box", "sphere" or "region" bounding volume are not displayed.' );
 
 		}
 
